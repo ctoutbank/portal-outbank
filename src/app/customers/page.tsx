@@ -26,7 +26,9 @@ export default async function Customerspage() {
           </div>
 
           <div className="flex items-start justify-between gap-4 mb-2">
-            <div className="flex-grow"></div>
+            <div className="flex-grow">
+              Teste
+            </div>
           </div>
         </div>
       </BaseBody>
