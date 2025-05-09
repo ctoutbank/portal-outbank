@@ -25,7 +25,7 @@ const data = {
   navMain: [
     { title: "Dashboard", url: "/", icon: ChartPie, isActive: false },
     {
-      title: "Clientes",
+      title: "ISOS",
       url: "/customers",
       icon: Users,
       isActive: false,
