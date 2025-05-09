@@ -1,7 +1,9 @@
 import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
-import CustomersForm from "@/features/customers/_componentes/customers-form";
+import CustomerWizardForm from "@/features/customers/_componentes/customer-wizard-form";
+
 import { getCustomerById } from "@/features/customers/server/customers";
+import { getDDProfiles } from "@/features/customers/users/_actions/user-actions";
 
 // Definir explicitamente os params
 interface PageProps {
@@ -15,20 +17,27 @@ export default async function CustomerDetail({ params }: PageProps) {
     // Buscar o cliente usando o ID
     const Customer = await getCustomerById(parseInt(id));
 
+    const profiles = await getDDProfiles();
+
     return (
     <>
     <BaseHeader
-        breadcrumbItems={[{ title: "Clientes", url: "/customers" }]}
+        breadcrumbItems={[{ title: "ISOS", url: "/customers" }]}
       />
-      <BaseBody title="Cliente" subtitle={`Visualização do cliente`}>
-        <CustomersForm customer={Customer && {
-          slug: Customer.slug,
-          name: Customer.name || "",
-          customerId: Customer.customerId || undefined,
-          settlementManagementType: Customer.settlementManagementType || undefined,
-          id: Customer.id,
-          idParent: Customer.idParent || undefined
-        }} />
+      <BaseBody title="ISO" subtitle={`Visualização do ISO`}>
+        <CustomerWizardForm 
+          customer={Customer ? {
+            name: Customer.name || '',
+            id: Customer.id,
+            slug: Customer.slug,
+            customerId: Customer.customerId || undefined,
+            settlementManagementType: Customer.settlementManagementType || undefined,
+            idParent: Customer.idParent || undefined
+          } : {
+            name: ''
+          }} 
+          profiles={profiles} 
+        />
       </BaseBody>
     </>
     )

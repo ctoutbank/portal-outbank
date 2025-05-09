@@ -42,7 +42,7 @@ export default function CustomersList({Customers}:{
                 </TableHead>
                 
                 <TableHead>
-                  Tipo de Gestão
+                  Tipo de Gerenciamento de Liquidação
                   <ChevronDown className="ml-2 h-4 w-4 inline" />
                 </TableHead>
                 <TableHead>

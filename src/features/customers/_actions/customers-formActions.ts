@@ -11,7 +11,7 @@ export async function insertCustomerFormAction(data: CustomerSchema) {
         const idParent = await db.select({ id: customers.id })
             .from(customers)
             .where(
-                sql`${customers.name} = 'outbank' AND ${customers.id} = 4`
+                sql`${customers.name} = 'outbank' `
             )
             .then(result => result[0]?.id || null);
 
@@ -44,7 +44,7 @@ export async function updateCustomerFormAction(data: CustomerSchema) {
                 customerId: data.customerId || null,
                 settlementManagementType: data.settlementManagementType || null,
                 slug: data.slug || "",
-                idParent: data.idParent || null
+                
             })
             .where(eq(customers.id, Number(data.id)))
             .returning({ id: customers.id });
