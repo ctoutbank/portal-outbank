@@ -20,9 +20,9 @@ export default function SolicitationFeeCard({ solicitationFee, id }: Solicitatio
     <Card className="w-full max-w-full">
     
       <CardContent className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Primeira coluna */}
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+          {/* Linha de 3 em cima */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div className="space-y-2">
               <Label htmlFor="cnae" className="flex items-center">
                 CNAE: <span className="text-red-500 ml-1">*</span>
@@ -33,7 +33,6 @@ export default function SolicitationFeeCard({ solicitationFee, id }: Solicitatio
                 readOnly
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="mcc">MCC:</Label>
               <Input
@@ -42,7 +41,6 @@ export default function SolicitationFeeCard({ solicitationFee, id }: Solicitatio
                 readOnly
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="quantidadeCnpjs">Quantidade de CNPJs:</Label>
               <Input
@@ -52,9 +50,8 @@ export default function SolicitationFeeCard({ solicitationFee, id }: Solicitatio
               />
             </div>
           </div>
-
-          {/* Segunda coluna */}
-          <div className="space-y-4">
+          {/* Linha de 2 em baixo */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <Label htmlFor="ticketMedio">Ticket Médio:</Label>
               <Input
@@ -63,7 +60,6 @@ export default function SolicitationFeeCard({ solicitationFee, id }: Solicitatio
                 readOnly
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="tpvMensal">TPV Mensal:</Label>
               <Input
@@ -72,12 +68,7 @@ export default function SolicitationFeeCard({ solicitationFee, id }: Solicitatio
                 readOnly
               />
             </div>
-
-           
           </div>
-
-          
-        
         </div>
       </CardContent>
     </Card>
