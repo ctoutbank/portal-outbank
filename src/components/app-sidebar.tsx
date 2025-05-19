@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartPie, Users } from "lucide-react";
+import { ChartPie, Table, Users } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
@@ -30,6 +30,7 @@ const data = {
       icon: Users,
       isActive: false,
     },
+    { title: "Solicitaçoes de Taxa", url: "/solicitationfee", icon: Table , isActive: false },
   ],
 };
 

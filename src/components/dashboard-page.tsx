@@ -1,10 +1,11 @@
 "use client"
 
-import { CustomerData } from "@/app/dashboard/actions"
+import { MerchantData } from "@/app/dashboard/actions"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, CreditCard, DollarSign, TrendingDown, TrendingUp } from "lucide-react"
 import { useEffect } from "react"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import RefreshButton from "@/app/dashboard/refresh-button"
 
 interface DashboardProps {
   dashboardData: {
@@ -12,7 +13,8 @@ interface DashboardProps {
     totalTransacoes: number;
     totalBruto: number;
     totalLucro: number;
-    topCustomers: CustomerData[];
+    topMerchants: MerchantData[];
+    lastUpdate?: Date;
   }
 }
 
@@ -22,7 +24,8 @@ const defaultData = {
   totalTransacoes: 0,
   totalBruto: 0,
   totalLucro: 0,
-  topCustomers: []
+  topMerchants: [],
+  lastUpdate: new Date()
 };
 
 // Cores para os cards de clientes
@@ -33,6 +36,20 @@ const cardColors = [
   { border: 'border-purple-500', bg: 'bg-purple-500', progress: 'bg-purple-500' },
   { border: 'border-pink-500', bg: 'bg-pink-500', progress: 'bg-pink-500' },
 ];
+
+// Formatar data
+function formatLastUpdate(date?: Date) {
+  if (!date) return 'Data desconhecida';
+  
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).format(new Date(date));
+}
 
 export default function Dashboard({ dashboardData = defaultData }: DashboardProps) {
   // Efeito para logging de debug
@@ -46,27 +63,32 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
     totalTransacoes: dashboardData?.totalTransacoes ?? defaultData.totalTransacoes,
     totalBruto: dashboardData?.totalBruto ?? defaultData.totalBruto,
     totalLucro: dashboardData?.totalLucro ?? defaultData.totalLucro,
-    topCustomers: dashboardData?.topCustomers ?? defaultData.topCustomers
+    topMerchants: dashboardData?.topMerchants ?? defaultData.topMerchants,
+    lastUpdate: dashboardData?.lastUpdate ?? defaultData.lastUpdate
   };
 
   // Converter os dados para o formato esperado pelo gráfico
-  const chartData = data.topCustomers.map(customer => ({
-    name: customer.name || "Cliente sem nome",
-    bruto: customer.bruto || 0,
-    lucro: customer.lucro || 0,
-    crescimento: customer.crescimento || 0
+  const chartData = data.topMerchants.map(merchant => ({
+    name: merchant.name || "Estabelecimento sem nome",
+    bruto: merchant.bruto || 0,
+    lucro: merchant.lucro || 0,
+    crescimento: merchant.crescimento || 0
   }));
 
   // Calcular o total bruto para percentuais
   const totalBruto = chartData.reduce((sum, item) => sum + item.bruto, 0);
 
   return (
-    <>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold"></h1>
+    <div className="space-y-4">
+      {/* Cabeçalho com última atualização e botão de refresh */}
+      <div className="flex justify-between items-center">
+        <div className="text-sm text-gray-500">
+          Última atualização: {formatLastUpdate(data.lastUpdate)}
+        </div>
+        <RefreshButton />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Bruto total</CardTitle>
@@ -74,7 +96,7 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R$ {data.totalBruto.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.totalBruto)}
             </div>
             <div className="flex items-center space-x-2">
               <p className="text-xs text-muted-foreground">Total bruto das transações</p>
@@ -88,7 +110,7 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R$ {data.totalLucro.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.totalLucro)}
             </div>
             <div className="flex items-center space-x-2">
               <p className="text-xs text-muted-foreground">Total de lucro realizado</p>
@@ -122,208 +144,226 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
       </div>
 
       {/* Gráfico de Barras */}
-      <Card className="mb-6">
+      <Card className="col-span-4">
         <CardHeader>
-          <CardTitle>Gráfico de Barras</CardTitle>
+          <CardTitle>Top 5 Estabelecimentos</CardTitle>
           <CardDescription>
-            Mostrando os principais clientes ({chartData.length})
+            Desempenho de faturamento bruto dos 5 maiores estabelecimentos
           </CardDescription>
         </CardHeader>
         <CardContent className="pl-2">
-          <div className="flex justify-end gap-2 mb-2">
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-[#f97d63] mr-2"></div>
-              <span className="text-sm">Bruto (R$)</span>
-              <span className="ml-2 font-bold">
-                R$ {data.totalBruto.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-            </div>
-            <div className="flex items-center ml-4">
-              <div className="w-4 h-4 bg-[#374151] mr-2"></div>
-              <span className="text-sm">Lucro (R$)</span>
-              <span className="ml-2 font-bold">
-                R$ {data.totalLucro.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={250}>
-            {chartData.length > 0 ? (
-              <BarChart
-                data={chartData}
-                margin={{
-                  top: 5,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value: number) => [
-                    `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
-                    ""
-                  ]}
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="name"
+                  tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
                 />
-                <Bar dataKey="bruto" name="Bruto" fill="#f97d63" barSize={40} />
-                <Bar dataKey="lucro" name="Lucro" fill="#374151" barSize={40} />
+                <YAxis 
+                  tickFormatter={(value) => new Intl.NumberFormat('pt-BR', { 
+                    notation: 'compact',
+                    compactDisplay: 'short',
+                    style: 'currency', 
+                    currency: 'BRL'
+                  }).format(value)}
+                />
+                <Tooltip 
+                  formatter={(value: number) => new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  }).format(value)}
+                />
+                <Bar dataKey="bruto" name="Valor Bruto" fill="#4f46e5" radius={[4, 4, 0, 0]} />
               </BarChart>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">Não há dados disponíveis para exibir.</p>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-[350px] text-center">
+              <div className="text-gray-500">
+                <p>Nenhum estabelecimento com dados suficientes encontrado.</p>
+                <p className="mt-2 text-sm">Os valores totais estão disponíveis nos cards acima.</p>
               </div>
-            )}
-          </ResponsiveContainer>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Cards dos principais clientes */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold mb-2">Top 5 Clientes (ISOs)</h2>
-        <p className="text-sm text-muted-foreground mb-4">Principais clientes por valor bruto</p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {chartData.slice(0, 5).map((item, index) => {
-            const color = cardColors[index % cardColors.length];
-            const percentualBruto = totalBruto > 0 
-              ? (item.bruto / totalBruto * 100).toFixed(1) 
-              : "0.0";
-            const percentualLucro = item.bruto > 0
-              ? (item.lucro / item.bruto * 100).toFixed(1)
-              : "0.0";
-            // Usar o valor real de crescimento vindo da API
-            const growthValue = item.crescimento;
-            const isPositiveGrowth = growthValue >= 0;
-                
-            return (
-              <Card key={index} className={`border-t-4 ${color.border} overflow-hidden`}>
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-semibold text-md truncate">{item.name}</h3>
-                    <div className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium">
-                      {index + 1}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-1 mb-2 text-xs">
-                    {isPositiveGrowth ? (
-                      <TrendingUp className="h-3 w-3 text-green-500" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3 text-red-500" />
-                    )}
-                    <span className={isPositiveGrowth ? "text-green-500" : "text-red-500"}>
-                      {isPositiveGrowth ? "+" : ""}{growthValue.toFixed(1)}%
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-muted-foreground">Valor Bruto</span>
-                        <span className="font-medium">
-                          R$ {item.bruto.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
+      {/* Top 5 Clientes Cards */}
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-0">
+          <CardTitle>Top 5 Estabelecimentos</CardTitle>
+          <CardDescription>
+            Os 5 estabelecimentos com maior volume de vendas
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {data.topMerchants.length > 0 ? (
+            <div className="mt-4">
+              {data.topMerchants.map((merchant, index) => (
+                <div 
+                  key={merchant.id} 
+                  className="group relative hover:bg-slate-50 transition-colors p-4 border-b last:border-b-0"
+                >
+                  <div className="flex items-center gap-4">
+                    {/* Ranking e logo */}
+                    <div className="relative">
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold ${cardColors[index % cardColors.length].bg}`}>
+                        {index + 1}
                       </div>
-                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${color.progress}`} 
-                          style={{ width: `${percentualBruto}%` }}
-                        ></div>
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-background flex items-center justify-center border">
+                        {merchant.crescimento >= 0 ? (
+                          <TrendingUp className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3 text-red-500" />
+                        )}
                       </div>
-                      <div className="text-right text-xs text-muted-foreground mt-1">{percentualBruto}%</div>
                     </div>
                     
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-muted-foreground">Lucro</span>
-                        <span className="font-medium">
-                          R$ {item.lucro.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {/* Detalhes */}
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-2 items-center">
+                      {/* Nome */}
+                      <div className="md:col-span-2">
+                        <h3 className="text-sm font-medium line-clamp-1">{merchant.name}</h3>
+                      </div>
+                      
+                      {/* Valores */}
+                      <div className="md:col-span-1">
+                        <p className="text-xs text-muted-foreground">Bruto</p>
+                        <p className="font-medium">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                            maximumFractionDigits: 0
+                          }).format(merchant.bruto)}
+                        </p>
+                      </div>
+                      
+                      <div className="md:col-span-1">
+                        <p className="text-xs text-muted-foreground">Lucro</p>
+                        <p className="font-medium">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                            maximumFractionDigits: 0
+                          }).format(merchant.lucro)}
+                        </p>
+                      </div>
+                      
+                      {/* Crescimento */}
+                      <div className="md:col-span-1">
+                        <p className="text-xs text-muted-foreground">Crescimento</p>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          merchant.crescimento >= 5 ? 'bg-green-100 text-green-800' : 
+                          merchant.crescimento >= 0 ? 'bg-blue-100 text-blue-800' : 
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {merchant.crescimento >= 0 ? '+' : ''}{merchant.crescimento.toFixed(1)}%
                         </span>
                       </div>
-                      <div className="text-right text-xs text-muted-foreground mt-1">{percentualLucro}%</div>
+                      
+                      {/* Participação */}
+                      <div className="md:col-span-1 flex flex-col">
+                        <div className="flex justify-between mb-1">
+                          <p className="text-xs text-muted-foreground">% do Total</p>
+                          <p className="text-xs font-medium">{totalBruto > 0 ? ((merchant.bruto / totalBruto) * 100).toFixed(1) : '0.0'}%</p>
+                        </div>
+                        <div className="w-full bg-secondary rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full ${cardColors[index % cardColors.length].progress}`}
+                            style={{ width: `${totalBruto > 0 ? (merchant.bruto / totalBruto) * 100 : 0}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Seta indicadora */}
+                    <div className="hidden md:flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="p-1 rounded-full hover:bg-slate-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m9 18 6-6-6-6"/>
+                        </svg>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-
-          {chartData.length === 0 && (
-            <Card className="col-span-full p-6">
-              <p className="text-center text-muted-foreground">Não há dados disponíveis para exibir.</p>
-            </Card>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-gray-500">Nenhum estabelecimento com dados reais encontrado.</p>
+            </div>
           )}
-        </div>
-      </div>
-
-      {/* Tabela de dados */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Dados dos Clientes (ISOs)</CardTitle>
-          <CardDescription>Detalhamento por cliente ({chartData.length})</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="p-2 text-left font-medium">Cliente</th>
-                  <th className="p-2 text-left font-medium">Bruto (R$)</th>
-                  <th className="p-2 text-left font-medium">Lucro (R$)</th>
-                  <th className="p-2 text-left font-medium">Margem (%)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {chartData.length > 0 ? (
-                  chartData.map((item) => (
-                    <tr key={item.name} className="border-b">
-                      <td className="p-2">{item.name}</td>
-                      <td className="p-2">
-                        {item.bruto.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        })}
-                      </td>
-                      <td className="p-2">
-                        {item.lucro.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        })}
-                      </td>
-                      <td className="p-2">{item.bruto > 0 ? ((item.lucro / item.bruto) * 100).toFixed(2) : "0.00"}%</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                      Não há dados disponíveis para exibir.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-              <tfoot>
-                <tr className="border-t bg-muted/50">
-                  <td className="p-2 font-medium">Total</td>
-                  <td className="p-2 font-medium">
-                    {data.totalBruto.toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
-                  </td>
-                  <td className="p-2 font-medium">
-                    {data.totalLucro.toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
-                  </td>
-                  <td className="p-2 font-medium">{data.totalBruto > 0 ? ((data.totalLucro / data.totalBruto) * 100).toFixed(2) : "0.00"}%</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
         </CardContent>
       </Card>
-    </>
+
+      {/* Dados detalhados dos clientes */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Dados dos Estabelecimentos</CardTitle>
+          <CardDescription>
+            Detalhamento dos 5 principais estabelecimentos
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {data.topMerchants.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {data.topMerchants.map((merchant, index) => (
+                <div key={merchant.id} className={`p-4 rounded-lg border ${cardColors[index % cardColors.length].border}`}>
+                  <div className="font-medium truncate">{merchant.name}</div>
+                  <div className="mt-2 space-y-2">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Bruto</p>
+                      <p className="font-medium">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(merchant.bruto)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Lucro</p>
+                      <p className="font-medium">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(merchant.lucro)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Crescimento</p>
+                      <div className={`flex items-center font-medium ${merchant.crescimento >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {merchant.crescimento >= 0 ? (
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3 mr-1" />
+                        )}
+                        {merchant.crescimento.toFixed(1)}%
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">% do Total</p>
+                      <p className="font-medium">
+                        {totalBruto > 0 ? ((merchant.bruto / totalBruto) * 100).toFixed(1) : '0.0'}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 w-full bg-secondary rounded-full h-2.5">
+                    <div
+                      className={`h-2.5 rounded-full ${cardColors[index % cardColors.length].progress}`}
+                      style={{ width: `${totalBruto > 0 ? (merchant.bruto / totalBruto) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-gray-500">Nenhum estabelecimento com dados detalhados disponível.</p>
+              <p className="mt-2 text-sm text-gray-500">Os valores totais do ISO estão disponíveis nos cards acima.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 } 
