@@ -4,7 +4,7 @@ import Dashboard from "@/components/dashboard-page";
 import { getDashboardData } from "./dashboard/actions";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300; // Revalidar a cada 5 minutos
 
 export default async function Dashboardpage() {
   try {
@@ -31,7 +31,8 @@ export default async function Dashboardpage() {
       totalTransacoes: 0,
       totalBruto: 0,
       totalLucro: 0,
-      topCustomers: []
+      topMerchants: [],
+      lastUpdate: new Date()
     };
     
     return (

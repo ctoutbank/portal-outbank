@@ -25,7 +25,7 @@ export default async function DashboardPage() {
       totalTransacoes: 0,
       totalBruto: 0,
       totalLucro: 0,
-      topCustomers: []
+      topMerchants: []
     };
     
     return <Dashboard dashboardData={fallbackData} />;
