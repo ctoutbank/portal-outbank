@@ -239,7 +239,7 @@ type SolicitationFeeWithTaxesResult = {
     pixMinimumCostFee: string | null;
     pixCeilingFee: string | null;
     transactionAnticipationMdr: string | null;
-  } | null;
+  } ;
 };
 
 export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditForm | null> {
@@ -384,62 +384,185 @@ export async function updateSolicitationFeeBrandsWithTaxes(
     }>;
   }>
 ): Promise<void> {
-  // Atualizar o status na tabela solicitationFee
-  await db
-    .update(solicitationFee)
-    .set({
-      status: status,
-      dtupdate: new Date().toISOString()
-    })
-    .where(eq(solicitationFee.id, solicitationFeeId));
+  try {
+    console.log("===== INICIANDO ATUALIZAÇÃO DE TAXAS =====");
+    console.log("ID da solicitação:", solicitationFeeId);
+    console.log("Status:", status);
+    console.log("Marcas e produtos recebidos:", JSON.stringify(brands, null, 2));
+    
+    // Atualizar o status na tabela solicitationFee
+    await db
+      .update(solicitationFee)
+      .set({
+        status: status,
+        dtupdate: new Date().toISOString()
+      })
+      .where(eq(solicitationFee.id, solicitationFeeId));
+    
+    console.log("Status da solicitação atualizado para:", status);
 
-  for (const brand of brands) {
-    // Buscar a brand existente pelo nome e solicitationFeeId
-    const existingBrands = await db
-      .select()
+    // Buscar todas as brands de uma vez
+    const brandsResults = await db
+      .select({
+        id: solicitationFeeBrand.id,
+        brand: solicitationFeeBrand.brand
+      })
       .from(solicitationFeeBrand)
-      .where(
-        and(
-          eq(solicitationFeeBrand.brand, brand.brand),
-          eq(solicitationFeeBrand.solicitationFeeId, solicitationFeeId)
-        )
-      );
+      .where(eq(solicitationFeeBrand.solicitationFeeId, solicitationFeeId));
+    
+    console.log("Marcas encontradas no banco:", brandsResults);
 
-    if (existingBrands.length > 0) {
-      const existingBrand = existingBrands[0];
+    // Criar um mapa de brands para acesso rápido
+    const brandsMap = new Map<string, number>();
+    brandsResults.forEach(br => {
+      if (br.brand) { // Garantir que brand não é null
+        brandsMap.set(br.brand, br.id);
+      }
+    });
+    
+    console.log("Mapa de marcas criado:", Object.fromEntries(brandsMap));
 
-      // Atualizar os product types para esta brand
-      for (const productType of brand.productTypes) {
-        const existingProductTypes = await db
-          .select()
+    // Para cada marca, buscar todos os tipos de produtos de uma vez
+    for (const brand of brands) {
+      console.log("Processando marca:", brand.brand);
+      const brandId = brandsMap.get(brand.brand);
+      
+      if (brandId) {
+        console.log("ID da marca encontrado:", brandId);
+        // Buscar todos os tipos de produtos para esta marca de uma vez
+        const productTypes = await db
+          .select({
+            id: solicitationBrandProductType.id,
+            productType: solicitationBrandProductType.productType,
+            transactionFeeStart: solicitationBrandProductType.transactionFeeStart,
+            transactionFeeEnd: solicitationBrandProductType.transactionFeeEnd,
+            fee: solicitationBrandProductType.fee,
+            feeAdmin: solicitationBrandProductType.feeAdmin,
+            feeDock: solicitationBrandProductType.feeDock
+          })
           .from(solicitationBrandProductType)
-          .where(
-            and(
-              eq(solicitationBrandProductType.solicitationFeeBrandId, existingBrand.id),
-              eq(solicitationBrandProductType.productType, productType.productType)
-            )
-          );
-
-        if (existingProductTypes.length > 0) {
-          // Atualizar campos feeAdmin e feeDock
-          await db
-            .update(solicitationBrandProductType)
-            .set({
-             
-              feeAdmin: String(productType.feeAdmin),
-              feeDock: String(productType.feeDock),
-              transactionFeeStart: productType.transactionFeeStart,
-              transactionFeeEnd: productType.transactionFeeEnd,
-              pixMinimumCostFee: String(productType.pixMinimumCostFee),
-              pixCeilingFee: String(productType.pixCeilingFee),
-              transactionAnticipationMdr: String(productType.transactionAnticipationMdr),
-              dtupdate: new Date().toISOString()
-            })
-            .where(eq(solicitationBrandProductType.id, existingProductTypes[0].id));
+          .where(eq(solicitationBrandProductType.solicitationFeeBrandId, brandId));
+        
+        console.log("Tipos de produtos encontrados para marca", brand.brand, ":", productTypes);
+        
+        // Criar um mapa para encontrar produtos rapidamente
+        const productTypesMap = new Map<string, number>();
+        productTypes.forEach(pt => {
+          if (pt.productType) {
+            // Criar uma chave única que combina tipo de produto e intervalos
+            const key = `${pt.productType.trim()}_${pt.transactionFeeStart}_${pt.transactionFeeEnd}`;
+            productTypesMap.set(key, pt.id);
+            console.log("Mapeado produto:", key, "->", pt.id);
+          }
+        });
+        
+        // Processar atualizações e inserções para esta marca
+        for (const pt of brand.productTypes) {
+          // Limpar espaços extras do tipo de produto
+          const cleanProductType = pt.productType.trim();
+          // Criar a mesma chave única para buscar no mapa
+          const key = `${cleanProductType}_${pt.transactionFeeStart}_${pt.transactionFeeEnd}`;
+          const existingProductTypeId = productTypesMap.get(key);
+          
+          console.log("Verificando produto:", cleanProductType, "com chave", key);
+          console.log("Valores a atualizar - feeAdmin:", pt.feeAdmin, "feeDock:", pt.feeDock);
+          
+          if (existingProductTypeId) {
+            console.log("Produto encontrado com ID:", existingProductTypeId, "- Atualizando");
+            // Atualizar o tipo de produto existente
+            const updateResult = await db
+              .update(solicitationBrandProductType)
+              .set({
+                feeAdmin: String(pt.feeAdmin),
+                feeDock: String(pt.feeDock),
+                pixMinimumCostFee: String(pt.pixMinimumCostFee),
+                pixCeilingFee: String(pt.pixCeilingFee),
+                transactionAnticipationMdr: String(pt.transactionAnticipationMdr),
+                dtupdate: new Date().toISOString()
+              })
+              .where(eq(solicitationBrandProductType.id, existingProductTypeId))
+              .returning({ 
+                id: solicitationBrandProductType.id,
+                feeAdmin: solicitationBrandProductType.feeAdmin,
+                feeDock: solicitationBrandProductType.feeDock
+              });
+            
+            console.log("Resultado da atualização:", updateResult);
+          } else {
+            console.log("Produto não encontrado - Inserindo novo");
+            // Inserir novo tipo de produto
+            const insertResult = await db.insert(solicitationBrandProductType).values({
+              slug: `${brandId}-${cleanProductType}`,
+              solicitationFeeBrandId: brandId,
+              productType: cleanProductType,
+              fee: String(pt.fee),
+              feeAdmin: String(pt.feeAdmin),
+              feeDock: String(pt.feeDock),
+              transactionFeeStart: pt.transactionFeeStart,
+              transactionFeeEnd: pt.transactionFeeEnd,
+              pixMinimumCostFee: String(pt.pixMinimumCostFee),
+              pixCeilingFee: String(pt.pixCeilingFee),
+              transactionAnticipationMdr: String(pt.transactionAnticipationMdr)
+            }).returning({ 
+              id: solicitationBrandProductType.id,
+              feeAdmin: solicitationBrandProductType.feeAdmin,
+              feeDock: solicitationBrandProductType.feeDock
+            });
+            
+            console.log("Resultado da inserção:", insertResult);
+          }
+        }
+      } else {
+        console.log("Marca não encontrada:", brand.brand, "- Inserindo nova marca");
+        // Inserir nova marca
+        const newBrandResult = await db
+          .insert(solicitationFeeBrand)
+          .values({
+            slug: `${solicitationFeeId}-${brand.brand}`,
+            brand: brand.brand,
+            solicitationFeeId: solicitationFeeId
+          })
+          .returning({ id: solicitationFeeBrand.id });
+        
+        if (newBrandResult.length > 0) {
+          const newBrandId = newBrandResult[0].id;
+          console.log("Nova marca inserida com ID:", newBrandId);
+          
+          // Inserir tipos de produtos para a nova marca
+          for (const pt of brand.productTypes) {
+            const cleanProductType = pt.productType.trim();
+            console.log("Inserindo produto para nova marca:", cleanProductType);
+            
+            const insertResult = await db.insert(solicitationBrandProductType).values({
+              slug: `${newBrandId}-${cleanProductType}`,
+              solicitationFeeBrandId: newBrandId,
+              productType: cleanProductType,
+              fee: String(pt.fee),
+              feeAdmin: String(pt.feeAdmin),
+              feeDock: String(pt.feeDock),
+              transactionFeeStart: pt.transactionFeeStart,
+              transactionFeeEnd: pt.transactionFeeEnd,
+              pixMinimumCostFee: String(pt.pixMinimumCostFee),
+              pixCeilingFee: String(pt.pixCeilingFee),
+              transactionAnticipationMdr: String(pt.transactionAnticipationMdr)
+            }).returning({ 
+              id: solicitationBrandProductType.id,
+              feeAdmin: solicitationBrandProductType.feeAdmin,
+              feeDock: solicitationBrandProductType.feeDock
+            });
+            
+            console.log("Resultado da inserção do produto:", insertResult);
+          }
         }
       }
     }
+    
+    console.log("===== ATUALIZAÇÃO DE TAXAS CONCLUÍDA =====");
+  } catch (error) {
+    console.error("Erro ao atualizar solicitação de tarifa:", error);
+    throw error;
   }
 }
+
 
 
