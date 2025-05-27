@@ -12,6 +12,7 @@ export const SchemaSolicitationFee = z.object({
     description: z.string().optional(),
     cnaeInUse: z.boolean().optional(),
     status: z.string().optional(),
+    
 });
 
 export type SolicitationFeeSchema = z.infer<typeof SchemaSolicitationFee>; 

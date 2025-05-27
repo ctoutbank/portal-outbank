@@ -2,16 +2,17 @@ import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
 import SolicitationFeeCard from "@/features/solicitationfee/_componentes/solicitationfee-card";
 import { TaxEditForm1 } from "@/features/solicitationfee/_componentes/tax-form";
-import { getSolicitationFeeById, getSolicitationFeeWithTaxes } from "@/features/solicitationfee/server/solicitationfee";
+import { getSolicitationFeeById, getSolicitationFeeWithTaxes, TaxEditForm } from "@/features/solicitationfee/server/solicitationfee";
 import { TaXEditFormSchema } from "@/features/solicitationfee/schema/schema-tax";
 import { brandList, SolicitationFeeProductTypeList } from "@/lib/lookuptables/lookuptables-tax";
+import DownloadDocumentsButton from "@/features/solicitationfee/_componentes/dowload-button";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 // Função para converter o formato retornado pela API para o formato do formulário
-function convertToTaxEditFormSchema(data: any): TaXEditFormSchema {
+async function convertToTaxEditFormSchema(data: any): Promise<TaXEditFormSchema> {
   if (!data) return {} as TaXEditFormSchema;
   
   // Criar uma estrutura completa para todas as marcas e tipos de produtos
@@ -54,14 +55,18 @@ function convertToTaxEditFormSchema(data: any): TaXEditFormSchema {
         id: existingProductType.id,
         slug: existingProductType.slug,
         productType: cleanProductTypeValue,
-        fee: String(existingProductType.fee || ""),
-        feeAdmin: String(existingProductType.feeAdmin || ""),
-        feeDock: String(existingProductType.feeDock || ""),
-        transactionFeeStart: String(existingProductType.transactionFeeStart || productTypeItem.transactionFeeStart),
-        transactionFeeEnd: String(existingProductType.transactionFeeEnd || productTypeItem.transactionFeeEnd),
-        pixMinimumCostFee: String(existingProductType.pixMinimumCostFee || ""),
-        pixCeilingFee: String(existingProductType.pixCeilingFee || ""),
-        transactionAnticipationMdr: String(existingProductType.transactionAnticipationMdr || ""),
+        fee: existingProductType.fee,
+        feeAdmin: existingProductType.feeAdmin,
+        feeDock: existingProductType.feeDock,
+        transactionFeeStart: existingProductType.transactionFeeStart || productTypeItem.transactionFeeStart,
+        transactionFeeEnd: existingProductType.transactionFeeEnd || productTypeItem.transactionFeeEnd,
+        pixMinimumCostFee: existingProductType.pixMinimumCostFee,
+        pixCeilingFee: existingProductType.pixCeilingFee,
+        transactionAnticipationMdr: existingProductType.transactionAnticipationMdr,
+        noCardFee: existingProductType.noCardFee,
+        noCardFeeAdmin: existingProductType.noCardFeeAdmin,
+        noCardFeeDock: existingProductType.noCardFeeDock,
+        noCardTransactionAnticipationMdr: existingProductType.noCardTransactionAnticipationMdr,
         dtinsert: existingProductType.dtinsert ? new Date(existingProductType.dtinsert) : undefined,
         dtupdate: existingProductType.dtupdate ? new Date(existingProductType.dtupdate) : undefined
       } : {
@@ -76,6 +81,10 @@ function convertToTaxEditFormSchema(data: any): TaXEditFormSchema {
         pixMinimumCostFee: "",
         pixCeilingFee: "",
         transactionAnticipationMdr: "",
+        noCardFee: "",
+        noCardFeeAdmin: "",
+        noCardFeeDock: "",
+        noCardTransactionAnticipationMdr: "",
         dtinsert: undefined,
         dtupdate: undefined
       };
@@ -103,6 +112,14 @@ function convertToTaxEditFormSchema(data: any): TaXEditFormSchema {
       status: data.solicitationFee.status,
       dtinsert: data.solicitationFee.dtinsert ? new Date(data.solicitationFee.dtinsert) : undefined,
       dtupdate: data.solicitationFee.dtupdate ? new Date(data.solicitationFee.dtupdate) : undefined,
+      nonCardPixMdr: data.solicitationFee.nonCardPixMdr,
+      nonCardPixCeilingFee: data.solicitationFee.nonCardPixCeilingFee,
+      nonCardPixMinimumCostFee: data.solicitationFee.nonCardPixMinimumCostFee,
+      cardPixMdr: data.solicitationFee.cardPixMdr,
+      cardPixCeilingFee: data.solicitationFee.cardPixCeilingFee,
+      cardPixMinimumCostFee: data.solicitationFee.cardPixMinimumCostFee,
+      compulsoryAnticipationConfig: data.solicitationFee.compulsoryAnticipationConfig,
+      eventualAnticipationFee: data.solicitationFee.eventualAnticipationFee,
       solicitationFeeBrands: allBrands
     }
   };
@@ -111,12 +128,17 @@ function convertToTaxEditFormSchema(data: any): TaXEditFormSchema {
 export default async function SolicitationFeeDetail({ params }: PageProps) {
   const { id } = await params;
   const solicitationFee = await getSolicitationFeeById(parseInt(id));
-  console.log(solicitationFee);
+  console.log("Solicitação base:", solicitationFee);
+  
+  // Consultar taxas diretamente do banco de dados
   const solicitationFeeWithTaxes = await getSolicitationFeeWithTaxes(parseInt(id));
   
-  // Converter dados para o formato esperado pelo componente
-  const formattedData = convertToTaxEditFormSchema(solicitationFeeWithTaxes);
-
+  console.log("Valores completos das taxas para debug:");
+  console.log(JSON.stringify(solicitationFeeWithTaxes, null, 2));
+  
+  // Converter dados para o formato esperado pelo componente, preservando os valores originais
+  const formattedData = await convertToTaxEditFormSchema(solicitationFeeWithTaxes);
+  
   return (
     <>
       <BaseHeader
@@ -126,6 +148,10 @@ export default async function SolicitationFeeDetail({ params }: PageProps) {
       <BaseBody title="Solicitação de Taxa" subtitle="Visualização da solicitação de taxa">
         <div className="mt-8">
           <SolicitationFeeCard id={parseInt(id)} solicitationFee={solicitationFee ?? undefined} />
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <DownloadDocumentsButton solicitationFeeId={parseInt(id)} />
         </div>
 
         <div className="mt-8">

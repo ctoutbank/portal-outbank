@@ -1,6 +1,6 @@
 "use server";
 import { db } from "@/db/drizzle";
-import { solicitationFee, customers, solicitationFeeBrand, solicitationBrandProductType } from "../../../../drizzle/schema";
+import { solicitationFee, customers, solicitationFeeBrand, solicitationBrandProductType, solicitationFeeDocument, file } from "../../../../drizzle/schema";
 import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import { SolicitationFeeSchema } from "../schema/schema";
 import { generateSlug } from "@/lib/utils";
@@ -42,6 +42,23 @@ export async function getSolicitationFees(
     whereConditions.push(ilike(solicitationFee.status, `%${status}%`));
   }
   
+  // Verificamos se sortField existe em solicitationFee e se não é undefined
+  let orderByClause;
+  try {
+    // Primeiro garantimos que é uma propriedade válida do objeto solicitationFee
+    if (sortField && sortField in solicitationFee) {
+      // Agora criamos a cláusula de ordenação baseada na direção
+      orderByClause = sortOrder === 'desc' ? desc(solicitationFee[sortField]) : solicitationFee[sortField];
+    } else {
+      // Se não for válido, usamos o id como fallback
+      orderByClause = sortOrder === 'desc' ? desc(solicitationFee.id) : solicitationFee.id;
+    }
+  } catch (error) {
+    console.error("Erro ao criar cláusula de ordenação:", error);
+    // Fallback seguro
+    orderByClause = sortOrder === 'desc' ? desc(solicitationFee.id) : solicitationFee.id;
+  }
+  
   const result = await db
     .select({
       id: solicitationFee.id,
@@ -62,7 +79,7 @@ export async function getSolicitationFees(
     .from(solicitationFee)
     .leftJoin(customers, eq(solicitationFee.idCustomers, customers.id))
     .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-    .orderBy(sortOrder === 'desc' ? desc(solicitationFee[sortField]) : solicitationFee[sortField])
+    .orderBy(orderByClause)
     .limit(pageSize)
     .offset(offset);
     
@@ -175,6 +192,17 @@ export type TaxEditForm = {
       status: string;
       dtinsert: string;
       dtupdate: string;
+      // Campos PIX cartão
+      cardPixMdr?: string;
+      cardPixCeilingFee?: string;
+      cardPixMinimumCostFee?: string;
+      // Campos PIX não cartão
+      nonCardPixMdr?: string;
+      nonCardPixCeilingFee?: string;
+      nonCardPixMinimumCostFee?: string;
+      // Campos para antecipação
+      compulsoryAnticipationConfig?: number;
+      eventualAnticipationFee?: string;
       solicitationFeeBrands: Array<{
         id: number;
         slug: string;
@@ -191,9 +219,12 @@ export type TaxEditForm = {
           feeDock: number;
           transactionFeeStart: number;
           transactionFeeEnd: number;
-          pixMinimumCostFee: number;
-          pixCeilingFee: number;
           transactionAnticipationMdr: number;
+          // Campos para Não Cartão
+          noCardFee?: number;
+          noCardFeeAdmin?: number;
+          noCardFeeDock?: number;
+          noCardTransactionAnticipationMdr?: number;
         }>;
       }>;
     };
@@ -218,6 +249,14 @@ type SolicitationFeeWithTaxesResult = {
     status: string | null;
     dtinsert: string | null;
     dtupdate: string | null;
+    nonCardPixMdr: string | null;
+    nonCardPixCeilingFee: string | null;
+    nonCardPixMinimumCostFee: string | null;
+    cardPixMdr: string | null;
+    cardPixCeilingFee: string | null;
+    cardPixMinimumCostFee: string | null;
+    compulsoryAnticipationConfig: number | null;
+    eventualAnticipationFee: string | null;
   };
   brand: {
     id: number;
@@ -236,13 +275,17 @@ type SolicitationFeeWithTaxesResult = {
     feeDock: string | null;
     transactionFeeStart: number | null;
     transactionFeeEnd: number | null;
-    pixMinimumCostFee: string | null;
-    pixCeilingFee: string | null;
     transactionAnticipationMdr: string | null;
+    noCardFee: string | null;
+    noCardFeeAdmin: string | null;
+    noCardFeeDock: string | null;
+    noCardTransactionAnticipationMdr: string | null;
   } ;
 };
 
 export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditForm | null> {
+  console.log("Iniciando consulta de taxas para solicitação ID:", id);
+  
   const result = await db
     .select({
       solicitationFee: {
@@ -259,6 +302,14 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
         status: solicitationFee.status,
         dtinsert: solicitationFee.dtinsert,
         dtupdate: solicitationFee.dtupdate,
+        nonCardPixMdr: solicitationFee.nonCardPixMdr,
+        nonCardPixCeilingFee: solicitationFee.nonCardPixCeilingFee,
+        nonCardPixMinimumCostFee: solicitationFee.nonCardPixMinimumCostFee,
+        cardPixMdr: solicitationFee.cardPixMdr,
+        cardPixCeilingFee: solicitationFee.cardPixCeilingFee,
+        cardPixMinimumCostFee: solicitationFee.cardPixMinimumCostFee,
+        compulsoryAnticipationConfig: solicitationFee.compulsoryAnticipationConfig,
+        eventualAnticipationFee: solicitationFee.eventualAnticipationFee,
       },
       brand: {
         id: solicitationFeeBrand.id,
@@ -277,9 +328,11 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
         feeDock: solicitationBrandProductType.feeDock,
         transactionFeeStart: solicitationBrandProductType.transactionFeeStart,
         transactionFeeEnd: solicitationBrandProductType.transactionFeeEnd,
-        pixMinimumCostFee: solicitationBrandProductType.pixMinimumCostFee,
-        pixCeilingFee: solicitationBrandProductType.pixCeilingFee,
         transactionAnticipationMdr: solicitationBrandProductType.transactionAnticipationMdr,
+        noCardFee: solicitationBrandProductType.noCardFee,
+        noCardFeeAdmin: solicitationBrandProductType.noCardFeeAdmin,
+        noCardFeeDock: solicitationBrandProductType.noCardFeeDock,
+        noCardTransactionAnticipationMdr: solicitationBrandProductType.noCardTransactionAnticipationMdr,
       }
     })
     .from(solicitationFee)
@@ -288,8 +341,11 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
     .where(eq(solicitationFee.id, id)) as SolicitationFeeWithTaxesResult[];
 
   if (result.length === 0) {
+    console.log("Nenhum resultado encontrado para a solicitação ID:", id);
     return null;
   }
+
+  console.log(`Foram encontrados ${result.length} registros para a solicitação ID:`, id);
 
   // Agrupar os resultados
   const solicitationFeeData = result[0].solicitationFee;
@@ -309,9 +365,11 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
       feeDock: number;
       transactionFeeStart: number;
       transactionFeeEnd: number;
-      pixMinimumCostFee: number;
-      pixCeilingFee: number;
       transactionAnticipationMdr: number;
+      noCardFee: any;
+      noCardFeeAdmin: any;
+      noCardFeeDock: any;
+      noCardTransactionAnticipationMdr: any;
     }>;
   }>();
 
@@ -328,6 +386,8 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
           solicitationBrandProductTypes: []
         });
       }
+      
+      // Manter os valores originais sem conversão
       const productType = {
         id: row.productType.id,
         slug: row.productType.slug || "",
@@ -337,10 +397,14 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
         feeDock: Number(row.productType.feeDock) || 0,
         transactionFeeStart: row.productType.transactionFeeStart || 0,
         transactionFeeEnd: row.productType.transactionFeeEnd || 0,
-        pixMinimumCostFee: Number(row.productType.pixMinimumCostFee) || 0,
-        pixCeilingFee: Number(row.productType.pixCeilingFee) || 0,
-        transactionAnticipationMdr: Number(row.productType.transactionAnticipationMdr) || 0
+        transactionAnticipationMdr: Number(row.productType.transactionAnticipationMdr) || 0,
+        // Manter os valores originais sem conversão
+        noCardFee: row.productType.noCardFee,
+        noCardFeeAdmin: row.productType.noCardFeeAdmin,
+        noCardFeeDock: row.productType.noCardFeeDock,
+        noCardTransactionAnticipationMdr: row.productType.noCardTransactionAnticipationMdr
       };
+      
       brandsMap.get(row.brand.id)?.solicitationBrandProductTypes.push(productType);
     }
   });
@@ -360,6 +424,14 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
       status: solicitationFeeData.status || "",
       dtinsert: solicitationFeeData.dtinsert || "",
       dtupdate: solicitationFeeData.dtupdate || "",
+      nonCardPixMdr: solicitationFeeData.nonCardPixMdr || "",
+      nonCardPixCeilingFee: solicitationFeeData.nonCardPixCeilingFee || "",
+      nonCardPixMinimumCostFee: solicitationFeeData.nonCardPixMinimumCostFee || "",
+      cardPixMdr: solicitationFeeData.cardPixMdr || "",
+      cardPixCeilingFee: solicitationFeeData.cardPixCeilingFee || "",
+      cardPixMinimumCostFee: solicitationFeeData.cardPixMinimumCostFee || "",
+      compulsoryAnticipationConfig: Number(solicitationFeeData.compulsoryAnticipationConfig) || 0,
+      eventualAnticipationFee: solicitationFeeData.eventualAnticipationFee || "",
       solicitationFeeBrands: Array.from(brandsMap.values())
     }
   };
@@ -378,28 +450,150 @@ export async function updateSolicitationFeeBrandsWithTaxes(
       feeDock: number;
       transactionFeeStart: number;
       transactionFeeEnd: number;
-      pixMinimumCostFee: number;
-      pixCeilingFee: number;
       transactionAnticipationMdr: number;
+      // Novos campos
+      noCardFee?: number;
+      noCardFeeAdmin?: number;
+      noCardFeeDock?: number;
+      noCardTransactionAnticipationMdr?: number;
     }>;
-  }>
+  }>,
+  nonCardPixData?: {
+    nonCardPixMdr: number;
+    nonCardPixCeilingFee: number;
+    nonCardPixMinimumCostFee: number;
+    // Campos Admin e Dock para nonCardPix
+    nonCardPixMdrAdmin?: number;
+    nonCardPixCeilingFeeAdmin?: number;
+    nonCardPixMinimumCostFeeAdmin?: number;
+    nonCardPixMdrDock?: number;
+    nonCardPixCeilingFeeDock?: number;
+    nonCardPixMinimumCostFeeDock?: number;
+    // Campos do PIX cartão
+    cardPixMdr?: number;
+    cardPixCeilingFee?: number;
+    cardPixMinimumCostFee?: number;
+    // Campos Admin e Dock para cardPix
+    cardPixMdrAdmin?: number;
+    cardPixCeilingFeeAdmin?: number;
+    cardPixMinimumCostFeeAdmin?: number;
+    cardPixMdrDock?: number;
+    cardPixCeilingFeeDock?: number;
+    cardPixMinimumCostFeeDock?: number;
+    // Campos de antecipação
+    eventualAnticipationFee?: number;
+    eventualAnticipationFeeAdmin?: number;
+    eventualAnticipationFeeDock?: number;
+    nonCardEventualAnticipationFee?: number;
+    nonCardEventualAnticipationFeeAdmin?: number;
+    nonCardEventualAnticipationFeeDock?: number;
+  }
 ): Promise<void> {
   try {
     console.log("===== INICIANDO ATUALIZAÇÃO DE TAXAS =====");
     console.log("ID da solicitação:", solicitationFeeId);
     console.log("Status:", status);
     console.log("Marcas e produtos recebidos:", JSON.stringify(brands, null, 2));
+    console.log("Dados PIX:", JSON.stringify(nonCardPixData, null, 2));
     
-    // Atualizar o status na tabela solicitationFee
+    // Atualizar o status e dados de PIX na tabela solicitationFee
+    const updateData: any = {
+      status: status,
+      dtupdate: new Date().toISOString()
+    };
+    
+    // Adicionar os campos nonCardPix e cardPix se estiverem presentes
+    if (nonCardPixData) {
+      // PIX não-cartão
+      updateData.nonCardPixMdr = String(nonCardPixData.nonCardPixMdr || 0);
+      updateData.nonCardPixCeilingFee = String(nonCardPixData.nonCardPixCeilingFee || 0);
+      updateData.nonCardPixMinimumCostFee = String(nonCardPixData.nonCardPixMinimumCostFee || 0);
+      
+      // PIX não-cartão Admin
+      if (nonCardPixData.nonCardPixMdrAdmin !== undefined) {
+        updateData.nonCardPixMdrAdmin = String(nonCardPixData.nonCardPixMdrAdmin || 0);
+      }
+      if (nonCardPixData.nonCardPixCeilingFeeAdmin !== undefined) {
+        updateData.nonCardPixCeilingFeeAdmin = String(nonCardPixData.nonCardPixCeilingFeeAdmin || 0);
+      }
+      if (nonCardPixData.nonCardPixMinimumCostFeeAdmin !== undefined) {
+        updateData.nonCardPixMinimumCostFeeAdmin = String(nonCardPixData.nonCardPixMinimumCostFeeAdmin || 0);
+      }
+      
+      // PIX não-cartão Dock
+      if (nonCardPixData.nonCardPixMdrDock !== undefined) {
+        updateData.nonCardPixMdrDock = String(nonCardPixData.nonCardPixMdrDock || 0);
+      }
+      if (nonCardPixData.nonCardPixCeilingFeeDock !== undefined) {
+        updateData.nonCardPixCeilingFeeDock = String(nonCardPixData.nonCardPixCeilingFeeDock || 0);
+      }
+      if (nonCardPixData.nonCardPixMinimumCostFeeDock !== undefined) {
+        updateData.nonCardPixMinimumCostFeeDock = String(nonCardPixData.nonCardPixMinimumCostFeeDock || 0);
+      }
+      
+      // PIX cartão
+      if (nonCardPixData.cardPixMdr !== undefined) {
+        updateData.cardPixMdr = String(nonCardPixData.cardPixMdr || 0);
+      }
+      if (nonCardPixData.cardPixCeilingFee !== undefined) {
+        updateData.cardPixCeilingFee = String(nonCardPixData.cardPixCeilingFee || 0);
+      }
+      if (nonCardPixData.cardPixMinimumCostFee !== undefined) {
+        updateData.cardPixMinimumCostFee = String(nonCardPixData.cardPixMinimumCostFee || 0);
+      }
+      
+      // PIX cartão Admin
+      if (nonCardPixData.cardPixMdrAdmin !== undefined) {
+        updateData.cardPixMdrAdmin = String(nonCardPixData.cardPixMdrAdmin || 0);
+      }
+      if (nonCardPixData.cardPixCeilingFeeAdmin !== undefined) {
+        updateData.cardPixCeilingFeeAdmin = String(nonCardPixData.cardPixCeilingFeeAdmin || 0);
+      }
+      if (nonCardPixData.cardPixMinimumCostFeeAdmin !== undefined) {
+        updateData.cardPixMinimumCostFeeAdmin = String(nonCardPixData.cardPixMinimumCostFeeAdmin || 0);
+      }
+      
+      // PIX cartão Dock
+      if (nonCardPixData.cardPixMdrDock !== undefined) {
+        updateData.cardPixMdrDock = String(nonCardPixData.cardPixMdrDock || 0);
+      }
+      if (nonCardPixData.cardPixCeilingFeeDock !== undefined) {
+        updateData.cardPixCeilingFeeDock = String(nonCardPixData.cardPixCeilingFeeDock || 0);
+      }
+      if (nonCardPixData.cardPixMinimumCostFeeDock !== undefined) {
+        updateData.cardPixMinimumCostFeeDock = String(nonCardPixData.cardPixMinimumCostFeeDock || 0);
+      }
+      
+      // Antecipação
+      if (nonCardPixData.eventualAnticipationFee !== undefined) {
+        updateData.eventualAnticipationFee = String(nonCardPixData.eventualAnticipationFee || 0);
+      }
+      if (nonCardPixData.eventualAnticipationFeeAdmin !== undefined) {
+        updateData.eventualAnticipationFeeAdmin = String(nonCardPixData.eventualAnticipationFeeAdmin || 0);
+      }
+      if (nonCardPixData.eventualAnticipationFeeDock !== undefined) {
+        updateData.eventualAnticipationFeeDock = String(nonCardPixData.eventualAnticipationFeeDock || 0);
+      }
+      if (nonCardPixData.nonCardEventualAnticipationFee !== undefined) {
+        updateData.nonCardEventualAnticipationFee = String(nonCardPixData.nonCardEventualAnticipationFee || 0);
+      }
+      if (nonCardPixData.nonCardEventualAnticipationFeeAdmin !== undefined) {
+        updateData.nonCardEventualAnticipationFeeAdmin = String(nonCardPixData.nonCardEventualAnticipationFeeAdmin || 0);
+      }
+      if (nonCardPixData.nonCardEventualAnticipationFeeDock !== undefined) {
+        updateData.nonCardEventualAnticipationFeeDock = String(nonCardPixData.nonCardEventualAnticipationFeeDock || 0);
+      }
+    }
+    
     await db
       .update(solicitationFee)
-      .set({
-        status: status,
-        dtupdate: new Date().toISOString()
-      })
+      .set(updateData)
       .where(eq(solicitationFee.id, solicitationFeeId));
     
     console.log("Status da solicitação atualizado para:", status);
+    if (nonCardPixData) {
+      console.log("Dados PIX atualizados na solicitação");
+    }
 
     // Buscar todas as brands de uma vez
     const brandsResults = await db
@@ -438,7 +632,10 @@ export async function updateSolicitationFeeBrandsWithTaxes(
             transactionFeeEnd: solicitationBrandProductType.transactionFeeEnd,
             fee: solicitationBrandProductType.fee,
             feeAdmin: solicitationBrandProductType.feeAdmin,
-            feeDock: solicitationBrandProductType.feeDock
+            feeDock: solicitationBrandProductType.feeDock,
+            noCardFee: solicitationBrandProductType.noCardFee,
+            noCardFeeAdmin: solicitationBrandProductType.noCardFeeAdmin,
+            noCardFeeDock: solicitationBrandProductType.noCardFeeDock
           })
           .from(solicitationBrandProductType)
           .where(eq(solicitationBrandProductType.solicitationFeeBrandId, brandId));
@@ -466,32 +663,46 @@ export async function updateSolicitationFeeBrandsWithTaxes(
           
           console.log("Verificando produto:", cleanProductType, "com chave", key);
           console.log("Valores a atualizar - feeAdmin:", pt.feeAdmin, "feeDock:", pt.feeDock);
+          console.log("Valores nonCard a atualizar - noCardFeeAdmin:", pt.noCardFeeAdmin, "noCardFeeDock:", pt.noCardFeeDock);
           
           if (existingProductTypeId) {
             console.log("Produto encontrado com ID:", existingProductTypeId, "- Atualizando");
             // Atualizar o tipo de produto existente
+            const updateData: any = {
+              feeAdmin: String(pt.feeAdmin),
+              feeDock: String(pt.feeDock),
+              transactionAnticipationMdr: String(pt.transactionAnticipationMdr),
+              dtupdate: new Date().toISOString()
+            };
+            
+            // Adicionar campos nonCard se existirem
+            if (pt.noCardFeeAdmin !== undefined) {
+              updateData.noCardFeeAdmin = String(pt.noCardFeeAdmin);
+            }
+            if (pt.noCardFeeDock !== undefined) {
+              updateData.noCardFeeDock = String(pt.noCardFeeDock);
+            }
+            if (pt.noCardTransactionAnticipationMdr !== undefined) {
+              updateData.noCardTransactionAnticipationMdr = String(pt.noCardTransactionAnticipationMdr);
+            }
+            
             const updateResult = await db
               .update(solicitationBrandProductType)
-              .set({
-                feeAdmin: String(pt.feeAdmin),
-                feeDock: String(pt.feeDock),
-                pixMinimumCostFee: String(pt.pixMinimumCostFee),
-                pixCeilingFee: String(pt.pixCeilingFee),
-                transactionAnticipationMdr: String(pt.transactionAnticipationMdr),
-                dtupdate: new Date().toISOString()
-              })
+              .set(updateData)
               .where(eq(solicitationBrandProductType.id, existingProductTypeId))
               .returning({ 
                 id: solicitationBrandProductType.id,
                 feeAdmin: solicitationBrandProductType.feeAdmin,
-                feeDock: solicitationBrandProductType.feeDock
+                feeDock: solicitationBrandProductType.feeDock,
+                noCardFeeAdmin: solicitationBrandProductType.noCardFeeAdmin,
+                noCardFeeDock: solicitationBrandProductType.noCardFeeDock
               });
             
             console.log("Resultado da atualização:", updateResult);
           } else {
             console.log("Produto não encontrado - Inserindo novo");
             // Inserir novo tipo de produto
-            const insertResult = await db.insert(solicitationBrandProductType).values({
+            const insertData: any = {
               slug: `${brandId}-${cleanProductType}`,
               solicitationFeeBrandId: brandId,
               productType: cleanProductType,
@@ -500,13 +711,29 @@ export async function updateSolicitationFeeBrandsWithTaxes(
               feeDock: String(pt.feeDock),
               transactionFeeStart: pt.transactionFeeStart,
               transactionFeeEnd: pt.transactionFeeEnd,
-              pixMinimumCostFee: String(pt.pixMinimumCostFee),
-              pixCeilingFee: String(pt.pixCeilingFee),
               transactionAnticipationMdr: String(pt.transactionAnticipationMdr)
-            }).returning({ 
+            };
+            
+            // Adicionar campos nonCard se existirem
+            if (pt.noCardFee !== undefined) {
+              insertData.noCardFee = String(pt.noCardFee);
+            }
+            if (pt.noCardFeeAdmin !== undefined) {
+              insertData.noCardFeeAdmin = String(pt.noCardFeeAdmin);
+            }
+            if (pt.noCardFeeDock !== undefined) {
+              insertData.noCardFeeDock = String(pt.noCardFeeDock);
+            }
+            if (pt.noCardTransactionAnticipationMdr !== undefined) {
+              insertData.noCardTransactionAnticipationMdr = String(pt.noCardTransactionAnticipationMdr);
+            }
+            
+            const insertResult = await db.insert(solicitationBrandProductType).values(insertData).returning({ 
               id: solicitationBrandProductType.id,
               feeAdmin: solicitationBrandProductType.feeAdmin,
-              feeDock: solicitationBrandProductType.feeDock
+              feeDock: solicitationBrandProductType.feeDock,
+              noCardFeeAdmin: solicitationBrandProductType.noCardFeeAdmin,
+              noCardFeeDock: solicitationBrandProductType.noCardFeeDock
             });
             
             console.log("Resultado da inserção:", insertResult);
@@ -533,7 +760,7 @@ export async function updateSolicitationFeeBrandsWithTaxes(
             const cleanProductType = pt.productType.trim();
             console.log("Inserindo produto para nova marca:", cleanProductType);
             
-            const insertResult = await db.insert(solicitationBrandProductType).values({
+            const insertData: any = {
               slug: `${newBrandId}-${cleanProductType}`,
               solicitationFeeBrandId: newBrandId,
               productType: cleanProductType,
@@ -542,13 +769,29 @@ export async function updateSolicitationFeeBrandsWithTaxes(
               feeDock: String(pt.feeDock),
               transactionFeeStart: pt.transactionFeeStart,
               transactionFeeEnd: pt.transactionFeeEnd,
-              pixMinimumCostFee: String(pt.pixMinimumCostFee),
-              pixCeilingFee: String(pt.pixCeilingFee),
               transactionAnticipationMdr: String(pt.transactionAnticipationMdr)
-            }).returning({ 
+            };
+            
+            // Adicionar campos nonCard se existirem
+            if (pt.noCardFee !== undefined) {
+              insertData.noCardFee = String(pt.noCardFee);
+            }
+            if (pt.noCardFeeAdmin !== undefined) {
+              insertData.noCardFeeAdmin = String(pt.noCardFeeAdmin);
+            }
+            if (pt.noCardFeeDock !== undefined) {
+              insertData.noCardFeeDock = String(pt.noCardFeeDock);
+            }
+            if (pt.noCardTransactionAnticipationMdr !== undefined) {
+              insertData.noCardTransactionAnticipationMdr = String(pt.noCardTransactionAnticipationMdr);
+            }
+            
+            const insertResult = await db.insert(solicitationBrandProductType).values(insertData).returning({ 
               id: solicitationBrandProductType.id,
               feeAdmin: solicitationBrandProductType.feeAdmin,
-              feeDock: solicitationBrandProductType.feeDock
+              feeDock: solicitationBrandProductType.feeDock,
+              noCardFeeAdmin: solicitationBrandProductType.noCardFeeAdmin,
+              noCardFeeDock: solicitationBrandProductType.noCardFeeDock
             });
             
             console.log("Resultado da inserção do produto:", insertResult);
@@ -560,6 +803,29 @@ export async function updateSolicitationFeeBrandsWithTaxes(
     console.log("===== ATUALIZAÇÃO DE TAXAS CONCLUÍDA =====");
   } catch (error) {
     console.error("Erro ao atualizar solicitação de tarifa:", error);
+    throw error;
+  }
+}
+
+export async function getSolicitationFeeDocuments(solicitationFeeId: number): Promise<Array<{ id: string; name: string; url: string }>> {
+  try {
+    const documents = await db
+      .select({
+        id: file.id,
+        name: file.fileName,
+        url: file.fileUrl
+      })
+      .from(solicitationFeeDocument)
+      .innerJoin(file, eq(solicitationFeeDocument.idFile, file.id))
+      .where(eq(solicitationFeeDocument.solicitationFeeId, solicitationFeeId));
+
+    return documents.map(doc => ({
+      id: String(doc.id),
+      name: doc.name || `documento-${doc.id}`,
+      url: doc.url || ''
+    }));
+  } catch (error) {
+    console.error("Erro ao buscar documentos da solicitação:", error);
     throw error;
   }
 }

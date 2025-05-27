@@ -69,6 +69,10 @@ export default function SolicitationFeeCard({ solicitationFee, id }: Solicitatio
               />
             </div>
           </div>
+          
+          
+
+      
         </div>
       </CardContent>
     </Card>

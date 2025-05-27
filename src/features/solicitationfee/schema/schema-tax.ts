@@ -28,6 +28,39 @@ export const TaxEditFormSchema = z.object({
         status: z.string().optional().nullable(),
         dtinsert: z.union([z.date(), z.string(), z.null(), z.undefined()]).optional(),
         dtupdate: z.union([z.date(), z.string(), z.null(), z.undefined()]).optional(),
+        // Adicionando os novos campos para PIX não cartão
+        nonCardPixMdr: z.string().optional().nullable(),
+        nonCardPixCeilingFee: z.string().optional().nullable(),
+        nonCardPixMinimumCostFee: z.string().optional().nullable(),
+        noCardTransactionAnticipationMdr: z.string().optional().nullable(),
+        nonCardEventualAnticipationFee: z.string().optional().nullable(),
+        cardPixMdrAdmin: z.string().optional().nullable(),
+        cardPixCeilingFeeAdmin: z.string().optional().nullable(),
+        cardPixMinimumCostFeeAdmin: z.string().optional().nullable(),
+        nonCardPixMdrAdmin: z.string().optional().nullable(),
+        nonCardPixCeilingFeeAdmin: z.string().optional().nullable(),
+        nonCardPixMinimumCostFeeAdmin: z.string().optional().nullable(),
+        compulsoryAnticipationConfigAdmin: z.string().optional().nullable(),
+        eventualAnticipationFeeAdmin: z.string().optional().nullable(),
+        nonCardEventualAnticipationFeeAdmin: z.string().optional().nullable(),
+        cardPixMdrDock: z.string().optional().nullable(),
+        cardPixCeilingFeeDock: z.string().optional().nullable(),
+        cardPixMinimumCostFeeDock: z.string().optional().nullable(),
+        nonCardPixMdrDock: z.string().optional().nullable(),
+        nonCardPixCeilingFeeDock: z.string().optional().nullable(),
+        nonCardPixMinimumCostFeeDock: z.string().optional().nullable(),
+        compulsoryAnticipationConfigDock: z.string().optional().nullable(),
+        eventualAnticipationFeeDock: z.string().optional().nullable(),
+        nonCardEventualAnticipationFeeDock: z.string().optional().nullable(),
+        // Campos existentes para PIX cartão
+        cardPixMdr: z.string().optional().nullable(),
+        cardPixCeilingFee: z.string().optional().nullable(),
+        cardPixMinimumCostFee: z.string().optional().nullable(),
+        // Campos para antecipação
+        compulsoryAnticipationConfig: z.union([z.number(), z.string(), z.null(), z.undefined()]).transform(val => 
+            val === null || val === undefined ? 0 : Number(val)
+        ).optional(),
+        eventualAnticipationFee: z.string().optional().nullable(),
         solicitationFeeBrands: z.array(z.object({
             id: z.union([z.number(), z.string(), z.null(), z.undefined()]).transform(val => 
                 val === null || val === undefined ? 0 : Number(val)
@@ -53,6 +86,11 @@ export const TaxEditFormSchema = z.object({
                 pixMinimumCostFee: z.string().optional().nullable(),
                 pixCeilingFee: z.string().optional().nullable(),
                 transactionAnticipationMdr: z.string().optional().nullable(),
+                // Adicionando campos para nonCard
+                noCardFee: z.string().optional().nullable(),
+                noCardFeeAdmin: z.string().optional().nullable(),
+                noCardFeeDock: z.string().optional().nullable(),
+                noCardTransactionAnticipationMdr: z.string().optional().nullable(),
                 dtinsert: z.union([z.date(), z.string(), z.null(), z.undefined()]).optional(),
                 dtupdate: z.union([z.date(), z.string(), z.null(), z.undefined()]).optional(),
             })).optional().default([]),
