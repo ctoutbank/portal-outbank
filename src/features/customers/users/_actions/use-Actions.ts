@@ -115,7 +115,7 @@ export async function createUser(data: Userinsert) {
         password: data.password,
       });
   
-      const newUser = await db
+      const userId = await db
         .insert(users)
         .values({
           slug: generateSlug(),
@@ -129,6 +129,8 @@ export async function createUser(data: Userinsert) {
           fullAccess: data.fullAccess,
         })
         .returning({ id: users.id });
+      
+      return userId[0].id;
   
   } catch (error) {
     console.error("Erro ao criar usuário:", error);

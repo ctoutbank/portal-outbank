@@ -3,59 +3,217 @@ import BaseHeader from "@/components/layout/base-header";
 import SolicitationFeeCard from "@/features/solicitationfee/_componentes/solicitationfee-card";
 import { TaxEditForm1 } from "@/features/solicitationfee/_componentes/tax-form";
 import { getSolicitationFeeById, getSolicitationFeeWithTaxes } from "@/features/solicitationfee/server/solicitationfee";
-import { TaXEditFormSchema } from "@/features/solicitationfee/schema/schema-tax";
+import { brandList, SolicitationFeeProductTypeList } from "@/lib/lookuptables/lookuptables-tax";
+import { TaxEditForm, TaXEditFormSchema, SolicitationFeeBrand, SolicitationBrandProductType, FormSolicitationFee } from "@/features/solicitationfee/types/types";
+import DownloadDocumentsButton from "@/features/solicitationfee/_componentes/dowload-button";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 // Função para converter o formato retornado pela API para o formato do formulário
-function convertToTaxEditFormSchema(data: any): TaXEditFormSchema {
-  if (!data) return {} as TaXEditFormSchema;
+async function convertToTaxEditFormSchema(Data: unknown): Promise<TaXEditFormSchema> {
+  const data = Data as TaxEditForm | null;
   
+  if (!data) {
+    const emptyFormData: FormSolicitationFee = {
+      id: 0,
+      slug: null,
+      cnae: null,
+      idCustomers: 0,
+      mcc: null,
+      cnpjQuantity: 0,
+      monthlyPosFee: 0,
+      averageTicket: 0,
+      description: null,
+      cnaeInUse: undefined,
+      status: "",
+      solicitationFeeBrands: [],
+      compulsoryAnticipationConfig: 0,
+      // PIX Online (nonCard)
+      nonCardPixMdr: null,
+      nonCardPixMdrAdmin: null,
+      nonCardPixMdrDock: null,
+      nonCardPixCeilingFee: null,
+      nonCardPixCeilingFeeAdmin: null,
+      nonCardPixCeilingFeeDock: null,
+      nonCardPixMinimumCostFee: null,
+      nonCardPixMinimumCostFeeAdmin: null,
+      nonCardPixMinimumCostFeeDock: null,
+      // PIX Pos (card)
+      cardPixMdr: null,
+      cardPixMdrAdmin: null,
+      cardPixMdrDock: null,
+      cardPixCeilingFee: null,
+      cardPixCeilingFeeAdmin: null,
+      cardPixCeilingFeeDock: null,
+      cardPixMinimumCostFee: null,
+      cardPixMinimumCostFeeAdmin: null,
+      cardPixMinimumCostFeeDock: null,
+      // Antecipação
+      eventualAnticipationFee: null,
+      eventualAnticipationFeeAdmin: null,
+      eventualAnticipationFeeDock: null,
+      nonCardEventualAnticipationFee: null,
+      nonCardEventualAnticipationFeeAdmin: null,
+      nonCardEventualAnticipationFeeDock: null
+    };
+    
+    return { solicitationFee: emptyFormData };
+  }
+
+  const allBrands: SolicitationFeeBrand[] = brandList.map(brandItem => {
+    const existingBrand = data.solicitationFee.solicitationFeeBrands?.find(
+      (b) => b.brand === brandItem.value
+    );
+
+    const allProductTypes: SolicitationBrandProductType[] = SolicitationFeeProductTypeList.map(productTypeItem => {
+      const cleanProductTypeValue = productTypeItem.value.trim();
+      
+      const existingProductType = existingBrand?.solicitationBrandProductTypes?.find(
+        (p) => {
+          const dbProductType = p?.productType?.trim();
+          return dbProductType === cleanProductTypeValue && 
+                 String(p.transactionFeeStart) === productTypeItem.transactionFeeStart && 
+                 String(p.transactionFeeEnd) === productTypeItem.transactionFeeEnd;
+        }
+      );
+
+      if (existingProductType) {
+        return {
+          ...existingProductType,
+          fee: existingProductType.fee || null,
+          feeAdmin: existingProductType.feeAdmin || null,
+          feeDock: existingProductType.feeDock || null,
+          transactionFeeStart: String(existingProductType.transactionFeeStart || productTypeItem.transactionFeeStart),
+          transactionFeeEnd: String(existingProductType.transactionFeeEnd || productTypeItem.transactionFeeEnd)
+        };
+      }
+
+      return {
+        id: 0,
+        slug: null,
+        productType: cleanProductTypeValue,
+        fee: null,
+        feeAdmin: null,
+        feeDock: null,
+        transactionFeeStart: String(productTypeItem.transactionFeeStart),
+        transactionFeeEnd: String(productTypeItem.transactionFeeEnd),
+        pixMinimumCostFee: null,
+        pixCeilingFee: null,
+        transactionAnticipationMdr: null,
+        noCardFee: null,
+        noCardFeeAdmin: null,
+        noCardFeeDock: null,
+        noCardTransactionAnticipationMdr: null,
+        dtinsert: null,
+        dtupdate: null
+      };
+    });
+
+    return {
+      id: existingBrand?.id || 0,
+      slug: existingBrand?.slug || null,
+      brand: brandItem.value,
+      solicitationFeeId: data.solicitationFee.id,
+      dtinsert: existingBrand?.dtinsert || null,
+      dtupdate: existingBrand?.dtupdate || null,
+      solicitationBrandProductTypes: allProductTypes
+    };
+  });
+
+  // Extrair todos os campos do data.solicitationFee
+  const {
+    id,
+    slug,
+    cnae,
+    idCustomers,
+    mcc,
+    cnpjQuantity,
+    monthlyPosFee,
+    averageTicket,
+    description,
+    status,
+    dtinsert,
+    dtupdate,
+    compulsoryAnticipationConfig,
+    // PIX Online (nonCard)
+    nonCardPixMdr,
+    nonCardPixMdrAdmin,
+    nonCardPixMdrDock,
+    nonCardPixCeilingFee,
+    nonCardPixCeilingFeeAdmin,
+    nonCardPixCeilingFeeDock,
+    nonCardPixMinimumCostFee,
+    nonCardPixMinimumCostFeeAdmin,
+    nonCardPixMinimumCostFeeDock,
+    // PIX Pos (card)
+    cardPixMdr,
+    cardPixMdrAdmin,
+    cardPixMdrDock,
+    cardPixCeilingFee,
+    cardPixCeilingFeeAdmin,
+    cardPixCeilingFeeDock,
+    cardPixMinimumCostFee,
+    cardPixMinimumCostFeeAdmin,
+    cardPixMinimumCostFeeDock,
+    // Antecipação
+    eventualAnticipationFee,
+    eventualAnticipationFeeAdmin,
+    eventualAnticipationFeeDock,
+    nonCardEventualAnticipationFee,
+    nonCardEventualAnticipationFeeAdmin,
+    nonCardEventualAnticipationFeeDock,
+  } = data.solicitationFee;
+
+  const formData: FormSolicitationFee = {
+    id,
+    slug,
+    cnae,
+    idCustomers,
+    mcc,
+    cnpjQuantity,
+    monthlyPosFee,
+    averageTicket,
+    description,
+    status,
+    dtinsert,
+    dtupdate,
+    compulsoryAnticipationConfig,
+    // PIX Online (nonCard)
+    nonCardPixMdr: nonCardPixMdr || null,
+    nonCardPixMdrAdmin: nonCardPixMdrAdmin || null,
+    nonCardPixMdrDock: nonCardPixMdrDock || null,
+    nonCardPixCeilingFee: nonCardPixCeilingFee || null,
+    nonCardPixCeilingFeeAdmin: nonCardPixCeilingFeeAdmin || null,
+    nonCardPixCeilingFeeDock: nonCardPixCeilingFeeDock || null,
+    nonCardPixMinimumCostFee: nonCardPixMinimumCostFee || null,
+    nonCardPixMinimumCostFeeAdmin: nonCardPixMinimumCostFeeAdmin || null,
+    nonCardPixMinimumCostFeeDock: nonCardPixMinimumCostFeeDock || null,
+    // PIX Pos (card)
+    cardPixMdr: cardPixMdr || null,
+    cardPixMdrAdmin: cardPixMdrAdmin || null,
+    cardPixMdrDock: cardPixMdrDock || null,
+    cardPixCeilingFee: cardPixCeilingFee || null,
+    cardPixCeilingFeeAdmin: cardPixCeilingFeeAdmin || null,
+    cardPixCeilingFeeDock: cardPixCeilingFeeDock || null,
+    cardPixMinimumCostFee: cardPixMinimumCostFee || null,
+    cardPixMinimumCostFeeAdmin: cardPixMinimumCostFeeAdmin || null,
+    cardPixMinimumCostFeeDock: cardPixMinimumCostFeeDock || null,
+    // Antecipação
+    eventualAnticipationFee: eventualAnticipationFee || null,
+    eventualAnticipationFeeAdmin: eventualAnticipationFeeAdmin || null,
+    eventualAnticipationFeeDock: eventualAnticipationFeeDock || null,
+    nonCardEventualAnticipationFee: nonCardEventualAnticipationFee || null,
+    nonCardEventualAnticipationFeeAdmin: nonCardEventualAnticipationFeeAdmin || null,
+    nonCardEventualAnticipationFeeDock: nonCardEventualAnticipationFeeDock || null,
+    // Outros campos
+    cnaeInUse: data.solicitationFee.cnaeInUse === "true" || data.solicitationFee.cnaeInUse === "1",
+    solicitationFeeBrands: allBrands
+  };
+
   return {
-    solicitationFee: {
-      id: data.solicitationFee.id,
-      slug: data.solicitationFee.slug,
-      cnae: data.solicitationFee.cnae,
-      idCustomers: data.solicitationFee.idCustomers,
-      mcc: data.solicitationFee.mcc,
-      cnpjQuantity: data.solicitationFee.cnpjQuantity,
-      monthlyPosFee: data.solicitationFee.monthlyPosFee,
-      averageTicket: data.solicitationFee.averageTicket,
-      description: data.solicitationFee.description,
-      cnaeInUse: data.solicitationFee.cnaeInUse,
-      status: data.solicitationFee.status,
-      dtinsert: data.solicitationFee.dtinsert ? new Date(data.solicitationFee.dtinsert) : undefined,
-      dtupdate: data.solicitationFee.dtupdate ? new Date(data.solicitationFee.dtupdate) : undefined,
-      solicitationFeeBrands: Array.isArray(data.solicitationFee.solicitationFeeBrands) 
-        ? data.solicitationFee.solicitationFeeBrands.map((brand: any) => ({
-            id: brand.id,
-            slug: brand.slug,
-            brand: brand.brand,
-            solicitationFeeId: brand.solicitationFeeId,
-            dtinsert: brand.dtinsert ? new Date(brand.dtinsert) : undefined,
-            dtupdate: brand.dtupdate ? new Date(brand.dtupdate) : undefined,
-            solicitationBrandProductTypes: Array.isArray(brand.solicitationBrandProductTypes)
-              ? brand.solicitationBrandProductTypes.map((type: any) => ({
-                  id: type.id,
-                  slug: type.slug,
-                  productType: type.productType,
-                  fee: String(type.fee || ""),
-                  feeAdmin: String(type.feeAdmin || ""),
-                  feeDock: String(type.feeDock || ""),
-                  transactionFeeStart: String(type.transactionFeeStart || ""),
-                  transactionFeeEnd: String(type.transactionFeeEnd || ""),
-                  pixMinimumCostFee: String(type.pixMinimumCostFee || ""),
-                  pixCeilingFee: String(type.pixCeilingFee || ""),
-                  transactionAnticipationMdr: String(type.transactionAnticipationMdr || ""),
-                  dtinsert: type.dtinsert ? new Date(type.dtinsert) : undefined,
-                  dtupdate: type.dtupdate ? new Date(type.dtupdate) : undefined,
-                }))
-              : []
-          }))
-        : []
-    }
+    solicitationFee: formData
   };
 }
 
@@ -63,10 +221,9 @@ export default async function SolicitationFeeDetail({ params }: PageProps) {
   const { id } = await params;
   const solicitationFee = await getSolicitationFeeById(parseInt(id));
   const solicitationFeeWithTaxes = await getSolicitationFeeWithTaxes(parseInt(id));
+  const formattedData = await convertToTaxEditFormSchema(solicitationFeeWithTaxes);
+  console.log("formattedData",formattedData)
   
-  // Converter dados para o formato esperado pelo componente
-  const formattedData = convertToTaxEditFormSchema(solicitationFeeWithTaxes);
-
   return (
     <>
       <BaseHeader
@@ -75,7 +232,11 @@ export default async function SolicitationFeeDetail({ params }: PageProps) {
       
       <BaseBody title="Solicitação de Taxa" subtitle="Visualização da solicitação de taxa">
         <div className="mt-8">
-          <SolicitationFeeCard id={parseInt(id)} solicitationFee={solicitationFee ?? undefined} />
+          <SolicitationFeeCard solicitationFee={solicitationFee ?? undefined} />
+        </div>
+
+        <div className="mt-4 flex">
+          <DownloadDocumentsButton solicitationFeeId={parseInt(id)} />
         </div>
 
         <div className="mt-8">

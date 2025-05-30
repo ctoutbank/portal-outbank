@@ -3,8 +3,6 @@
 import { SolicitationFeeDetail } from "../server/solicitationfee";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -12,10 +10,9 @@ import { Input } from "@/components/ui/input";
 
 interface SolicitationFeeCardProps {
   solicitationFee?: SolicitationFeeDetail;
-  id?: number;
 }
 
-export default function SolicitationFeeCard({ solicitationFee, id }: SolicitationFeeCardProps) {
+export default function SolicitationFeeCard({ solicitationFee }: SolicitationFeeCardProps) {
   return (
     <Card className="w-full max-w-full">
     
@@ -69,6 +66,10 @@ export default function SolicitationFeeCard({ solicitationFee, id }: Solicitatio
               />
             </div>
           </div>
+          
+          
+
+      
         </div>
       </CardContent>
     </Card>

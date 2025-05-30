@@ -1,4 +1,3 @@
-
 export interface SelectItem {
     value: string;
     label: string;
@@ -59,13 +58,13 @@ export const brandList: SelectItem[] = [
       transactionFeeEnd: "0",
     },
     {
-      value: "CREDIT_INSTALLMENTS_2_TO_6 ",
+      value: "CREDIT_INSTALLMENTS_2_TO_6",
       label: "Crédito (2-6x)",
       transactionFeeStart: "2",
       transactionFeeEnd: "6",
     },
     {
-      value: "CREDIT_INSTALLMENTS_7_TO_12 ",
+      value: "CREDIT_INSTALLMENTS_7_TO_12",
       label: "Crédito (7-12x)",
       transactionFeeStart: "7",
       transactionFeeEnd: "12",

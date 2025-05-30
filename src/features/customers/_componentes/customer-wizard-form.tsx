@@ -31,7 +31,6 @@ export default function CustomerWizardForm({
   );
   const [isFirstStepComplete, setIsFirstStepComplete] = useState(!!customer.id);
   const [users, setUsers] = useState<UserDetail[]>([]);
-  const [totalUsers, setTotalUsers] = useState(0);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [userToEdit, setUserToEdit] = useState<UserDetailForm | null>(null);
@@ -67,7 +66,6 @@ export default function CustomerWizardForm({
     try {
       const response = await getUsersByCustomerId(customerId);
       setUsers(response.data);
-      setTotalUsers(response.totalCount);
     } catch (error) {
       console.error("Erro ao carregar usuários:", error);
       toast.error("Não foi possível carregar os usuários");
@@ -118,30 +116,6 @@ export default function CustomerWizardForm({
     }
     setSelectedUser(null);
     setUserToEdit(null);
-  };
-
-  // Função para editar um usuário
-  const handleEditUser = (userId: number) => {
-    setSelectedUser(userId);
-  };
-
-  // Função para adicionar um novo usuário
-  const handleAddUser = () => {
-    setSelectedUser(null);
-    setUserToEdit(null);
-  };
-
-  // Função para excluir um usuário
-  const handleDeleteUser = (userId: number) => {
-    if (confirm("Tem certeza que deseja excluir este usuário?")) {
-      // Implementar a lógica de exclusão
-      // Em um ambiente real, chamaríamos algo como:
-      // deleteUser(userId).then(() => { loadUsers(newCustomerId); });
-      toast.success("Usuário excluído com sucesso");
-      // Simulação da remoção do usuário da lista
-      setUsers(users.filter(user => user.id !== userId));
-      setTotalUsers(prev => prev - 1);
-    }
   };
 
   return (

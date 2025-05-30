@@ -1195,30 +1195,6 @@ export const merchantBankAccounts = pgTable("merchant_bank_accounts", {
 	active: boolean().default(true),
 });
 
-export const solicitationFee = pgTable("solicitation_fee", {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "solicitation_fee_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
-	slug: varchar({ length: 50 }),
-	cnae: varchar({ length: 20 }),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	idCustomers: bigint("id_customers", { mode: "number" }),
-	mcc: varchar({ length: 20 }),
-	cnpjQuantity: integer("cnpj_quantity"),
-	monthlyPosFee: numeric("monthly_pos_fee"),
-	averageTicket: numeric("average_ticket"),
-	description: varchar({ length: 1000 }),
-	cnaeInUse: boolean("cnae_in_use"),
-	status: varchar({ length: 50 }),
-	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-	dtupdate: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [
-	foreignKey({
-			columns: [table.idCustomers],
-			foreignColumns: [customers.id],
-			name: "solicitation_fee_id_customers_fkey"
-		}).onDelete("cascade"),
-]);
-
 export const solicitationFeeBrand = pgTable("solicitation_fee_brand", {
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "solicitation_fee_brand_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
@@ -1228,36 +1204,12 @@ export const solicitationFeeBrand = pgTable("solicitation_fee_brand", {
 	solicitationFeeId: bigint("solicitation_fee_id", { mode: "number" }),
 	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	dtupdate: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	idGroup: integer("id_group"),
 }, (table) => [
 	foreignKey({
 			columns: [table.solicitationFeeId],
 			foreignColumns: [solicitationFee.id],
 			name: "solicitation_fee_brand_solicitation_fee_id_fkey"
-		}).onDelete("cascade"),
-]);
-
-export const solicitationBrandProductType = pgTable("solicitation_brand_product_type", {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "solicitation_brand_product_type_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
-	slug: varchar({ length: 50 }),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	solicitationFeeBrandId: bigint("solicitation_fee_brand_id", { mode: "number" }),
-	productType: varchar("product_type", { length: 100 }),
-	fee: numeric(),
-	feeAdmin: numeric("fee_admin"),
-	feeDock: numeric("fee_dock"),
-	transactionFeeStart: integer("transaction_fee_start"),
-	transactionFeeEnd: integer("transaction_fee_end"),
-	pixMinimumCostFee: numeric("pix_minimum_cost_fee"),
-	pixCeilingFee: numeric("pix_ceiling_fee"),
-	transactionAnticipationMdr: numeric("transaction_anticipation_mdr"),
-	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-	dtupdate: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-}, (table) => [
-	foreignKey({
-			columns: [table.solicitationFeeBrandId],
-			foreignColumns: [solicitationFeeBrand.id],
-			name: "solicitation_brand_product_type_solicitation_fee_brand_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
@@ -1282,5 +1234,83 @@ export const solicitationFeeDocument = pgTable("solicitation_fee_document", {
 			columns: [table.solicitationFeeId],
 			foreignColumns: [solicitationFee.id],
 			name: "solicitation_fee_document_solicitation_fee_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const solicitationBrandProductType = pgTable("solicitation_brand_product_type", {
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "solicitation_brand_product_type_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
+	slug: varchar({ length: 50 }),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	solicitationFeeBrandId: bigint("solicitation_fee_brand_id", { mode: "number" }),
+	productType: varchar("product_type", { length: 100 }),
+	fee: numeric(),
+	feeAdmin: numeric("fee_admin"),
+	feeDock: numeric("fee_dock"),
+	transactionFeeStart: integer("transaction_fee_start"),
+	transactionFeeEnd: integer("transaction_fee_end"),
+	transactionAnticipationMdr: numeric("transaction_anticipation_mdr"),
+	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	dtupdate: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	noCardFee: numeric("no_card_fee"),
+	noCardFeeAdmin: numeric("no_card_fee_admin"),
+	noCardFeeDock: numeric("no_card_fee_dock"),
+	noCardTransactionAnticipationMdr: numeric("no_card_transaction_anticipation_mdr"),
+}, (table) => [
+	foreignKey({
+			columns: [table.solicitationFeeBrandId],
+			foreignColumns: [solicitationFeeBrand.id],
+			name: "solicitation_brand_product_type_solicitation_fee_brand_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const solicitationFee = pgTable("solicitation_fee", {
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "solicitation_fee_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
+	slug: varchar({ length: 50 }),
+	cnae: varchar({ length: 20 }),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	idCustomers: bigint("id_customers", { mode: "number" }),
+	mcc: varchar({ length: 20 }),
+	cnpjQuantity: integer("cnpj_quantity"),
+	monthlyPosFee: numeric("monthly_pos_fee"),
+	averageTicket: numeric("average_ticket"),
+	description: varchar({ length: 1000 }),
+	cnaeInUse: boolean("cnae_in_use"),
+	status: varchar({ length: 50 }),
+	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	dtupdate: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	cardPixMdr: numeric("card_pix_mdr"),
+	cardPixCeilingFee: numeric("card_pix_ceiling_fee"),
+	cardPixMinimumCostFee: numeric("card_pix_minimum_cost_fee"),
+	nonCardPixMdr: numeric("non_card_pix_mdr"),
+	nonCardPixCeilingFee: numeric("non_card_pix_ceiling_fee"),
+	nonCardPixMinimumCostFee: numeric("non_card_pix_minimum_cost_fee"),
+	compulsoryAnticipationConfig: integer("compulsory_anticipation_config"),
+	eventualAnticipationFee: numeric("eventual_anticipation_fee"),
+	nonCardEventualAnticipationFee: numeric("non_card_eventual_anticipation_fee"),
+	cardPixMdrAdmin: numeric("card_pix_mdr_admin"),
+	cardPixCeilingFeeAdmin: numeric("card_pix_ceiling_fee_admin"),
+	cardPixMinimumCostFeeAdmin: numeric("card_pix_minimum_cost_fee_admin"),
+	nonCardPixMdrAdmin: numeric("non_card_pix_mdr_admin"),
+	nonCardPixCeilingFeeAdmin: numeric("non_card_pix_ceiling_fee_admin"),
+	nonCardPixMinimumCostFeeAdmin: numeric("non_card_pix_minimum_cost_fee_admin"),
+	compulsoryAnticipationConfigAdmin: integer("compulsory_anticipation_config_admin"),
+	eventualAnticipationFeeAdmin: numeric("eventual_anticipation_fee_admin"),
+	nonCardEventualAnticipationFeeAdmin: numeric("non_card_eventual_anticipation_fee_admin"),
+	cardPixMdrDock: numeric("card_pix_mdr_dock"),
+	cardPixCeilingFeeDock: numeric("card_pix_ceiling_fee_dock"),
+	cardPixMinimumCostFeeDock: numeric("card_pix_minimum_cost_fee_dock"),
+	nonCardPixMdrDock: numeric("non_card_pix_mdr_dock"),
+	nonCardPixCeilingFeeDock: numeric("non_card_pix_ceiling_fee_dock"),
+	nonCardPixMinimumCostFeeDock: numeric("non_card_pix_minimum_cost_fee_dock"),
+	compulsoryAnticipationConfigDock: integer("compulsory_anticipation_config_dock"),
+	eventualAnticipationFeeDock: numeric("eventual_anticipation_fee_dock"),
+	nonCardEventualAnticipationFeeDock: numeric("non_card_eventual_anticipation_fee_dock"),
+}, (table) => [
+	foreignKey({
+			columns: [table.idCustomers],
+			foreignColumns: [customers.id],
+			name: "solicitation_fee_id_customers_fkey"
 		}).onDelete("cascade"),
 ]);

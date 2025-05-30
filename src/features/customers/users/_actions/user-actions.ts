@@ -133,13 +133,19 @@ export async function InsertUser(data: UserInsert) {
       // Não interrompe o fluxo se o refresh falhar
     }
     return newUser;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Erro ao criar usuário:", error);
 
     // Verificar se é um erro de segurança de senha
-    if (error.status === 422 && error.errors && error.errors.length > 0) {
+    if (error && 
+        typeof error === 'object' && 
+        'status' in error && 
+        error.status === 422 && 
+        'errors' in error && 
+        Array.isArray(error.errors) && 
+        error.errors.length > 0) {
       const passwordError = error.errors.find(
-        (e: any) => e.code === "form_password_pwned"
+        (e) => typeof e === 'object' && e && 'code' in e && e.code === "form_password_pwned"
       );
       if (passwordError) {
         throw new Error(

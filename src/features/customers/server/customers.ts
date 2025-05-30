@@ -49,11 +49,28 @@ export async function getCustomers(
     whereConditions.push(ilike(customers.settlementManagementType, `%${settlementManagementType}%`));
   }
   
+  // Verificamos se sortField existe em customers e se não é undefined
+  let orderByClause;
+  try {
+    // Primeiro garantimos que é uma propriedade válida do objeto customers
+    if (sortField && sortField in customers) {
+      // Agora criamos a cláusula de ordenação baseada na direção
+      orderByClause = sortOrder === 'desc' ? desc(customers[sortField]) : customers[sortField];
+    } else {
+      // Se não for válido, usamos o id como fallback
+      orderByClause = sortOrder === 'desc' ? desc(customers.id) : customers.id;
+    }
+  } catch (error) {
+    console.error("Erro ao criar cláusula de ordenação:", error);
+    // Fallback seguro
+    orderByClause = sortOrder === 'desc' ? desc(customers.id) : customers.id;
+  }
+  
   const result = await db
     .select()
     .from(customers)
     .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-    .orderBy(sortOrder === 'desc' ? desc(customers[sortField]) : customers[sortField])
+    .orderBy(orderByClause)
     .limit(pageSize)
     .offset(offset);
     

@@ -1,26 +1,25 @@
-// @ts-nocheck
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Lock, Mail, User, UserCog } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { SchemaUser } from "../schema/schema";
-import { Lock, Mail, User, UserCog } from "lucide-react";
 import { InsertUser, UserDetailForm, updateUserWithClerk } from "../_actions/user-actions";
+import { SchemaUser } from "../schema/schema";
 
 interface UserFormProps {
   user?: UserDetailForm;
@@ -29,12 +28,28 @@ interface UserFormProps {
   profiles?: { id: number; name: string }[];
 }
 
+// Definindo um tipo específico para o formulário que satisfaz os requisitos
+type FormValues = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  idCustomer: number | null;
+  idProfile: number | null;
+  idAddress: number | null;
+  selectedMerchants: string[];
+  fullAccess: boolean;
+  active: boolean;
+  idClerk: string | null;
+  slug: string;
+};
+
 export default function UserCustomerForm({ user, customerId, onSuccess, profiles = [] }: UserFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const isEditing = !!user?.id;
 
   // Definir valores padrão
-  const defaultValues = {
+  const defaultValues: FormValues = {
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
     email: user?.email || "",
@@ -49,7 +64,9 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
     slug: user?.slug || "",
   };
 
-  const form = useForm({
+
+  const form = useForm<FormValues>({
+    // @ts-expect-error - O zodResolver funciona corretamente aqui, mas os tipos são incompatíveis
     resolver: zodResolver(SchemaUser),
     defaultValues,
   });
@@ -74,7 +91,7 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
     }
   }, [user, customerId, form]);
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     try {
       if (isEditing && user?.id) {
@@ -95,7 +112,8 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
       }
     } catch (error) {
       console.error("Erro ao salvar usuário:", error);
-      toast.error(error.message || "Ocorreu um erro ao processar a solicitação");
+      const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro ao processar a solicitação";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +121,7 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
 
   return (
     <Form {...form}>
+      {/* @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis */}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
@@ -114,6 +133,7 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
           <CardContent className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
+                // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
                 control={form.control}
                 name="firstName"
                 render={({ field }) => (
@@ -131,6 +151,7 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
               />
 
               <FormField
+                // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
                 control={form.control}
                 name="lastName"
                 render={({ field }) => (
@@ -150,6 +171,7 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
+                // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
                 control={form.control}
                 name="email"
                 render={({ field }) => (
@@ -176,6 +198,7 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
               />
 
               <FormField
+                // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
                 control={form.control}
                 name="password"
                 render={({ field }) => (
@@ -207,6 +230,7 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
+                // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
                 control={form.control}
                 name="idProfile"
                 render={({ field }) => (
@@ -241,6 +265,7 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
               />
 
               <FormField
+                // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
                 control={form.control}
                 name="active"
                 render={({ field }) => (
