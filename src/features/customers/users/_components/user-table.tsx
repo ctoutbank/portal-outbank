@@ -18,13 +18,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useState } from "react";
-import { deleteUser, getUserById } from "../_actions/use-Actions";
+import { deleteUser, UserDetail } from "../_actions/use-Actions";
 import { UserDetailForm, getUserDetailWithClerk } from "../_actions/user-actions";
 import UserCustomerForm from "./user-form";
 
 
 interface UserTableProps {
-  users: any[];
+  users: UserDetail[];
   customerId: number;
   onRefresh?: () => void;
 }

@@ -1,5 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { SchemaSolicitationFee, SolicitationFeeSchema } from "../schema/schema";
+import { SolicitationFeeDetail } from "../server/solicitationfee";
+import { insertSolicitationFeeFormAction, updateSolicitationFeeFormAction } from "../_actions/solicitationfee-formActions";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -12,16 +16,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useRouter } from "next/navigation";
-import { SchemaSolicitationFee, SolicitationFeeSchema } from "../schema/schema";
-import { insertSolicitationFeeFormAction, updateSolicitationFeeFormAction } from "../_actions/solicitationfee-formActions";
-import { SolicitationFeeDetail } from "../server/solicitationfee";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useEffect, useState } from "react";
 import { getCustomers } from "@/features/customers/server/customers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import SolicitationFeeCard from "@/features/solicitationfee/_componentes/solicitationfee-card";
 
 interface SolicitationFeeProps {
   solicitationFee?: SolicitationFeeDetail;

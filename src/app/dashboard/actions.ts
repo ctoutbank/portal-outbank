@@ -1,9 +1,8 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { and, count, eq, gte, lt, sql, inArray, desc, or, isNotNull, not, isNull } from "drizzle-orm";
+import { and, count, eq, sql, inArray, or, not, isNull } from "drizzle-orm";
 import { merchants, payout, transactions, customers } from "../../../drizzle/schema";
-import { cache } from "react";
 import { revalidatePath } from "next/cache";
 
 // Interface para os dados do merchant
@@ -43,7 +42,7 @@ let lastCacheUpdate: Date | null = null;
 const CACHE_TTL_MS = 1000 * 60 * 5; // 5 minutos
 
 // Função utilitária para converter UUID para VARCHAR nas comparações
-function uuidToVarchar(field: any) {
+function uuidToVarchar(field: unknown) {
   return sql`${field}::varchar`;
 }
 
@@ -343,11 +342,6 @@ export async function getTopIsoMerchants(): Promise<MerchantData[]> {
     
     // Criar um mapa de valores por merchant combinando dados de diferentes fontes
     const merchantDataMap = new Map();
-    
-    // Inicializar apenas os merchants que efetivamente têm dados de transações ou payouts
-    // Em vez de inicializar todos os merchants
-    const transactionSlugs = transactionsBySlug.map(t => t.slugMerchant?.toString()).filter(Boolean);
-    const payoutIds = payoutsByMerchant.map(p => Number(p.idMerchant));
     
     // Conjunto de merchants com dados reais
     const merchantsWithDataIds = new Set();

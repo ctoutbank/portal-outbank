@@ -1,8 +1,6 @@
 "use server";
-import { db } from "@/db/drizzle";
 import { SolicitationFeeSchema } from "../schema/schema";
 import { SolicitationFeeInsert, insertSolicitationFee, updateSolicitationFee } from "../server/solicitationfee";
-import { solicitationFee } from "../../../../drizzle/schema";
 
 export async function insertSolicitationFeeFormAction(data: SolicitationFeeSchema) {
     try {

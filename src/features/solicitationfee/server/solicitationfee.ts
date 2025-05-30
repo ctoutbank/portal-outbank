@@ -3,7 +3,6 @@ import { db } from "@/db/drizzle";
 import { solicitationFee, customers, solicitationFeeBrand, solicitationBrandProductType, solicitationFeeDocument, file } from "../../../../drizzle/schema";
 import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import { SolicitationFeeSchema } from "../schema/schema";
-import { generateSlug } from "@/lib/utils";
 
 export type SolicitationFeeInsert = typeof solicitationFee.$inferInsert;
 export type SolicitationFeeDetail = typeof solicitationFee.$inferSelect;
@@ -185,24 +184,40 @@ export type TaxEditForm = {
       idCustomers: number;
       mcc: string;
       cnpjQuantity: number;
-      monthlyPosFee: number;
-      averageTicket: number;
-      description: string;
-      cnaeInUse: boolean;
-      status: string;
-      dtinsert: string;
-      dtupdate: string;
-      // Campos PIX cartão
-      cardPixMdr?: string;
-      cardPixCeilingFee?: string;
-      cardPixMinimumCostFee?: string;
-      // Campos PIX não cartão
-      nonCardPixMdr?: string;
-      nonCardPixCeilingFee?: string;
-      nonCardPixMinimumCostFee?: string;
-      // Campos para antecipação
-      compulsoryAnticipationConfig?: number;
-      eventualAnticipationFee?: string;
+      monthlyPosFee: number | null;
+      averageTicket: number | null;
+      description: string | null;
+      cnaeInUse: boolean | null;
+      status: string | null;
+      dtinsert: string | null;
+      dtupdate: string | null;
+      cardPixMdr?: string | null;
+      cardPixCeilingFee?: string | null;
+      cardPixMinimumCostFee?: string | null;
+      cardPixMdrAdmin?: string | null;
+      cardPixCeilingFeeAdmin?: string | null;
+      cardPixMinimumCostFeeAdmin?: string | null;
+      cardPixMdrDock?: string | null;
+      cardPixCeilingFeeDock?: string | null;
+      cardPixMinimumCostFeeDock?: string | null;
+      nonCardPixMdr?: string | null;
+      nonCardPixCeilingFee?: string | null;
+      nonCardPixMinimumCostFee?: string | null;
+      nonCardPixMdrAdmin?: string | null;
+      nonCardPixCeilingFeeAdmin?: string | null;
+      nonCardPixMinimumCostFeeAdmin?: string | null;
+      nonCardPixMdrDock?: string | null;
+      nonCardPixCeilingFeeDock?: string | null;
+      nonCardPixMinimumCostFeeDock?: string | null;
+      compulsoryAnticipationConfig?: number | null;
+      compulsoryAnticipationConfigAdmin?: string | null;
+      compulsoryAnticipationConfigDock?: string | null;
+      eventualAnticipationFee?: string | null;
+      eventualAnticipationFeeAdmin?: string | null;
+      eventualAnticipationFeeDock?: string | null;
+      nonCardEventualAnticipationFee?: string | null;
+      nonCardEventualAnticipationFeeAdmin?: string | null;
+      nonCardEventualAnticipationFeeDock?: string | null;
       solicitationFeeBrands: Array<{
         id: number;
         slug: string;
@@ -214,17 +229,23 @@ export type TaxEditForm = {
           id: number;
           slug: string;
           productType: string;
-          fee: number;
-          feeAdmin: number;
-          feeDock: number;
-          transactionFeeStart: number;
-          transactionFeeEnd: number;
-          transactionAnticipationMdr: number;
+          fee: number | string;
+          feeAdmin: number | string;
+          feeDock: number | string;
+          transactionFeeStart: number | string;
+          transactionFeeEnd: number | string;
+          transactionAnticipationMdr: number | string;
+          // Campos PIX
+          pixMinimumCostFee?: string | number | null;
+          pixCeilingFee?: string | number | null;
           // Campos para Não Cartão
-          noCardFee?: number;
-          noCardFeeAdmin?: number;
-          noCardFeeDock?: number;
-          noCardTransactionAnticipationMdr?: number;
+          noCardFee?: string | number | null;
+          noCardFeeAdmin?: string | number | null;
+          noCardFeeDock?: string | number | null;
+          noCardTransactionAnticipationMdr?: string | number | null;
+          // Datas
+          dtinsert?: string | Date | null;
+          dtupdate?: string | Date | null;
         }>;
       }>;
     };
@@ -253,10 +274,29 @@ type SolicitationFeeWithTaxesResult = {
     nonCardPixCeilingFee: string | null;
     nonCardPixMinimumCostFee: string | null;
     cardPixMdr: string | null;
+    cardPixMdrAdmin: string | null;
     cardPixCeilingFee: string | null;
     cardPixMinimumCostFee: string | null;
+    cardPixMdrDock: string | null;
+    cardPixCeilingFeeDock: string | null;
+    cardPixMinimumCostFeeAdmin: string | null;
+    cardPixMinimumCostFeeDock: string | null;
+    cardPixCeilingFeeAdmin: string | null;
+    nonCardPixMdrAdmin: string | null;
+    nonCardPixCeilingFeeAdmin: string | null;
+    nonCardPixMinimumCostFeeAdmin: string | null;
+    nonCardPixMdrDock: string | null;
+    nonCardPixCeilingFeeDock: string | null;
+    nonCardPixMinimumCostFeeDock: string | null;
     compulsoryAnticipationConfig: number | null;
     eventualAnticipationFee: string | null;
+    eventualAnticipationFeeAdmin: string | null;
+    eventualAnticipationFeeDock: string | null;
+    nonCardEventualAnticipationFee: string | null;
+    nonCardEventualAnticipationFeeAdmin: string | null;
+    nonCardEventualAnticipationFeeDock: string | null;
+    compulsoryAnticipationConfigAdmin: string | null;
+    compulsoryAnticipationConfigDock: string | null;
   };
   brand: {
     id: number;
@@ -303,13 +343,32 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
         dtinsert: solicitationFee.dtinsert,
         dtupdate: solicitationFee.dtupdate,
         nonCardPixMdr: solicitationFee.nonCardPixMdr,
+        nonCardPixMdrAdmin: solicitationFee.nonCardPixMdrAdmin,
+        nonCardPixMdrDock: solicitationFee.nonCardPixMdrDock,
         nonCardPixCeilingFee: solicitationFee.nonCardPixCeilingFee,
+        nonCardPixCeilingFeeAdmin: solicitationFee.nonCardPixCeilingFeeAdmin,
+        nonCardPixCeilingFeeDock: solicitationFee.nonCardPixCeilingFeeDock,
         nonCardPixMinimumCostFee: solicitationFee.nonCardPixMinimumCostFee,
+        nonCardPixMinimumCostFeeAdmin: solicitationFee.nonCardPixMinimumCostFeeAdmin,
+        nonCardPixMinimumCostFeeDock: solicitationFee.nonCardPixMinimumCostFeeDock,
         cardPixMdr: solicitationFee.cardPixMdr,
+        cardPixMdrAdmin: solicitationFee.cardPixMdrAdmin,
+        cardPixMdrDock: solicitationFee.cardPixMdrDock,
         cardPixCeilingFee: solicitationFee.cardPixCeilingFee,
+        cardPixCeilingFeeAdmin: solicitationFee.cardPixCeilingFeeAdmin,
+        cardPixCeilingFeeDock: solicitationFee.cardPixCeilingFeeDock,
         cardPixMinimumCostFee: solicitationFee.cardPixMinimumCostFee,
+        cardPixMinimumCostFeeAdmin: solicitationFee.cardPixMinimumCostFeeAdmin,
+        cardPixMinimumCostFeeDock: solicitationFee.cardPixMinimumCostFeeDock,
         compulsoryAnticipationConfig: solicitationFee.compulsoryAnticipationConfig,
+        compulsoryAnticipationConfigAdmin: solicitationFee.compulsoryAnticipationConfigAdmin,
+        compulsoryAnticipationConfigDock: solicitationFee.compulsoryAnticipationConfigDock,
         eventualAnticipationFee: solicitationFee.eventualAnticipationFee,
+        eventualAnticipationFeeAdmin: solicitationFee.eventualAnticipationFeeAdmin,
+        eventualAnticipationFeeDock: solicitationFee.eventualAnticipationFeeDock,
+        nonCardEventualAnticipationFee: solicitationFee.nonCardEventualAnticipationFee,
+        nonCardEventualAnticipationFeeAdmin: solicitationFee.nonCardEventualAnticipationFeeAdmin,
+        nonCardEventualAnticipationFeeDock: solicitationFee.nonCardEventualAnticipationFeeDock,
       },
       brand: {
         id: solicitationFeeBrand.id,
@@ -341,11 +400,14 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
     .where(eq(solicitationFee.id, id)) as SolicitationFeeWithTaxesResult[];
 
   if (result.length === 0) {
-    console.log("Nenhum resultado encontrado para a solicitação ID:", id);
+
+    console.log("result",result)
+    
     return null;
   }
 
-  console.log(`Foram encontrados ${result.length} registros para a solicitação ID:`, id);
+
+
 
   // Agrupar os resultados
   const solicitationFeeData = result[0].solicitationFee;
@@ -360,18 +422,26 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
       id: number;
       slug: string;
       productType: string;
-      fee: number;
-      feeAdmin: number;
-      feeDock: number;
-      transactionFeeStart: number;
-      transactionFeeEnd: number;
-      transactionAnticipationMdr: number;
-      noCardFee: any;
-      noCardFeeAdmin: any;
-      noCardFeeDock: any;
-      noCardTransactionAnticipationMdr: any;
+      fee: number | string;
+      feeAdmin: number | string;
+      feeDock: number | string;
+      transactionFeeStart: number | string;
+      transactionFeeEnd: number | string;
+      transactionAnticipationMdr: number | string;
+      // Campos PIX
+      pixMinimumCostFee?: string | number | null;
+      pixCeilingFee?: string | number | null;
+      // Campos para Não Cartão
+      noCardFee: string | number | null;
+      noCardFeeAdmin: string | number | null;
+      noCardFeeDock: string | number | null;
+      noCardTransactionAnticipationMdr: string | number | null;
+      // Datas
+      dtinsert?: string | Date | null;
+      dtupdate?: string | Date | null;
     }>;
   }>();
+
 
   result.forEach((row: SolicitationFeeWithTaxesResult) => {
     if (row.brand && row.productType) {
@@ -409,6 +479,8 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
     }
   });
 
+ 
+
   return {
     solicitationFee: {
       id: solicitationFeeData.id,
@@ -427,11 +499,29 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
       nonCardPixMdr: solicitationFeeData.nonCardPixMdr || "",
       nonCardPixCeilingFee: solicitationFeeData.nonCardPixCeilingFee || "",
       nonCardPixMinimumCostFee: solicitationFeeData.nonCardPixMinimumCostFee || "",
+      nonCardPixMdrAdmin: solicitationFeeData.nonCardPixMdrAdmin || "",
+      nonCardPixCeilingFeeAdmin: solicitationFeeData.nonCardPixCeilingFeeAdmin || "",
+      nonCardPixMinimumCostFeeAdmin: solicitationFeeData.nonCardPixMinimumCostFeeAdmin || "",
+      nonCardPixMdrDock: solicitationFeeData.nonCardPixMdrDock || "",
+      nonCardPixCeilingFeeDock: solicitationFeeData.nonCardPixCeilingFeeDock || "",
+      nonCardPixMinimumCostFeeDock: solicitationFeeData.nonCardPixMinimumCostFeeDock || "",
+      cardPixCeilingFeeAdmin: solicitationFeeData.cardPixCeilingFeeAdmin || "",
+      cardPixMdrAdmin: solicitationFeeData.cardPixMdrAdmin || "",
       cardPixMdr: solicitationFeeData.cardPixMdr || "",
       cardPixCeilingFee: solicitationFeeData.cardPixCeilingFee || "",
       cardPixMinimumCostFee: solicitationFeeData.cardPixMinimumCostFee || "",
+      cardPixCeilingFeeDock: solicitationFeeData.cardPixCeilingFeeDock || "",
+      cardPixMinimumCostFeeAdmin: solicitationFeeData.cardPixMinimumCostFeeAdmin || "",
+      cardPixMinimumCostFeeDock: solicitationFeeData.cardPixMinimumCostFeeDock || "",
+      cardPixMdrDock: solicitationFeeData.cardPixMdrDock || "",
+     
       compulsoryAnticipationConfig: Number(solicitationFeeData.compulsoryAnticipationConfig) || 0,
       eventualAnticipationFee: solicitationFeeData.eventualAnticipationFee || "",
+      eventualAnticipationFeeAdmin: solicitationFeeData.eventualAnticipationFeeAdmin || "",
+      eventualAnticipationFeeDock: solicitationFeeData.eventualAnticipationFeeDock || "",
+      nonCardEventualAnticipationFee: solicitationFeeData.nonCardEventualAnticipationFee || "",
+      nonCardEventualAnticipationFeeAdmin: solicitationFeeData.nonCardEventualAnticipationFeeAdmin || "",
+      nonCardEventualAnticipationFeeDock: solicitationFeeData.nonCardEventualAnticipationFeeDock || "",
       solicitationFeeBrands: Array.from(brandsMap.values())
     }
   };
@@ -452,10 +542,10 @@ export async function updateSolicitationFeeBrandsWithTaxes(
       transactionFeeEnd: number;
       transactionAnticipationMdr: number;
       // Novos campos
-      noCardFee?: number;
-      noCardFeeAdmin?: number;
-      noCardFeeDock?: number;
-      noCardTransactionAnticipationMdr?: number;
+      noCardFee?: string | number | null;
+      noCardFeeAdmin?: string | number | null;
+      noCardFeeDock?: string | number | null;
+      noCardTransactionAnticipationMdr?: string | number | null;
     }>;
   }>,
   nonCardPixData?: {
@@ -488,34 +578,34 @@ export async function updateSolicitationFeeBrandsWithTaxes(
     nonCardEventualAnticipationFeeAdmin?: number;
     nonCardEventualAnticipationFeeDock?: number;
   }
-): Promise<void> {
+): Promise<{ success: boolean; message: string; updateData?: Record<string, string | number | boolean | Date> }> {
   try {
-    console.log("===== INICIANDO ATUALIZAÇÃO DE TAXAS =====");
-    console.log("ID da solicitação:", solicitationFeeId);
-    console.log("Status:", status);
-    console.log("Marcas e produtos recebidos:", JSON.stringify(brands, null, 2));
-    console.log("Dados PIX:", JSON.stringify(nonCardPixData, null, 2));
-    
+   
     // Atualizar o status e dados de PIX na tabela solicitationFee
-    const updateData: any = {
+    const updateData: Record<string, string | number | boolean | Date> = {
       status: status,
       dtupdate: new Date().toISOString()
     };
     
     // Adicionar os campos nonCardPix e cardPix se estiverem presentes
     if (nonCardPixData) {
+    
       // PIX não-cartão
       updateData.nonCardPixMdr = String(nonCardPixData.nonCardPixMdr || 0);
+      
       updateData.nonCardPixCeilingFee = String(nonCardPixData.nonCardPixCeilingFee || 0);
+      
       updateData.nonCardPixMinimumCostFee = String(nonCardPixData.nonCardPixMinimumCostFee || 0);
       
       // PIX não-cartão Admin
       if (nonCardPixData.nonCardPixMdrAdmin !== undefined) {
         updateData.nonCardPixMdrAdmin = String(nonCardPixData.nonCardPixMdrAdmin || 0);
       }
+      
       if (nonCardPixData.nonCardPixCeilingFeeAdmin !== undefined) {
         updateData.nonCardPixCeilingFeeAdmin = String(nonCardPixData.nonCardPixCeilingFeeAdmin || 0);
       }
+      
       if (nonCardPixData.nonCardPixMinimumCostFeeAdmin !== undefined) {
         updateData.nonCardPixMinimumCostFeeAdmin = String(nonCardPixData.nonCardPixMinimumCostFeeAdmin || 0);
       }
@@ -524,9 +614,11 @@ export async function updateSolicitationFeeBrandsWithTaxes(
       if (nonCardPixData.nonCardPixMdrDock !== undefined) {
         updateData.nonCardPixMdrDock = String(nonCardPixData.nonCardPixMdrDock || 0);
       }
+      
       if (nonCardPixData.nonCardPixCeilingFeeDock !== undefined) {
         updateData.nonCardPixCeilingFeeDock = String(nonCardPixData.nonCardPixCeilingFeeDock || 0);
       }
+      
       if (nonCardPixData.nonCardPixMinimumCostFeeDock !== undefined) {
         updateData.nonCardPixMinimumCostFeeDock = String(nonCardPixData.nonCardPixMinimumCostFeeDock || 0);
       }
@@ -535,9 +627,11 @@ export async function updateSolicitationFeeBrandsWithTaxes(
       if (nonCardPixData.cardPixMdr !== undefined) {
         updateData.cardPixMdr = String(nonCardPixData.cardPixMdr || 0);
       }
+      
       if (nonCardPixData.cardPixCeilingFee !== undefined) {
         updateData.cardPixCeilingFee = String(nonCardPixData.cardPixCeilingFee || 0);
       }
+      
       if (nonCardPixData.cardPixMinimumCostFee !== undefined) {
         updateData.cardPixMinimumCostFee = String(nonCardPixData.cardPixMinimumCostFee || 0);
       }
@@ -546,9 +640,11 @@ export async function updateSolicitationFeeBrandsWithTaxes(
       if (nonCardPixData.cardPixMdrAdmin !== undefined) {
         updateData.cardPixMdrAdmin = String(nonCardPixData.cardPixMdrAdmin || 0);
       }
+      
       if (nonCardPixData.cardPixCeilingFeeAdmin !== undefined) {
         updateData.cardPixCeilingFeeAdmin = String(nonCardPixData.cardPixCeilingFeeAdmin || 0);
       }
+      
       if (nonCardPixData.cardPixMinimumCostFeeAdmin !== undefined) {
         updateData.cardPixMinimumCostFeeAdmin = String(nonCardPixData.cardPixMinimumCostFeeAdmin || 0);
       }
@@ -557,9 +653,11 @@ export async function updateSolicitationFeeBrandsWithTaxes(
       if (nonCardPixData.cardPixMdrDock !== undefined) {
         updateData.cardPixMdrDock = String(nonCardPixData.cardPixMdrDock || 0);
       }
+      
       if (nonCardPixData.cardPixCeilingFeeDock !== undefined) {
         updateData.cardPixCeilingFeeDock = String(nonCardPixData.cardPixCeilingFeeDock || 0);
       }
+      
       if (nonCardPixData.cardPixMinimumCostFeeDock !== undefined) {
         updateData.cardPixMinimumCostFeeDock = String(nonCardPixData.cardPixMinimumCostFeeDock || 0);
       }
@@ -568,31 +666,39 @@ export async function updateSolicitationFeeBrandsWithTaxes(
       if (nonCardPixData.eventualAnticipationFee !== undefined) {
         updateData.eventualAnticipationFee = String(nonCardPixData.eventualAnticipationFee || 0);
       }
+      
       if (nonCardPixData.eventualAnticipationFeeAdmin !== undefined) {
         updateData.eventualAnticipationFeeAdmin = String(nonCardPixData.eventualAnticipationFeeAdmin || 0);
       }
+      
       if (nonCardPixData.eventualAnticipationFeeDock !== undefined) {
         updateData.eventualAnticipationFeeDock = String(nonCardPixData.eventualAnticipationFeeDock || 0);
       }
+      
       if (nonCardPixData.nonCardEventualAnticipationFee !== undefined) {
         updateData.nonCardEventualAnticipationFee = String(nonCardPixData.nonCardEventualAnticipationFee || 0);
       }
+      
       if (nonCardPixData.nonCardEventualAnticipationFeeAdmin !== undefined) {
         updateData.nonCardEventualAnticipationFeeAdmin = String(nonCardPixData.nonCardEventualAnticipationFeeAdmin || 0);
       }
+      
       if (nonCardPixData.nonCardEventualAnticipationFeeDock !== undefined) {
         updateData.nonCardEventualAnticipationFeeDock = String(nonCardPixData.nonCardEventualAnticipationFeeDock || 0);
       }
     }
+    
+    // Executar a consulta SQL para atualizar
+  
     
     await db
       .update(solicitationFee)
       .set(updateData)
       .where(eq(solicitationFee.id, solicitationFeeId));
     
-    console.log("Status da solicitação atualizado para:", status);
+   
     if (nonCardPixData) {
-      console.log("Dados PIX atualizados na solicitação");
+    
     }
 
     // Buscar todas as brands de uma vez
@@ -661,14 +767,12 @@ export async function updateSolicitationFeeBrandsWithTaxes(
           const key = `${cleanProductType}_${pt.transactionFeeStart}_${pt.transactionFeeEnd}`;
           const existingProductTypeId = productTypesMap.get(key);
           
-          console.log("Verificando produto:", cleanProductType, "com chave", key);
-          console.log("Valores a atualizar - feeAdmin:", pt.feeAdmin, "feeDock:", pt.feeDock);
-          console.log("Valores nonCard a atualizar - noCardFeeAdmin:", pt.noCardFeeAdmin, "noCardFeeDock:", pt.noCardFeeDock);
+          
           
           if (existingProductTypeId) {
-            console.log("Produto encontrado com ID:", existingProductTypeId, "- Atualizando");
+           
             // Atualizar o tipo de produto existente
-            const updateData: any = {
+            const updateData: Record<string, string | number | Date> = {
               feeAdmin: String(pt.feeAdmin),
               feeDock: String(pt.feeDock),
               transactionAnticipationMdr: String(pt.transactionAnticipationMdr),
@@ -702,7 +806,7 @@ export async function updateSolicitationFeeBrandsWithTaxes(
           } else {
             console.log("Produto não encontrado - Inserindo novo");
             // Inserir novo tipo de produto
-            const insertData: any = {
+            const insertData: Record<string, string | number> = {
               slug: `${brandId}-${cleanProductType}`,
               solicitationFeeBrandId: brandId,
               productType: cleanProductType,
@@ -760,7 +864,7 @@ export async function updateSolicitationFeeBrandsWithTaxes(
             const cleanProductType = pt.productType.trim();
             console.log("Inserindo produto para nova marca:", cleanProductType);
             
-            const insertData: any = {
+            const insertData: Record<string, string | number> = {
               slug: `${newBrandId}-${cleanProductType}`,
               solicitationFeeBrandId: newBrandId,
               productType: cleanProductType,
@@ -786,7 +890,7 @@ export async function updateSolicitationFeeBrandsWithTaxes(
               insertData.noCardTransactionAnticipationMdr = String(pt.noCardTransactionAnticipationMdr);
             }
             
-            const insertResult = await db.insert(solicitationBrandProductType).values(insertData).returning({ 
+             await db.insert(solicitationBrandProductType).values(insertData).returning({ 
               id: solicitationBrandProductType.id,
               feeAdmin: solicitationBrandProductType.feeAdmin,
               feeDock: solicitationBrandProductType.feeDock,
@@ -794,16 +898,27 @@ export async function updateSolicitationFeeBrandsWithTaxes(
               noCardFeeDock: solicitationBrandProductType.noCardFeeDock
             });
             
-            console.log("Resultado da inserção do produto:", insertResult);
+            
           }
         }
       }
     }
     
-    console.log("===== ATUALIZAÇÃO DE TAXAS CONCLUÍDA =====");
+
+    
+    // Retornar o resultado da operação
+    return {
+      success: true,
+      message: "Taxas atualizadas com sucesso",
+      updateData: updateData
+    };
+    
   } catch (error) {
     console.error("Erro ao atualizar solicitação de tarifa:", error);
-    throw error;
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : String(error)
+    };
   }
 }
 

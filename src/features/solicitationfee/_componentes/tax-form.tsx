@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { brandList, SolicitationFeeProductTypeList } from "@/lib/lookuptables/lookuptables-tax";
 import { getCardImage } from "@/utils/actions";
 import React, { CSSProperties } from "react";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -42,7 +43,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
         
         // Encontrar o produto correspondente nos dados recebidos
         const existingProduct = existingBrand.solicitationBrandProductTypes?.find(
-          (p: any) => {
+          (p) => {
             // Tolerar espaços extras no valor do banco de dados
             const dbProductType = p?.productType?.trim();
             // Fazer a comparação ignorando os espaços extras
@@ -100,11 +101,71 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
       };
     });
 
-    // Importante: manter todos os valores originais da solicitação
+    // Importante: manter todos os valores originais da solicitação e garantir que os campos PIX estejam presentes
+    const solicitationFeeData = solicitationFeetax?.solicitationFee || {};
+    
+    // Log para depuração dos campos PIX
+    console.log("Campos PIX nos dados originais:", {
+      // PIX Online (nonCard)
+      nonCardPixMdr: solicitationFeeData.nonCardPixMdr,
+      nonCardPixMdrAdmin: solicitationFeeData.nonCardPixMdrAdmin,
+      nonCardPixMdrDock: solicitationFeeData.nonCardPixMdrDock,
+      nonCardPixCeilingFee: solicitationFeeData.nonCardPixCeilingFee,
+      nonCardPixCeilingFeeAdmin: solicitationFeeData.nonCardPixCeilingFeeAdmin,
+      nonCardPixCeilingFeeDock: solicitationFeeData.nonCardPixCeilingFeeDock,
+      nonCardPixMinimumCostFee: solicitationFeeData.nonCardPixMinimumCostFee,
+      nonCardPixMinimumCostFeeAdmin: solicitationFeeData.nonCardPixMinimumCostFeeAdmin,
+      nonCardPixMinimumCostFeeDock: solicitationFeeData.nonCardPixMinimumCostFeeDock,
+      
+      // PIX Pos (card)
+      cardPixMdr: solicitationFeeData.cardPixMdr,
+      cardPixMdrAdmin: solicitationFeeData.cardPixMdrAdmin,
+      cardPixMdrDock: solicitationFeeData.cardPixMdrDock,
+      cardPixCeilingFee: solicitationFeeData.cardPixCeilingFee,
+      cardPixCeilingFeeAdmin: solicitationFeeData.cardPixCeilingFeeAdmin,
+      cardPixCeilingFeeDock: solicitationFeeData.cardPixCeilingFeeDock,
+      cardPixMinimumCostFee: solicitationFeeData.cardPixMinimumCostFee,
+      cardPixMinimumCostFeeAdmin: solicitationFeeData.cardPixMinimumCostFeeAdmin,
+      cardPixMinimumCostFeeDock: solicitationFeeData.cardPixMinimumCostFeeDock,
+      
+      // Campos de antecipação
+      eventualAnticipationFee: solicitationFeeData.eventualAnticipationFee,
+      eventualAnticipationFeeAdmin: solicitationFeeData.eventualAnticipationFeeAdmin,
+      eventualAnticipationFeeDock: solicitationFeeData.eventualAnticipationFeeDock,
+      nonCardEventualAnticipationFee: solicitationFeeData.nonCardEventualAnticipationFee,
+      nonCardEventualAnticipationFeeAdmin: solicitationFeeData.nonCardEventualAnticipationFeeAdmin,
+      nonCardEventualAnticipationFeeDock: solicitationFeeData.nonCardEventualAnticipationFeeDock
+    });
+
     return {
       solicitationFee: {
-        ...solicitationFeetax?.solicitationFee,
-        solicitationFeeBrands
+        ...solicitationFeeData,
+        solicitationFeeBrands,
+        // Garantir que todos os campos PIX estejam presentes, mesmo que vazios
+        nonCardPixMdr: solicitationFeeData.nonCardPixMdr || '',
+        nonCardPixMdrAdmin: solicitationFeeData.nonCardPixMdrAdmin || '',
+        nonCardPixMdrDock: solicitationFeeData.nonCardPixMdrDock || '',
+        nonCardPixCeilingFee: solicitationFeeData.nonCardPixCeilingFee || '',
+        nonCardPixCeilingFeeAdmin: solicitationFeeData.nonCardPixCeilingFeeAdmin || '',
+        nonCardPixCeilingFeeDock: solicitationFeeData.nonCardPixCeilingFeeDock || '',
+        nonCardPixMinimumCostFee: solicitationFeeData.nonCardPixMinimumCostFee || '',
+        nonCardPixMinimumCostFeeAdmin: solicitationFeeData.nonCardPixMinimumCostFeeAdmin || '',
+        nonCardPixMinimumCostFeeDock: solicitationFeeData.nonCardPixMinimumCostFeeDock || '',
+        cardPixMdr: solicitationFeeData.cardPixMdr || '',
+        cardPixMdrAdmin: solicitationFeeData.cardPixMdrAdmin || '',
+        cardPixMdrDock: solicitationFeeData.cardPixMdrDock || '',
+        cardPixCeilingFee: solicitationFeeData.cardPixCeilingFee || '',
+        cardPixCeilingFeeAdmin: solicitationFeeData.cardPixCeilingFeeAdmin || '',
+        cardPixCeilingFeeDock: solicitationFeeData.cardPixCeilingFeeDock || '',
+        cardPixMinimumCostFee: solicitationFeeData.cardPixMinimumCostFee || '',
+        cardPixMinimumCostFeeAdmin: solicitationFeeData.cardPixMinimumCostFeeAdmin || '',
+        cardPixMinimumCostFeeDock: solicitationFeeData.cardPixMinimumCostFeeDock || '',
+        eventualAnticipationFee: solicitationFeeData.eventualAnticipationFee || '',
+        eventualAnticipationFeeAdmin: solicitationFeeData.eventualAnticipationFeeAdmin || '',
+        eventualAnticipationFeeDock: solicitationFeeData.eventualAnticipationFeeDock || '',
+        nonCardEventualAnticipationFee: solicitationFeeData.nonCardEventualAnticipationFee || '',
+        nonCardEventualAnticipationFeeAdmin: solicitationFeeData.nonCardEventualAnticipationFeeAdmin || '',
+        nonCardEventualAnticipationFeeDock: solicitationFeeData.nonCardEventualAnticipationFeeDock || ''
       }
     };
   };
@@ -142,6 +203,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
     setSubmitting(true);
     console.log("===== INICIANDO ENVIO DOS DADOS =====");
     console.log("ID da solicitação:", idsolicitationFee);
+    console.log("Form data completo:", formData);
 
     try {
       // Extrair apenas os dados necessários: marca, tipo de produto, feeAdmin e feeDock
@@ -198,52 +260,127 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
         };
       });
 
-      // Adicionar campos nonCardPix da solicitação
+      console.log("===== PREPARANDO DADOS PIX =====");
+      
+      // Garantir que todos os campos PIX tenham valores definidos
+      // Removendo % e convertendo para número com precisão correta
+      const pixFields = {
+        // PIX Online (nonCard)
+        nonCardPixMdr: formData.solicitationFee.nonCardPixMdr || '',
+        nonCardPixMdrAdmin: formData.solicitationFee.nonCardPixMdrAdmin || '',
+        nonCardPixMdrDock: formData.solicitationFee.nonCardPixMdrDock || '',
+        nonCardPixCeilingFee: formData.solicitationFee.nonCardPixCeilingFee || '',
+        nonCardPixCeilingFeeAdmin: formData.solicitationFee.nonCardPixCeilingFeeAdmin || '',
+        nonCardPixCeilingFeeDock: formData.solicitationFee.nonCardPixCeilingFeeDock || '',
+        nonCardPixMinimumCostFee: formData.solicitationFee.nonCardPixMinimumCostFee || '',
+        nonCardPixMinimumCostFeeAdmin: formData.solicitationFee.nonCardPixMinimumCostFeeAdmin || '',
+        nonCardPixMinimumCostFeeDock: formData.solicitationFee.nonCardPixMinimumCostFeeDock || '',
+        
+        // PIX Pos (card)
+        cardPixMdr: formData.solicitationFee.cardPixMdr || '',
+        cardPixMdrAdmin: formData.solicitationFee.cardPixMdrAdmin || '',
+        cardPixMdrDock: formData.solicitationFee.cardPixMdrDock || '',
+        cardPixCeilingFee: formData.solicitationFee.cardPixCeilingFee || '',
+        cardPixCeilingFeeAdmin: formData.solicitationFee.cardPixCeilingFeeAdmin || '',
+        cardPixCeilingFeeDock: formData.solicitationFee.cardPixCeilingFeeDock || '',
+        cardPixMinimumCostFee: formData.solicitationFee.cardPixMinimumCostFee || '',
+        cardPixMinimumCostFeeAdmin: formData.solicitationFee.cardPixMinimumCostFeeAdmin || '',
+        cardPixMinimumCostFeeDock: formData.solicitationFee.cardPixMinimumCostFeeDock || '',
+        
+        // Campos de antecipação
+        eventualAnticipationFee: formData.solicitationFee.eventualAnticipationFee || '',
+        eventualAnticipationFeeAdmin: formData.solicitationFee.eventualAnticipationFeeAdmin || '',
+        eventualAnticipationFeeDock: formData.solicitationFee.eventualAnticipationFeeDock || '',
+        nonCardEventualAnticipationFee: formData.solicitationFee.nonCardEventualAnticipationFee || '',
+        nonCardEventualAnticipationFeeAdmin: formData.solicitationFee.nonCardEventualAnticipationFeeAdmin || '',
+        nonCardEventualAnticipationFeeDock: formData.solicitationFee.nonCardEventualAnticipationFeeDock || ''
+      };
+      
+      console.log("Valores originais PIX:", pixFields);
+      
+      // Converter todos os campos para valores numéricos
       const nonCardPixData = {
-        nonCardPixMdr: parseNumericValue(formData.solicitationFee.nonCardPixMdr || 0),
-        nonCardPixCeilingFee: parseNumericValue(formData.solicitationFee.nonCardPixCeilingFee || 0),
-        nonCardPixMinimumCostFee: parseNumericValue(formData.solicitationFee.nonCardPixMinimumCostFee || 0),
-        // Adicionar campos Admin e Dock para nonCardPix
-        nonCardPixMdrAdmin: parseNumericValue(formData.solicitationFee.nonCardPixMdrAdmin || 0),
-        nonCardPixCeilingFeeAdmin: parseNumericValue(formData.solicitationFee.nonCardPixCeilingFeeAdmin || 0),
-        nonCardPixMinimumCostFeeAdmin: parseNumericValue(formData.solicitationFee.nonCardPixMinimumCostFeeAdmin || 0),
-        nonCardPixMdrDock: parseNumericValue(formData.solicitationFee.nonCardPixMdrDock || 0),
-        nonCardPixCeilingFeeDock: parseNumericValue(formData.solicitationFee.nonCardPixCeilingFeeDock || 0),
-        nonCardPixMinimumCostFeeDock: parseNumericValue(formData.solicitationFee.nonCardPixMinimumCostFeeDock || 0),
-        // Incluir campos do PIX Pos também
-        cardPixMdr: parseNumericValue(formData.solicitationFee.cardPixMdr || 0),
-        cardPixCeilingFee: parseNumericValue(formData.solicitationFee.cardPixCeilingFee || 0),
-        cardPixMinimumCostFee: parseNumericValue(formData.solicitationFee.cardPixMinimumCostFee || 0),
-        // Adicionar campos Admin e Dock para cardPix
-        cardPixMdrAdmin: parseNumericValue(formData.solicitationFee.cardPixMdrAdmin || 0),
-        cardPixCeilingFeeAdmin: parseNumericValue(formData.solicitationFee.cardPixCeilingFeeAdmin || 0),
-        cardPixMinimumCostFeeAdmin: parseNumericValue(formData.solicitationFee.cardPixMinimumCostFeeAdmin || 0),
-        cardPixMdrDock: parseNumericValue(formData.solicitationFee.cardPixMdrDock || 0),
-        cardPixCeilingFeeDock: parseNumericValue(formData.solicitationFee.cardPixCeilingFeeDock || 0),
-        cardPixMinimumCostFeeDock: parseNumericValue(formData.solicitationFee.cardPixMinimumCostFeeDock || 0),
-        // Incluir também o campo de antecipação
-        eventualAnticipationFee: parseNumericValue(formData.solicitationFee.eventualAnticipationFee || 0),
-        eventualAnticipationFeeAdmin: parseNumericValue(formData.solicitationFee.eventualAnticipationFeeAdmin || 0),
-        eventualAnticipationFeeDock: parseNumericValue(formData.solicitationFee.eventualAnticipationFeeDock || 0),
-        nonCardEventualAnticipationFee: parseNumericValue(formData.solicitationFee.nonCardEventualAnticipationFee || 0),
-        nonCardEventualAnticipationFeeAdmin: parseNumericValue(formData.solicitationFee.nonCardEventualAnticipationFeeAdmin || 0),
-        nonCardEventualAnticipationFeeDock: parseNumericValue(formData.solicitationFee.nonCardEventualAnticipationFeeDock || 0)
+        // PIX Online (nonCard)
+        nonCardPixMdr: parseNumericValue(pixFields.nonCardPixMdr),
+        nonCardPixCeilingFee: parseNumericValue(pixFields.nonCardPixCeilingFee),
+        nonCardPixMinimumCostFee: parseNumericValue(pixFields.nonCardPixMinimumCostFee),
+        nonCardPixMdrAdmin: parseNumericValue(pixFields.nonCardPixMdrAdmin),
+        nonCardPixCeilingFeeAdmin: parseNumericValue(pixFields.nonCardPixCeilingFeeAdmin),
+        nonCardPixMinimumCostFeeAdmin: parseNumericValue(pixFields.nonCardPixMinimumCostFeeAdmin),
+        nonCardPixMdrDock: parseNumericValue(pixFields.nonCardPixMdrDock),
+        nonCardPixCeilingFeeDock: parseNumericValue(pixFields.nonCardPixCeilingFeeDock),
+        nonCardPixMinimumCostFeeDock: parseNumericValue(pixFields.nonCardPixMinimumCostFeeDock),
+        
+        // PIX Pos (card)
+        cardPixMdr: parseNumericValue(pixFields.cardPixMdr),
+        cardPixCeilingFee: parseNumericValue(pixFields.cardPixCeilingFee),
+        cardPixMinimumCostFee: parseNumericValue(pixFields.cardPixMinimumCostFee),
+        cardPixMdrAdmin: parseNumericValue(pixFields.cardPixMdrAdmin),
+        cardPixCeilingFeeAdmin: parseNumericValue(pixFields.cardPixCeilingFeeAdmin),
+        cardPixMinimumCostFeeAdmin: parseNumericValue(pixFields.cardPixMinimumCostFeeAdmin),
+        cardPixMdrDock: parseNumericValue(pixFields.cardPixMdrDock),
+        cardPixCeilingFeeDock: parseNumericValue(pixFields.cardPixCeilingFeeDock),
+        cardPixMinimumCostFeeDock: parseNumericValue(pixFields.cardPixMinimumCostFeeDock),
+        
+        // Campos de antecipação
+        eventualAnticipationFee: parseNumericValue(pixFields.eventualAnticipationFee),
+        eventualAnticipationFeeAdmin: parseNumericValue(pixFields.eventualAnticipationFeeAdmin),
+        eventualAnticipationFeeDock: parseNumericValue(pixFields.eventualAnticipationFeeDock),
+        nonCardEventualAnticipationFee: parseNumericValue(pixFields.nonCardEventualAnticipationFee),
+        nonCardEventualAnticipationFeeAdmin: parseNumericValue(pixFields.nonCardEventualAnticipationFeeAdmin),
+        nonCardEventualAnticipationFeeDock: parseNumericValue(pixFields.nonCardEventualAnticipationFeeDock)
       };
 
+      // Log detalhado dos valores PIX para depuração
+      console.log("===== DETALHAMENTO DOS VALORES PIX =====");
+      console.log("PIX Online (nonCard):");
+      console.log(`  MDR - Original: ${pixFields.nonCardPixMdr}, Processado: ${nonCardPixData.nonCardPixMdr}, Tipo: ${typeof nonCardPixData.nonCardPixMdr}`);
+      console.log(`  MDR Admin - Original: ${pixFields.nonCardPixMdrAdmin}, Processado: ${nonCardPixData.nonCardPixMdrAdmin}, Tipo: ${typeof nonCardPixData.nonCardPixMdrAdmin}`);
+      console.log(`  MDR Dock - Original: ${pixFields.nonCardPixMdrDock}, Processado: ${nonCardPixData.nonCardPixMdrDock}, Tipo: ${typeof nonCardPixData.nonCardPixMdrDock}`);
+      console.log(`  Custo Mínimo - Original: ${pixFields.nonCardPixMinimumCostFee}, Processado: ${nonCardPixData.nonCardPixMinimumCostFee}, Tipo: ${typeof nonCardPixData.nonCardPixMinimumCostFee}`);
+      console.log(`  Custo Mínimo Admin - Original: ${pixFields.nonCardPixMinimumCostFeeAdmin}, Processado: ${nonCardPixData.nonCardPixMinimumCostFeeAdmin}, Tipo: ${typeof nonCardPixData.nonCardPixMinimumCostFeeAdmin}`);
+      console.log(`  Custo Mínimo Dock - Original: ${pixFields.nonCardPixMinimumCostFeeDock}, Processado: ${nonCardPixData.nonCardPixMinimumCostFeeDock}, Tipo: ${typeof nonCardPixData.nonCardPixMinimumCostFeeDock}`);
+      console.log(`  Custo Máximo - Original: ${pixFields.nonCardPixCeilingFee}, Processado: ${nonCardPixData.nonCardPixCeilingFee}, Tipo: ${typeof nonCardPixData.nonCardPixCeilingFee}`);
+      console.log(`  Custo Máximo Admin - Original: ${pixFields.nonCardPixCeilingFeeAdmin}, Processado: ${nonCardPixData.nonCardPixCeilingFeeAdmin}, Tipo: ${typeof nonCardPixData.nonCardPixCeilingFeeAdmin}`);
+      console.log(`  Custo Máximo Dock - Original: ${pixFields.nonCardPixCeilingFeeDock}, Processado: ${nonCardPixData.nonCardPixCeilingFeeDock}, Tipo: ${typeof nonCardPixData.nonCardPixCeilingFeeDock}`);
+      
+      console.log("PIX Pos (card):");
+      console.log(`  MDR - Original: ${pixFields.cardPixMdr}, Processado: ${nonCardPixData.cardPixMdr}, Tipo: ${typeof nonCardPixData.cardPixMdr}`);
+      console.log(`  MDR Admin - Original: ${pixFields.cardPixMdrAdmin}, Processado: ${nonCardPixData.cardPixMdrAdmin}, Tipo: ${typeof nonCardPixData.cardPixMdrAdmin}`);
+      console.log(`  MDR Dock - Original: ${pixFields.cardPixMdrDock}, Processado: ${nonCardPixData.cardPixMdrDock}, Tipo: ${typeof nonCardPixData.cardPixMdrDock}`);
+      console.log(`  Custo Mínimo - Original: ${pixFields.cardPixMinimumCostFee}, Processado: ${nonCardPixData.cardPixMinimumCostFee}, Tipo: ${typeof nonCardPixData.cardPixMinimumCostFee}`);
+      console.log(`  Custo Mínimo Admin - Original: ${pixFields.cardPixMinimumCostFeeAdmin}, Processado: ${nonCardPixData.cardPixMinimumCostFeeAdmin}, Tipo: ${typeof nonCardPixData.cardPixMinimumCostFeeAdmin}`);
+      console.log(`  Custo Mínimo Dock - Original: ${pixFields.cardPixMinimumCostFeeDock}, Processado: ${nonCardPixData.cardPixMinimumCostFeeDock}, Tipo: ${typeof nonCardPixData.cardPixMinimumCostFeeDock}`);
+      console.log(`  Custo Máximo - Original: ${pixFields.cardPixCeilingFee}, Processado: ${nonCardPixData.cardPixCeilingFee}, Tipo: ${typeof nonCardPixData.cardPixCeilingFee}`);
+      console.log(`  Custo Máximo Admin - Original: ${pixFields.cardPixCeilingFeeAdmin}, Processado: ${nonCardPixData.cardPixCeilingFeeAdmin}, Tipo: ${typeof nonCardPixData.cardPixCeilingFeeAdmin}`);
+      console.log(`  Custo Máximo Dock - Original: ${pixFields.cardPixCeilingFeeDock}, Processado: ${nonCardPixData.cardPixCeilingFeeDock}, Tipo: ${typeof nonCardPixData.cardPixCeilingFeeDock}`);
+      
       console.log("Enviando dados para API:");
       console.log("Status: REVIEWED");
       console.log("Dados JSON completo:", JSON.stringify(simplifiedBrands, null, 2));
       console.log("Dados PIX:", JSON.stringify(nonCardPixData, null, 2));
       
       // Enviar todos os tipos de produtos
-      await updateSolicitationFeeBrandsWithTaxes(
+      const result = await updateSolicitationFeeBrandsWithTaxes(
         idsolicitationFee, 
         "REVIEWED", 
         simplifiedBrands,
         nonCardPixData // Passar os dados PIX para a API
       );
       
-      console.log("Resposta da API recebida com sucesso");
+      console.log("Resposta da API recebida:", result);
+      
+      if (result && result.success) {
+        toast.success("Taxas atualizadas com sucesso!");
+        
+        // Forçar recarregamento da página para obter os dados atualizados
+        console.log("Recarregando a página para exibir os dados atualizados...");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000); // Dar tempo para o toast ser exibido
+        return; // Interromper execução para evitar exibição de toast duplicado
+      }
+      
       toast.success("Taxas atualizadas com sucesso!");
     } catch (error) {
       console.error("Erro ao atualizar taxas:", error);
@@ -291,18 +428,28 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
   };
 
   // Função auxiliar específica para extrair valores no-card de forma segura
-  const getNoCardValue = (product: any, field: 'noCardFee' | 'noCardFeeAdmin' | 'noCardFeeDock') => {
+  const getNoCardValue = (
+    product: {
+      noCardFee?: string | number | null;
+      noCardFeeAdmin?: string | number | null;
+      noCardFeeDock?: string | number | null;
+      [key: string]: unknown;
+    }, 
+    field: 'noCardFee' | 'noCardFeeAdmin' | 'noCardFeeDock'
+  ) => {
     if (!product) return '';
     
-    const rawValue = product[field];
+    // Se o valor for null, undefined ou vazio, retornar string vazia
+    const value = product[field];
+    if (value === null || value === undefined || value === '') return '';
     
-    // Se for null, undefined ou uma string vazia
-    if (rawValue === null || rawValue === undefined || String(rawValue).trim() === '') {
-      return '';
+    // Se for um número, retornar como string formatada
+    if (typeof value === 'number') {
+      return value.toString();
     }
     
-    // Converter para string, independente do tipo original
-    return String(rawValue);
+    // Se for string, retornar diretamente
+    return value;
   };
 
   const noFocusStyle: CSSProperties = {
@@ -434,7 +581,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                 <TableCell className="font-medium sticky left-0 z-10 bg-white">
                   <div className="flex items-center gap-2">
                     {getCardImage(brand.value) && (
-                      <img
+                      <Image
                         src={getCardImage(brand.value)}
                         alt={brand.label}
                         width={40}
@@ -552,6 +699,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
+                        console.log(`Atualizando cardPixMdrAdmin para: ${value}`);
                         newData.solicitationFee.cardPixMdrAdmin = value;
                         setFormData(newData);
                       }
@@ -566,6 +714,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
+                        console.log(`Atualizando cardPixMdrDock para: ${value}`);
                         newData.solicitationFee.cardPixMdrDock = value;
                         setFormData(newData);
                       }
@@ -600,7 +749,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        newData.solicitationFee.cardPixMinimumCostFeeAdmin = e.target.value;
+                        // Converter valor para string numérica para evitar problemas
+                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
+                        console.log(`Atualizando cardPixMinimumCostFeeAdmin para: ${value}`);
+                        newData.solicitationFee.cardPixMinimumCostFeeAdmin = value;
                         setFormData(newData);
                       }
                     }}
@@ -616,7 +768,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        newData.solicitationFee.cardPixMinimumCostFeeDock = e.target.value;
+                        // Converter valor para string numérica para evitar problemas
+                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
+                        console.log(`Atualizando cardPixMinimumCostFeeDock para: ${value}`);
+                        newData.solicitationFee.cardPixMinimumCostFeeDock = value;
                         setFormData(newData);
                       }
                     }}
@@ -648,7 +803,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        newData.solicitationFee.cardPixCeilingFeeAdmin = e.target.value;
+                        // Converter valor para string numérica para evitar problemas
+                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
+                        console.log(`Atualizando cardPixCeilingFeeAdmin para: ${value}`);
+                        newData.solicitationFee.cardPixCeilingFeeAdmin = value;
                         setFormData(newData);
                       }
                     }}
@@ -664,7 +822,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        newData.solicitationFee.cardPixCeilingFeeDock = e.target.value;
+                        // Converter valor para string numérica para evitar problemas
+                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
+                        console.log(`Atualizando cardPixCeilingFeeDock para: ${value}`);
+                        newData.solicitationFee.cardPixCeilingFeeDock = value;
                         setFormData(newData);
                       }
                     }}
@@ -690,6 +851,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
+                        console.log(`Atualizando eventualAnticipationFeeAdmin para: ${value}`);
                         newData.solicitationFee.eventualAnticipationFeeAdmin = value;
                         setFormData(newData);
                       }
@@ -704,6 +866,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
+                        console.log(`Atualizando eventualAnticipationFeeDock para: ${value}`);
                         newData.solicitationFee.eventualAnticipationFeeDock = value;
                         setFormData(newData);
                       }
@@ -752,7 +915,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                 <TableCell className="font-medium sticky left-0 z-10 bg-white">
                   <div className="flex items-center gap-2">
                     {getCardImage(brand.value) && (
-                      <img
+                      <Image
                         src={getCardImage(brand.value)}
                         alt={brand.label}
                         width={40}
@@ -869,6 +1032,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
+                        console.log(`Atualizando nonCardPixMdrAdmin para: ${value}`);
                         newData.solicitationFee.nonCardPixMdrAdmin = value;
                         setFormData(newData);
                       }
@@ -883,6 +1047,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
+                        console.log(`Atualizando nonCardPixMdrDock para: ${value}`);
                         newData.solicitationFee.nonCardPixMdrDock = value;
                         setFormData(newData);
                       }
@@ -917,7 +1082,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        newData.solicitationFee.nonCardPixMinimumCostFeeAdmin = e.target.value;
+                        // Converter valor para string numérica para evitar problemas
+                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
+                        console.log(`Atualizando nonCardPixMinimumCostFeeAdmin para: ${value}`);
+                        newData.solicitationFee.nonCardPixMinimumCostFeeAdmin = value;
                         setFormData(newData);
                       }
                     }}
@@ -933,7 +1101,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        newData.solicitationFee.nonCardPixMinimumCostFeeDock = e.target.value;
+                        // Converter valor para string numérica para evitar problemas
+                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
+                        console.log(`Atualizando nonCardPixMinimumCostFeeDock para: ${value}`);
+                        newData.solicitationFee.nonCardPixMinimumCostFeeDock = value;
                         setFormData(newData);
                       }
                     }}
@@ -965,7 +1136,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        newData.solicitationFee.nonCardPixCeilingFeeAdmin = e.target.value;
+                        // Converter valor para string numérica para evitar problemas
+                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
+                        console.log(`Atualizando nonCardPixCeilingFeeAdmin para: ${value}`);
+                        newData.solicitationFee.nonCardPixCeilingFeeAdmin = value;
                         setFormData(newData);
                       }
                     }}
@@ -981,7 +1155,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        newData.solicitationFee.nonCardPixCeilingFeeDock = e.target.value;
+                        // Converter valor para string numérica para evitar problemas
+                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
+                        console.log(`Atualizando nonCardPixCeilingFeeDock para: ${value}`);
+                        newData.solicitationFee.nonCardPixCeilingFeeDock = value;
                         setFormData(newData);
                       }
                     }}
@@ -1007,6 +1184,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
+                        console.log(`Atualizando nonCardEventualAnticipationFeeAdmin para: ${value}`);
                         newData.solicitationFee.nonCardEventualAnticipationFeeAdmin = value;
                         setFormData(newData);
                       }
@@ -1021,6 +1199,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
+                        console.log(`Atualizando nonCardEventualAnticipationFeeDock para: ${value}`);
                         newData.solicitationFee.nonCardEventualAnticipationFeeDock = value;
                         setFormData(newData);
                       }
