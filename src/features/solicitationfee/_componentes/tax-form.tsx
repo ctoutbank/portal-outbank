@@ -533,17 +533,19 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
       <div className="w-full overflow-x-auto">
         {/* Legenda para cores de inputs */}
         <div className="flex flex-col gap-4 mb-6">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-blue-100"></div>
-            <span className="text-sm text-gray-600">Taxa Solicitada (fee)</span>
+        <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-green-100"></div>
+            <span className="text-sm text-gray-600">Taxa Dock</span>
           </div>
+         
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-yellow-100"></div>
-            <span className="text-sm text-gray-600">Taxa Admin (feeAdmin)</span>
+            <span className="text-sm text-gray-600">Taxa Admin (Outbank)</span>
           </div>
+          
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-green-100"></div>
-            <span className="text-sm text-gray-600">Taxa Dock (feeDock)</span>
+            <div className="w-4 h-4 rounded-full bg-blue-100"></div>
+            <span className="text-sm text-gray-600">Taxa Solicitada (ISO)</span>
           </div>
         </div>
         
@@ -634,15 +636,14 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   
                   return (
                     <React.Fragment key={`cell-${brand.value}-${type.value}-${typeIndex}`}>
-                      {/* Taxa fee */}
-                      <TableCell className="p-1 text-center">
-                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-blue-100">
+                     {/* Taxa feeDock */}
+                     <TableCell className="p-1 text-center">
+                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-green-100">
                           <PercentageInput
-                            value={feeValue}
-                            onChange={() => {}} // Readonly
+                            value={feeDockValue}
+                            onChange={(value) => updateFormValue(brandIndex, actualIndex, 'feeDock', value)}
                             placeholder="0%"
                             className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
-                            disabled={true}
                           />
                         </div>
                       </TableCell>
@@ -659,14 +660,16 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                         </div>
                       </TableCell>
                       
-                      {/* Taxa feeDock */}
-                      <TableCell className="p-1 text-center">
-                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-green-100">
+                      
+                       {/* Taxa fee */}
+                       <TableCell className="p-1 text-center">
+                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-blue-100">
                           <PercentageInput
-                            value={feeDockValue}
-                            onChange={(value) => updateFormValue(brandIndex, actualIndex, 'feeDock', value)}
+                            value={feeValue}
+                            onChange={() => {}} // Readonly
                             placeholder="0%"
                             className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                            disabled={true}
                           />
                         </div>
                       </TableCell>
@@ -684,15 +687,22 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             <div>
               <h4 className="font-medium mb-2">MDR</h4>
               <div className="flex gap-2">
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <PercentageInput
-                    value={formData.solicitationFee.cardPixMdr || ""}
-                    onChange={() => {}} // Readonly
+                    value={formData.solicitationFee.cardPixMdrDock || ""}
+                    onChange={(value) => {
+                      const newData = { ...formData };
+                      if (newData.solicitationFee) {
+                        console.log(`Atualizando cardPixMdrDock para: ${value}`);
+                        newData.solicitationFee.cardPixMdrDock = value;
+                        setFormData(newData);
+                      }
+                    }}
                     placeholder="0,01%"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
-                    disabled={true}
                   />
                 </div>
+               
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.cardPixMdrAdmin || ""}
@@ -708,35 +718,38 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                   />
                 </div>
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <PercentageInput
-                    value={formData.solicitationFee.cardPixMdrDock || ""}
-                    onChange={(value) => {
-                      const newData = { ...formData };
-                      if (newData.solicitationFee) {
-                        console.log(`Atualizando cardPixMdrDock para: ${value}`);
-                        newData.solicitationFee.cardPixMdrDock = value;
-                        setFormData(newData);
-                      }
-                    }}
+                    value={formData.solicitationFee.cardPixMdr || ""}
+                    onChange={() => {}} // Readonly
                     placeholder="0,01%"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
+                    disabled={true}
                   />
                 </div>
+               
               </div>
             </div>
             <div>
               <h4 className="font-medium mb-2">Custo Mínimo</h4>
               <div className="flex gap-2">
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <input
                     type="number"
                     step="0.01"
                     placeholder="R$ 0.09"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
-                    value={formData.solicitationFee.cardPixMinimumCostFee || ""}
-                    onChange={() => {}}
-                    disabled={true}
+                    value={formData.solicitationFee.cardPixMinimumCostFeeDock || ""}
+                    onChange={(e) => {
+                      const newData = { ...formData };
+                      if (newData.solicitationFee) {
+                        // Converter valor para string numérica para evitar problemas
+                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
+                        console.log(`Atualizando cardPixMinimumCostFeeDock para: ${value}`);
+                        newData.solicitationFee.cardPixMinimumCostFeeDock = value;
+                        setFormData(newData);
+                      }
+                    }}
                   />
                 </div>
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
@@ -758,23 +771,16 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     }}
                   />
                 </div>
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+               
+                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <input
                     type="number"
                     step="0.01"
                     placeholder="R$ 0.09"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
-                    value={formData.solicitationFee.cardPixMinimumCostFeeDock || ""}
-                    onChange={(e) => {
-                      const newData = { ...formData };
-                      if (newData.solicitationFee) {
-                        // Converter valor para string numérica para evitar problemas
-                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
-                        console.log(`Atualizando cardPixMinimumCostFeeDock para: ${value}`);
-                        newData.solicitationFee.cardPixMinimumCostFeeDock = value;
-                        setFormData(newData);
-                      }
-                    }}
+                    value={formData.solicitationFee.cardPixMinimumCostFee || ""}
+                    onChange={() => {}}
+                    disabled={true}
                   />
                 </div>
               </div>
@@ -782,17 +788,26 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             <div>
               <h4 className="font-medium mb-2">Custo Máximo</h4>
               <div className="flex gap-2">
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <input
                     type="number"
                     step="0.01"
                     placeholder="R$ 0.09"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
-                    value={formData.solicitationFee.cardPixCeilingFee || ""}
-                    onChange={() => {}}
-                    disabled={true}
+                    value={formData.solicitationFee.cardPixCeilingFeeDock || ""}
+                    onChange={(e) => {
+                      const newData = { ...formData };
+                      if (newData.solicitationFee) {
+                        // Converter valor para string numérica para evitar problemas
+                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
+                        console.log(`Atualizando cardPixCeilingFeeDock para: ${value}`);
+                        newData.solicitationFee.cardPixCeilingFeeDock = value;
+                        setFormData(newData);
+                      }
+                    }}
                   />
                 </div>
+               
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <input
                     type="number"
@@ -812,39 +827,39 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     }}
                   />
                 </div>
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <input
                     type="number"
                     step="0.01"
                     placeholder="R$ 0.09"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
-                    value={formData.solicitationFee.cardPixCeilingFeeDock || ""}
-                    onChange={(e) => {
-                      const newData = { ...formData };
-                      if (newData.solicitationFee) {
-                        // Converter valor para string numérica para evitar problemas
-                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
-                        console.log(`Atualizando cardPixCeilingFeeDock para: ${value}`);
-                        newData.solicitationFee.cardPixCeilingFeeDock = value;
-                        setFormData(newData);
-                      }
-                    }}
+                    value={formData.solicitationFee.cardPixCeilingFee || ""}
+                    onChange={() => {}}
+                    disabled={true}
                   />
                 </div>
+              
               </div>
             </div>
             <div>
               <h4 className="font-medium mb-2">Antecipação</h4>
               <div className="flex gap-2">
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <PercentageInput
-                    value={formData.solicitationFee.eventualAnticipationFee || ""}
-                    onChange={() => {}}
+                    value={formData.solicitationFee.eventualAnticipationFeeDock || ""}
+                    onChange={(value) => {
+                      const newData = { ...formData };
+                      if (newData.solicitationFee) {
+                        console.log(`Atualizando eventualAnticipationFeeDock para: ${value}`);
+                        newData.solicitationFee.eventualAnticipationFeeDock = value;
+                        setFormData(newData);
+                      }
+                    }}
                     placeholder="1,67%"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
-                    disabled={true}
                   />
                 </div>
+                
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.eventualAnticipationFeeAdmin || ""}
@@ -860,21 +875,16 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                   />
                 </div>
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <PercentageInput
-                    value={formData.solicitationFee.eventualAnticipationFeeDock || ""}
-                    onChange={(value) => {
-                      const newData = { ...formData };
-                      if (newData.solicitationFee) {
-                        console.log(`Atualizando eventualAnticipationFeeDock para: ${value}`);
-                        newData.solicitationFee.eventualAnticipationFeeDock = value;
-                        setFormData(newData);
-                      }
-                    }}
+                    value={formData.solicitationFee.eventualAnticipationFee || ""}
+                    onChange={() => {}}
                     placeholder="1,67%"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
+                    disabled={true}
                   />
                 </div>
+              
               </div>
             </div>
           </div>
@@ -964,30 +974,9 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   
                   return (
                     <React.Fragment key={`noncard-cell-${brand.value}-${type.value}-${typeIndex}`}>
-                      {/* Taxa noCardFee */}
-                      <TableCell className="p-1 text-center">
-                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-blue-100">
-                          <PercentageInput
-                            value={noCardFeeValue}
-                            onChange={() => {}} // Readonly
-                            placeholder="0%"
-                            className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
-                            disabled={true}
-                          />
-                        </div>
-                      </TableCell>
+                    
                       
-                      {/* Taxa noCardFeeAdmin */}
-                      <TableCell className="p-1 text-center">
-                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-yellow-100">
-                          <PercentageInput
-                            value={noCardFeeAdminValue}
-                            onChange={(value) => updateFormValue(brandIndex, actualIndex, 'noCardFeeAdmin', value)}
-                            placeholder="0%"
-                            className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
-                          />
-                        </div>
-                      </TableCell>
+                     
                       
                       {/* Taxa noCardFeeDock */}
                       <TableCell className="p-1 text-center">
@@ -997,6 +986,29 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                             onChange={(value) => updateFormValue(brandIndex, actualIndex, 'noCardFeeDock', value)}
                             placeholder="0%"
                             className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                          />
+                        </div>
+                      </TableCell>
+                       {/* Taxa noCardFeeAdmin */}
+                       <TableCell className="p-1 text-center">
+                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-yellow-100">
+                          <PercentageInput
+                            value={noCardFeeAdminValue}
+                            onChange={(value) => updateFormValue(brandIndex, actualIndex, 'noCardFeeAdmin', value)}
+                            placeholder="0%"
+                            className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                          />
+                        </div>
+                      </TableCell>
+                        {/* Taxa noCardFee */}
+                        <TableCell className="p-1 text-center">
+                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-blue-100">
+                          <PercentageInput
+                            value={noCardFeeValue}
+                            onChange={() => {}} // Readonly
+                            placeholder="0%"
+                            className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                            disabled={true}
                           />
                         </div>
                       </TableCell>
@@ -1017,15 +1029,22 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             <div>
               <h4 className="font-medium mb-2">MDR</h4>
               <div className="flex gap-2">
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <PercentageInput
-                    value={formData.solicitationFee.nonCardPixMdr || ""}
-                    onChange={() => {}} // Readonly
+                    value={formData.solicitationFee.nonCardPixMdrDock || ""}
+                    onChange={(value) => {
+                      const newData = { ...formData };
+                      if (newData.solicitationFee) {
+                        console.log(`Atualizando nonCardPixMdrDock para: ${value}`);
+                        newData.solicitationFee.nonCardPixMdrDock = value;
+                        setFormData(newData);
+                      }
+                    }}
                     placeholder="0,01%"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
-                    disabled={true}
                   />
                 </div>
+               
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardPixMdrAdmin || ""}
@@ -1041,19 +1060,14 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                   />
                 </div>
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              
+                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <PercentageInput
-                    value={formData.solicitationFee.nonCardPixMdrDock || ""}
-                    onChange={(value) => {
-                      const newData = { ...formData };
-                      if (newData.solicitationFee) {
-                        console.log(`Atualizando nonCardPixMdrDock para: ${value}`);
-                        newData.solicitationFee.nonCardPixMdrDock = value;
-                        setFormData(newData);
-                      }
-                    }}
+                    value={formData.solicitationFee.nonCardPixMdr || ""}
+                    onChange={() => {}} // Readonly
                     placeholder="0,01%"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
+                    disabled={true}
                   />
                 </div>
               </div>
@@ -1061,17 +1075,26 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             <div>
               <h4 className="font-medium mb-2">Custo Mínimo</h4>
               <div className="flex gap-2">
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <input
                     type="number"
                     step="0.01"
                     placeholder="R$ 0.09"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
-                    value={formData.solicitationFee.nonCardPixMinimumCostFee || ""}
-                    onChange={() => {}}
-                    disabled={true}
+                    value={formData.solicitationFee.nonCardPixMinimumCostFeeDock || ""}
+                    onChange={(e) => {
+                      const newData = { ...formData };
+                      if (newData.solicitationFee) {
+                        // Converter valor para string numérica para evitar problemas
+                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
+                        console.log(`Atualizando nonCardPixMinimumCostFeeDock para: ${value}`);
+                        newData.solicitationFee.nonCardPixMinimumCostFeeDock = value;
+                        setFormData(newData);
+                      }
+                    }}
                   />
                 </div>
+                
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <input
                     type="number"
@@ -1091,23 +1114,15 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     }}
                   />
                 </div>
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <input
                     type="number"
                     step="0.01"
                     placeholder="R$ 0.09"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
-                    value={formData.solicitationFee.nonCardPixMinimumCostFeeDock || ""}
-                    onChange={(e) => {
-                      const newData = { ...formData };
-                      if (newData.solicitationFee) {
-                        // Converter valor para string numérica para evitar problemas
-                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
-                        console.log(`Atualizando nonCardPixMinimumCostFeeDock para: ${value}`);
-                        newData.solicitationFee.nonCardPixMinimumCostFeeDock = value;
-                        setFormData(newData);
-                      }
-                    }}
+                    value={formData.solicitationFee.nonCardPixMinimumCostFee || ""}
+                    onChange={() => {}}
+                    disabled={true}
                   />
                 </div>
               </div>
@@ -1115,17 +1130,26 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             <div>
               <h4 className="font-medium mb-2">Custo Máximo</h4>
               <div className="flex gap-2">
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <input
                     type="number"
                     step="0.01"
                     placeholder="R$ 0.09"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
-                    value={formData.solicitationFee.nonCardPixCeilingFee || ""}
-                    onChange={() => {}}
-                    disabled={true}
+                    value={formData.solicitationFee.nonCardPixCeilingFeeDock || ""}
+                    onChange={(e) => {
+                      const newData = { ...formData };
+                      if (newData.solicitationFee) {
+                        // Converter valor para string numérica para evitar problemas
+                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
+                        console.log(`Atualizando nonCardPixCeilingFeeDock para: ${value}`);
+                        newData.solicitationFee.nonCardPixCeilingFeeDock = value;
+                        setFormData(newData);
+                      }
+                    }}
                   />
                 </div>
+                
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <input
                     type="number"
@@ -1145,23 +1169,15 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     }}
                   />
                 </div>
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <input
                     type="number"
                     step="0.01"
                     placeholder="R$ 0.09"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
-                    value={formData.solicitationFee.nonCardPixCeilingFeeDock || ""}
-                    onChange={(e) => {
-                      const newData = { ...formData };
-                      if (newData.solicitationFee) {
-                        // Converter valor para string numérica para evitar problemas
-                        const value = e.target.value ? String(parseFloat(e.target.value)) : "";
-                        console.log(`Atualizando nonCardPixCeilingFeeDock para: ${value}`);
-                        newData.solicitationFee.nonCardPixCeilingFeeDock = value;
-                        setFormData(newData);
-                      }
-                    }}
+                    value={formData.solicitationFee.nonCardPixCeilingFee || ""}
+                    onChange={() => {}}
+                    disabled={true}
                   />
                 </div>
               </div>
@@ -1169,15 +1185,22 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             <div>
               <h4 className="font-medium mb-2">Antecipação</h4>
               <div className="flex gap-2">
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <PercentageInput
-                    value={formData.solicitationFee.nonCardEventualAnticipationFee || ""}
-                    onChange={() => {}}
+                    value={formData.solicitationFee.nonCardEventualAnticipationFeeDock || ""}
+                    onChange={(value) => {
+                      const newData = { ...formData };
+                      if (newData.solicitationFee) {
+                        console.log(`Atualizando nonCardEventualAnticipationFeeDock para: ${value}`);
+                        newData.solicitationFee.nonCardEventualAnticipationFeeDock = value;
+                        setFormData(newData);
+                      }
+                    }}
                     placeholder="1,67%"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
-                    disabled={true}
                   />
                 </div>
+               
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardEventualAnticipationFeeAdmin || ""}
@@ -1193,19 +1216,13 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                   />
                 </div>
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <PercentageInput
-                    value={formData.solicitationFee.nonCardEventualAnticipationFeeDock || ""}
-                    onChange={(value) => {
-                      const newData = { ...formData };
-                      if (newData.solicitationFee) {
-                        console.log(`Atualizando nonCardEventualAnticipationFeeDock para: ${value}`);
-                        newData.solicitationFee.nonCardEventualAnticipationFeeDock = value;
-                        setFormData(newData);
-                      }
-                    }}
+                    value={formData.solicitationFee.nonCardEventualAnticipationFee || ""}
+                    onChange={() => {}}
                     placeholder="1,67%"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
+                    disabled={true}
                   />
                 </div>
               </div>
