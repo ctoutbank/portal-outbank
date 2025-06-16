@@ -118,6 +118,7 @@ export async function InsertUser(data: UserInsert) {
         idProfile: data.idProfile,
         idAddress: data.idAddress,
         fullAccess: data.fullAccess || true,
+        email: data.email,
       })
       .returning({ id: users.id });
 
