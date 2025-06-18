@@ -12,7 +12,8 @@ import UsersCustomerList from "../users/_components/user-table-updated";
 import { UserDetail, getUsersByCustomerId } from "../users/_actions/use-Actions";
 import { ProfileDD, UserDetailForm, getUserDetailWithClerk } from "../users/_actions/user-actions";
 import { Input } from "@/components/ui/input";
-import { saveCustomization } from "@/utils/serverActions";
+import {getCustomizationByCustomerId, saveCustomization, updateCustomization} from "@/utils/serverActions";
+import Image from "next/image";
 
 interface CustomerWizardFormProps {
   customer: CustomerSchema;
@@ -37,8 +38,48 @@ export default function CustomerWizardForm({
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [userToEdit, setUserToEdit] = useState<UserDetailForm | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(false);
+  const [customizationData, setCustomizationData] = useState<{
+    imageUrl?: string;
+    id: number;
+    subdomain?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const loadCustomization = async () => {
+      if (newCustomerId) {
+        const response = await getCustomizationByCustomerId(newCustomerId);
+        if (response) {
+          setCustomizationData({
+            imageUrl: response.imageUrl ?? undefined,
+            id: response.id,
+            subdomain: response.name,
+            primaryColor: response.primaryColor ?? undefined,
+            secondaryColor: response.secondaryColor ?? undefined,
+          });
+        }
+      }
+    };
+
+    loadCustomization();
+  }, [newCustomerId]);
 
 
+  function hslToHex(hsl: string): string {
+    const [h, s, l] = hsl.split(' ').map((value, index) =>
+        index === 0 ? parseFloat(value) : parseFloat(value) / 100
+    );
+
+    const a = s * Math.min(l, 1 - l);
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+
+    return `#${f(0)}${f(8)}${f(4)}`;
+  }
 
   const handleStepChange = (value: string) => {
     // Só permite ir para o segundo passo se o cliente foi criado
@@ -49,6 +90,21 @@ export default function CustomerWizardForm({
       return;
     }
     setActiveTab(value);
+  };
+
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
+    }
   };
 
   // Função para marcar que o primeiro passo foi concluído e passar para o próximo
@@ -246,7 +302,6 @@ export default function CustomerWizardForm({
             </Card>
           </TabsContent>
           <TabsContent value="step3">
-
             <div className="flex justify-between items-center mb-4 pl-5">
               <div>
                 <h2 className="text-xl font-semibold flex">Personalização do ISO</h2>
@@ -255,54 +310,33 @@ export default function CustomerWizardForm({
                 </p>
               </div>
             </div>
-            <form action={saveCustomization} className="space-y-6">
+
+            <form action={customizationData ? updateCustomization : saveCustomization} className="space-y-6">
               <Card className="border-1">
                 {isFirstStepComplete && (
                     <>
-                      <div className="space-y-6">
-                        <CardContent>
-                          <h3 className="text-lg font-medium mb-4">Configurações Visuais</h3>
+                      <CardContent>
+                        <h3 className="text-lg font-medium mb-4">Configurações Visuais</h3>
 
-                          <div className="mb-4">
-
-                            <label className="block text-sm font-medium text-gray-200 mb-2">
-                              Escolha o nome do subdomínio
-                            </label>
-                            <Input className="w-64"
-                                   placeholder="Meu subdomínio"
-                                   name="subdomain"></Input>
-                          </div>
-
-                          <div className="flex flex-wrap gap-6">
-                            {/* Cor Primária */}
-                            <div className="flex flex-col">
-                              <label className="block text-sm font-medium text-gray-200 mb-1">
-                                Cor Primária
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          {/* Coluna Esquerda - Subdomínio e Imagem */}
+                          <div className="space-y-4">
+                            {/* Subdomínio */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-200 mb-2">
+                                Nome do Subdomínio
                               </label>
-                              <input
-                                  type="color"
-                                  name="primaryColor"
-                                  defaultValue="#ffffff"
-                                  className="h-10 w-44 p-0 border rounded"
-                              />
-                            </div>
-
-                            {/* Cor Secundária */}
-                            <div className="flex flex-col">
-                              <label className="block text-sm font-medium text-gray-200 mb-1">
-                                Cor Secundária
-                              </label>
-                              <input
-                                  type="color"
-                                  name="secondaryColor"
-                                  defaultValue="#ffffff"
-                                  className="h-10 w-44 p-0 border rounded"
+                              <Input
+                                  className="w-full"
+                                  placeholder="Meu subdomínio"
+                                  name="subdomain"
+                                  defaultValue={customizationData?.subdomain || ""}
                               />
                             </div>
 
                             {/* Upload de Imagem */}
-                            <div className="flex flex-col">
-                              <label className="block text-sm font-medium text-gray-200 mb-1">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-200 mb-2">
                                 Imagem ou Logotipo
                               </label>
                               <input
@@ -310,21 +344,70 @@ export default function CustomerWizardForm({
                                   accept="image/*"
                                   name="image"
                                   id="image"
-                                  className="block w-44 text-sm text-gray-200
-        file:mr-4 file:py-2 file:px-4
-        file:rounded file:border-0
-        file:text-sm file:font-semibold
-        file:bg-primary file:text-gray-700
-        hover:file:bg-primary/80"
+                                  onChange={handleImageChange}
+                                  className="block w-full text-sm text-gray-200
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-primary file:text-gray-700
+                          hover:file:bg-primary/80"
                               />
                             </div>
 
-                            {/* Campo escondido do CustomerId */}
-                            <input type="hidden" name="customerId" value={newCustomerId || ''} />
+                            {/* Preview da Imagem Selecionada */}
+                            {imagePreview && (
+                                <div>
+                                  <p className="text-sm text-gray-400 mb-1">Pré-visualização:</p>
+                                  {/* Usa img simples pra evitar problemas com next/image */}
+                                  <Image src={imagePreview} alt={"image preview"} height={100} width={100}></Image>
+                                </div>
+                            )}
+
+                            {/* Preview da Imagem Atual */}
+                            {customizationData?.imageUrl && !imagePreview && (
+                                <div>
+                                  <p className="text-sm text-gray-400 mb-1">Logo atual:</p>
+                                  <Image src={customizationData.imageUrl} alt={"imagem atual"} height={100} width={100}></Image>
+                                </div>
+                            )}
                           </div>
 
-                        </CardContent>
-                      </div>
+                          {/* Coluna Direita - Cores */}
+                          <div className="space-y-4">
+                            {/* Cor Primária */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-200 mb-1">
+                                Cor Primária
+                              </label>
+                              <input
+                                  type="color"
+                                  name="primaryColor"
+                                  defaultValue={customizationData?.primaryColor ? hslToHex(customizationData.primaryColor) : "#ffffff"}
+                                  className="h-10 w-full p-0 border rounded"
+                              />
+                            </div>
+
+                            {/* Cor Secundária */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-200 mb-1">
+                                Cor Secundária
+                              </label>
+                              <input
+                                  type="color"
+                                  name="secondaryColor"
+                                  defaultValue={customizationData?.secondaryColor ? hslToHex(customizationData.secondaryColor) : "#ffffff"}
+                                  className="h-10 w-full p-0 border rounded"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Campos ocultos */}
+                        {customizationData?.id && (
+                            <input type="hidden" name="id" value={customizationData.id} />
+                        )}
+                        <input type="hidden" name="customerId" value={newCustomerId || ""} />
+                      </CardContent>
                     </>
                 )}
                 <Button type="submit" className="mt-6">

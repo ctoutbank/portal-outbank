@@ -1,10 +1,15 @@
-'use server'
+'use server';
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { customerCustomization, db, file, } from "@/lib/db";
+import { customerCustomization, db, file } from "@/lib/db";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "@/lib/s3-client/s3Client";
 import { nanoid } from "nanoid";
+import {eq, InferSelectModel} from "drizzle-orm";
+
+export type CustomerCustomization = InferSelectModel<typeof customerCustomization>;
+
 
 // Função para converter HEX → HSL
 function hexToHsl(hex: string): string {
@@ -32,98 +37,164 @@ function hexToHsl(hex: string): string {
     return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
+
+
 const customizationSchema = z.object({
     subdomain: z.string().min(1),
     primaryColor: z.string().min(1),
     secondaryColor: z.string().min(1),
+    customerId: z.coerce.number(),
 });
+
+export async function getCustomizationByCustomerId(customerId: number): Promise<CustomerCustomization | null> {
+    try {
+        const result = await db
+            .select()
+            .from(customerCustomization)
+            .where(eq(customerCustomization.customerId, customerId))
+            .limit(1);
+
+        return result[0] || null;
+    } catch (error) {
+        console.error("Erro ao buscar customização por customerId:", error);
+        return null;
+    }
+}
 
 export async function saveCustomization(formData: FormData) {
     const rawData = {
         subdomain: formData.get("subdomain"),
         primaryColor: formData.get("primaryColor"),
         secondaryColor: formData.get("secondaryColor"),
-        customerId: Number(formData.get("customerId")),
+        customerId: formData.get("customerId"),
     };
 
-    const image = formData.get("image") as File;
-    const arrayBuffer = await image.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
-
-    const imageId = nanoid()
-
-    const imageName = image.name
-
-
-    const putObjectParams = new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: imageId + '.jpg',
-        Body: imageBuffer,
-        ContentType: "image/jpeg",
-    })
-
-    await s3Client.send(putObjectParams)
-
     const validated = customizationSchema.safeParse(rawData);
-
     if (!validated.success) {
-        console.error(validated.error);
+        console.error("Erro de validação:", validated.error.flatten());
         return;
     }
 
-    // Conversão HEX → HSL
-    const primaryHSL = hexToHsl(validated.data.primaryColor);
-    const secondaryHSL = hexToHsl(validated.data.secondaryColor);
-    const imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${imageId}.jpg`;
-    const customerId = Number(formData.get("customerId"));
+    const { subdomain, primaryColor, secondaryColor, customerId } = validated.data;
 
+    let imageUrl = "";
+    let fileId: number | null = null;
 
-    const extension = image.name.split(".").pop() || "jpg";
-    const fileType = image.type || "image/jpeg";
+    const image = formData.get("image") as File | null;
+    if (image) {
+        const arrayBuffer = await image.arrayBuffer();
+        const imageBuffer = Buffer.from(arrayBuffer);
+        const imageId = nanoid();
+        const extension =  "png";
+        const fileType = image.type || "image/jpeg";
 
-    try {
+        const uploadCommand = new PutObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: `${imageId}.jpg`,
+            Body: imageBuffer,
+            ContentType: fileType,
+        });
 
-       const result =  await db.insert(file).values({
+        await s3Client.send(uploadCommand);
+
+        imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${imageId}.jpg`;
+
+        const result = await db.insert(file).values({
             fileUrl: imageUrl,
-            fileName: imageName,
+            fileName: image.name,
             extension: extension,
             fileType: fileType,
             active: true,
-        })
-           .returning({id: file.id
-               }
-           )
-       ;
+        }).returning({ id: file.id });
 
-        await db.insert(customerCustomization).values({
-            name: validated.data.subdomain,
-            slug: validated.data.subdomain,
-            primaryColor: primaryHSL,
-            secondaryColor: secondaryHSL,
-            imageUrl: imageUrl,
-            customerId: customerId,
-            fileId: result[0].id,
-        });
-
-        console.log("salvo");
-    } catch (error) {
-        console.error("erro", error);
+        fileId = result[0].id;
     }
 
+    const primaryHSL = hexToHsl(primaryColor);
+    const secondaryHSL = hexToHsl(secondaryColor);
 
-
-
-
-
-
-    console.log("Salvando na tabela file com:", {
-        fileUrl: imageUrl,
+    await db.insert(customerCustomization).values({
+        name: subdomain,
+        slug: subdomain,
+        primaryColor: primaryHSL,
+        secondaryColor: secondaryHSL,
+        imageUrl: imageUrl,
         customerId: customerId,
-        fileName: imageName,
+        fileId: fileId,
     });
 
+    revalidatePath("/");
+}
 
+export async function updateCustomization(formData: FormData) {
+    const rawData = {
+        id: formData.get("id"),
+        subdomain: formData.get("subdomain"),
+        primaryColor: formData.get("primaryColor"),
+        secondaryColor: formData.get("secondaryColor"),
+        customerId: formData.get("customerId"),
+    };
 
+    const schemaWithId = customizationSchema.extend({
+        id: z.coerce.number(),
+    });
+
+    const validated = schemaWithId.safeParse(rawData);
+    if (!validated.success) {
+        console.error("Erro de validação:", validated.error.flatten());
+        return;
+    }
+
+    const { id, subdomain, primaryColor, secondaryColor, } = validated.data;
+
+    let imageUrl = "";
+    let fileId: number | null = null;
+
+    const image = formData.get("image") as File | null;
+    if (image && image.size > 0) {
+        const arrayBuffer = await image.arrayBuffer();
+        const imageBuffer = Buffer.from(arrayBuffer);
+        const imageId = nanoid();
+        const extension = image.name.split(".").pop() || "jpg";
+        const fileType = image.type || "image/jpeg";
+
+        const uploadCommand = new PutObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: `${imageId}.jpg`,
+            Body: imageBuffer,
+            ContentType: fileType,
+        });
+
+        await s3Client.send(uploadCommand);
+
+        imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${imageId}.jpg`;
+
+        console.log("extensão", extension)
+
+        const result = await db.insert(file).values({
+            fileUrl: imageUrl,
+            fileName: image.name,
+            extension: extension,
+            fileType: fileType,
+            active: true,
+        }).returning({ id: file.id });
+
+        fileId = result[0].id;
+    }
+
+    const primaryHSL = hexToHsl(primaryColor);
+    const secondaryHSL = hexToHsl(secondaryColor);
+
+    await db.update(customerCustomization)
+        .set({
+            name: subdomain,
+            slug: subdomain,
+            primaryColor: primaryHSL,
+            secondaryColor: secondaryHSL,
+            ...(imageUrl && { imageUrl: imageUrl }),
+            ...(fileId && { fileId: fileId }),
+        })
+        .where(eq(customerCustomization.id, id));
 
     revalidatePath("/");
 }
