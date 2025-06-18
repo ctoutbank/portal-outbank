@@ -528,172 +528,180 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
     );
   }
 
+  // Função utilitária para calcular diferença entre dois valores
+  const calcDiff = (a: string | number | undefined, b: string | number | undefined) => {
+    const nA = parseFloat(String(a ?? '').replace(',', '.'));
+    const nB = parseFloat(String(b ?? '').replace(',', '.'));
+    if (isNaN(nA) || isNaN(nB)) return '';
+    const diff = nA - nB;
+    return diff.toFixed(2).replace('.', ',') + '%';
+  };
+
   return (
     <div>
-      <div className="w-full overflow-x-auto">
-        {/* Legenda para cores de inputs */}
-        <div className="flex flex-col gap-4 mb-6">
-        <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-green-100"></div>
-            <span className="text-sm text-gray-600">Taxa Dock</span>
-          </div>
-         
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-yellow-100"></div>
-            <span className="text-sm text-gray-600">Taxa Admin (Outbank)</span>
+      {/* Tabelas de taxas e seções de PIX com scroll horizontal próprio */}
+      <div className="w-full">
+        {/* Tabela Taxa POS */}
+        <div className="overflow-x-auto">
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-green-100"></div>
+              <span className="text-sm text-gray-600">Taxa Dock</span>
+            </div>
+           
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-yellow-100"></div>
+              <span className="text-sm text-gray-600">Taxa Admin (Outbank)</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-blue-100"></div>
+              <span className="text-sm text-gray-600">Taxa Solicitada (ISO)</span>
+            </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-blue-100"></div>
-            <span className="text-sm text-gray-600">Taxa Solicitada (ISO)</span>
-          </div>
-        </div>
-        
-        <h3 className="text-lg font-medium mb-4">Taxa no Pos</h3>
-        <Table className="w-full">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="sticky left-0 z-10 bg-white">
-                Bandeiras
-              </TableHead>
-              {SolicitationFeeProductTypeList.map((type, index) => (
-                <React.Fragment key={`header-${type.value}-${index}`}>
-                  <TableHead
-                    className="text-center min-w-[100px] text-sm"
-                  >
-                    {type.label}
-                  </TableHead>
-                  <TableHead
-                    className="text-center min-w-[100px] text-sm"
-                  >
-                    {type.label}
-                  </TableHead>
-                  <TableHead
-                    className="text-center min-w-[100px] text-sm"
-                  >
-                    {type.label}
-                  </TableHead>
-                </React.Fragment>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {brandList.map((brand, brandIndex) => (
-              <TableRow key={`brand-${brand.value}-${brandIndex}`}>
-                <TableCell className="font-medium sticky left-0 z-10 bg-white">
-                  <div className="flex items-center gap-2">
-                    {getCardImage(brand.value) && (
-                      <Image
-                        src={getCardImage(brand.value)}
-                        alt={brand.label}
-                        width={40}
-                        height={24}
-                        className="object-contain"
-                      />
-                    )}
-                    {brand.label}
-                  </div>
-                </TableCell>
-                {SolicitationFeeProductTypeList.map((type, typeIndex) => {
-                  // Limpar possíveis espaços extras no valor do tipo
-                  const cleanTypeValue = type.value.trim();
-                  
-                  // Encontrar o índice correto do produto
-                  const productIndex = formData.solicitationFee.solicitationFeeBrands[brandIndex]?.
-                    solicitationBrandProductTypes.findIndex(product => {
-                      const productType = product?.productType?.trim() || '';
-                      const matchingType = productType === cleanTypeValue;
-                      const matchingInterval = 
-                        String(product?.transactionFeeStart) === type.transactionFeeStart && 
-                        String(product?.transactionFeeEnd) === type.transactionFeeEnd;
-                      return matchingType && matchingInterval;
-                    });
-                  
-                  const actualIndex = productIndex !== -1 ? productIndex : typeIndex;
-                  const currentProduct = formData.solicitationFee.solicitationFeeBrands[brandIndex]?.
-                    solicitationBrandProductTypes[actualIndex];
-                  
-                  // Debug log para verificar os valores que estão sendo exibidos
-                  console.log(`Exibindo produto POS: ${brand.label}-${type.label}`, {
-                    productType: currentProduct?.productType,
-                    fee: currentProduct?.fee,
-                    feeAdmin: currentProduct?.feeAdmin, 
-                    feeDock: currentProduct?.feeDock
-                  });
-                  
-                  // Converter valores para garantir tipos corretos
-                  const feeValue = currentProduct?.fee !== undefined && currentProduct.fee !== null 
-                    ? String(currentProduct.fee) 
-                    : "";
-                    
-                  const feeAdminValue = currentProduct?.feeAdmin !== undefined && currentProduct.feeAdmin !== null 
-                    ? String(currentProduct.feeAdmin) 
-                    : "";
-                    
-                  const feeDockValue = currentProduct?.feeDock !== undefined && currentProduct.feeDock !== null 
-                    ? String(currentProduct.feeDock) 
-                    : "";
-                  
-                  return (
-                    <React.Fragment key={`cell-${brand.value}-${type.value}-${typeIndex}`}>
-                     {/* Taxa feeDock */}
-                     <TableCell className="p-1 text-center">
-                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-green-100">
-                          <PercentageInput
-                            value={feeDockValue}
-                            onChange={(value) => updateFormValue(brandIndex, actualIndex, 'feeDock', value)}
-                            placeholder="0%"
-                            className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
-                          />
-                        </div>
-                      </TableCell>
-                      
-                      {/* Taxa feeAdmin */}
-                      <TableCell className="p-1 text-center">
-                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-yellow-100">
-                          <PercentageInput
-                            value={feeAdminValue}
-                            onChange={(value) => updateFormValue(brandIndex, actualIndex, 'feeAdmin', value)}
-                            placeholder="0%"
-                            className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
-                          />
-                        </div>
-                      </TableCell>
-                      
-                      
-                       {/* Taxa fee */}
-                       <TableCell className="p-1 text-center">
-                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-blue-100">
-                          <PercentageInput
-                            value={feeValue}
-                            onChange={() => {}} // Readonly
-                            placeholder="0%"
-                            className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
-                            disabled={true}
-                          />
-                        </div>
-                      </TableCell>
-                    </React.Fragment>
-                  );
-                })}
+          <h3 className="text-lg font-medium mb-4">Taxa no Pos</h3>
+          <Table className="w-full">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="sticky left-0 z-10 bg-white">
+                  Bandeiras
+                </TableHead>
+                {SolicitationFeeProductTypeList.map((type, index) => (
+                  <React.Fragment key={`header-${type.value}-${index}`}>
+                    <TableHead className="text-center min-w-[100px] text-sm">{type.label}</TableHead>
+                    {/* Diferença feeDock - feeAdmin */}
+                    <TableHead className="text-center min-w-[40px] text-[9px] font-bold"></TableHead>
+                    <TableHead className="text-center min-w-[100px] text-sm">{type.label}</TableHead>
+                    {/* Diferença feeAdmin - fee */}
+                    <TableHead className="text-center min-w-[40px] text-[9px] font-bold"></TableHead>
+                    <TableHead className="text-center min-w-[100px] text-sm">{type.label}</TableHead>
+                  </React.Fragment>
+                ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-            {/* PIX Fees Section */}
-            <div className="mt-12 mb-6">
+            </TableHeader>
+            <TableBody>
+              {brandList.map((brand, brandIndex) => (
+                <TableRow key={`brand-${brand.value}-${brandIndex}`}>
+                  <TableCell className="font-medium sticky left-0 z-10 bg-white">
+                    <div className="flex items-center gap-2">
+                      {getCardImage(brand.value) && (
+                        <Image
+                          src={getCardImage(brand.value)}
+                          alt={brand.label}
+                          width={40}
+                          height={24}
+                          className="object-contain"
+                        />
+                      )}
+                      {brand.label}
+                    </div>
+                  </TableCell>
+                  {SolicitationFeeProductTypeList.map((type, typeIndex) => {
+                    // Limpar possíveis espaços extras no valor do tipo
+                    const cleanTypeValue = type.value.trim();
+                    
+                    // Encontrar o índice correto do produto
+                    const productIndex = formData.solicitationFee.solicitationFeeBrands[brandIndex]?.
+                      solicitationBrandProductTypes.findIndex(product => {
+                        const productType = product?.productType?.trim() || '';
+                        const matchingType = productType === cleanTypeValue;
+                        const matchingInterval = 
+                          String(product?.transactionFeeStart) === type.transactionFeeStart && 
+                          String(product?.transactionFeeEnd) === type.transactionFeeEnd;
+                        return matchingType && matchingInterval;
+                      });
+                    
+                    const actualIndex = productIndex !== -1 ? productIndex : typeIndex;
+                    const currentProduct = formData.solicitationFee.solicitationFeeBrands[brandIndex]?.
+                      solicitationBrandProductTypes[actualIndex];
+                    
+                    // Debug log para verificar os valores que estão sendo exibidos
+                    console.log(`Exibindo produto POS: ${brand.label}-${type.label}`, {
+                      productType: currentProduct?.productType,
+                      fee: currentProduct?.fee,
+                      feeAdmin: currentProduct?.feeAdmin, 
+                      feeDock: currentProduct?.feeDock
+                    });
+                    
+                    // Converter valores para garantir tipos corretos
+                    const feeValue = currentProduct?.fee !== undefined && currentProduct.fee !== null 
+                      ? String(currentProduct.fee) 
+                      : "";
+                      
+                    const feeAdminValue = currentProduct?.feeAdmin !== undefined && currentProduct.feeAdmin !== null 
+                      ? String(currentProduct.feeAdmin) 
+                      : "";
+                      
+                    const feeDockValue = currentProduct?.feeDock !== undefined && currentProduct.feeDock !== null 
+                      ? String(currentProduct.feeDock) 
+                      : "";
+                    
+                    return (
+                      <React.Fragment key={`cell-${brand.value}-${type.value}-${typeIndex}`}> 
+                        {/* Taxa feeDock */}
+                        <TableCell className="p-1 text-center">
+                          <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-green-100">
+                            <PercentageInput
+                              value={feeDockValue}
+                              onChange={(value) => updateFormValue(brandIndex, actualIndex, 'feeDock', value)}
+                              placeholder="0%"
+                              className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                            />
+                          </div>
+                        </TableCell>
+                        {/* Diferença feeDock - feeAdmin */}
+                        <TableCell className="p-1 text-center align-middle font-bold text-[9px] min-w-[40px]">
+                          {calcDiff(feeDockValue, feeAdminValue)}
+                        </TableCell>
+                        {/* Taxa feeAdmin */}
+                        <TableCell className="p-1 text-center">
+                          <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-yellow-100">
+                            <PercentageInput
+                              value={feeAdminValue}
+                              onChange={(value) => updateFormValue(brandIndex, actualIndex, 'feeAdmin', value)}
+                              placeholder="0%"
+                              className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                            />
+                          </div>
+                        </TableCell>
+                        {/* Diferença feeAdmin - fee */}
+                        <TableCell className="p-1 text-center align-middle font-bold text-[9px] min-w-[40px]">
+                          {calcDiff(feeAdminValue, feeValue)}
+                        </TableCell>
+                        {/* Taxa fee */}
+                        <TableCell className="p-1 text-center">
+                          <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-blue-100">
+                            <PercentageInput
+                              value={feeValue}
+                              onChange={() => {}} // Readonly
+                              placeholder="0%"
+                              className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                              disabled={true}
+                            />
+                          </div>
+                        </TableCell>
+                      </React.Fragment>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        {/* Seção PIX POS */}
+        <div className="overflow-x-auto mt-12 mb-6">
           <h3 className="text-lg font-medium mb-4">PIX Pos</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div>
               <h4 className="font-medium mb-2">MDR</h4>
-              <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <div className="flex gap-2 items-center">
+                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.cardPixMdrDock || ""}
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        console.log(`Atualizando cardPixMdrDock para: ${value}`);
                         newData.solicitationFee.cardPixMdrDock = value;
                         setFormData(newData);
                       }
@@ -702,14 +710,16 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                   />
                 </div>
-               
+                {/* Diferença Dock - Admin */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.cardPixMdrDock ?? undefined, formData.solicitationFee.cardPixMdrAdmin ?? undefined)}
+                </div>
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.cardPixMdrAdmin || ""}
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        console.log(`Atualizando cardPixMdrAdmin para: ${value}`);
                         newData.solicitationFee.cardPixMdrAdmin = value;
                         setFormData(newData);
                       }
@@ -718,22 +728,25 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                   />
                 </div>
+                {/* Diferença Admin - ISO */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.cardPixMdrAdmin ?? undefined, formData.solicitationFee.cardPixMdr ?? undefined)}
+                </div>
                 <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.cardPixMdr || ""}
-                    onChange={() => {}} // Readonly
+                    onChange={() => {}}
                     placeholder="0,01%"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                     disabled={true}
                   />
                 </div>
-               
               </div>
             </div>
             <div>
               <h4 className="font-medium mb-2">Custo Mínimo</h4>
-              <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <div className="flex gap-2 items-center">
+                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <input
                     type="number"
                     step="0.01"
@@ -743,14 +756,16 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        // Converter valor para string numérica para evitar problemas
                         const value = e.target.value ? String(parseFloat(e.target.value)) : "";
-                        console.log(`Atualizando cardPixMinimumCostFeeDock para: ${value}`);
                         newData.solicitationFee.cardPixMinimumCostFeeDock = value;
                         setFormData(newData);
                       }
                     }}
                   />
+                </div>
+                {/* Diferença Dock - Admin */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.cardPixMinimumCostFeeDock ?? undefined, formData.solicitationFee.cardPixMinimumCostFeeAdmin ?? undefined)}
                 </div>
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <input
@@ -762,16 +777,17 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        // Converter valor para string numérica para evitar problemas
                         const value = e.target.value ? String(parseFloat(e.target.value)) : "";
-                        console.log(`Atualizando cardPixMinimumCostFeeAdmin para: ${value}`);
                         newData.solicitationFee.cardPixMinimumCostFeeAdmin = value;
                         setFormData(newData);
                       }
                     }}
                   />
                 </div>
-               
+                {/* Diferença Admin - ISO */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.cardPixMinimumCostFeeAdmin ?? undefined, formData.solicitationFee.cardPixMinimumCostFee ?? undefined)}
+                </div>
                 <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <input
                     type="number"
@@ -787,8 +803,8 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             </div>
             <div>
               <h4 className="font-medium mb-2">Custo Máximo</h4>
-              <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <div className="flex gap-2 items-center">
+                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <input
                     type="number"
                     step="0.01"
@@ -798,16 +814,17 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        // Converter valor para string numérica para evitar problemas
                         const value = e.target.value ? String(parseFloat(e.target.value)) : "";
-                        console.log(`Atualizando cardPixCeilingFeeDock para: ${value}`);
                         newData.solicitationFee.cardPixCeilingFeeDock = value;
                         setFormData(newData);
                       }
                     }}
                   />
                 </div>
-               
+                {/* Diferença Dock - Admin */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.cardPixCeilingFeeDock ?? undefined, formData.solicitationFee.cardPixCeilingFeeAdmin ?? undefined)}
+                </div>
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <input
                     type="number"
@@ -818,14 +835,16 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        // Converter valor para string numérica para evitar problemas
                         const value = e.target.value ? String(parseFloat(e.target.value)) : "";
-                        console.log(`Atualizando cardPixCeilingFeeAdmin para: ${value}`);
                         newData.solicitationFee.cardPixCeilingFeeAdmin = value;
                         setFormData(newData);
                       }
                     }}
                   />
+                </div>
+                {/* Diferença Admin - ISO */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.cardPixCeilingFeeAdmin ?? undefined, formData.solicitationFee.cardPixCeilingFee ?? undefined)}
                 </div>
                 <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <input
@@ -838,19 +857,17 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     disabled={true}
                   />
                 </div>
-              
               </div>
             </div>
             <div>
               <h4 className="font-medium mb-2">Antecipação</h4>
-              <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <div className="flex gap-2 items-center">
+                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.eventualAnticipationFeeDock || ""}
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        console.log(`Atualizando eventualAnticipationFeeDock para: ${value}`);
                         newData.solicitationFee.eventualAnticipationFeeDock = value;
                         setFormData(newData);
                       }
@@ -859,14 +876,16 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                   />
                 </div>
-                
+                {/* Diferença Dock - Admin */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.eventualAnticipationFeeDock ?? undefined, formData.solicitationFee.eventualAnticipationFeeAdmin ?? undefined)}
+                </div>
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.eventualAnticipationFeeAdmin || ""}
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        console.log(`Atualizando eventualAnticipationFeeAdmin para: ${value}`);
                         newData.solicitationFee.eventualAnticipationFeeAdmin = value;
                         setFormData(newData);
                       }
@@ -874,6 +893,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     placeholder="1,67%"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                   />
+                </div>
+                {/* Diferença Admin - ISO */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.eventualAnticipationFeeAdmin ?? undefined, formData.solicitationFee.eventualAnticipationFee ?? undefined)}
                 </div>
                 <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <PercentageInput
@@ -884,158 +907,152 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     disabled={true}
                   />
                 </div>
-              
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tabela NonCard */}
-        <h3 className="text-lg font-medium mt-12 mb-4">Taxa Online</h3>
-        <Table className="w-full">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="sticky left-0 z-10 bg-white">
-                Bandeiras
-              </TableHead>
-              {SolicitationFeeProductTypeList.map((type, index) => (
-                <React.Fragment key={`noncard-header-${type.value}-${index}`}>
-                  <TableHead
-                    className="text-center min-w-[100px] text-sm"
-                  >
-                    {type.label}
-                  </TableHead>
-                  <TableHead
-                    className="text-center min-w-[100px] text-sm"
-                  >
-                    {type.label}
-                  </TableHead>
-                  <TableHead
-                    className="text-center min-w-[100px] text-sm"
-                  >
-                    {type.label}
-                  </TableHead>
-                </React.Fragment>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {brandList.map((brand, brandIndex) => (
-              <TableRow key={`noncard-brand-${brand.value}-${brandIndex}`}>
-                <TableCell className="font-medium sticky left-0 z-10 bg-white">
-                  <div className="flex items-center gap-2">
-                    {getCardImage(brand.value) && (
-                      <Image
-                        src={getCardImage(brand.value)}
-                        alt={brand.label}
-                        width={40}
-                        height={24}
-                        className="object-contain"
-                      />
-                    )}
-                    {brand.label}
-                  </div>
-                </TableCell>
-                {SolicitationFeeProductTypeList.map((type, typeIndex) => {
-                  // Limpar possíveis espaços extras no valor do tipo
-                  const cleanTypeValue = type.value.trim();
-                  
-                  // Encontrar o índice correto do produto
-                  const productIndex = formData.solicitationFee.solicitationFeeBrands[brandIndex]?.
-                    solicitationBrandProductTypes.findIndex(product => {
-                      const productType = product?.productType?.trim() || '';
-                      const matchingType = productType === cleanTypeValue;
-                      const matchingInterval = 
-                        String(product?.transactionFeeStart) === type.transactionFeeStart && 
-                        String(product?.transactionFeeEnd) === type.transactionFeeEnd;
-                      return matchingType && matchingInterval;
-                    });
-                  
-                  const actualIndex = productIndex !== -1 ? productIndex : typeIndex;
-                  const currentProduct = formData.solicitationFee.solicitationFeeBrands[brandIndex]?.
-                    solicitationBrandProductTypes[actualIndex];
-                  
-                  // Verificar se temos um produto válido antes de tentar acessar suas propriedades
-                  if (!currentProduct) {
-                    return null;
-                  }
-                  
-                  // Log de depuração temporário
-                  console.log(`Valores para tabela Online - ${brand.label} - ${type.label}:`, {
-                    noCardFee: currentProduct.noCardFee,
-                    noCardFeeAdmin: currentProduct.noCardFeeAdmin, 
-                    noCardFeeDock: currentProduct.noCardFeeDock
-                  });
-                  
-                  // Garantir que os valores noCardFee sejam strings não vazias
-                  const noCardFeeValue = getNoCardValue(currentProduct, 'noCardFee');
-                  const noCardFeeAdminValue = getNoCardValue(currentProduct, 'noCardFeeAdmin');
-                  const noCardFeeDockValue = getNoCardValue(currentProduct, 'noCardFeeDock');
-                  
-                  return (
-                    <React.Fragment key={`noncard-cell-${brand.value}-${type.value}-${typeIndex}`}>
+        {/* Tabela Taxa Online */}
+        <div className="overflow-x-auto mt-12">
+          <h3 className="text-lg font-medium mt-12 mb-4">Taxa Online</h3>
+          <Table className="w-full">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="sticky left-0 z-10 bg-white">
+                  Bandeiras
+                </TableHead>
+                {SolicitationFeeProductTypeList.map((type, index) => (
+                  <React.Fragment key={`noncard-header-${type.value}-${index}`}>
+                    <TableHead className="text-center min-w-[100px] text-sm">{type.label}</TableHead>
+                    {/* Diferença noCardFeeDock - noCardFeeAdmin */}
+                    <TableHead className="text-center min-w-[40px] text-[9px] font-bold"></TableHead>
+                    <TableHead className="text-center min-w-[100px] text-sm">{type.label}</TableHead>
+                    {/* Diferença noCardFeeAdmin - noCardFee */}
+                    <TableHead className="text-center min-w-[40px] text-[9px] font-bold"></TableHead>
+                    <TableHead className="text-center min-w-[100px] text-sm">{type.label}</TableHead>
+                  </React.Fragment>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {brandList.map((brand, brandIndex) => (
+                <TableRow key={`noncard-brand-${brand.value}-${brandIndex}`}>
+                  <TableCell className="font-medium sticky left-0 z-10 bg-white">
+                    <div className="flex items-center gap-2">
+                      {getCardImage(brand.value) && (
+                        <Image
+                          src={getCardImage(brand.value)}
+                          alt={brand.label}
+                          width={40}
+                          height={24}
+                          className="object-contain"
+                        />
+                      )}
+                      {brand.label}
+                    </div>
+                  </TableCell>
+                  {SolicitationFeeProductTypeList.map((type, typeIndex) => {
+                    // Limpar possíveis espaços extras no valor do tipo
+                    const cleanTypeValue = type.value.trim();
                     
-                      
-                     
-                      
-                      {/* Taxa noCardFeeDock */}
-                      <TableCell className="p-1 text-center">
-                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-green-100">
-                          <PercentageInput
-                            value={noCardFeeDockValue}
-                            onChange={(value) => updateFormValue(brandIndex, actualIndex, 'noCardFeeDock', value)}
-                            placeholder="0%"
-                            className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
-                          />
-                        </div>
-                      </TableCell>
-                       {/* Taxa noCardFeeAdmin */}
-                       <TableCell className="p-1 text-center">
-                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-yellow-100">
-                          <PercentageInput
-                            value={noCardFeeAdminValue}
-                            onChange={(value) => updateFormValue(brandIndex, actualIndex, 'noCardFeeAdmin', value)}
-                            placeholder="0%"
-                            className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
-                          />
-                        </div>
-                      </TableCell>
+                    // Encontrar o índice correto do produto
+                    const productIndex = formData.solicitationFee.solicitationFeeBrands[brandIndex]?.
+                      solicitationBrandProductTypes.findIndex(product => {
+                        const productType = product?.productType?.trim() || '';
+                        const matchingType = productType === cleanTypeValue;
+                        const matchingInterval = 
+                          String(product?.transactionFeeStart) === type.transactionFeeStart && 
+                          String(product?.transactionFeeEnd) === type.transactionFeeEnd;
+                        return matchingType && matchingInterval;
+                      });
+                    
+                    const actualIndex = productIndex !== -1 ? productIndex : typeIndex;
+                    const currentProduct = formData.solicitationFee.solicitationFeeBrands[brandIndex]?.
+                      solicitationBrandProductTypes[actualIndex];
+                    
+                    // Verificar se temos um produto válido antes de tentar acessar suas propriedades
+                    if (!currentProduct) {
+                      return null;
+                    }
+                    
+                    // Log de depuração temporário
+                    console.log(`Valores para tabela Online - ${brand.label} - ${type.label}:`, {
+                      noCardFee: currentProduct.noCardFee,
+                      noCardFeeAdmin: currentProduct.noCardFeeAdmin, 
+                      noCardFeeDock: currentProduct.noCardFeeDock
+                    });
+                    
+                    // Garantir que os valores noCardFee sejam strings não vazias
+                    const noCardFeeValue = getNoCardValue(currentProduct, 'noCardFee');
+                    const noCardFeeAdminValue = getNoCardValue(currentProduct, 'noCardFeeAdmin');
+                    const noCardFeeDockValue = getNoCardValue(currentProduct, 'noCardFeeDock');
+                    
+                    return (
+                      <React.Fragment key={`noncard-cell-${brand.value}-${type.value}-${typeIndex}`}> 
+                        {/* Taxa noCardFeeDock */}
+                        <TableCell className="p-1 text-center">
+                          <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-green-100">
+                            <PercentageInput
+                              value={noCardFeeDockValue}
+                              onChange={(value) => updateFormValue(brandIndex, actualIndex, 'noCardFeeDock', value)}
+                              placeholder="0%"
+                              className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                            />
+                          </div>
+                        </TableCell>
+                        {/* Diferença noCardFeeDock - noCardFeeAdmin */}
+                        <TableCell className="p-1 text-center align-middle font-bold text-[9px] min-w-[40px]">
+                          {calcDiff(noCardFeeDockValue, noCardFeeAdminValue)}
+                        </TableCell>
+                        {/* Taxa noCardFeeAdmin */}
+                        <TableCell className="p-1 text-center">
+                          <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-yellow-100">
+                            <PercentageInput
+                              value={noCardFeeAdminValue}
+                              onChange={(value) => updateFormValue(brandIndex, actualIndex, 'noCardFeeAdmin', value)}
+                              placeholder="0%"
+                              className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                            />
+                          </div>
+                        </TableCell>
+                        {/* Diferença noCardFeeAdmin - noCardFee */}
+                        <TableCell className="p-1 text-center align-middle font-bold text-[9px] min-w-[40px]">
+                          {calcDiff(noCardFeeAdminValue, noCardFeeValue)}
+                        </TableCell>
                         {/* Taxa noCardFee */}
                         <TableCell className="p-1 text-center">
-                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-blue-100">
-                          <PercentageInput
-                            value={noCardFeeValue}
-                            onChange={() => {}} // Readonly
-                            placeholder="0%"
-                            className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
-                            disabled={true}
-                          />
-                        </div>
-                      </TableCell>
-                    </React.Fragment>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                          <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-blue-100">
+                            <PercentageInput
+                              value={noCardFeeValue}
+                              onChange={() => {}} // Readonly
+                              placeholder="0%"
+                              className="border-0 p-0 h-auto text-center w-full bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                              disabled={true}
+                            />
+                          </div>
+                        </TableCell>
+                      </React.Fragment>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
 
-    
-        
-        {/* PIX Online Fees Section */}
-        <div className="mt-12 mb-6">
+        {/* Seção PIX Online */}
+        <div className="overflow-x-auto mt-12 mb-6">
           <h3 className="text-lg font-medium mb-4">PIX Online</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div>
               <h4 className="font-medium mb-2">MDR</h4>
-              <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <div className="flex gap-2 items-center">
+                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardPixMdrDock || ""}
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        console.log(`Atualizando nonCardPixMdrDock para: ${value}`);
                         newData.solicitationFee.nonCardPixMdrDock = value;
                         setFormData(newData);
                       }
@@ -1044,14 +1061,16 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                   />
                 </div>
-               
+                {/* Diferença Dock - Admin */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.nonCardPixMdrDock ?? undefined, formData.solicitationFee.nonCardPixMdrAdmin ?? undefined)}
+                </div>
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardPixMdrAdmin || ""}
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        console.log(`Atualizando nonCardPixMdrAdmin para: ${value}`);
                         newData.solicitationFee.nonCardPixMdrAdmin = value;
                         setFormData(newData);
                       }
@@ -1060,11 +1079,14 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                   />
                 </div>
-              
+                {/* Diferença Admin - ISO */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.nonCardPixMdrAdmin ?? undefined, formData.solicitationFee.nonCardPixMdr ?? undefined)}
+                </div>
                 <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardPixMdr || ""}
-                    onChange={() => {}} // Readonly
+                    onChange={() => {}}
                     placeholder="0,01%"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                     disabled={true}
@@ -1074,8 +1096,8 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             </div>
             <div>
               <h4 className="font-medium mb-2">Custo Mínimo</h4>
-              <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <div className="flex gap-2 items-center">
+                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <input
                     type="number"
                     step="0.01"
@@ -1085,16 +1107,17 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        // Converter valor para string numérica para evitar problemas
                         const value = e.target.value ? String(parseFloat(e.target.value)) : "";
-                        console.log(`Atualizando nonCardPixMinimumCostFeeDock para: ${value}`);
                         newData.solicitationFee.nonCardPixMinimumCostFeeDock = value;
                         setFormData(newData);
                       }
                     }}
                   />
                 </div>
-                
+                {/* Diferença Dock - Admin */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.nonCardPixMinimumCostFeeDock ?? undefined, formData.solicitationFee.nonCardPixMinimumCostFeeAdmin ?? undefined)}
+                </div>
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <input
                     type="number"
@@ -1105,14 +1128,16 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        // Converter valor para string numérica para evitar problemas
                         const value = e.target.value ? String(parseFloat(e.target.value)) : "";
-                        console.log(`Atualizando nonCardPixMinimumCostFeeAdmin para: ${value}`);
                         newData.solicitationFee.nonCardPixMinimumCostFeeAdmin = value;
                         setFormData(newData);
                       }
                     }}
                   />
+                </div>
+                {/* Diferença Admin - ISO */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.nonCardPixMinimumCostFeeAdmin ?? undefined, formData.solicitationFee.nonCardPixMinimumCostFee ?? undefined)}
                 </div>
                 <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <input
@@ -1129,8 +1154,8 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             </div>
             <div>
               <h4 className="font-medium mb-2">Custo Máximo</h4>
-              <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <div className="flex gap-2 items-center">
+                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <input
                     type="number"
                     step="0.01"
@@ -1140,16 +1165,17 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        // Converter valor para string numérica para evitar problemas
                         const value = e.target.value ? String(parseFloat(e.target.value)) : "";
-                        console.log(`Atualizando nonCardPixCeilingFeeDock para: ${value}`);
                         newData.solicitationFee.nonCardPixCeilingFeeDock = value;
                         setFormData(newData);
                       }
                     }}
                   />
                 </div>
-                
+                {/* Diferença Dock - Admin */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.nonCardPixCeilingFeeDock ?? undefined, formData.solicitationFee.nonCardPixCeilingFeeAdmin ?? undefined)}
+                </div>
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <input
                     type="number"
@@ -1160,14 +1186,16 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     onChange={(e) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        // Converter valor para string numérica para evitar problemas
                         const value = e.target.value ? String(parseFloat(e.target.value)) : "";
-                        console.log(`Atualizando nonCardPixCeilingFeeAdmin para: ${value}`);
                         newData.solicitationFee.nonCardPixCeilingFeeAdmin = value;
                         setFormData(newData);
                       }
                     }}
                   />
+                </div>
+                {/* Diferença Admin - ISO */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.nonCardPixCeilingFeeAdmin ?? undefined, formData.solicitationFee.nonCardPixCeilingFee ?? undefined)}
                 </div>
                 <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <input
@@ -1184,14 +1212,13 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             </div>
             <div>
               <h4 className="font-medium mb-2">Antecipação</h4>
-              <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <div className="flex gap-2 items-center">
+                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardEventualAnticipationFeeDock || ""}
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        console.log(`Atualizando nonCardEventualAnticipationFeeDock para: ${value}`);
                         newData.solicitationFee.nonCardEventualAnticipationFeeDock = value;
                         setFormData(newData);
                       }
@@ -1200,14 +1227,16 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                   />
                 </div>
-               
+                {/* Diferença Dock - Admin */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.nonCardEventualAnticipationFeeDock ?? undefined, formData.solicitationFee.nonCardEventualAnticipationFeeAdmin ?? undefined)}
+                </div>
                 <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardEventualAnticipationFeeAdmin || ""}
                     onChange={(value) => {
                       const newData = { ...formData };
                       if (newData.solicitationFee) {
-                        console.log(`Atualizando nonCardEventualAnticipationFeeAdmin para: ${value}`);
                         newData.solicitationFee.nonCardEventualAnticipationFeeAdmin = value;
                         setFormData(newData);
                       }
@@ -1215,6 +1244,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                     placeholder="1,67%"
                     className="border-0 p-0 h-auto bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full text-center"
                   />
+                </div>
+                {/* Diferença Admin - ISO */}
+                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                  {calcDiff(formData.solicitationFee.nonCardEventualAnticipationFeeAdmin ?? undefined, formData.solicitationFee.nonCardEventualAnticipationFee ?? undefined)}
                 </div>
                 <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
                   <PercentageInput
