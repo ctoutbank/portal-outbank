@@ -5,16 +5,12 @@ import { generateSlug } from "@/lib/utils";
 import { clerkClient } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import {
-  profiles,
-  userMerchants,
-  users
-} from "../../../../../drizzle/schema";
+import { profiles, userMerchants, users } from "../../../../../drizzle/schema";
 
-export type ProfileDD ={
+export type ProfileDD = {
   id: number;
   name: string;
-}
+};
 
 export async function getDDProfiles(): Promise<ProfileDD[]> {
   const result = await db
@@ -24,15 +20,12 @@ export async function getDDProfiles(): Promise<ProfileDD[]> {
   return result as ProfileDD[];
 }
 
-
-
 export type UserInsert = {
   firstName: string;
   lastName: string;
   email: string;
   password: string;
   idCustomer: number | null;
-  idProfile: number | null;
   idAddress: number | null;
   selectedMerchants?: string[];
   fullAccess: boolean;
@@ -81,7 +74,6 @@ export async function InsertUser(data: UserInsert) {
     "firstName",
     "lastName",
     "email",
-    "idProfile",
   ];
 
   const hasEmptyFields = fieldsToValidate.some((field) => {
@@ -105,7 +97,10 @@ export async function InsertUser(data: UserInsert) {
       emailAddress: [data.email],
       password: data.password,
     });
-
+    const profile = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.name, "Admin Total"));
     const newUser = await db
       .insert(users)
       .values({
@@ -115,22 +110,23 @@ export async function InsertUser(data: UserInsert) {
         active: true,
         idClerk: clerkUser.id,
         idCustomer: data.idCustomer,
-        idProfile: data.idProfile,
+        idProfile: profile[0].id,
         idAddress: data.idAddress,
         fullAccess: data.fullAccess || true,
         email: data.email,
       })
       .returning({ id: users.id });
 
-    
-
     // Revalidar os dados após a criação do usuário
     // Isso garante que a UI será atualizada com os dados mais recentes
     try {
-      await revalidatePath('/customers');
-      await revalidatePath(`/customers/${data.idCustomer}`);
+      revalidatePath("/customers");
+      revalidatePath(`/customers/${data.idCustomer}`);
     } catch (refreshError) {
-      console.error("Erro ao atualizar a interface após criar usuário:", refreshError);
+      console.error(
+        "Erro ao atualizar a interface após criar usuário:",
+        refreshError
+      );
       // Não interrompe o fluxo se o refresh falhar
     }
     return newUser;
@@ -138,15 +134,21 @@ export async function InsertUser(data: UserInsert) {
     console.error("Erro ao criar usuário:", error);
 
     // Verificar se é um erro de segurança de senha
-    if (error && 
-        typeof error === 'object' && 
-        'status' in error && 
-        error.status === 422 && 
-        'errors' in error && 
-        Array.isArray(error.errors) && 
-        error.errors.length > 0) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 422 &&
+      "errors" in error &&
+      Array.isArray(error.errors) &&
+      error.errors.length > 0
+    ) {
       const passwordError = error.errors.find(
-        (e) => typeof e === 'object' && e && 'code' in e && e.code === "form_password_pwned"
+        (e) =>
+          typeof e === "object" &&
+          e &&
+          "code" in e &&
+          e.code === "form_password_pwned"
       );
       if (passwordError) {
         throw new Error(
@@ -168,7 +170,6 @@ export async function updateUserWithClerk(id: number, data: UserInsert) {
     "firstName",
     "lastName",
     "email",
-    "idProfile",
   ];
 
   const hasInvalidFields = fieldsToValidate.some((field) => {
@@ -198,17 +199,20 @@ export async function updateUserWithClerk(id: number, data: UserInsert) {
       ...(data.password ? { password: data.password } : {}),
     });
 
+    const profile = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.name, "Admin Total"));
     await db
       .update(users)
       .set({
-        idProfile: data.idProfile,
+        idProfile: profile[0].id,
         idCustomer: data.idCustomer,
         idAddress: data.idAddress,
         dtupdate: new Date().toISOString(),
         fullAccess: data.fullAccess,
       })
       .where(eq(users.id, id));
-
 
     revalidatePath("/portal/users");
     return true;
@@ -218,19 +222,25 @@ export async function updateUserWithClerk(id: number, data: UserInsert) {
   }
 }
 
-export async function getUserDetailWithClerk(userId: number): Promise<UserDetailForm | null> {
+export async function getUserDetailWithClerk(
+  userId: number
+): Promise<UserDetailForm | null> {
   try {
-    const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-    
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
     if (!user || user.length === 0 || !user[0].idClerk) {
       return null;
     }
 
     const clerk = await clerkClient();
-    
+
     // Obter detalhes do usuário do Clerk
     const clerkUser = await clerk.users.getUser(user[0].idClerk);
-    
+
     if (!clerkUser) {
       return null;
     }
@@ -242,8 +252,8 @@ export async function getUserDetailWithClerk(userId: number): Promise<UserDetail
       .where(eq(userMerchants.idUser, userId));
 
     const selectedMerchants = userMerchantRelations
-      .filter(relation => relation.idMerchant !== null)
-      .map(relation => relation.idMerchant!.toString());
+      .filter((relation) => relation.idMerchant !== null)
+      .map((relation) => relation.idMerchant!.toString());
 
     // Compor o objeto UserDetailForm
     const userDetailForm: UserDetailForm = {
@@ -253,7 +263,7 @@ export async function getUserDetailWithClerk(userId: number): Promise<UserDetail
       email: clerkUser.emailAddresses[0]?.emailAddress || "",
       password: "",
       selectedMerchants,
-      fullAccess: user[0].fullAccess || true
+      fullAccess: user[0].fullAccess || true,
     };
 
     return userDetailForm;
@@ -261,4 +271,4 @@ export async function getUserDetailWithClerk(userId: number): Promise<UserDetail
     console.error("Erro ao buscar detalhes do usuário com Clerk:", error);
     return null;
   }
-} 
+}
