@@ -12,13 +12,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Lock, Mail, User, UserCog } from "lucide-react";
+import { User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { InsertUser, UserDetailForm, updateUserWithClerk } from "../_actions/user-actions";
+import {
+  InsertUser,
+  UserDetailForm,
+  updateUserWithClerk,
+} from "../_actions/user-actions";
 import { SchemaUser } from "../schema/schema";
 
 interface UserFormProps {
@@ -35,7 +38,6 @@ type FormValues = {
   email: string;
   password: string;
   idCustomer: number | null;
-  idProfile: number | null;
   idAddress: number | null;
   selectedMerchants: string[];
   fullAccess: boolean;
@@ -44,7 +46,11 @@ type FormValues = {
   slug: string;
 };
 
-export default function UserCustomerForm({ user, customerId, onSuccess, profiles = [] }: UserFormProps) {
+export default function UserCustomerForm({
+  user,
+  customerId,
+  onSuccess,
+}: UserFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const isEditing = !!user?.id;
 
@@ -55,7 +61,6 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
     email: user?.email || "",
     password: "",
     idCustomer: user?.idCustomer || customerId || null,
-    idProfile: user?.idProfile || null,
     idAddress: user?.idAddress || null,
     selectedMerchants: user?.selectedMerchants || [],
     fullAccess: user?.fullAccess || false,
@@ -63,7 +68,6 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
     idClerk: user?.idClerk || null,
     slug: user?.slug || "",
   };
-
 
   const form = useForm<FormValues>({
     // @ts-expect-error - O zodResolver funciona corretamente aqui, mas os tipos são incompatíveis
@@ -80,7 +84,6 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
         email: user.email || "",
         password: "",
         idCustomer: user.idCustomer || customerId || null,
-        idProfile: user.idProfile || null,
         idAddress: user.idAddress || null,
         selectedMerchants: user.selectedMerchants || [],
         fullAccess: user.fullAccess || false,
@@ -112,7 +115,10 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
       }
     } catch (error) {
       console.error("Erro ao salvar usuário:", error);
-      const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro ao processar a solicitação";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Ocorreu um erro ao processar a solicitação";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -123,14 +129,14 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
     <Form {...form}>
       {/* @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis */}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-xl flex items-center">
-              <User className="h-5 w-5 mr-2 text-primary" />
+        <Card className="border-border bg-card">
+          <CardHeader className="border-b border-border">
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <User className="h-5 w-5" />
               Informações do Usuário
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
@@ -138,12 +144,15 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center">
-                      Primeiro Nome{" "}
-                      <span className="text-destructive ml-1">*</span>
+                    <FormLabel className="text-foreground">
+                      Primeiro Nome <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Digite o primeiro nome" {...field} />
+                      <Input
+                        placeholder="Digite o primeiro nome"
+                        className="bg-background border-border text-foreground placeholder:text-muted-foreground"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -156,43 +165,40 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center">
-                      Último Nome{" "}
-                      <span className="text-destructive ml-1">*</span>
+                    <FormLabel className="text-foreground">
+                      Último Nome <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Digite o último nome" {...field} />
+                      <Input
+                        placeholder="Digite o último nome"
+                        className="bg-background border-border text-foreground placeholder:text-muted-foreground"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center">
-                      <Mail className="h-4 w-4 mr-1" />
-                      E-mail <span className="text-destructive ml-1">*</span>
+                    <FormLabel className="text-foreground">
+                      E-mail <span className="text-destructive">*</span>
                     </FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="Digite o e-mail" 
-                        {...field} 
-                        disabled={isEditing} // Email não pode ser alterado na edição
+                      <Input
+                        type="email"
+                        placeholder="Digite o e-mail"
+                        className="bg-background border-border text-foreground placeholder:text-muted-foreground"
+                        {...field}
+                        disabled={isEditing}
                       />
                     </FormControl>
                     <FormMessage />
-                    {isEditing && (
-                      <p className="text-xs text-muted-foreground">
-                        O e-mail não pode ser alterado após a criação do usuário
-                      </p>
-                    )}
                   </FormItem>
                 )}
               />
@@ -203,8 +209,7 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center">
-                      <Lock className="h-4 w-4 mr-1" />
+                    <FormLabel className="text-foreground">
                       Senha{" "}
                       {!isEditing && (
                         <span className="text-destructive ml-1">*</span>
@@ -213,87 +218,50 @@ export default function UserCustomerForm({ user, customerId, onSuccess, profiles
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder={isEditing ? "Deixe em branco para manter a senha atual" : "Digite a senha"}
+                        className="bg-background border-border text-foreground placeholder:text-muted-foreground"
+                        placeholder={
+                          isEditing
+                            ? "Deixe em branco para manter a senha atual"
+                            : "Digite a senha"
+                        }
                         {...field}
                       />
                     </FormControl>
                     <FormMessage />
-                    {isEditing && (
-                      <p className="text-xs text-muted-foreground">
-                        Deixe em branco para manter a senha atual
-                      </p>
-                    )}
                   </FormItem>
                 )}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
-                control={form.control}
-                name="idProfile"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center">
-                      <UserCog className="h-4 w-4 mr-1" />
-                      Perfil <span className="text-destructive ml-1">*</span>
+            <FormField
+              // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
+              control={form.control}
+              name="active"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 mt-6">
+                  <FormControl>
+                    <Checkbox
+                      checked={Boolean(field.value)}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="text-foreground">
+                      Usuário Ativo
                     </FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange(Number(value) || null)}
-                      value={field.value?.toString() || ""}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o perfil" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {profiles.map((profile) => (
-                          <SelectItem
-                            key={profile.id}
-                            value={profile.id.toString()}
-                          >
-                            {profile.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
-                control={form.control}
-                name="active"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 mt-6">
-                    <FormControl>
-                      <Checkbox
-                        checked={Boolean(field.value)}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Usuário Ativo</FormLabel>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
           <div className="flex justify-end space-x-2 mr-4 mt-2">
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
-          </Button>
-        </div>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
+            </Button>
+          </div>
         </Card>
-
-        
       </form>
     </Form>
   );
-} 
+}

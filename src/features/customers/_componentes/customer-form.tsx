@@ -15,7 +15,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { CustomerSchema, SchemaCustomer } from "../schema/schema";
-import {  updateCustomer } from "../server/customers";
+import { updateCustomer } from "../server/customers";
 import { Card, CardContent } from "@/components/ui/card";
 import { generateSlug } from "@/lib/utils";
 import { insertCustomerFormAction } from "../_actions/customers-formActions";
@@ -25,7 +25,10 @@ interface CustomerFormProps {
   onSuccess?: (id: number) => void;
 }
 
-export default function CustomerFormm({ customer, onSuccess }: CustomerFormProps) {
+export default function CustomerFormm({
+  customer,
+  onSuccess,
+}: CustomerFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const isEditing = !!customer?.id;
 
@@ -37,7 +40,6 @@ export default function CustomerFormm({ customer, onSuccess }: CustomerFormProps
       name: customer?.name || "",
       customerId: customer?.customerId || "",
       settlementManagementType: customer?.settlementManagementType || "",
-     
     },
   });
 
@@ -49,10 +51,8 @@ export default function CustomerFormm({ customer, onSuccess }: CustomerFormProps
         toast.success("Cliente atualizado com sucesso");
         if (onSuccess) onSuccess(updatedId);
       } else {
-       
         const slug = generateSlug();
-        
-       
+
         // Corrigindo o tipo de id para ser compatível com o parâmetro esperado
         const customerDataFixed = {
           slug: slug || "",
@@ -62,7 +62,7 @@ export default function CustomerFormm({ customer, onSuccess }: CustomerFormProps
           idParent: customer?.idParent || undefined,
           id: customer?.id || undefined,
         };
-        
+
         const newId = await insertCustomerFormAction(customerDataFixed);
         toast.success("Cliente criado com sucesso");
         form.reset();
@@ -103,7 +103,10 @@ export default function CustomerFormm({ customer, onSuccess }: CustomerFormProps
                   <FormItem>
                     <FormLabel>Tipo de Gerenciamento de Liquidação</FormLabel>
                     <FormControl>
-                      <Input placeholder="Tipo de gestão (opcional)" {...field} />
+                      <Input
+                        placeholder="Tipo de gestão (opcional)"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -121,4 +124,4 @@ export default function CustomerFormm({ customer, onSuccess }: CustomerFormProps
       </form>
     </Form>
   );
-} 
+}
