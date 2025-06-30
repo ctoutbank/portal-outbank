@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartPie, Table, Users } from "lucide-react";
+import { Briefcase, ChartPie, Table, Users } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
@@ -11,6 +11,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { UserMenu } from "./user-menu";
 
@@ -30,11 +31,18 @@ const data = {
       icon: Users,
       isActive: false,
     },
-    { title: "Solicitaçoes de Taxa", url: "/solicitationfee", icon: Table , isActive: false },
+    {
+      title: "Solicitações de Taxa",
+      url: "/solicitationfee",
+      icon: Table,
+      isActive: false,
+    },
+    { title: "CNAE", url: "/categories", icon: Briefcase, isActive: false },
   ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { state } = useSidebar();
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="flex flex-col items-center">
@@ -44,9 +52,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={data.navMain} />
       </SidebarContent>
-      <SidebarFooter>
-        <UserMenu />
-      </SidebarFooter>
+      <SidebarFooter>{state !== "collapsed" && <UserMenu />}</SidebarFooter>
     </Sidebar>
   );
 }

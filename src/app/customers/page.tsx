@@ -1,7 +1,9 @@
 import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
+import PageSizeSelector from "@/components/page-size-selector";
+import PaginationRecords from "@/components/pagination-Records";
+
 import { Button } from "@/components/ui/button";
-import PaginationRecords from "@/components/ui/pagination-Records";
 
 import CustomersList from "@/features/customers/_componentes/customers-list";
 import { CustomersFilter } from "@/features/customers/_componentes/custumers-filter";
@@ -18,33 +20,44 @@ type CustomersPageProps = {
   name?: string;
   customerId?: string;
   settlementManagementType?: string;
-}
+};
 
-export default async function Customerspage({searchParams}: {searchParams: Promise<CustomersPageProps>}) {
- 
-    // Aguarda searchParams antes de acessar suas propriedades
-    const params = await searchParams;
-    
-    const page = parseInt(params.page?.toString() || "1");
-    const perPage = parseInt(params.perPage?.toString() || "10");
-   
-    const customers = await getCustomers(params.name || "", page, perPage, params.customerId || "", params.settlementManagementType || "");
- 
+export default async function Customerspage({
+  searchParams,
+}: {
+  searchParams: Promise<CustomersPageProps>;
+}) {
+  // Aguarda searchParams antes de acessar suas propriedades
+  const params = await searchParams;
 
-  
+  const page = parseInt(params.page?.toString() || "1");
+  const perPage = parseInt(params.perPage?.toString() || "10");
+
+  const customers = await getCustomers(
+    params.name || "",
+    page,
+    perPage,
+    params.customerId || "",
+    params.settlementManagementType || ""
+  );
+
   const totalCount = customers.totalCount;
-  
+
   return (
     <>
-      <BaseHeader
-        breadcrumbItems={[{ title: "Iso", url: "/customers" }]}
-      />
+      <BaseHeader breadcrumbItems={[{ title: "Iso", url: "/customers" }]} />
 
       <BaseBody title="Isos" subtitle={`visualização de todos os Isos`}>
         <div className="flex flex-col space-y-4">
           <div className="mb-1 flex items-center justify-between">
             <div className="flex-1">
-              <CustomersFilter nameIn={params.name || ""} customerIdIn={params.customerId || ""} settlementManagementTypeIn={params.settlementManagementType || ""} />
+              <CustomersFilter
+                nameIn={params.name || ""}
+                customerIdIn={params.customerId || ""}
+                settlementManagementTypeIn={
+                  params.settlementManagementType || ""
+                }
+              />
             </div>
             <Button asChild className="ml-2">
               <Link href="/customers/0">
@@ -60,21 +73,33 @@ export default async function Customerspage({searchParams}: {searchParams: Promi
             </div>
           </div>
 
-          <CustomersList Customers={{
-            customers: customers.customers.map(customer => ({
-              id: customer.id,
-              name: customer.name || "",
-              customerId: customer.customerId || "",
-              settlementManagementType: customer.settlementManagementType || "",
-              slug: customer.slug,
-              idParent: customer.idParent || 0
-            })),
-            totalCount: customers.totalCount
-          }} />
+          <CustomersList
+            Customers={{
+              customers: customers.customers.map((customer) => ({
+                id: customer.id,
+                name: customer.name || "",
+                customerId: customer.customerId || "",
+                settlementManagementType:
+                  customer.settlementManagementType || "",
+                slug: customer.slug,
+                idParent: customer.idParent || 0,
+              })),
+              totalCount: customers.totalCount,
+            }}
+          />
 
           {totalCount > 0 && (
-            <div>
-              <PaginationRecords totalRecords={totalCount} currentPage={page} pageSize={perPage} pageName="customers" />
+            <div className="flex items-center justify-between mt-4">
+              <PageSizeSelector
+                currentPageSize={perPage}
+                pageName="customers"
+              />
+              <PaginationRecords
+                totalRecords={totalCount}
+                currentPage={page}
+                pageSize={perPage}
+                pageName="customers"
+              />
             </div>
           )}
         </div>

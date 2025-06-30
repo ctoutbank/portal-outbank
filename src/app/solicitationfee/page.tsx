@@ -1,7 +1,9 @@
 import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
+import PageSizeSelector from "@/components/page-size-selector";
+import PaginationRecords from "@/components/pagination-Records";
+
 import { Button } from "@/components/ui/button";
-import PaginationRecords from "@/components/ui/pagination-Records";
 import SolicitationFeeList from "@/features/solicitationfee/_componentes/solicitationfee-list";
 import { getSolicitationFees } from "@/features/solicitationfee/server/solicitationfee";
 import { Plus } from "lucide-react";
@@ -15,32 +17,41 @@ type SolicitationFeePageProps = {
   search?: string;
   cnae?: string;
   status?: string;
-}
+};
 
-export default async function SolicitationFeePage({searchParams}: {searchParams: Promise<SolicitationFeePageProps>}) {
+export default async function SolicitationFeePage({
+  searchParams,
+}: {
+  searchParams: Promise<SolicitationFeePageProps>;
+}) {
   // Aguarda searchParams antes de acessar suas propriedades
   const params = await searchParams;
-  
+
   const page = parseInt(params.page?.toString() || "1");
   const perPage = parseInt(params.perPage?.toString() || "10");
- 
+
   const solicitationFees = await getSolicitationFees(
-    params.search || "", 
-    page, 
-    perPage, 
-    params.cnae || "", 
+    params.search || "",
+    page,
+    perPage,
+    params.cnae || "",
     params.status || ""
   );
 
   const totalCount = solicitationFees.totalCount;
-  
+
   return (
     <>
       <BaseHeader
-        breadcrumbItems={[{ title: "Solicitações de Taxas", url: "/solicitationfee" }]}
+        breadcrumbItems={[
+          { title: "Solicitações de Taxas", url: "/solicitationfee" },
+        ]}
       />
 
-      <BaseBody title="Solicitações de Taxas" subtitle="Visualização de todas as solicitações de taxas">
+      <BaseBody
+        title="Solicitações de Taxas"
+        subtitle="Visualização de todas as solicitações de taxas"
+      >
         <div className="flex flex-col space-y-4">
           <div className="mb-1 flex items-center justify-between">
             <div className="flex-1">
@@ -63,12 +74,21 @@ export default async function SolicitationFeePage({searchParams}: {searchParams:
           <SolicitationFeeList SolicitationFees={solicitationFees} />
 
           {totalCount > 0 && (
-            <div>
-              <PaginationRecords totalRecords={totalCount} currentPage={page} pageSize={perPage} pageName="solicitationfee" />
+            <div className="flex items-center justify-between mt-4">
+              <PageSizeSelector
+                currentPageSize={perPage}
+                pageName="solicitationfee"
+              />
+              <PaginationRecords
+                totalRecords={totalCount}
+                currentPage={page}
+                pageSize={perPage}
+                pageName="solicitationfee"
+              />
             </div>
           )}
         </div>
       </BaseBody>
     </>
   );
-} 
+}
