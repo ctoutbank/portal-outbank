@@ -6,17 +6,17 @@ import { getCategoryById } from "@/features/categories/server/category";
 export const revalidate = 0;
 
 export default async function CategoryDetail({
-  searchParams,
+  params,
 }: {
-  searchParams: Promise<{ id: string }>;
+  params: { id: string };
 }) {
-  const params = await searchParams;
-  const category = await getCategoryById(parseInt(params.id));
+  const id = params.id ? parseInt(params.id) : undefined;
+  const category = id ? await getCategoryById(id) : undefined;
 
   return (
     <>
       <BaseHeader
-        breadcrumbItems={[{ title: "Categorias", url: "/portal/categories" }]}
+        breadcrumbItems={[{ title: "Categorias", url: "/categories" }]}
       />
       <BaseBody
         title="Categorias"
@@ -26,7 +26,6 @@ export default async function CategoryDetail({
           categories={{
             id: category?.id,
             name: category?.name || "",
-
             slug: category?.slug || "",
             active: category?.active ?? true,
             dtinsert: category?.dtinsert

@@ -132,7 +132,7 @@ export async function getCategoryById(
     .select()
     .from(categories)
     .where(eq(categories.id, id));
-
+  console.log(result)
   return result[0] || null;
 }
 

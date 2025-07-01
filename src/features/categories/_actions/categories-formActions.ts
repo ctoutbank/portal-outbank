@@ -47,6 +47,7 @@ export async function updateCategoryFormAction(data: CategoriesSchema) {
     mcc: data.mcc || "",
     cnae: data.cnae || "",
     slug: data.slug || "",
+    idSolicitationFee: Number(data.idSolicitationFee) || 0,
   };
   await updateCategory(categoryUpdate);
   toast.success("CNAE atualizado com sucesso");

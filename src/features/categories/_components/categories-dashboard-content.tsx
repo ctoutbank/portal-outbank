@@ -21,11 +21,11 @@ export function CategoriesDashboardContent({
   return (
     <div className="w-full max-w-full">
       <div className="w-full mt-2 mb-2">
-        <Card className="w-full border-l-8 border-black bg-transparent p-6 flex justify-center items-center">
+        <Card className="w-full border-l-8 border-black dark:border-white bg-transparent dark:bg-transparent p-6 flex justify-center items-center">
           <div className="flex items-center justify-between">
             {/* Card Único de Categorias */}
             <div className="w-[500px]">
-              <Card className="bg-transparent border">
+              <Card className="bg-transparent dark:bg-transparent border">
                 <CardContent className="p-4">
                   {/* Total de Categorias */}
                   <div className="text-center mb-4">
@@ -35,7 +35,7 @@ export function CategoriesDashboardContent({
                         Total de Categorias
                       </span>
                     </div>
-                    <div className="text-2xl font-bold text-zinc-900">
+                    <div className="text-2xl font-bold text-zinc-900 dark:text-card-foreground">
                       {totalCategories}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
@@ -48,11 +48,11 @@ export function CategoriesDashboardContent({
                     <div className="text-center">
                       <div className="flex items-center justify-center gap-1 mb-1">
                         <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                        <span className="text-xs font-medium text-zinc-600">
+                        <span className="text-xs font-medium text-zinc-600 dark:text-card-foreground">
                           Ativas
                         </span>
                       </div>
-                      <div className="text-sm font-semibold text-zinc-900">
+                      <div className="text-sm font-semibold text-zinc-900 dark:text-card-foreground">
                         {activeCategories}
                       </div>
                     </div>
@@ -60,11 +60,11 @@ export function CategoriesDashboardContent({
                     <div className="text-center">
                       <div className="flex items-center justify-center gap-1 mb-1">
                         <div className="h-2 w-2 rounded-full bg-red-500" />
-                        <span className="text-xs font-medium text-zinc-600">
+                        <span className="text-xs font-medium text-zinc-600 dark:text-card-foreground">
                           Inativas
                         </span>
                       </div>
-                      <div className="text-sm font-semibold text-zinc-900">
+                      <div className="text-sm font-semibold text-zinc-900 dark:text-card-foreground">
                         {inactiveCategories}
                       </div>
                     </div>

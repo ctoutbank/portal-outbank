@@ -53,7 +53,7 @@ export default async function CategoriesPage({
   return (
     <>
       <BaseHeader
-        breadcrumbItems={[{ title: "CNAE", url: "/portal/categories" }]}
+        breadcrumbItems={[{ title: "CNAE", url: "/categories" }]}
       />
 
       <BaseBody title="CNAE" subtitle={`Visualização de Todos os CNAE`}>
@@ -68,7 +68,7 @@ export default async function CategoriesPage({
               />
             </div>
             <Button asChild className="ml-2">
-              <Link href="/portal/categories/0">
+              <Link href="/categories/0">
                 <Plus className="h-4 w-4 mr-1" />
                 Novo CNAE
               </Link>
