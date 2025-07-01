@@ -345,8 +345,10 @@ export default function CustomerWizardForm({
                           file:mr-4 file:py-2 file:px-4
                           file:rounded file:border-0
                           file:text-sm file:font-semibold
-                          file:bg-primary file:text-gray-700
-                          hover:file:bg-primary/80"
+                          file:bg-secondary file:text-gray-700 
+                          hover:file:bg-secondary/80
+                          file:cursor-pointer
+                          dark:file:bg-white"
                           />
                         </div>
 
