@@ -12,7 +12,6 @@ export const SchemaUser = z.object({
     idProfile: z.number().nullable(),
     idAddress: z.number().nullable(),
     selectedMerchants: z.array(z.string()).optional(),
-    fullAccess: z.boolean().optional(),
     active: z.boolean().default(true),
     idClerk: z.string().nullable(),
     slug: z.string().optional(),

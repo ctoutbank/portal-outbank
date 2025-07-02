@@ -11,6 +11,7 @@ export const paymentInstitutionRelations = relations(paymentInstitution, ({one, 
 
 export const customersRelations = relations(customers, ({one, many}) => ({
 	paymentInstitutions: many(paymentInstitution),
+	settlements: many(settlements),
 	customer: one(customers, {
 		fields: [customers.idParent],
 		references: [customers.id],
@@ -19,7 +20,6 @@ export const customersRelations = relations(customers, ({one, many}) => ({
 	customers: many(customers, {
 		relationName: "customers_idParent_customers_id"
 	}),
-	settlements: many(settlements),
 	merchantPixSettlementOrders: many(merchantPixSettlementOrders),
 	merchants: many(merchants),
 	customerFunctions: many(customerFunctions),

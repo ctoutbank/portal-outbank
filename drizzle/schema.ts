@@ -59,23 +59,6 @@ export const bank = pgTable("bank", {
 	number: varchar({ length: 10 }),
 });
 
-export const customers = pgTable("customers", {
-	slug: varchar({ length: 50 }).notNull(),
-	name: varchar({ length: 255 }),
-	customerId: varchar("customer_id", { length: 100 }),
-	settlementManagementType: varchar("settlement_management_type", { length: 50 }),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "customers_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	idParent: bigint("id_parent", { mode: "number" }),
-}, (table) => [
-	foreignKey({
-			columns: [table.idParent],
-			foreignColumns: [table.id],
-			name: "customers_id_parent_fkey"
-		}),
-]);
-
 export const configurations = pgTable("configurations", {
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "configurations_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
@@ -156,6 +139,24 @@ export const settlements = pgTable("settlements", {
 			columns: [table.idCustomer],
 			foreignColumns: [customers.id],
 			name: "settlements_id_customer_fkey"
+		}),
+]);
+
+export const customers = pgTable("customers", {
+	slug: varchar({ length: 50 }).notNull(),
+	name: varchar({ length: 255 }),
+	customerId: varchar("customer_id", { length: 100 }),
+	settlementManagementType: varchar("settlement_management_type", { length: 50 }),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "customers_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	idParent: bigint("id_parent", { mode: "number" }),
+	isActive: boolean("is_active").default(true),
+}, (table) => [
+	foreignKey({
+			columns: [table.idParent],
+			foreignColumns: [table.id],
+			name: "customers_id_parent_fkey"
 		}),
 ]);
 

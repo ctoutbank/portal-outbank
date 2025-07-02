@@ -24,11 +24,9 @@ export type UserInsert = {
   firstName: string;
   lastName: string;
   email: string;
-  password: string;
   idCustomer: number | null;
   idAddress: number | null;
   selectedMerchants?: string[];
-  fullAccess: boolean;
   active: boolean | null;
   idClerk: string | null;
   slug?: string;
@@ -63,7 +61,6 @@ export type UserDetail = typeof users.$inferSelect;
 export interface UserDetailForm extends UserDetail {
   firstName: string;
   lastName: string;
-  password: string;
   email: string;
   selectedMerchants?: string[];
   fullAccess: boolean;
@@ -95,7 +92,6 @@ export async function InsertUser(data: UserInsert) {
       firstName: data.firstName,
       lastName: data.lastName,
       emailAddress: [data.email],
-      password: data.password,
     });
     const profile = await db
       .select()
@@ -112,7 +108,6 @@ export async function InsertUser(data: UserInsert) {
         idCustomer: data.idCustomer,
         idProfile: profile[0].id,
         idAddress: data.idAddress,
-        fullAccess: data.fullAccess || true,
         email: data.email,
       })
       .returning({ id: users.id });
@@ -134,29 +129,6 @@ export async function InsertUser(data: UserInsert) {
     console.error("Erro ao criar usuário:", error);
 
     // Verificar se é um erro de segurança de senha
-    if (
-      error &&
-      typeof error === "object" &&
-      "status" in error &&
-      error.status === 422 &&
-      "errors" in error &&
-      Array.isArray(error.errors) &&
-      error.errors.length > 0
-    ) {
-      const passwordError = error.errors.find(
-        (e) =>
-          typeof e === "object" &&
-          e &&
-          "code" in e &&
-          e.code === "form_password_pwned"
-      );
-      if (passwordError) {
-        throw new Error(
-          "Senha comprometida: Essa senha foi encontrada em vazamentos de dados. Por favor, escolha uma senha mais segura."
-        );
-      }
-    }
-
     throw error;
   }
 }
@@ -196,7 +168,6 @@ export async function updateUserWithClerk(id: number, data: UserInsert) {
     await clerk.users.updateUser(existingUser[0].idClerk || "", {
       firstName: data.firstName,
       lastName: data.lastName,
-      ...(data.password ? { password: data.password } : {}),
     });
 
     const profile = await db
@@ -210,7 +181,6 @@ export async function updateUserWithClerk(id: number, data: UserInsert) {
         idCustomer: data.idCustomer,
         idAddress: data.idAddress,
         dtupdate: new Date().toISOString(),
-        fullAccess: data.fullAccess,
       })
       .where(eq(users.id, id));
 
@@ -261,9 +231,8 @@ export async function getUserDetailWithClerk(
       firstName: clerkUser.firstName || "",
       lastName: clerkUser.lastName || "",
       email: clerkUser.emailAddresses[0]?.emailAddress || "",
-      password: "",
       selectedMerchants,
-      fullAccess: user[0].fullAccess || true,
+      fullAccess: user[0].fullAccess || false,
     };
 
     return userDetailForm;

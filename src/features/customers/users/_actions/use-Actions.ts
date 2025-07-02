@@ -150,7 +150,6 @@ export async function updateUser(id: number, userData: UserSchema): Promise<bool
         idClerk: userData.idClerk,
         idCustomer: userData.idCustomer,
         idProfile: userData.idProfile,
-        fullAccess: userData.fullAccess,
         idAddress: userData.idAddress,
         dtupdate: new Date().toISOString(),
       })

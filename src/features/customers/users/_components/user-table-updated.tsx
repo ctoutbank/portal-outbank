@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -18,22 +18,43 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useState } from "react";
-import { deleteUser, UserDetail } from "../_actions/use-Actions";
-import { UserDetailForm, getUserDetailWithClerk } from "../_actions/user-actions";
+import { deleteUser } from "../_actions/use-Actions";
+import {getUserDetailWithClerk, UserDetailForm} from "../_actions/user-actions";
 import UserCustomerForm from "./user-form";
 
 interface UserTableProps {
-  users: UserDetail[];
+  users: UserWithClerk[];
   customerId: number;
   onRefresh?: () => void;
 }
+export type UserWithClerk = {
+  id: number;
+  slug: string | null;
+  dtinsert: string | null;
+  dtupdate: string | null;
+  active: boolean | null;         // alterado
+  idClerk: string | null;
+  idCustomer: number | null;
+  idProfile: number | null;
+  fullAccess: boolean | null;     // alterado
+  idAddress: number | null;
+  hashedPassword: string | null;
+  email: string | null;           // alterado
 
+  // Campos do Clerk
+  firstName?: string;
+  lastName?: string;
+
+  // Campos exigidos pelo formulário
+  password?: string;
+  selectedMerchants?: string[];
+};
 export default function UserTable({
   users,
   customerId,
   onRefresh,
 }: UserTableProps) {
-  const [selectedUser, setSelectedUser] = useState<UserDetailForm | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserDetailForm| null>(null);
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -48,6 +69,7 @@ export default function UserTable({
     setSelectedUser(null);
     setOpen(true);
   }
+
 
   async function handleEditUser(userId: number) {
     try {
@@ -83,17 +105,9 @@ export default function UserTable({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-2xl font-bold">Usuários</h2>
-          <p className="text-sm text-muted-foreground">
-            Gerencie os usuários do cliente
-          </p>
-        </div>
+
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger onClick={handleNewUser}>
-            <div className="h-8 px-4 py-2 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90">
-              Novo Usuário
-            </div>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -111,6 +125,14 @@ export default function UserTable({
       </div>
 
       <Card>
+        <CardHeader>
+          <div>
+            <h2 className="text-2xl font-bold">Usuários</h2>
+            <p className="text-sm text-muted-foreground">
+              Gerencie os usuários do cliente
+            </p>
+          </div>
+        </CardHeader>
         <CardContent className="pt-6">
           {isLoading ? (
             <div className="flex justify-center py-6">Carregando...</div>
@@ -128,7 +150,7 @@ export default function UserTable({
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell>{user.slug}</TableCell>
+                    <TableCell>{`${user.firstName} ${user.lastName}`.trim() || "-"}</TableCell>
                     <TableCell>
                       {user.active ? "Ativo" : "Inativo"}
                     </TableCell>
