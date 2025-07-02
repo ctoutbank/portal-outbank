@@ -1,15 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { Customerslist, deleteCustomer } from "../server/customers";
+import { Customerslist } from "../server/customers";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
-
-
-
-
 
 
 
@@ -19,16 +13,6 @@ export default function CustomersList({Customers}:{
     Customers: Customerslist
 }) {
 
-
-    const router = useRouter();
-    
-    const handleDelete = async (id: number) => {
-        const confirm = window.confirm("Tem certeza que deseja deletar este Iso?");
-        if (confirm) {
-            await deleteCustomer(id);
-            router.refresh();
-        }
-    }
 
     return (
       <div>
@@ -61,16 +45,6 @@ export default function CustomersList({Customers}:{
                     >
                       {customer.name}
                     </Link>
-                  </TableCell>
-                  
-                  <TableCell>{customer.settlementManagementType || "-"}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleDelete(customer.id)}
-                    >
-                      Excluir
-                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

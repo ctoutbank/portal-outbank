@@ -113,9 +113,9 @@ export async function saveCustomization(formData: FormData) {
   if (image) {
     const arrayBuffer = await image.arrayBuffer();
     const imageBuffer = Buffer.from(arrayBuffer);
-    const imageId = nanoid();
+    const imageId = nanoid(8);
     const extension = "png";
-    const fileType = image.type || "image/jpeg";
+    const fileType = "image/jpeg";
 
     const uploadCommand = new PutObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME,

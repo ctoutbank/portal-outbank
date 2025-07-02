@@ -4,6 +4,7 @@ import CustomerWizardForm from "@/features/customers/_componentes/customer-wizar
 
 import { getCustomerById } from "@/features/customers/server/customers";
 import { getDDProfiles } from "@/features/customers/users/_actions/user-actions";
+import DeactivateCustomerButton from "@/features/customers/_componentes/buttonIsActive";
 
 // Definir explicitamente os params
 interface PageProps {
@@ -24,7 +25,9 @@ export default async function CustomerDetail({ params }: PageProps) {
     <BaseHeader
         breadcrumbItems={[{ title: "ISOS", url: "/customers" }]}
       />
-      <BaseBody title="ISO" subtitle={`Visualização do ISO`}>
+      <BaseBody title="ISO" subtitle={`Visualização do ISO`} actions={<div className="flex items-center space-x-2">
+          <DeactivateCustomerButton />
+      </div>}>
         <CustomerWizardForm 
           customer={Customer ? {
             name: Customer.name || '',

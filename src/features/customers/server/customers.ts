@@ -165,3 +165,10 @@ export interface Customerslist {
   customers: CustomerFull[];
   totalCount: number;
 }
+
+export async function deactivateCustomer(id: number) {
+  await db
+      .update(customers)
+      .set({ isActive: false })
+      .where(eq(customers.id, id));
+}
