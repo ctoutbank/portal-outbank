@@ -47,6 +47,8 @@ export async function getCustomers(
     );
   }
 
+  whereConditions.push(eq(customers.isActive, true));
+
   // Verificamos se sortField existe em customers e se não é undefined
   let orderByClause;
   try {
@@ -101,7 +103,7 @@ export async function getCustomerById(
   const customer = await db
     .select()
     .from(customers)
-    .where(eq(customers.id, id));
+    .where(and(eq(customers.id, id), eq(customers.isActive, true)));
   return customer[0] || null;
 }
 
@@ -168,7 +170,7 @@ export interface Customerslist {
 
 export async function deactivateCustomer(id: number) {
   await db
-      .update(customers)
-      .set({ isActive: false })
-      .where(eq(customers.id, id));
+    .update(customers)
+    .set({ isActive: false })
+    .where(eq(customers.id, id));
 }
