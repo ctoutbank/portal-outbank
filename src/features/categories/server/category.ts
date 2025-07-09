@@ -2,7 +2,8 @@
 
 import { db } from "@/lib/db";
 import { asc, count, desc, eq, ilike, or, and } from "drizzle-orm";
-import { categories } from "../../../../drizzle/schema";
+import { categories, solicitationBrandProductType, solicitationFee, solicitationFeeBrand } from "../../../../drizzle/schema";
+import {insertSolicitationFee} from "@/features/solicitationfee/server/solicitationfee";
 
 
 export interface CategoryList {
@@ -26,7 +27,6 @@ export interface CategoryList {
   inactiveCount: number;
   avgWaitingPeriodCp: number;
   avgWaitingPeriodCnp: number;
-  avgAnticipationRiskFactorCp: number;
   avgAnticipationRiskFactorCnp: number;
 }
 
@@ -115,7 +115,6 @@ export async function getCategories(
     inactiveCount: categoriesList.filter(c => !c.active).length,
     avgWaitingPeriodCp: calculateAverage(categoriesList, 'waiting_period_cp'),
     avgWaitingPeriodCnp: calculateAverage(categoriesList, 'waiting_period_cnp'),
-    avgAnticipationRiskFactorCp: calculateAverage(categoriesList, 'anticipation_risk_factor_cp'),
     avgAnticipationRiskFactorCnp: calculateAverage(categoriesList, 'anticipation_risk_factor_cnp'),
   };
 }
@@ -148,7 +147,7 @@ export async function insertCategory(category: CategoryInsert) {
   return result[0].id;
 }
 
-export async function updateCategory(category: CategoryDetail): Promise<void> {
+export async function updateCategory(categoryId: number, category: CategoryDetail): Promise<void> {
   await db
     .update(categories)
     .set({
@@ -163,9 +162,131 @@ export async function updateCategory(category: CategoryDetail): Promise<void> {
       waitingPeriodCnp: category.waitingPeriodCnp,
     })
     .where(eq(categories.id, category.id));
-   
+}
+
+export async function updateCategoryWithSolicitationFeeId(categoryId: number, solicitationFeeId: number): Promise<void> {
+    await db
+        .update(categories)
+        .set({
+            idSolicitationFee: solicitationFeeId,
+            dtupdate: new Date().toISOString(),
+        })
+        .where(eq(categories.id, categoryId));
 }
 
 export async function deleteCategory(id: number): Promise<void> {
   await db.delete(categories).where(eq(categories.id, id));
+}
+
+
+
+// Tipos auxiliares para a estrutura de taxas
+export interface FeeProductType {
+    id: number;
+    name: string | null;
+    cardTransactionFee: number | null;
+    nonCardTransactionFee: number | null;
+    installmentTransactionFeeStart: number | null;
+    installmentTransactionFeeEnd: number | null;
+}
+
+export interface FeeBrand {
+    id: number;
+    brand: string | null;
+    productTypes: FeeProductType[];
+}
+
+export interface FeeDetail {
+    id: number;
+    compulsoryAnticipationConfig: number | null;
+    eventualAnticipationFee: string | number | null;
+    nonCardCompulsoryAnticipationConfig: number | null;
+    nonCardEventualAnticipationFee: string | number | null;
+    cardPixMdr: string | number | null;
+    cardPixCeilingFee: string | number | null;
+    cardPixMinimumCostFee: string | number | null;
+    nonCardPixMdr: string | number | null;
+    nonCardPixCeilingFee: string | number | null;
+    nonCardPixMinimumCostFee: string | number | null;
+    brands: FeeBrand[];
+}
+export async function getFeeDetailById(
+    idSolicitationFee: number
+): Promise<FeeDetail | null> {
+    // Busca a solicitation_fee principal
+    const feeResult = await db
+        .select()
+        .from(solicitationFee)
+        .where(eq(solicitationFee.id, idSolicitationFee));
+    if (!feeResult[0]) return null;
+    const feeData = feeResult[0];
+
+    // Busca as brands associadas
+    const brandsResult = await db
+        .select()
+        .from(solicitationFeeBrand)
+        .where(eq(solicitationFeeBrand.solicitationFeeId, idSolicitationFee));
+
+    // Para cada brand, busca os productTypes
+    const brands: FeeBrand[] = [];
+    for (const brand of brandsResult) {
+        const productTypesResult = await db
+            .select()
+            .from(solicitationBrandProductType)
+            .where(eq(solicitationBrandProductType.solicitationFeeBrandId, brand.id));
+        brands.push({
+            id: brand.id,
+            brand: brand.brand,
+            productTypes: productTypesResult.map((pt) => ({
+                id: pt.id,
+                name: pt.productType,
+                cardTransactionFee: Number(pt.feeAdmin),
+                nonCardTransactionFee: Number(pt.noCardFeeAdmin),
+                installmentTransactionFeeStart: Number(pt.transactionFeeStart),
+                installmentTransactionFeeEnd: Number(pt.transactionFeeEnd),
+            })),
+        });
+    }
+
+    return {
+        id: feeData.id,
+        compulsoryAnticipationConfig: feeData.compulsoryAnticipationConfigAdmin,
+        eventualAnticipationFee: feeData.eventualAnticipationFeeAdmin,
+        cardPixMdr: feeData.cardPixMdrAdmin,
+        cardPixCeilingFee: feeData.cardPixCeilingFeeAdmin,
+        cardPixMinimumCostFee: feeData.cardPixMinimumCostFeeAdmin,
+        nonCardPixMdr: feeData.nonCardPixMdrAdmin,
+        nonCardPixCeilingFee: feeData.nonCardPixCeilingFeeAdmin,
+        nonCardPixMinimumCostFee: feeData.nonCardPixMinimumCostFeeAdmin,
+        brands,
+        nonCardCompulsoryAnticipationConfig: feeData.compulsoryAnticipationConfig,
+        nonCardEventualAnticipationFee: feeData.nonCardEventualAnticipationFeeAdmin
+    };
+}
+
+export async function ensureSolicitationFeeForCategory(categoryId: number): Promise<number> {
+    const category = await getCategoryById(categoryId);
+
+    if (!category) {
+        throw new Error("Categoria não encontrada");
+    }
+
+    // Se já tem ID, retorna direto
+    if (category.idSolicitationFee) {
+        return category.idSolicitationFee;
+    }
+
+    // Inserir nova SolicitationFee no banco
+    const newFeeId = await insertSolicitationFee({
+        idCustomers: null,
+        status: "SEND_DOCUMENTS",
+    });
+
+    // Atualizar categoria com o novo idSolicitationFee
+    await updateCategory(categoryId, {
+        ...category,
+        idSolicitationFee: newFeeId,
+    });
+
+    return newFeeId;
 }

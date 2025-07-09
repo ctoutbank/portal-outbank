@@ -60,6 +60,7 @@ export default function SolicitationFeeList({SolicitationFees}:{
                     <Button
                       variant="destructive"
                       onClick={() => handleDelete(fee.id)}
+                      className="cursor-pointer"
                     >
                       Excluir
                     </Button>

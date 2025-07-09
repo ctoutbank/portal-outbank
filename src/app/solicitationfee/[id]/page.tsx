@@ -1,11 +1,12 @@
 import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
 import SolicitationFeeCard from "@/features/solicitationfee/_componentes/solicitationfee-card";
-import { TaxEditForm1 } from "@/features/solicitationfee/_componentes/tax-form";
 import { getSolicitationFeeById, getSolicitationFeeWithTaxes } from "@/features/solicitationfee/server/solicitationfee";
 import { brandList, SolicitationFeeProductTypeList } from "@/lib/lookuptables/lookuptables-tax";
 import { TaxEditForm, TaXEditFormSchema, SolicitationFeeBrand, SolicitationBrandProductType, FormSolicitationFee } from "@/features/solicitationfee/types/types";
 import DownloadDocumentsButton from "@/features/solicitationfee/_componentes/dowload-button";
+import PricingSolicitationForm from "@/features/pricingSolicitation/_components/pricing-solicitation-form";
+import {getPricingSolicitationById} from "@/features/pricingSolicitation/server/pricing-solicitation";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -14,7 +15,8 @@ interface PageProps {
 // Função para converter o formato retornado pela API para o formato do formulário
 async function convertToTaxEditFormSchema(Data: unknown): Promise<TaXEditFormSchema> {
   const data = Data as TaxEditForm | null;
-  
+
+
   if (!data) {
     const emptyFormData: FormSolicitationFee = {
       id: 0,
@@ -222,7 +224,14 @@ export default async function SolicitationFeeDetail({ params }: PageProps) {
   const solicitationFee = await getSolicitationFeeById(parseInt(id));
   const solicitationFeeWithTaxes = await getSolicitationFeeWithTaxes(parseInt(id));
   const formattedData = await convertToTaxEditFormSchema(solicitationFeeWithTaxes);
+
+  const mcc: string | null = solicitationFee ? solicitationFee.mcc : null;
+  const cnae: string | null = solicitationFee ? solicitationFee.cnae : null;
+
+  const pricingSolicitationById = await getPricingSolicitationById(solicitationFee?.id || 0); // ✅ adicione
+
   console.log("formattedData",formattedData)
+  console.log("pricingSolicitationById",pricingSolicitationById)
   
   return (
     <>
@@ -241,10 +250,11 @@ export default async function SolicitationFeeDetail({ params }: PageProps) {
 
         <div className="mt-8">
           {solicitationFeeWithTaxes ? (
-            <TaxEditForm1 
-              solicitationFeetax={formattedData} 
-              idsolicitationFee={parseInt(id)} 
-            />
+          <PricingSolicitationForm
+              pricingSolicitation={pricingSolicitationById}
+              mcc={mcc}
+              cnae={cnae}
+          />
           ) : (
             <p>Carregando dados de taxas...</p>
           )}

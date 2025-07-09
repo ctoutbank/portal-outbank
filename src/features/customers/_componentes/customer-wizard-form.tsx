@@ -274,6 +274,7 @@ export default function CustomerWizardForm({
               variant="outline"
               onClick={() => handleStepChange("step2")}
               disabled={!isFirstStepComplete}
+              className="cursor-pointer"
             >
               Próximo →
             </Button>
@@ -312,6 +313,7 @@ export default function CustomerWizardForm({
                         <Button
                           variant="outline"
                           onClick={() => setSelectedUser(null)}
+                          className="cursor-pointer"
                         >
                           Voltar
                         </Button>
@@ -336,10 +338,10 @@ export default function CustomerWizardForm({
             )}
           </Card>
           <div className="flex justify-between gap-2 mt-4">
-            <Button variant="outline" onClick={() => handleStepChange("step1")}>
+            <Button variant="outline" className="cursor-pointer" onClick={() => handleStepChange("step1")}>
               ← Voltar
             </Button>
-            <Button variant="outline" onClick={() => handleStepChange("step3")}>
+            <Button variant="outline" className="cursor-pointer" onClick={() => handleStepChange("step3")}>
               Próximo →
             </Button>
           </div>
@@ -347,8 +349,25 @@ export default function CustomerWizardForm({
 
         <TabsContent value="step3">
           <form
-            action={customizationData ? updateCustomization : saveCustomization}
-            className="space-y-6"
+              onSubmit={async (e) => {
+                e.preventDefault();
+
+                const formData = new FormData(e.currentTarget);
+
+                try {
+                  if (customizationData) {
+                    await updateCustomization(formData);
+                  } else {
+                    await saveCustomization(formData);
+                  }
+
+                  toast.success("Customização salva com sucesso!");
+                } catch (error) {
+                  console.error("Erro ao salvar a customização", error);
+                  toast.error("Erro ao salvar a customização");
+                }
+              }}
+              className="space-y-6"
           >
             <Card className="border-1">
               <CardHeader className="border-b border-border">
@@ -381,7 +400,7 @@ export default function CustomerWizardForm({
                                   <TooltipContent side="top" className="z-50">
                                     <p>
                                       Este será o seu endereço de acesso ao
-                                      portal: meusubdominio.consolle.one.com
+                                      portal: meusubdominio.consolle.one
                                     </p>
                                   </TooltipContent>
                                 </Tooltip>
@@ -392,10 +411,9 @@ export default function CustomerWizardForm({
                             maxLength={15}
                             value={subdomainValue}
                             onChange={(e) => {
-                              const sanitized = e.target.value.replace(
-                                /[^a-zA-Z0-9À-ÿ\s]/g,
-                                ""
-                              );
+                              const sanitized = e.target.value
+                                  .replace(/[^a-zA-Z0-9À-ÿ\s]/g, "")
+                                  .toLowerCase();
                               setSubdomainValue(sanitized);
                             }}
                             className="w-full"
@@ -420,7 +438,7 @@ export default function CustomerWizardForm({
                               file:rounded file:border-0
                               file:text-sm file:font-semibold
                               file:bg-secondary file:text-gray-700
-                              hover:file:bg-blue-400
+                              hover:file:bg-gray-300
                               file:cursor-pointer
                               dark:file:bg-white"
                           />
@@ -492,7 +510,7 @@ export default function CustomerWizardForm({
                                 ? hslToHex(customizationData.primaryColor)
                                 : "#ffffff"
                             }
-                            className="h-10 w-full p-0 border rounded"
+                            className="h-10 w-full p-0 border rounded cursor-pointer"
                           />
                         </div>
 
@@ -509,7 +527,7 @@ export default function CustomerWizardForm({
                                 ? hslToHex(customizationData.secondaryColor)
                                 : "#ffffff"
                             }
-                            className="h-10 w-full p-0 border rounded"
+                            className="h-10 w-full p-0 border rounded cursor-pointer"
                           />
                         </div>
                       </div>
@@ -532,14 +550,14 @@ export default function CustomerWizardForm({
                 </>
               )}
               <div className="flex justify-end space-x-2 mt-4 pr-3">
-                <Button type="submit" className="mt-6 p-2">
+                <Button type="submit" className="mt-6 p-2 cursor-pointer">
                   Salvar personalização
                 </Button>
               </div>
             </Card>
           </form>
           <div className="flex justify-start space-x-2 mt-4 p-1">
-            <Button variant="outline" onClick={() => handleStepChange("step2")}>
+            <Button variant="outline" className="cursor-pointer" onClick={() => handleStepChange("step2")}>
               ← Voltar
             </Button>
           </div>

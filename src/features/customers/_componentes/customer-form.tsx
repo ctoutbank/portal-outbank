@@ -147,7 +147,7 @@ export default function CustomerFormm({
               </div>
 
               <div className="flex justify-end space-x-2 mt-4">
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading} className="cursor-pointer">
                   {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
                 </Button>
               </div>

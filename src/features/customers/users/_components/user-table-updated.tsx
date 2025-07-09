@@ -166,13 +166,14 @@ export default function UserTable({
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button onClick={() => handleEditUser(user.id)} disabled={isLoading}>
+                        <Button onClick={() => handleEditUser(user.id)} disabled={isLoading} className="cursor-pointer">
                           Editar
                         </Button>
                         <Button
                           variant="destructive"
                           onClick={() => handleDeleteUser(user.id)}
                           disabled={isLoading}
+                          className="cursor-pointer"
                         >
                           Excluir
                         </Button>

@@ -30,6 +30,7 @@ export default function ThemeSwitcher() {
       aria-label={
         theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
       }
+      className="cursor-pointer"
     >
       {theme === "dark" ? (
         <Sun className="h-4 w-4" />

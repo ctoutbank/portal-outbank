@@ -25,7 +25,7 @@ export default function DeactivateCustomerButton() {
   };
 
   return (
-    <Button variant="destructive" onClick={handleClick} disabled={isPending}>
+    <Button variant="destructive" className="cursor-pointer" onClick={handleClick} disabled={isPending}>
       {isPending ? "Desativando..." : "Desativar ISO"}
     </Button>
   );
