@@ -8,17 +8,20 @@ import { getSolicitationFees } from "@/features/solicitationfee/server/solicitat
 export default async function SolicitationFeePage({
                                                     searchParams,
                                                   }: {
-  searchParams: { page?: string; perPage?: string; search?: string; cnae?: string; status?: string };
+  searchParams: Promise<{ page?: string; perPage?: string; search?: string; cnae?: string; status?: string }>;
 }) {
-  const page = parseInt(searchParams.page || "1", 10);
-  const perPage = parseInt(searchParams.perPage || "10", 10);
+  // Aguarda searchParams antes de acessar suas propriedades
+  const params = await searchParams;
+  
+  const page = parseInt(params.page || "1", 10);
+  const perPage = parseInt(params.perPage || "10", 10);
 
   const solicitationFees = await getSolicitationFees(
-      searchParams.search || "",
+      params.search || "",
       page,
       perPage,
-      searchParams.cnae || "",
-      searchParams.status || ""
+      params.cnae || "",
+      params.status || ""
   );
 
   const totalCount = solicitationFees.totalCount;
@@ -32,7 +35,7 @@ export default async function SolicitationFeePage({
           { title: "Solicitações de Taxas", url: "/solicitationfee" },
         ]}
       />
-z
+
       <BaseBody
         title="Solicitações de Taxas"
         subtitle="Visualização de todas as solicitações de taxas"

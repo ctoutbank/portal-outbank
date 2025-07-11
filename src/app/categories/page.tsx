@@ -8,7 +8,7 @@ import { getCategories } from "@/features/categories/server/category";
 export default async function CategoriesPage({
                                                  searchParams,
                                              }: {
-    searchParams: {
+    searchParams: Promise<{
         page?: string;
         perPage?: string;
         search?: string;
@@ -17,16 +17,19 @@ export default async function CategoriesPage({
         status?: string;
         sortField?: string;
         sortOrder?: "asc" | "desc";
-    };
+    }>;
 }) {
-    const page = typeof searchParams.page === "string" ? parseInt(searchParams.page, 10) : 1;
-    const perPage = typeof searchParams.perPage === "string" ? parseInt(searchParams.perPage, 10) : 10;
-    const search = typeof searchParams.search === "string" ? searchParams.search : "";
-    const sortField = typeof searchParams.sortField === "string" ? searchParams.sortField : "name";
-    const sortOrder = searchParams.sortOrder === "desc" ? "desc" : "asc";
-    const mcc = typeof searchParams.mcc === "string" ? searchParams.mcc : undefined;
-    const cnae = typeof searchParams.cnae === "string" ? searchParams.cnae : undefined;
-    const status = typeof searchParams.status === "string" ? searchParams.status : undefined;
+    // Aguarda searchParams antes de acessar suas propriedades
+    const params = await searchParams;
+    
+    const page = typeof params.page === "string" ? parseInt(params.page, 10) : 1;
+    const perPage = typeof params.perPage === "string" ? parseInt(params.perPage, 10) : 10;
+    const search = typeof params.search === "string" ? params.search : "";
+    const sortField = typeof params.sortField === "string" ? params.sortField : "name";
+    const sortOrder = params.sortOrder === "desc" ? "desc" : "asc";
+    const mcc = typeof params.mcc === "string" ? params.mcc : undefined;
+    const cnae = typeof params.cnae === "string" ? params.cnae : undefined;
+    const status = typeof params.status === "string" ? params.status : undefined;
 
     const categories = await getCategories(
         search,

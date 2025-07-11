@@ -40,11 +40,13 @@ export default async function CategoryDetailPage({ params }: PageProps) {
         active: category.active ?? false,
         mcc: category.mcc ?? "",
         cnae: category.cnae ?? "",
-        anticipation_risk_factor_cp: category.anticipationRiskFactorCp ?? "",
+        anticipation_risk_factor_cp: category.anticipationRiskFactorCp ?? 0,
         anticipation_risk_factor_cnp: category.anticipationRiskFactorCnp ?? 0,
         waiting_period_cp: category.waitingPeriodCp ?? 0,
         waiting_period_cnp: category.waitingPeriodCnp ?? 0,
         idSolicitationFee: solicitationFeeId,
+        dtinsert: category.dtinsert ?? "",
+        dtupdate: category.dtupdate ?? "",
     };
 
     return (
