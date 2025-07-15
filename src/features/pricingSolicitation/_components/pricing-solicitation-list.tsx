@@ -45,7 +45,7 @@ export default function PricingSolicitationList({
                 <TableCell>
                   <a
                     className="underline"
-                    href={`/portal/pricingSolicitation/${solicitation.id}`}
+                    href={`/solicitationfee/${solicitation.id}`}
                   >
                     {solicitation.cnae}
                   </a>

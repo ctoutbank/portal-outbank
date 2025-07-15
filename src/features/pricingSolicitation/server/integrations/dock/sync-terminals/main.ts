@@ -1,6 +1,6 @@
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 import { sql } from "drizzle-orm";
-import { terminals } from "../../../../../drizzle/schema";
+import { terminals } from "@/db/drizzle";
 import { getTerminals } from "../dock-terminals";
 import { Terminal } from "../dock-terminals-type";
 
@@ -10,8 +10,9 @@ async function getTerminalTotalCount(): Promise<number> {
       .select({ count: sql<number>`count(1)` })
       .from(terminals);
     return result[0].count || 0;
-  } catch (error: any) {
-    console.error("Erro ao obter contagem total de terminais:", error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Erro ao obter contagem total de terminais:", errorMessage);
     throw error;
   }
 }
@@ -60,8 +61,9 @@ async function saveToDatabaseBatch(terminalsData: Terminal[]) {
     console.log(
       `Lote de ${terminalsData.length} terminais sincronizado com sucesso.`
     );
-  } catch (error: any) {
-    console.error("Erro ao salvar lote no banco de dados:", error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Erro ao salvar lote no banco de dados:", errorMessage);
     throw error;
   }
 }
@@ -82,8 +84,9 @@ export async function syncTerminals() {
     } else {
       console.log("Nenhum terminal encontrado para sincronizar.");
     }
-  } catch (error: any) {
-    console.error("Erro durante a sincronização:", error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Erro durante a sincronização:", errorMessage);
     throw error;
   }
 }

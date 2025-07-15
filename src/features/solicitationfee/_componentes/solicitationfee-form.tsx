@@ -21,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { useEffect, useState } from "react";
 import { getCustomers } from "@/features/customers/server/customers";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface SolicitationFeeProps {
   solicitationFee?: SolicitationFeeDetail;
@@ -57,15 +58,58 @@ export default function SolicitationFeeForm({ solicitationFee }: SolicitationFee
 
   async function onSubmit(values: SolicitationFeeSchema) {
     try {
+      let result;
+      
       if (solicitationFee?.id) {
-        await updateSolicitationFeeFormAction(values);
+        const loadingToast = toast.loading("Atualizando solicitação...");
+        result = await updateSolicitationFeeFormAction(values);
+        console.log("Solicitação atualizada com sucesso, ID:", result);
+        toast.dismiss(loadingToast);
+        toast.success("Taxa atualizada com sucesso!");
       } else {
-        await insertSolicitationFeeFormAction(values);
+        const loadingToast = toast.loading("Criando solicitação...");
+        result = await insertSolicitationFeeFormAction(values);
+        console.log("Solicitação criada com sucesso, ID:", result);
+        toast.dismiss(loadingToast);
+        toast.success("Solicitação criada com sucesso!");
       }
-      router.push("/solicitationfee");
-      router.refresh();
+      
+      // Verificar se o resultado foi bem-sucedido
+      if (result) {
+        console.log("Operação realizada com sucesso, navegando...");
+        
+        // Aguardar um pouco para o toast ser exibido antes de navegar
+        setTimeout(() => {
+          // Usar window.location.href como método mais confiável para navegação
+          try {
+            // Primeiro tentar com router.push
+            router.push("/solicitationfee");
+            router.refresh();
+            
+            // Fallback: se após 1 segundo ainda estiver na mesma página, usar window.location
+            setTimeout(() => {
+              if (window.location.pathname !== "/solicitationfee") {
+                console.log("Router não funcionou, usando window.location.href");
+                window.location.href = "/solicitationfee";
+              }
+            }, 1000);
+            
+          } catch (navigationError) {
+            console.error("Erro na navegação com router:", navigationError);
+            // Fallback: usar window.location.href
+            window.location.href = "/solicitationfee";
+          }
+        }, 1500); // Aguardar 1.5 segundos para o toast ser exibido
+        
+      } else {
+        throw new Error("Operação não retornou resultado válido");
+      }
+      
     } catch (error) {
       console.error("Erro ao enviar formulário:", error);
+      // Em caso de erro, não navegar e mostrar mensagem de erro
+      toast.dismiss(); // Remove qualquer toast de loading
+      toast.error(`Erro ao salvar solicitação: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   }
 

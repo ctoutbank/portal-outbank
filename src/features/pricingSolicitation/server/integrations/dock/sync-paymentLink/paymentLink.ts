@@ -1,7 +1,7 @@
 "use server";
 
-import { db } from "@/server/db";
-import { paymentLink } from "../../../../../drizzle/schema";
+import { db } from "@/db/drizzle";
+import { paymentLink } from "@/db/drizzle";
 import { getIdBySlugs } from "../sync-settlements/getIdBySlugs";
 import { InsertPaymentLink, PaymentLinkObject } from "./types";
 

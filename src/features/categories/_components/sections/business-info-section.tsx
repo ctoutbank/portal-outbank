@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { forwardRef } from "react";
 import { NumericFormat } from "react-number-format";
 import { Control } from "react-hook-form";
-import { PricingSolicitationSchema } from "@/features/pricingSolicitation/schema/schema";
+import { PricingSolicitationSchemaAdmin } from "@/features/categories/schema/schema";
 
 // Create a currency input component that uses NumericFormat with R$ prefix
 const CurrencyInput = forwardRef<
@@ -39,10 +39,10 @@ const CurrencyInput = forwardRef<
 CurrencyInput.displayName = "CurrencyInput";
 
 interface BusinessInfoSectionProps {
-  control: Control<PricingSolicitationSchema>;
+  control: Control<PricingSolicitationSchemaAdmin>;
 }
 
-export function BusinessInfoSection({ control }: BusinessInfoSectionProps) {
+export function BusinessInfoSectionFeeAdmin({ control }: BusinessInfoSectionProps) {
   return (
     <div className="space-y-4">
       <h3 className="font-semibold text-lg">Informações do Negócio</h3>
@@ -92,7 +92,7 @@ export function BusinessInfoSection({ control }: BusinessInfoSectionProps) {
         <div>
           <FormField
             control={control}
-            name="cnpjsQuantity"
+            name="cnpjQuantity"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Quantidade de CNPJs</FormLabel>
@@ -107,7 +107,7 @@ export function BusinessInfoSection({ control }: BusinessInfoSectionProps) {
         <div>
           <FormField
             control={control}
-            name="ticketAverage"
+            name="averageTicket"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Ticket Médio</FormLabel>
@@ -126,7 +126,7 @@ export function BusinessInfoSection({ control }: BusinessInfoSectionProps) {
         <div>
           <FormField
             control={control}
-            name="tpvMonthly"
+            name="monthlyPosFee"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>TPV Mensal</FormLabel>

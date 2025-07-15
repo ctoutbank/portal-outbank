@@ -5,19 +5,39 @@ export type GetTransactionsResponse = {
   objects: Transaction[];
 };
 
+export type Authorizer = {
+  id: string;
+  name: string;
+};
+
+export type Terminal = {
+  id: string;
+  name: string;
+};
+
+export type Merchant = {
+  id: string;
+  name: string;
+};
+
+export type Customer = {
+  id: string;
+  name: string;
+};
+
 export type Transaction = {
   slug: string;
   active: boolean;
   dtInsert: Date;
   dtUpdate: Date;
   slugAuthorizer: string;
-  authorizer: any;
+  authorizer: Authorizer;
   slugTerminal: string;
-  terminal: any;
+  terminal: Terminal;
   slugMerchant: string;
-  merchant: any;
+  merchant: Merchant;
   slugCustomer: string;
-  customer: any;
+  customer: Customer;
   salesChannel: string;
   authorizerMerchantId: string;
   authorizerTerminalId: string;

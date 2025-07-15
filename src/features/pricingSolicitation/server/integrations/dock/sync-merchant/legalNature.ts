@@ -1,11 +1,11 @@
 "use server";
 
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 import { sql } from "drizzle-orm";
 
 import { eq } from "drizzle-orm";
 
-import { legalNatures } from "../../../../../drizzle/schema";
+import { legalNatures } from "@/db/drizzle";
 import { LegalNature } from "./types";
 
 async function updateLegalNature(

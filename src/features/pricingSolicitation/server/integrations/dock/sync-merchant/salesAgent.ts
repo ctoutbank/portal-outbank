@@ -1,8 +1,8 @@
 "use server";
 
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 import { eq, sql } from "drizzle-orm";
-import { salesAgents } from "../../../../../drizzle/schema";
+import { salesAgents } from "@/db/drizzle";
 import { saleAgent } from "./types";
 
 async function updateSaleAgent(saleAgent: saleAgent, existingSlug: string) {

@@ -1,17 +1,24 @@
 "use server"
 
-import { insertSolicitationFee, updateSolicitationFee } from "../server/solicitationfee"
+import { insertSolicitationFee, updateSolicitationFee } from "../server/solicitationfee";
 
-export async function saveOrUpdateFeeAction(data: any, id: number | null) {
+type FeeData = Record<string, unknown> & {
+    id?: number;
+
+}
+
+export async function saveOrUpdateFeeAction(data: FeeData, id: number | null) {
     try {
         const payload = {
             ...data,
             id: id ?? undefined,
         };
 
+       
+
         const savedId = id
-            ? await updateSolicitationFee(payload)
-            : await insertSolicitationFee(payload)
+            ? await updateSolicitationFee(payload as Parameters<typeof updateSolicitationFee>[0])
+            : await insertSolicitationFee(payload as Parameters<typeof insertSolicitationFee>[0])
 
         return { success: true, id: savedId }
     } catch (e) {

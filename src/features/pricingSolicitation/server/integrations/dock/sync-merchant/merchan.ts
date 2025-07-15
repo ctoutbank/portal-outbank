@@ -1,9 +1,9 @@
 "use server";
 
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 
 import { eq } from "drizzle-orm";
-import { merchants } from "../../../../../drizzle/schema";
+import { merchants } from "@/db/drizzle";
 import { getAddressId, insertAddress } from "./address";
 import { getOrCreateCategory } from "./category";
 import { getOrCreateConfiguration } from "./configuration";

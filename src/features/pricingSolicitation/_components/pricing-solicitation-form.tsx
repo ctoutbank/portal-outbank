@@ -103,7 +103,7 @@ export default function PricingSolicitationForm({
 
     // Atualizar a URL para incluir o ID da solicitação sem navegar
     // Corrigir o caminho para usar o formato correto da aplicação
-    window.history.replaceState({}, "", `/portal/pricingSolicitation/${id}`);
+            window.history.replaceState({}, "", `/solicitationfee/${id}`);
   };
 
   const form = useForm<PricingSolicitationSchema>({
@@ -192,9 +192,9 @@ export default function PricingSolicitationForm({
 
 
   // Map form data to solicitation structure
-  function mapFormDataToSolicitation(data: PricingSolicitationSchema) {
-    // Se não houver dados, retorna objeto vazio
-    if (!data) return {};
+  function mapFormDataToSolicitation(data: PricingSolicitationSchema): PricingSolicitationForm | undefined {
+    // Se não houver dados, retorna undefined
+    if (!data) return undefined;
 
     const mappedData: PricingSolicitationForm = {
       id: solicitationId || 0,
@@ -311,7 +311,7 @@ export default function PricingSolicitationForm({
       });
     } finally {
       setIsSubmitting(false);
-      router.push(`/portal/pricingSolicitation/${solicitationId}`);
+      router.push(`/solicitationfee/${solicitationId}`);
     }
   }
 
@@ -322,7 +322,7 @@ export default function PricingSolicitationForm({
     // Se uma solicitação foi criada durante o upload e temos um ID
     if (uploadSuccessful && solicitationId) {
       // Navegar para a página correta com o ID da solicitação
-      router.push(`/portal/pricingSolicitation/${solicitationId}`);
+      router.push(`/solicitationfee/${solicitationId}`);
     }
   };
 

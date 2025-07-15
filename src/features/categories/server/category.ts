@@ -125,7 +125,8 @@ function calculateAverage(categories: { waiting_period_cp: number | null; waitin
 }
 
 export async function getCategoryById(
-  id: number
+  id: number,
+  
 ): Promise<CategoryDetail | null> {
   const result = await db
     .select()
@@ -160,8 +161,9 @@ export async function updateCategory(categoryId: number, category: CategoryDetai
       anticipationRiskFactorCnp: category.anticipationRiskFactorCnp,
       waitingPeriodCp: category.waitingPeriodCp,
       waitingPeriodCnp: category.waitingPeriodCnp,
+      idSolicitationFee: category.idSolicitationFee,
     })
-    .where(eq(categories.id, category.id));
+    .where(eq(categories.id, categoryId));
 }
 
 export async function updateCategoryWithSolicitationFeeId(categoryId: number, solicitationFeeId: number): Promise<void> {
@@ -188,6 +190,7 @@ export interface FeeProductType {
     nonCardTransactionFee: number | null;
     installmentTransactionFeeStart: number | null;
     installmentTransactionFeeEnd: number | null;
+    transactionAnticipationMdr: number | null;
 }
 
 export interface FeeBrand {
@@ -198,6 +201,11 @@ export interface FeeBrand {
 
 export interface FeeDetail {
     id: number;
+    cnpjQuantity: number | null;
+    monthlyPosFee: string | number | null;
+    averageTicket: string | number | null;
+    description: string | null;
+    cnaeInUse: boolean | null;
     compulsoryAnticipationConfig: number | null;
     eventualAnticipationFee: string | number | null;
     nonCardCompulsoryAnticipationConfig: number | null;
@@ -244,12 +252,18 @@ export async function getFeeDetailById(
                 nonCardTransactionFee: Number(pt.noCardFeeAdmin),
                 installmentTransactionFeeStart: Number(pt.transactionFeeStart),
                 installmentTransactionFeeEnd: Number(pt.transactionFeeEnd),
+                transactionAnticipationMdr: Number(pt.transactionAnticipationMdr),
             })),
         });
     }
 
     return {
         id: feeData.id,
+        cnpjQuantity: feeData.cnpjQuantity,
+        monthlyPosFee: feeData.monthlyPosFee,
+        averageTicket: feeData.averageTicket,
+        description: feeData.description,
+        cnaeInUse: feeData.cnaeInUse,
         compulsoryAnticipationConfig: feeData.compulsoryAnticipationConfigAdmin,
         eventualAnticipationFee: feeData.eventualAnticipationFeeAdmin,
         cardPixMdr: feeData.cardPixMdrAdmin,

@@ -64,7 +64,7 @@ export function PricingSolicitationFilter(
       </FilterPricingSolicitationButton>
       {props.permissions?.includes("Inserir") && (
         <Button asChild className="shrink-0">
-          <Link href="/portal/pricingSolicitation/0">
+          <Link href="/solicitationfee/0">
             <Plus className="h-4 w-4" />
             Nova Solicitação de Taxas
           </Link>

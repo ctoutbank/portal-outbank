@@ -18,6 +18,25 @@ import {
 } from "../../../../drizzle/schema";
 import { AddressSchema } from "../schema/schema";
 
+interface ClerkUserData {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  emailAddresses: Array<{
+    emailAddress: string;
+  }>;
+}
+
+interface ClerkError {
+  code: string;
+  message: string;
+}
+
+interface ClerkErrorResponse {
+  status: number;
+  errors: ClerkError[];
+}
+
 export type UserInsert = {
   firstName: string;
   lastName: string;
@@ -110,7 +129,7 @@ export async function getUsers(
   }
 
   if (email && email.trim() !== "" && clerkResult.length > 0) {
-    const clerkIds = clerkResult.map((clerk: any) => clerk.id);
+    const clerkIds = (clerkResult as ClerkUserData[]).map((clerk) => clerk.id);
     conditions.push(inArray(users.idClerk, clerkIds));
   }
 
@@ -135,8 +154,8 @@ export async function getUsers(
   // Then, for each user, get their merchants
   const userObject = await Promise.all(
     userResults.map(async (dbUser) => {
-      const clerkData = clerkResult.find(
-        (clerk: any) => clerk.id === dbUser.idClerk
+      const clerkData = (clerkResult as ClerkUserData[]).find(
+        (clerk) => clerk.id === dbUser.idClerk
       );
       console.log("clerkData", clerkData);
 
@@ -268,18 +287,21 @@ export async function InsertUser(data: UserInsert) {
     revalidatePath("/portal/users");
     console.log("newUser", newUser);
     return newUser;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Erro ao criar usuário:", error);
 
     // Verificar se é um erro de segurança de senha
-    if (error.status === 422 && error.errors && error.errors.length > 0) {
-      const passwordError = error.errors.find(
-        (e: any) => e.code === "form_password_pwned"
-      );
-      if (passwordError) {
-        throw new Error(
-          "Senha comprometida: Essa senha foi encontrada em vazamentos de dados. Por favor, escolha uma senha mais segura."
+    if (error && typeof error === 'object' && 'status' in error && 'errors' in error) {
+      const clerkError = error as ClerkErrorResponse;
+      if (clerkError.status === 422 && clerkError.errors && clerkError.errors.length > 0) {
+        const passwordError = clerkError.errors.find(
+          (e: ClerkError) => e.code === "form_password_pwned"
         );
+        if (passwordError) {
+          throw new Error(
+            "Senha comprometida: Essa senha foi encontrada em vazamentos de dados. Por favor, escolha uma senha mais segura."
+          );
+        }
       }
     }
 
@@ -467,24 +489,20 @@ export async function getDDCustomers(): Promise<DD[]> {
 
 export async function getUserGroupPermissions(
   userSlug: string,
-  group: string
+ 
 ): Promise<string[]> {
   try {
     const result = await db.execute(sql`
       SELECT DISTINCT f.name
       FROM users u
-      JOIN profiles p ON u.id_profile = p.id
-      JOIN profile_functions pf ON p.id = pf.id_profile
-      JOIN functions f ON pf.id_functions = f.id
-      WHERE u.id_clerk = ${userSlug}
-        AND f."group" = ${group}
-        AND u.active = true
-        AND p.active = true
+      JOIN profile_functions pf ON u.id_profile = pf.id_profile
+      JOIN functions f ON pf.id_function = f.id
+      WHERE u.slug = ${userSlug}
         AND pf.active = true
       ORDER BY f.name
     `);
 
-    return result.rows.map((row: any) => row.name);
+    return result.rows.map((row: Record<string, unknown>) => row.name as string);
   } catch (error) {
     console.error("Error getting user group permissions:", error);
     return [];

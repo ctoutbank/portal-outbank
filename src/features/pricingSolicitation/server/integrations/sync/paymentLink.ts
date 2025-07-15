@@ -1,9 +1,9 @@
 // pages/api/syncPaymentLinks.ts
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 import { eq, or, gte, desc } from "drizzle-orm";
-import { paymentLink, syncLog } from "../../../../drizzle/schema"; // Esquemas das tabelas
+import { paymentLink, syncLog } from "@/db/drizzle"; // Esquemas das tabelas
 
 //
 // Tipos de dados utilizados
@@ -292,8 +292,9 @@ export async function syncPaymentLinks(): Promise<void> {
         await deleteAPIPaymentLink(local.slug);
         await markPaymentLinkAsSynced(local.slug);
         console.log(`Deleted payment link ${local.slug} from external API`);
-      } catch (error: any) {
-        console.error(`Error deleting payment link ${local.slug}: ${error.message}`);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`Error deleting payment link ${local.slug}: ${errorMessage}`);
       }
     } else if (local.modified) {
       try {
@@ -302,8 +303,9 @@ export async function syncPaymentLinks(): Promise<void> {
         await updateLocalPaymentLinkFromAPI(response);
         totalUpdated++;
         console.log(`Upserted payment link ${local.slug} to external API`);
-      } catch (error: any) {
-        console.error(`Error upserting payment link ${local.slug}: ${error.message}`);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`Error upserting payment link ${local.slug}: ${errorMessage}`);
       }
     }
   }
@@ -347,8 +349,9 @@ export default async function handler(
     res.status(200).json({
       message: "Payment link sync completed successfully.",
     });
-  } catch (error: any) {
-    console.error("Sync failed:", error.message);
-    res.status(500).json({ error: error.message });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Sync failed:", errorMessage);
+    res.status(500).json({ error: errorMessage });
   }
 }

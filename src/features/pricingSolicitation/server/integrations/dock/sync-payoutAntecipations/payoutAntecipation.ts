@@ -1,5 +1,5 @@
-import { db } from "@/server/db";
-import { payoutAntecipations } from "../../../../../drizzle/schema";
+import { db } from "@/db/drizzle";
+import { payoutAntecipations } from "@/db/drizzle";
 import { getOrCreateCustomer } from "../sync-settlements/customer";
 import { getIdBySlugs } from "../sync-settlements/getIdBySlugs";
 import { getOrCreateMerchants } from "../sync-settlements/merchant";

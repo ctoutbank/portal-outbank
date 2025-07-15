@@ -122,70 +122,89 @@ export async function getPricingSolicitationById(
 ): Promise<PricingSolicitationForm | null> {
 
   console.log("getPricingSolicitationById", id);
-  const pricingSolicitation = await db.execute(sql`
-    SELECT 
-      sf.id,
-      sf.cnae,
-      sf.mcc,
-      sf.cnpj_quantity as "cnpjQuantity",
-      sf.status,
-      sf.dtinsert,
-      sf.dtupdate,
-      sf.slug,
-      sf.id_customers as "idCustomers",
-      sf.monthly_pos_fee as "monthlyPosFee",
-      sf.average_ticket as "averageTicket",
-      sf.description,
-      sf.cnae_in_use as "cnaeInUse",
-      sf.card_pix_mdr as "cardPixMdr",
-      sf.card_pix_ceiling_fee as "cardPixCeilingFee",
-      sf.card_pix_minimum_cost_fee as "cardPixMinimumCostFee",
-      sf.eventual_anticipation_fee as "eventualAnticipationFee",
-      sf.non_card_pix_mdr as "nonCardPixMdr",
-      sf.non_card_pix_ceiling_fee as "nonCardPixCeilingFee",
-      sf.non_card_pix_minimum_cost_fee as "nonCardPixMinimumCostFee",
-      sf.non_card_eventual_anticipation_fee as "nonCardEventualAnticipationFee",
-      sf.card_pix_mdr_admin as "cardPixMdrAdmin",
-      sf.card_pix_ceiling_fee_admin as "cardPixCeilingFeeAdmin",
-      sf.card_pix_minimum_cost_fee_admin as "cardPixMinimumCostFeeAdmin",
-      sf.eventual_anticipation_fee_admin as "eventualAnticipationFeeAdmin",
-      sf.non_card_pix_mdr_admin as "nonCardPixMdrAdmin",
-      sf.non_card_pix_ceiling_fee_admin as "nonCardPixCeilingFeeAdmin",
-      sf.non_card_pix_minimum_cost_fee_admin as "nonCardPixMinimumCostFeeAdmin",
-      sf.non_card_eventual_anticipation_fee_admin as "nonCardEventualAnticipationFeeAdmin",
-      json_agg(
-        json_build_object(
-          'name', sfb.brand,
-          'productTypes', (
-            SELECT json_agg(
-              json_build_object(
-                'name', sbpt.product_type,
-                'fee', sbpt.fee,
-                'feeAdmin', sbpt.fee_admin,
-                'feeDock', sbpt.fee_dock,
-                'transactionFeeStart', sbpt.transaction_fee_start,
-                'transactionFeeEnd', sbpt.transaction_fee_end,
-                'noCardFee', sbpt.no_card_fee,
-                'noCardFeeAdmin', sbpt.no_card_fee_admin,
-                'noCardFeeDock', sbpt.no_card_fee_dock,
-                'noCardTransactionAnticipationMdr', sbpt.no_card_transaction_anticipation_mdr,
-                'transactionAnticipationMdr', sbpt.transaction_anticipation_mdr
-              )
-            )
-            FROM ${solicitationBrandProductType} sbpt
-            WHERE sbpt.solicitation_fee_brand_id = sfb.id
-          )
-        )
-      ) as brands
-    FROM ${solicitationFee} sf
-    LEFT JOIN ${solicitationFeeBrand} sfb ON sf.id = sfb.solicitation_fee_id
-    WHERE sf.id = ${id}
-    GROUP BY sf.id
-  `);
+  
+  try {
+    const pricingSolicitation = await db.execute(sql`
+      SELECT 
+        sf.id,
+        sf.cnae,
+        sf.mcc,
+        sf.cnpj_quantity as "cnpjQuantity",
+        sf.status,
+        sf.dtinsert,
+        sf.dtupdate,
+        sf.slug,
+        sf.id_customers as "idCustomers",
+        sf.monthly_pos_fee as "monthlyPosFee",
+        sf.average_ticket as "averageTicket",
+        sf.description,
+        sf.cnae_in_use as "cnaeInUse",
+        sf.card_pix_mdr as "cardPixMdr",
+        sf.card_pix_ceiling_fee as "cardPixCeilingFee",
+        sf.card_pix_minimum_cost_fee as "cardPixMinimumCostFee",
+        sf.eventual_anticipation_fee as "eventualAnticipationFee",
+        sf.non_card_pix_mdr as "nonCardPixMdr",
+        sf.non_card_pix_ceiling_fee as "nonCardPixCeilingFee",
+        sf.non_card_pix_minimum_cost_fee as "nonCardPixMinimumCostFee",
+        sf.non_card_eventual_anticipation_fee as "nonCardEventualAnticipationFee",
+        sf.card_pix_mdr_admin as "cardPixMdrAdmin",
+        sf.card_pix_ceiling_fee_admin as "cardPixCeilingFeeAdmin",
+        sf.card_pix_minimum_cost_fee_admin as "cardPixMinimumCostFeeAdmin",
+        sf.eventual_anticipation_fee_admin as "eventualAnticipationFeeAdmin",
+        sf.non_card_pix_mdr_admin as "nonCardPixMdrAdmin",
+        sf.non_card_pix_ceiling_fee_admin as "nonCardPixCeilingFeeAdmin",
+        sf.non_card_pix_minimum_cost_fee_admin as "nonCardPixMinimumCostFeeAdmin",
+        sf.non_card_eventual_anticipation_fee_admin as "nonCardEventualAnticipationFeeAdmin",
+        COALESCE(
+          json_agg(
+            CASE 
+              WHEN sfb.id IS NOT NULL THEN
+                json_build_object(
+                  'name', sfb.brand,
+                  'productTypes', (
+                    SELECT COALESCE(
+                      json_agg(
+                        json_build_object(
+                          'name', sbpt.product_type,
+                          'fee', sbpt.fee,
+                          'feeAdmin', sbpt.fee_admin,
+                          'feeDock', sbpt.fee_dock,
+                          'transactionFeeStart', sbpt.transaction_fee_start,
+                          'transactionFeeEnd', sbpt.transaction_fee_end,
+                          'noCardFee', sbpt.no_card_fee,
+                          'noCardFeeAdmin', sbpt.no_card_fee_admin,
+                          'noCardFeeDock', sbpt.no_card_fee_dock,
+                          'noCardTransactionAnticipationMdr', sbpt.no_card_transaction_anticipation_mdr,
+                          'transactionAnticipationMdr', sbpt.transaction_anticipation_mdr
+                        )
+                      ), '[]'::json
+                    )
+                    FROM ${solicitationBrandProductType} sbpt
+                    WHERE sbpt.solicitation_fee_brand_id = sfb.id
+                  )
+                )
+              ELSE NULL
+            END
+          ) FILTER (WHERE sfb.id IS NOT NULL), '[]'::json
+        ) as brands
+      FROM ${solicitationFee} sf
+      LEFT JOIN ${solicitationFeeBrand} sfb ON sf.id = sfb.solicitation_fee_id
+      WHERE sf.id = ${id}
+      GROUP BY sf.id
+    `);
 
-  console.log("pricingSolicitation", pricingSolicitation);
+    console.log("pricingSolicitation", pricingSolicitation);
 
-  return pricingSolicitation.rows[0] as unknown as PricingSolicitationForm;
+    if (!pricingSolicitation.rows || pricingSolicitation.rows.length === 0) {
+      console.log("Nenhum resultado encontrado para ID:", id);
+      return null;
+    }
+
+    return pricingSolicitation.rows[0] as unknown as PricingSolicitationForm;
+  } catch (error) {
+    console.error("Erro na consulta getPricingSolicitationById:", error);
+    throw error;
+  }
 }
 
 export async function insertPricingSolicitation(

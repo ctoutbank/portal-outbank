@@ -8,9 +8,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Control } from "react-hook-form";
+import { PricingSolicitationSchema } from "@/features/pricingSolicitation/schema/schema";
 
 interface DetailsSectionProps {
-  control: any;
+  control: Control<PricingSolicitationSchema>;
 }
 
 export function DetailsSection({ control }: DetailsSectionProps) {

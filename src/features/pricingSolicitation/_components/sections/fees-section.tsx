@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { FormControl, FormField } from "@/components/ui/form"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -8,9 +8,11 @@ import { SolicitationFeeProductTypeList } from "@/lib/lookuptables/lookuptables"
 import { brandList } from "@/lib/lookuptables/lookuptables-transactions"
 import type { CSSProperties } from "react"
 import { useWatch } from "react-hook-form"
+import { Control } from "react-hook-form";
+import { PricingSolicitationSchema } from "@/features/pricingSolicitation/schema/schema";
 
 interface FeesSectionProps {
-  control: any
+  control: Control<PricingSolicitationSchema>
   isReadOnly?: boolean
   isNewSolicitation?: boolean
   hideFeeAdmin?: boolean
@@ -43,8 +45,8 @@ function PercentageInput({
                            placeholder,
                            className,
                          }: {
-  value: string
-  onChange: (e: any) => void
+  value: string | undefined
+  onChange: (value: string) => void
   placeholder: string
   className?: string
 }) {
@@ -86,8 +88,8 @@ function CurrencyInput({
                          placeholder,
                          className,
                        }: {
-  value: string
-  onChange: (e: any) => void
+  value: string | undefined
+  onChange: (value: string) => void
   placeholder: string
   className?: string
 }) {
@@ -129,7 +131,7 @@ function POSBrandTable({
                          isNewSolicitation = false,
                          hideFeeAdmin = false,
                        }: {
-  control: any
+  control: Control<PricingSolicitationSchema>
   isReadOnly?: boolean
   isNewSolicitation?: boolean
   hideFeeAdmin?: boolean
@@ -148,22 +150,25 @@ function POSBrandTable({
                 Bandeiras
               </TableHead>
               {paymentTypes.map((type, index) => (
-                  <>
+                  <React.Fragment key={`payment-type-${type.value}-${index}`}>
                     <TableHead
-                        key={`${type.value}-fee-${index}`}
                         className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border"
                     >
                       {type.label}
                     </TableHead>
                     {!isNewSolicitation && !hideFeeAdmin && (
                         <TableHead
-                            key={`${type.value}-feeAdmin-${index}`}
                             className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border"
                         >
                           {type.label}
                         </TableHead>
                     )}
-                  </>
+                    <TableHead
+                        className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border bg-green-100 dark:bg-green-900/30"
+                    >
+                      {type.label} Dock
+                    </TableHead>
+                  </React.Fragment>
               ))}
             </TableRow>
           </TableHeader>
@@ -185,16 +190,15 @@ function POSBrandTable({
                     </div>
                   </TableCell>
                   {paymentTypes.map((type, typeIndex) => (
-                      <>
+                      <React.Fragment key={`pos-brand-${brand.value}-${type.value}-${typeIndex}`}>
                         <TableCell
-                            key={`${brand.value}-${type.value}-fee-${typeIndex}`}
                             className="p-1 text-center border-r border-border"
                         >
                           {isReadOnly ? (
                               <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
                         <span>
                           {brandsValues?.[brandIndex]?.productTypes?.[typeIndex]?.fee
-                              ? `${brandsValues[brandIndex].productTypes[typeIndex].fee}%`
+                              ? `${brandsValues[brandIndex].productTypes[typeIndex].fee || ""}%`
                               : "-"}
                         </span>
                               </div>
@@ -219,7 +223,6 @@ function POSBrandTable({
                         </TableCell>
                         {!isNewSolicitation && !hideFeeAdmin && (
                             <TableCell
-                                key={`${brand.value}-${type.value}-feeAdmin-${typeIndex}`}
                                 className="p-1 text-center border-r border-border"
                             >
                               {isReadOnly ? (
@@ -250,7 +253,37 @@ function POSBrandTable({
                               )}
                             </TableCell>
                         )}
-                      </>
+                        <TableCell
+                            className="p-1 text-center border-r border-border bg-green-100 dark:bg-green-900/30"
+                        >
+                          {isReadOnly ? (
+                              <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-green-100 dark:bg-green-900/30 text-foreground border border-border">
+                        <span>
+                          {brandsValues?.[brandIndex]?.productTypes?.[typeIndex]?.feeDock
+                              ? `${brandsValues[brandIndex].productTypes[typeIndex].feeDock}%`
+                              : "-"}
+                        </span>
+                              </div>
+                          ) : (
+                              <FormField
+                                  control={control}
+                                  name={`brands.${brandIndex}.productTypes.${typeIndex}.feeDock`}
+                                  render={({ field }) => (
+                                      <FormControl>
+                                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-green-100 dark:bg-green-900/30 text-foreground border border-border">
+                                          <PercentageInput
+                                              value={field.value}
+                                              onChange={field.onChange}
+                                              placeholder="0%"
+                                              className="border-0 p-0 h-auto text-center w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                                          />
+                                        </div>
+                                      </FormControl>
+                                  )}
+                              />
+                          )}
+                        </TableCell>
+                      </React.Fragment>
                   ))}
                 </TableRow>
             ))}
@@ -267,7 +300,7 @@ function OnlineBrandTable({
                             isNewSolicitation = false,
                             hideFeeAdmin = false,
                           }: {
-  control: any
+  control: Control<PricingSolicitationSchema>
   isReadOnly?: boolean
   isNewSolicitation?: boolean
   hideFeeAdmin?: boolean
@@ -286,22 +319,25 @@ function OnlineBrandTable({
                 Bandeiras
               </TableHead>
               {paymentTypes.map((type, index) => (
-                  <>
+                  <React.Fragment key={`online-payment-type-${type.value}-${index}`}>
                     <TableHead
-                        key={`${type.value}-online-fee-${index}`}
                         className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border"
                     >
                       {type.label}
                     </TableHead>
                     {!isNewSolicitation && !hideFeeAdmin && (
                         <TableHead
-                            key={`${type.value}-online-feeAdmin-${index}`}
                             className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border"
                         >
                           {type.label}
                         </TableHead>
                     )}
-                  </>
+                    <TableHead
+                        className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border bg-green-100 dark:bg-green-900/30"
+                    >
+                      {type.label} Dock
+                    </TableHead>
+                  </React.Fragment>
               ))}
             </TableRow>
           </TableHeader>
@@ -323,9 +359,8 @@ function OnlineBrandTable({
                     </div>
                   </TableCell>
                   {paymentTypes.map((type, typeIndex) => (
-                      <>
+                      <React.Fragment key={`online-brand-${brand.value}-${type.value}-${typeIndex}`}>
                         <TableCell
-                            key={`${brand.value}-${type.value}-noCardFee-${typeIndex}`}
                             className="p-1 text-center border-r border-border"
                         >
                           {isReadOnly ? (
@@ -357,7 +392,6 @@ function OnlineBrandTable({
                         </TableCell>
                         {!isNewSolicitation && !hideFeeAdmin && (
                             <TableCell
-                                key={`${brand.value}-${type.value}-noCardFeeAdmin-${typeIndex}`}
                                 className="p-1 text-center border-r border-border"
                             >
                               {isReadOnly ? (
@@ -388,7 +422,37 @@ function OnlineBrandTable({
                               )}
                             </TableCell>
                         )}
-                      </>
+                        <TableCell
+                            className="p-1 text-center border-r border-border bg-green-100 dark:bg-green-900/30"
+                        >
+                          {isReadOnly ? (
+                              <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-green-100 dark:bg-green-900/30 text-foreground border border-border">
+                        <span>
+                          {brandsValues?.[brandIndex]?.productTypes?.[typeIndex]?.noCardFeeDock
+                              ? `${brandsValues[brandIndex].productTypes[typeIndex].noCardFeeDock}%`
+                              : "-"}
+                        </span>
+                              </div>
+                          ) : (
+                              <FormField
+                                  control={control}
+                                  name={`brands.${brandIndex}.productTypes.${typeIndex}.noCardFeeDock`}
+                                  render={({ field }) => (
+                                      <FormControl>
+                                        <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-green-100 dark:bg-green-900/30 text-foreground border border-border">
+                                          <PercentageInput
+                                              value={field.value}
+                                              onChange={field.onChange}
+                                              placeholder="0%"
+                                              className="border-0 p-0 h-auto text-center w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                                          />
+                                        </div>
+                                      </FormControl>
+                                  )}
+                              />
+                          )}
+                        </TableCell>
+                      </React.Fragment>
                   ))}
                 </TableRow>
             ))}
@@ -399,25 +463,31 @@ function OnlineBrandTable({
 }
 
 // PIX Fees Component
-function PIXFeesSection({ control, isReadOnly = false }: { control: any; isReadOnly?: boolean }) {
+function PIXFeesSection({ control, isReadOnly = false }: { control: Control<PricingSolicitationSchema>; isReadOnly?: boolean }) {
   const cardPixMdr = useWatch({ control, name: "cardPixMdr" })
+  const cardPixMdrAdmin = useWatch({ control, name: "cardPixMdrAdmin" })
   const cardPixMinimumCostFee = useWatch({
     control,
     name: "cardPixMinimumCostFee",
   })
+  const cardPixMinimumCostFeeAdmin = useWatch({ control, name: "cardPixMinimumCostFeeAdmin" })
   const cardPixCeilingFee = useWatch({ control, name: "cardPixCeilingFee" })
+  const cardPixCeilingFeeAdmin = useWatch({ control, name: "cardPixCeilingFeeAdmin" })
   const eventualAnticipationFee = useWatch({
     control,
     name: "eventualAnticipationFee",
   })
+  const eventualAnticipationFeeAdmin = useWatch({ control, name: "eventualAnticipationFeeAdmin" })
 
   return (
       <div className="mt-12 mb-6">
         <h3 className="text-lg font-medium mb-4 text-foreground">PIX</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* MDR */}
           <div>
             <h4 className="font-medium mb-2 text-foreground">MDR</h4>
             <div className="flex gap-2">
+              {/* Solicitado */}
               <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{cardPixMdr ? `${cardPixMdr}%` : "-"}</span>
@@ -438,11 +508,34 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: any; isReadO
                     />
                 )}
               </div>
+              {/* Admin */}
+              <div className="rounded-full py-2 px-4 bg-yellow-100 dark:bg-yellow-900/30 text-foreground border border-border inline-block">
+                {isReadOnly ? (
+                    <span>{cardPixMdrAdmin ? `${cardPixMdrAdmin}%` : "-"}</span>
+                ) : (
+                    <FormField
+                        control={control}
+                        name="cardPixMdrAdmin"
+                        render={({ field }) => (
+                            <FormControl>
+                              <PercentageInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="0,01%"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                              />
+                            </FormControl>
+                        )}
+                    />
+                )}
+              </div>
             </div>
           </div>
+          {/* Custo Mínimo */}
           <div>
             <h4 className="font-medium mb-2 text-foreground">Custo Mínimo</h4>
             <div className="flex gap-2">
+              {/* Solicitado */}
               <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{cardPixMinimumCostFee ? `R$ ${cardPixMinimumCostFee}` : "-"}</span>
@@ -463,11 +556,34 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: any; isReadO
                     />
                 )}
               </div>
+              {/* Admin */}
+              <div className="rounded-full py-2 px-4 bg-yellow-100 dark:bg-yellow-900/30 text-foreground border border-border inline-block">
+                {isReadOnly ? (
+                    <span>{cardPixMinimumCostFeeAdmin ? `R$ ${cardPixMinimumCostFeeAdmin}` : "-"}</span>
+                ) : (
+                    <FormField
+                        control={control}
+                        name="cardPixMinimumCostFeeAdmin"
+                        render={({ field }) => (
+                            <FormControl>
+                              <CurrencyInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="R$ 0,09"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                              />
+                            </FormControl>
+                        )}
+                    />
+                )}
+              </div>
             </div>
           </div>
+          {/* Custo Máximo */}
           <div>
             <h4 className="font-medium mb-2 text-foreground">Custo Máximo</h4>
             <div className="flex gap-2">
+              {/* Solicitado */}
               <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{cardPixCeilingFee ? `R$ ${cardPixCeilingFee}` : "-"}</span>
@@ -488,11 +604,34 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: any; isReadO
                     />
                 )}
               </div>
+              {/* Admin */}
+              <div className="rounded-full py-2 px-4 bg-yellow-100 dark:bg-yellow-900/30 text-foreground border border-border inline-block">
+                {isReadOnly ? (
+                    <span>{cardPixCeilingFeeAdmin ? `R$ ${cardPixCeilingFeeAdmin}` : "-"}</span>
+                ) : (
+                    <FormField
+                        control={control}
+                        name="cardPixCeilingFeeAdmin"
+                        render={({ field }) => (
+                            <FormControl>
+                              <CurrencyInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="R$ 0,09"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                              />
+                            </FormControl>
+                        )}
+                    />
+                )}
+              </div>
             </div>
           </div>
+          {/* Antecipação */}
           <div>
             <h4 className="font-medium mb-2 text-foreground">Antecipação</h4>
             <div className="flex gap-2">
+              {/* Solicitado */}
               <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{eventualAnticipationFee ? `${eventualAnticipationFee}%` : "-"}</span>
@@ -500,6 +639,27 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: any; isReadO
                     <FormField
                         control={control}
                         name="eventualAnticipationFee"
+                        render={({ field }) => (
+                            <FormControl>
+                              <PercentageInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="1,67%"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                              />
+                            </FormControl>
+                        )}
+                    />
+                )}
+              </div>
+              {/* Admin */}
+              <div className="rounded-full py-2 px-4 bg-yellow-100 dark:bg-yellow-900/30 text-foreground border border-border inline-block">
+                {isReadOnly ? (
+                    <span>{eventualAnticipationFeeAdmin ? `${eventualAnticipationFeeAdmin}%` : "-"}</span>
+                ) : (
+                    <FormField
+                        control={control}
+                        name="eventualAnticipationFeeAdmin"
                         render={({ field }) => (
                             <FormControl>
                               <PercentageInput
@@ -521,28 +681,34 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: any; isReadO
 }
 
 // NonCardPIXFeesSection Component for PIX without card
-function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: any; isReadOnly?: boolean }) {
+function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: Control<PricingSolicitationSchema>; isReadOnly?: boolean }) {
   const nonCardPixMdr = useWatch({ control, name: "nonCardPixMdr" })
+  const nonCardPixMdrAdmin = useWatch({ control, name: "nonCardPixMdrAdmin" })
   const nonCardPixMinimumCostFee = useWatch({
     control,
     name: "nonCardPixMinimumCostFee",
   })
+  const nonCardPixMinimumCostFeeAdmin = useWatch({ control, name: "nonCardPixMinimumCostFeeAdmin" })
   const nonCardPixCeilingFee = useWatch({
     control,
     name: "nonCardPixCeilingFee",
   })
+  const nonCardPixCeilingFeeAdmin = useWatch({ control, name: "nonCardPixCeilingFeeAdmin" })
   const nonCardEventualAnticipationFee = useWatch({
     control,
     name: "nonCardEventualAnticipationFee",
   })
+  const nonCardEventualAnticipationFeeAdmin = useWatch({ control, name: "nonCardEventualAnticipationFeeAdmin" })
 
   return (
       <div className="mt-8 mb-6">
         <h3 className="text-lg font-medium mb-4 text-foreground">PIX sem Cartão</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* MDR */}
           <div>
             <h4 className="font-medium mb-2 text-foreground">MDR</h4>
             <div className="flex gap-2">
+              {/* Solicitado */}
               <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{nonCardPixMdr ? `${nonCardPixMdr}%` : "-"}</span>
@@ -563,11 +729,34 @@ function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: any; 
                     />
                 )}
               </div>
+              {/* Admin */}
+              <div className="rounded-full py-2 px-4 bg-yellow-100 dark:bg-yellow-900/30 text-foreground border border-border inline-block">
+                {isReadOnly ? (
+                    <span>{nonCardPixMdrAdmin ? `${nonCardPixMdrAdmin}%` : "-"}</span>
+                ) : (
+                    <FormField
+                        control={control}
+                        name="nonCardPixMdrAdmin"
+                        render={({ field }) => (
+                            <FormControl>
+                              <PercentageInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="0,01%"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                              />
+                            </FormControl>
+                        )}
+                    />
+                )}
+              </div>
             </div>
           </div>
+          {/* Custo Mínimo */}
           <div>
             <h4 className="font-medium mb-2 text-foreground">Custo Mínimo</h4>
             <div className="flex gap-2">
+              {/* Solicitado */}
               <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{nonCardPixMinimumCostFee ? `R$ ${nonCardPixMinimumCostFee}` : "-"}</span>
@@ -588,11 +777,34 @@ function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: any; 
                     />
                 )}
               </div>
+              {/* Admin */}
+              <div className="rounded-full py-2 px-4 bg-yellow-100 dark:bg-yellow-900/30 text-foreground border border-border inline-block">
+                {isReadOnly ? (
+                    <span>{nonCardPixMinimumCostFeeAdmin ? `R$ ${nonCardPixMinimumCostFeeAdmin}` : "-"}</span>
+                ) : (
+                    <FormField
+                        control={control}
+                        name="nonCardPixMinimumCostFeeAdmin"
+                        render={({ field }) => (
+                            <FormControl>
+                              <CurrencyInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="R$ 0,09"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                              />
+                            </FormControl>
+                        )}
+                    />
+                )}
+              </div>
             </div>
           </div>
+          {/* Custo Máximo */}
           <div>
             <h4 className="font-medium mb-2 text-foreground">Custo Máximo</h4>
             <div className="flex gap-2">
+              {/* Solicitado */}
               <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{nonCardPixCeilingFee ? `R$ ${nonCardPixCeilingFee}` : "-"}</span>
@@ -613,11 +825,34 @@ function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: any; 
                     />
                 )}
               </div>
+              {/* Admin */}
+              <div className="rounded-full py-2 px-4 bg-yellow-100 dark:bg-yellow-900/30 text-foreground border border-border inline-block">
+                {isReadOnly ? (
+                    <span>{nonCardPixCeilingFeeAdmin ? `R$ ${nonCardPixCeilingFeeAdmin}` : "-"}</span>
+                ) : (
+                    <FormField
+                        control={control}
+                        name="nonCardPixCeilingFeeAdmin"
+                        render={({ field }) => (
+                            <FormControl>
+                              <CurrencyInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="R$ 0,09"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                              />
+                            </FormControl>
+                        )}
+                    />
+                )}
+              </div>
             </div>
           </div>
+          {/* Antecipação */}
           <div>
             <h4 className="font-medium mb-2 text-foreground">Antecipação</h4>
             <div className="flex gap-2">
+              {/* Solicitado */}
               <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{nonCardEventualAnticipationFee ? `${nonCardEventualAnticipationFee}%` : "-"}</span>
@@ -625,6 +860,27 @@ function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: any; 
                     <FormField
                         control={control}
                         name="nonCardEventualAnticipationFee"
+                        render={({ field }) => (
+                            <FormControl>
+                              <PercentageInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="1,67%"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                              />
+                            </FormControl>
+                        )}
+                    />
+                )}
+              </div>
+              {/* Admin */}
+              <div className="rounded-full py-2 px-4 bg-yellow-100 dark:bg-yellow-900/30 text-foreground border border-border inline-block">
+                {isReadOnly ? (
+                    <span>{nonCardEventualAnticipationFeeAdmin ? `${nonCardEventualAnticipationFeeAdmin}%` : "-"}</span>
+                ) : (
+                    <FormField
+                        control={control}
+                        name="nonCardEventualAnticipationFeeAdmin"
                         render={({ field }) => (
                             <FormControl>
                               <PercentageInput
@@ -665,6 +921,10 @@ export function FeesSection({
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 border border-border"></div>
                 <span className="text-sm text-muted-foreground">Oferecido pelo Outbank</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30 border border-border"></div>
+                <span className="text-sm text-muted-foreground">Dock</span>
               </div>
             </div>
         )}

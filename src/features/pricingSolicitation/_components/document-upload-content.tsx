@@ -2,14 +2,21 @@
 
 import FileUpload from "@/components/fileUpload";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { insertPricingSolicitation } from "@/features/pricingSolicitation/server/pricing-solicitation";
+import { PricingSolicitationForm, insertPricingSolicitation } from "@/features/pricingSolicitation/server/pricing-solicitation";
 import { getFilesByFileType } from "../../categories/server/upload";
 import { useEffect, useRef, useState } from "react";
 
 interface DocumentUploadContentProps {
   solicitationId?: number | null;
-  pricingSolicitationData?: any;
+  pricingSolicitationData?: PricingSolicitationForm;
   onSolicitationCreated?: (id: number) => void; // Callback quando a solicitação é criada
+}
+
+interface UploadedDocument {
+  id: number;
+  fileName: string;
+  fileUrl: string;
+  extension: string;
 }
 
 export function DocumentUploadContent({
@@ -21,7 +28,7 @@ export function DocumentUploadContent({
     number | null
   >(solicitationId || null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([]);
+  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const initialLoadComplete = useRef(false);
 
@@ -120,7 +127,7 @@ export function DocumentUploadContent({
       );
 
       const newSolicitationId = await insertPricingSolicitation(
-        pricingSolicitationData
+        pricingSolicitationData as PricingSolicitationForm
       );
 
       // Armazenar o ID da solicitação criada

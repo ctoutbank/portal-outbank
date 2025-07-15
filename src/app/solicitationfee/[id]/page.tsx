@@ -220,18 +220,19 @@ async function convertToTaxEditFormSchema(Data: unknown): Promise<TaXEditFormSch
 }
 
 export default async function SolicitationFeeDetail({ params }: PageProps) {
-  const { id } = await params;
-  const solicitationFee = await getSolicitationFeeById(parseInt(id));
-  const solicitationFeeWithTaxes = await getSolicitationFeeWithTaxes(parseInt(id));
-  const formattedData = await convertToTaxEditFormSchema(solicitationFeeWithTaxes);
+  try {
+    const { id } = await params;
+    const solicitationFee = await getSolicitationFeeById(parseInt(id));
+    const solicitationFeeWithTaxes = await getSolicitationFeeWithTaxes(parseInt(id));
+    const formattedData = await convertToTaxEditFormSchema(solicitationFeeWithTaxes);
 
-  const mcc: string | null = solicitationFee ? solicitationFee.mcc : null;
-  const cnae: string | null = solicitationFee ? solicitationFee.cnae : null;
+    const mcc: string | null = solicitationFee ? solicitationFee.mcc : null;
+    const cnae: string | null = solicitationFee ? solicitationFee.cnae : null;
 
-  const pricingSolicitationById = await getPricingSolicitationById(solicitationFee?.id || 0); // ✅ adicione
+    const pricingSolicitationById = await getPricingSolicitationById(solicitationFee?.id || 0);
 
-  console.log("formattedData",formattedData)
-  console.log("pricingSolicitationById",pricingSolicitationById)
+    console.log("formattedData",formattedData)
+    console.log("pricingSolicitationById",pricingSolicitationById)
   
   return (
     <>
@@ -262,4 +263,20 @@ export default async function SolicitationFeeDetail({ params }: PageProps) {
       </BaseBody>
     </>
   );
+  } catch (error) {
+    console.error("Erro ao carregar solicitação de taxa:", error);
+    return (
+      <>
+        <BaseHeader
+          breadcrumbItems={[{ title: "Solicitações de Taxas", url: "/solicitationfee" }]}
+        />
+        <BaseBody title="Erro" subtitle="Erro ao carregar solicitação de taxa">
+          <div className="mt-8">
+            <p>Erro ao carregar a solicitação de taxa. Tente novamente.</p>
+            <p>Detalhes do erro: {error instanceof Error ? error.message : 'Erro desconhecido'}</p>
+          </div>
+        </BaseBody>
+      </>
+    );
+  }
 } 

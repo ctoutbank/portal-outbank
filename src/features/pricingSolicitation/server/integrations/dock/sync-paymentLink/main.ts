@@ -1,6 +1,9 @@
 "use server";
 import { insertPaymentLinkAndRelations } from "./paymentLink";
 import { PaymentLinkObject, PaymentLinkResponse } from "./types";
+import { db } from "@/db/drizzle";
+import { paymentLink, merchants } from "@/db/drizzle";
+import { eq, inArray, and, isNotNull } from "drizzle-orm";
 
 async function fetchPaymentLink() {
   let offset = 0;
@@ -48,11 +51,6 @@ async function atualizarLinksExistentes(
   linksAPI: PaymentLinkObject[]
 ): Promise<number> {
   try {
-    // Importar db e esquemas necessários
-    const { db } = await import("@/server/db");
-    const { paymentLink } = await import("../../../../../drizzle/schema");
-    const { eq, inArray } = await import("drizzle-orm");
-
     // Pegar todos os slugs para buscar eficientemente
     const slugs = linksAPI.map((link) => link.slug);
 
@@ -170,11 +168,6 @@ export async function syncPaymentLink() {
 // Função para marcar links excluídos
 async function marcarLinksExcluidos(): Promise<number> {
   try {
-    // Importar db e esquemas necessários
-    const { db } = await import("@/server/db");
-    const { paymentLink } = await import("../../../../../drizzle/schema");
-    const { and, eq, inArray, isNotNull } = await import("drizzle-orm");
-
     // 1. Buscar todos os links ativos no banco local
     const linksLocais = await db
       .select({
@@ -196,7 +189,7 @@ async function marcarLinksExcluidos(): Promise<number> {
 
     // 2. Criar conjunto com slugs existentes na API
     const linksAPI = await fetchPaymentLink();
-    const slugsAPI = new Set(linksAPI.map((link) => link.slug));
+    const slugsAPI = new Set(linksAPI.map((link: PaymentLinkObject) => link.slug));
 
     // 3. Identificar links que não existem mais na API
     const linksExcluidos: number[] = [];
@@ -228,13 +221,6 @@ async function marcarLinksExcluidos(): Promise<number> {
 // Função para atualizar links modificados localmente na API
 async function atualizarLinksModificados(): Promise<number> {
   try {
-    // Importar db e esquemas necessários
-    const { db } = await import("@/server/db");
-    const { paymentLink, merchants } = await import(
-      "../../../../../drizzle/schema"
-    );
-    const { and, eq, isNotNull } = await import("drizzle-orm");
-
     // 1. Buscar links marcados como modificados
     const linksModificados = await db
       .select()
@@ -263,7 +249,7 @@ async function atualizarLinksModificados(): Promise<number> {
           .where(eq(merchants.id, link.idMerchant || 0));
 
         // Preparar dados para API
-        const updateData = {
+        const updateData: UpdatePaymentLinkData = {
           linkName: link.linkName || "",
           totalAmount: link.totalAmount || "0",
           documentId: merchant?.idDocument || "0MerchantDock1",
@@ -298,8 +284,32 @@ async function atualizarLinksModificados(): Promise<number> {
   }
 }
 
+type UpdatePaymentLinkData = {
+  linkName: string;
+  totalAmount: string;
+  documentId: string;
+  dtExpiration: string;
+  productType: string;
+  installments: number;
+};
+
+type UpdatePaymentLinkResponse = {
+  slug: string;
+  active: boolean;
+  dtInsert: string;
+  dtUpdate: string;
+  linkName: string;
+  dtExpiration: string;
+  totalAmount: string;
+  slugMerchant: string;
+  paymentLinkStatus: string;
+  productType: string;
+  installments: number;
+  linkUrl: string;
+};
+
 // Função para atualizar um link específico na API
-async function updateAPIPaymentLink(slug: string, data: any): Promise<any> {
+async function updateAPIPaymentLink(slug: string, data: UpdatePaymentLinkData): Promise<UpdatePaymentLinkResponse> {
   const response = await fetch(
     `https://serviceorder.acquiring.hml.dock.tech/v1/external_payment_links/${slug}`,
     {

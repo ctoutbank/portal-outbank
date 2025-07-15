@@ -1,12 +1,13 @@
 "use server";
 
-import { db } from "@/server/db";
+
 import { and, eq, isNotNull, max } from "drizzle-orm";
-import { cronJobMonitoring, payout } from "../../../../../drizzle/schema";
+
 import { getOrCreateCustomer } from "../sync-settlements/customer";
 import { getIdBySlugs } from "../sync-settlements/getIdBySlugs";
 import { getOrCreateMerchants } from "../sync-settlements/merchant";
 import { InsertPayout, Payout } from "./types";
+import { cronJobMonitoring, db, payout } from "@/db/drizzle";
 
 export async function insertPayoutAndRelations(payoutList: Payout[], lastSyncDate: Date, monitoringId: number) {
   try {

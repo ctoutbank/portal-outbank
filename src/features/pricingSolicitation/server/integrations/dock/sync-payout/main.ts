@@ -4,11 +4,11 @@ import {
   currentDateTimeUTC,
   parseToUTC,
   toAPIFilterUTC,
-} from "@/lib/datetime-utils";
-import { db } from "@/server/db";
+} from "@/lib/utils";
+import { db } from "@/db/drizzle";
 import { eq } from "drizzle-orm";
 import { DateTime } from "luxon";
-import { cronJobMonitoring } from "../../../../../drizzle/schema";
+import { cronJobMonitoring } from "@/db/drizzle";
 import { getPayoutSyncConfig, insertPayoutAndRelations } from "./payout";
 import { Payout, PayoutResponse } from "./types";
 

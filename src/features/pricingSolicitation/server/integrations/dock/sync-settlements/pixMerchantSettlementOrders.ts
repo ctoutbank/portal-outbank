@@ -1,7 +1,7 @@
 "use server";
 
-import { db } from "@/server/db";
-import { merchantPixSettlementOrders } from "../../../../../drizzle/schema";
+import { db } from "@/db/drizzle";
+import { merchantPixSettlementOrders } from "@/db/drizzle";
 import { getIdBySlugs } from "./getIdBySlugs";
 import {
   InsertPixMerchantSettlementOrders,

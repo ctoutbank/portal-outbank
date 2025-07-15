@@ -1,8 +1,8 @@
 "use server";
 
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 import { eq, sql } from "drizzle-orm";
-import { categories } from "../../../../../drizzle/schema";
+import { categories } from "@/db/drizzle";
 import { category } from "./types";
 
 async function updateCategory(category: category, existingSlug: string) {

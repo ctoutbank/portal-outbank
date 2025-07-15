@@ -32,6 +32,18 @@ type Customer = {
   name: string;
 };
 
+type Authorizer = {
+  slug: string;
+  name: string;
+  active: boolean;
+};
+
+type Terminal = {
+  slug: string;
+  name: string;
+  active: boolean;
+};
+
 export type Metadata = {
   limit: number;
   offset: number;
@@ -49,9 +61,9 @@ export type Transaction = {
   dtInsert: Date;
   dtUpdate: Date;
   slugAuthorizer: string;
-  authorizer: any;
+  authorizer: Authorizer;
   slugTerminal: string;
-  terminal: any;
+  terminal: Terminal;
   slugMerchant: string;
   merchant: Merchant;
   slugCustomer: string;
@@ -90,8 +102,9 @@ async function fetchData(offset: number) {
     const data: GetTransactionsResponse = await response.json();
     console.log(data);
     return data.objects;
-  } catch (error: any) {
-    console.error("Error fetching API data:", error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error fetching API data:", errorMessage);
     throw error;
   }
 }
@@ -106,8 +119,9 @@ async function getTransactionTotalCount(): Promise<number> {
     const result = await client.query(query);
     console.log("Total count:", result.rows[0].count);
     return result.rows[0].count || 0;
-  } catch (error: any) {
-    console.error("Error getting transaction total count:", error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error getting transaction total count:", errorMessage);
     throw error;
   } finally {
     await client.end();
@@ -194,8 +208,9 @@ async function saveToDatabaseBatch(transactions: Transaction[]) {
     // Execute the query
     await client.query(query, values);
     console.log(`Batch of ${transactions.length} transactions inserted.`);
-  } catch (error: any) {
-    console.error("Error saving batch to database:", error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error saving batch to database:", errorMessage);
   } finally {
     await client.end();
   }
@@ -229,7 +244,8 @@ export async function syncTransactions() {
       startTime: new Date().toISOString(),
       logMessage: `Finalizado`,
     });
-  } catch (error: any) {
-    console.error("Error during execution:", error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error during execution:", errorMessage);
   }
 }

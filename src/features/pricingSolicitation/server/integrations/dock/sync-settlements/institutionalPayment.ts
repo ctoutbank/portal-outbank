@@ -1,9 +1,9 @@
 "use server";
 
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 import { sql, eq } from "drizzle-orm";
 import { PaymentInstitution } from "./types";
-import { paymentInstitution } from "../../../../../drizzle/schema";
+import { paymentInstitution } from "@/db/drizzle";
 
 async function insertPaymentInstitution(
   paymentInstitutions: PaymentInstitution,

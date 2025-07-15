@@ -1,6 +1,6 @@
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 import { eq } from "drizzle-orm";
-import { merchantPrice, merchantPriceGroup, merchantTransactionPrice } from "../../../../../drizzle/schema";
+import { merchantPrice, merchantPriceGroup, merchantTransactionPrice } from "@/db/drizzle";
 import { MerchantPriceGroup, TransactionPrice } from "./types";
 
 export async function getMerchantPriceIdBySlug(slug: string) {
@@ -43,12 +43,12 @@ export async function insertTransactionPrices(
     installmentTransactionFeeStart: price.installmentTransactionFeeStart,
     installmentTransactionFeeEnd: price.installmentTransactionFeeEnd,
     cardTransactionFee: price.cardTransactionFee,
-    cardTransactionMdr: price.cardTransactionMdr,
+    cardTransactionMdr: price.cardTransactionMdr.toString(),
     nonCardTransactionFee: price.nonCardTransactionFee,
-    nonCardTransactionMdr: price.nonCardTransactionMdr,
+    nonCardTransactionMdr: price.nonCardTransactionMdr.toString(),
     producttype: price.productType,
-    idMerchantPriceGroup: BigInt(idMerchantPriceGroup),
-  })) as any;
+    idMerchantPriceGroup: Number(idMerchantPriceGroup),
+  }));
 
   await db.insert(merchantTransactionPrice).values(values);
 }

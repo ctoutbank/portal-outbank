@@ -1,9 +1,9 @@
 "use server";
 
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 
 import { eq, sql } from "drizzle-orm";
-import { configurations } from "../../../../../drizzle/schema";
+import { configurations } from "@/db/drizzle";
 import { configuration } from "./types";
 
 async function updateConfiguration(

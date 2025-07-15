@@ -50,6 +50,14 @@ export const schemaPricingSolicitation = z
     noCardTransactionAnticipationMdr: z.string().optional(),
     noCardFeeAdmin: z.string().optional(),
     noCardFeeDock: z.string().optional(),
+    cardPixMdrDock: z.string().optional(),
+    cardPixCeilingFeeDock: z.string().optional(),
+    cardPixMinimumCostFeeDock: z.string().optional(),
+    eventualAnticipationFeeDock: z.string().optional(),
+    nonCardPixMdrDock: z.string().optional(),
+    nonCardPixCeilingFeeDock: z.string().optional(),
+    nonCardPixMinimumCostFeeDock: z.string().optional(),
+    nonCardEventualAnticipationFeeDock: z.string().optional(),
   })
   .refine(
     (data) => {

@@ -357,6 +357,19 @@ export function getPreviousPeriodFromRange(
   };
 }
 
+export function currentDateTimeUTC(): string {
+  return DateTime.utc().toISO();
+}
+
+export function parseToUTC(dateString: string): DateTime {
+  return DateTime.fromISO(dateString, { zone: 'utc' });
+}
+
+export function toAPIFilterUTC(date: DateTime | string): string {
+  const dt = typeof date === 'string' ? DateTime.fromISO(date, { zone: 'utc' }) : date;
+  return dt.toFormat('yyyy-MM-dd');
+}
+
 export function handleNumericInput(
     event: React.KeyboardEvent<HTMLInputElement>,
     maxLength: number

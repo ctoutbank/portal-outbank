@@ -1,8 +1,8 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { db } from "@/server/db";
-import { state, city } from "../../../../drizzle/schema";
+import { db } from "@/db/drizzle";
+import { state, city } from "@/db/drizzle";
 
 type Region = {
   id: number;

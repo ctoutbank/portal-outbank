@@ -1,8 +1,8 @@
 "use server";
 
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 import { eq, sql } from "drizzle-orm";
-import { merchantpixaccount } from "../../../../../drizzle/schema";
+import { merchantpixaccount } from "@/db/drizzle";
 import { getIdBySlug } from "./getslug";
 import { Merchant, merchantPixAccounts } from "./types";
 

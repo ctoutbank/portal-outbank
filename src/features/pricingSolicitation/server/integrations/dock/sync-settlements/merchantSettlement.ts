@@ -1,7 +1,7 @@
 "use server";
 
-import { db } from "@/server/db";
-import { merchantSettlements } from "../../../../../drizzle/schema";
+import { db } from "@/db/drizzle";
+import { merchantSettlements } from "@/db/drizzle";
 import { getIdBySlugs } from "./getIdBySlugs";
 import { InsertSettlementObject, SettlementObject } from "./types";
 

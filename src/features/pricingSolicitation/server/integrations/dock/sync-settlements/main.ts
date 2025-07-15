@@ -1,6 +1,6 @@
 "use server";
-import { getOrCreateMerchants } from "@/server/integrations/dock/sync-settlements/merchant";
-import { truncateSettlementTables } from "@/server/integrations/dock/sync-settlements/truncate-table";
+import { getOrCreateMerchants } from "../sync-settlements/merchant";
+import { truncateSettlementTables } from "../sync-settlements/truncate-table";
 import { insertMerchantSettlementAndRelations } from "./merchantSettlement";
 import { insertMerchantSettlementOrdersAndRelations } from "./merchantSettlementOrders";
 import { insertPixMerchantSettlementOrdersAndRelations } from "./pixMerchantSettlementOrders";

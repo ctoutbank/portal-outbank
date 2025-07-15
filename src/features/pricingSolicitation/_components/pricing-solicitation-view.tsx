@@ -1,6 +1,7 @@
 "use client";
 
-import { sendPricingSolicitationEmail } from "@/app/utils/send-email-adtivo";
+import React from "react";
+import { sendPricingSolicitationEmail } from "@/utils/send-email-adtivo";
 import FileUpload from "@/components/fileUpload";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +63,53 @@ interface ProductType {
 interface Brand {
   name: string;
   productTypes?: ProductType[];
+}
+
+// Tipo para normalizar os campos da solicitação
+interface NormalizedPricingSolicitation extends Omit<PricingSolicitationForm, 'cnpjQuantity' | 'averageTicket' | 'monthlyPosFee' | 'cnaeInUse' | 'cardPixMdr' | 'cardPixCeilingFee' | 'cardPixMinimumCostFee' | 'eventualAnticipationFee' | 'cardPixMdrAdmin' | 'cardPixCeilingFeeAdmin' | 'cardPixMinimumCostFeeAdmin' | 'eventualAnticipationFeeAdmin' | 'nonCardPixMdr' | 'nonCardPixCeilingFee' | 'nonCardPixMinimumCostFee' | 'nonCardEventualAnticipationFee' | 'nonCardPixMdrAdmin' | 'nonCardPixCeilingFeeAdmin' | 'nonCardPixMinimumCostFeeAdmin' | 'nonCardEventualAnticipationFeeAdmin'> {
+  // Campos originais
+  cnpjQuantity?: number | null;
+  averageTicket?: string | null;
+  monthlyPosFee?: string | null;
+  cnaeInUse?: boolean | null;
+  cardPixMdr?: string | null;
+  cardPixCeilingFee?: string | null;
+  cardPixMinimumCostFee?: string | null;
+  eventualAnticipationFee?: string | null;
+  cardPixMdrAdmin?: string | null;
+  cardPixCeilingFeeAdmin?: string | null;
+  cardPixMinimumCostFeeAdmin?: string | null;
+  eventualAnticipationFeeAdmin?: string | null;
+  nonCardPixMdr?: string | null;
+  nonCardPixCeilingFee?: string | null;
+  nonCardPixMinimumCostFee?: string | null;
+  nonCardEventualAnticipationFee?: string | null;
+  nonCardPixMdrAdmin?: string | null;
+  nonCardPixCeilingFeeAdmin?: string | null;
+  nonCardPixMinimumCostFeeAdmin?: string | null;
+  nonCardEventualAnticipationFeeAdmin?: string | null;
+  
+  // Campos com underscore (do banco de dados)
+  cnpj_quantity?: number | null;
+  average_ticket?: string | null;
+  monthly_pos_fee?: string | null;
+  cnae_in_use?: boolean | null;
+  card_pix_mdr?: string | null;
+  card_pix_ceiling_fee?: string | null;
+  card_pix_minimum_cost_fee?: string | null;
+  eventual_anticipation_fee?: string | null;
+  card_pix_mdr_admin?: string | null;
+  card_pix_ceiling_fee_admin?: string | null;
+  card_pix_minimum_cost_fee_admin?: string | null;
+  eventual_anticipation_fee_admin?: string | null;
+  non_card_pix_mdr?: string | null;
+  non_card_pix_ceiling_fee?: string | null;
+  non_card_pix_minimum_cost_fee?: string | null;
+  non_card_eventual_anticipation_fee?: string | null;
+  non_card_pix_mdr_admin?: string | null;
+  non_card_pix_ceiling_fee_admin?: string | null;
+  non_card_pix_minimum_cost_fee_admin?: string | null;
+  non_card_eventual_anticipation_fee_admin?: string | null;
 }
 
 const getCardImage = (cardName: string): string => {
@@ -171,7 +219,7 @@ export function PricingSolicitationView({
     // Se uma solicitação foi criada durante o upload e temos um ID
     if (uploadSuccessful && pricingSolicitation.id) {
       // Navegar para a página correta com o ID da solicitação
-      router.push(`/portal/pricingSolicitation/${pricingSolicitation.id}`);
+              router.push(`/solicitationfee/${pricingSolicitation.id}`);
     }
   };
   // feesData agora garante todas as bandeiras e tipos, mesmo que não existam no banco
@@ -272,74 +320,74 @@ export function PricingSolicitationView({
 
   // Você pode sim criar uma constante que normaliza toda a estrutura, facilitando o acesso aos campos independentemente do formato do nome.
   // Exemplo de normalização dos campos em uma única constante:
-  const normalized = {
+  const normalized: NormalizedPricingSolicitation = {
     ...pricingSolicitation,
     cnpjQuantity:
-      (pricingSolicitation as any).cnpj_quantity ??
+      (pricingSolicitation as NormalizedPricingSolicitation).cnpj_quantity ??
       pricingSolicitation.cnpjQuantity,
     averageTicket:
-      (pricingSolicitation as any).average_ticket ??
+      (pricingSolicitation as NormalizedPricingSolicitation).average_ticket ??
       pricingSolicitation.averageTicket,
     monthlyPosFee:
-      (pricingSolicitation as any).monthly_pos_fee ??
+      (pricingSolicitation as NormalizedPricingSolicitation).monthly_pos_fee ??
       pricingSolicitation.monthlyPosFee,
     cnaeInUse:
-      (pricingSolicitation as any).cnae_in_use ?? pricingSolicitation.cnaeInUse,
+      (pricingSolicitation as NormalizedPricingSolicitation).cnae_in_use ?? pricingSolicitation.cnaeInUse,
 
     // PIX com cartão
     cardPixMdr:
-      (pricingSolicitation as any).card_pix_mdr ??
+      (pricingSolicitation as NormalizedPricingSolicitation).card_pix_mdr ??
       pricingSolicitation.cardPixMdr,
     cardPixCeilingFee:
-      (pricingSolicitation as any).card_pix_ceiling_fee ??
+      (pricingSolicitation as NormalizedPricingSolicitation).card_pix_ceiling_fee ??
       pricingSolicitation.cardPixCeilingFee,
     cardPixMinimumCostFee:
-      (pricingSolicitation as any).card_pix_minimum_cost_fee ??
+      (pricingSolicitation as NormalizedPricingSolicitation).card_pix_minimum_cost_fee ??
       pricingSolicitation.cardPixMinimumCostFee,
     eventualAnticipationFee:
-      (pricingSolicitation as any).eventualAnticipationFee ??
-      (pricingSolicitation as any).eventual_anticipation_fee,
+      (pricingSolicitation as NormalizedPricingSolicitation).eventual_anticipation_fee ??
+      (pricingSolicitation as NormalizedPricingSolicitation).eventual_anticipation_fee,
 
     // Novos campos Admin para PIX com cartão
     cardPixMdrAdmin:
-      (pricingSolicitation as any).card_pix_mdr_admin ??
+      (pricingSolicitation as NormalizedPricingSolicitation).card_pix_mdr_admin ??
       pricingSolicitation.cardPixMdrAdmin,
     cardPixCeilingFeeAdmin:
-      (pricingSolicitation as any).card_pix_ceiling_fee_admin ??
+      (pricingSolicitation as NormalizedPricingSolicitation).card_pix_ceiling_fee_admin ??
       pricingSolicitation.cardPixCeilingFeeAdmin,
     cardPixMinimumCostFeeAdmin:
-      (pricingSolicitation as any).card_pix_minimum_cost_fee_admin ??
+      (pricingSolicitation as NormalizedPricingSolicitation).card_pix_minimum_cost_fee_admin ??
       pricingSolicitation.cardPixMinimumCostFeeAdmin,
     eventualAnticipationFeeAdmin:
-      (pricingSolicitation as any).eventual_anticipation_fee_admin ??
+      (pricingSolicitation as NormalizedPricingSolicitation).eventual_anticipation_fee_admin ??
       pricingSolicitation.eventualAnticipationFeeAdmin,
 
     // PIX sem cartão
     nonCardPixMdr:
-      (pricingSolicitation as any).non_card_pix_mdr ??
+      (pricingSolicitation as NormalizedPricingSolicitation).non_card_pix_mdr ??
       pricingSolicitation.nonCardPixMdr,
     nonCardPixCeilingFee:
-      (pricingSolicitation as any).non_card_pix_ceiling_fee ??
+      (pricingSolicitation as NormalizedPricingSolicitation).non_card_pix_ceiling_fee ??
       pricingSolicitation.nonCardPixCeilingFee,
     nonCardPixMinimumCostFee:
-      (pricingSolicitation as any).non_card_pix_minimum_cost_fee ??
+      (pricingSolicitation as NormalizedPricingSolicitation).non_card_pix_minimum_cost_fee ??
       pricingSolicitation.nonCardPixMinimumCostFee,
     nonCardEventualAnticipationFee:
-      (pricingSolicitation as any).nonCardEventualAnticipationFee ??
-      (pricingSolicitation as any).non_card_eventual_anticipation_fee,
+      (pricingSolicitation as NormalizedPricingSolicitation).nonCardEventualAnticipationFee ??
+      (pricingSolicitation as NormalizedPricingSolicitation).non_card_eventual_anticipation_fee,
 
     // Novos campos Admin para PIX sem cartão
     nonCardPixMdrAdmin:
-      (pricingSolicitation as any).non_card_pix_mdr_admin ??
+      (pricingSolicitation as NormalizedPricingSolicitation).non_card_pix_mdr_admin ??
       pricingSolicitation.nonCardPixMdrAdmin,
     nonCardPixCeilingFeeAdmin:
-      (pricingSolicitation as any).non_card_pix_ceiling_fee_admin ??
+      (pricingSolicitation as NormalizedPricingSolicitation).non_card_pix_ceiling_fee_admin ??
       pricingSolicitation.nonCardPixCeilingFeeAdmin,
     nonCardPixMinimumCostFeeAdmin:
-      (pricingSolicitation as any).non_card_pix_minimum_cost_fee_admin ??
+      (pricingSolicitation as NormalizedPricingSolicitation).non_card_pix_minimum_cost_fee_admin ??
       pricingSolicitation.nonCardPixMinimumCostFeeAdmin,
     nonCardEventualAnticipationFeeAdmin:
-      (pricingSolicitation as any).non_card_eventual_anticipation_fee_admin ??
+      (pricingSolicitation as NormalizedPricingSolicitation).non_card_eventual_anticipation_fee_admin ??
       pricingSolicitation.nonCardEventualAnticipationFeeAdmin,
   };
 
@@ -570,27 +618,24 @@ export function PricingSolicitationView({
                         Bandeiras
                       </TableHead>
                       {SolicitationFeeProductTypeList.map((type, index) => (
-                        <>
+                        <React.Fragment key={`view-payment-type-${type.value}-${index}`}>
                           <TableHead
-                            key={`${type.value}-feeAdmin-${index}`}
                             className="text-center"
                             style={{ width: "9%", minWidth: "50px" }}
                           >
                             {type.label}
                           </TableHead>
                           <TableHead
-                            key={`${type.value}-diff-${index}`}
                             className="text-center text-xs"
                             style={{ width: "7%", minWidth: "50px" }}
                           ></TableHead>
                           <TableHead
-                            key={`${type.value}-fee-${index}`}
                             className="text-center"
                             style={{ width: "9%", minWidth: "50px" }}
                           >
                             {type.label}
                           </TableHead>
-                        </>
+                        </React.Fragment>
                       ))}
                     </TableRow>
                   </TableHeader>
@@ -631,9 +676,8 @@ export function PricingSolicitationView({
                             feeAdmin && fee ? (feeAdmin - fee).toFixed(2) : "-";
 
                           return (
-                            <>
+                            <React.Fragment key={`view-brand-${item.brand.value}-${productType.value}-${typeIndex}`}>
                               <TableCell
-                                key={`${item.brand.value}-${productType.value}-feeAdmin-${typeIndex}`}
                                 className="p-1 text-center"
                               >
                                 <div className="flex items-center justify-center">
@@ -645,7 +689,6 @@ export function PricingSolicitationView({
                                 </div>
                               </TableCell>
                               <TableCell
-                                key={`${item.brand.value}-${productType.value}-diff-${typeIndex}`}
                                 className="p-1 text-center"
                               >
                                 <div className="text-[10px] text-gray-600 font-medium">
@@ -653,7 +696,6 @@ export function PricingSolicitationView({
                                 </div>
                               </TableCell>
                               <TableCell
-                                key={`${item.brand.value}-${productType.value}-fee-${typeIndex}`}
                                 className="p-1 text-center"
                               >
                                 <div className="rounded-full py-1 px-2 inline-block min-w-[50px] max-w-[70px] text-center bg-blue-100 text-xs sm:text-sm">
@@ -662,7 +704,7 @@ export function PricingSolicitationView({
                                     : "-"}
                                 </div>
                               </TableCell>
-                            </>
+                            </React.Fragment>
                           );
                         })}
                       </TableRow>

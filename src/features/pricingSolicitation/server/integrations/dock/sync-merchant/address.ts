@@ -1,7 +1,7 @@
 "use server";
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 import { and, eq } from "drizzle-orm";
-import { addresses } from "../../../../../drizzle/schema";
+import { addresses } from "@/db/drizzle";
 import { Address } from "./types";
 
 async function updateAddress(address: Address, existingId: number) {

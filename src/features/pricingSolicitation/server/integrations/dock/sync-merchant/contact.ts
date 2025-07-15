@@ -1,7 +1,7 @@
 "use server";
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 import { eq } from "drizzle-orm";
-import { contacts } from "../../../../../drizzle/schema";
+import { contacts } from "@/db/drizzle";
 import { insertAddress } from "./address";
 import { getIdBySlug } from "./getslug";
 import { Address, contact, Merchant } from "./types";

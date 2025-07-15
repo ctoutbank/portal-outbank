@@ -1,9 +1,9 @@
 "use server";
 
-import { db } from "@/server/db";
+import { db } from "@/db/drizzle";
 import { sql } from "drizzle-orm";
 import { eq } from "drizzle-orm";
-import { merchantPrice, merchants } from "../../../../../drizzle/schema";
+import { merchantPrice, merchants } from "@/db/drizzle";
 import { MerchantPrice } from "./types";
 
 async function insertMerchantPrice(merchantPriceData: MerchantPrice, merchantSlug: string) {
