@@ -61,7 +61,7 @@ export default function SolicitationFeeCard({ solicitationFee }: SolicitationFee
               <Label htmlFor="tpvMensal">TPV Mensal:</Label>
               <Input
                 id="tpvMensal"
-                value={"-"}
+                value={solicitationFee?.monthlyPosFee?.toString() || "-"}
                 readOnly
               />
             </div>
