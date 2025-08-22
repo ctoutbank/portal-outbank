@@ -215,6 +215,7 @@ export default function UserCustomerForm({
                     <Checkbox
                       checked={Boolean(field.value)}
                       onCheckedChange={field.onChange}
+                      className="cursor-pointer"
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
@@ -228,7 +229,7 @@ export default function UserCustomerForm({
             />
           </CardContent>
           <div className="flex justify-end space-x-2 mr-4 mt-2">
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" className="cursor-pointer" disabled={isLoading}>
               {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
             </Button>
           </div>

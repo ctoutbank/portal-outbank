@@ -10,9 +10,7 @@ import { CustomerSchema } from "../schema/schema";
 import UserCustomerForm from "../users/_components/user-form";
 import UsersCustomerList from "../users/_components/user-table-updated";
 import { useSearchParams, useRouter } from "next/navigation";
-import {
-  UserDetail,
-} from "../users/_actions/use-Actions";
+import { UserDetail } from "../users/_actions/use-Actions";
 import {
   ProfileDD,
   UserDetailForm,
@@ -25,9 +23,13 @@ import {
   updateCustomization,
 } from "@/utils/serverActions";
 import Image from "next/image";
-import {Info, Palette} from "lucide-react";
-import {Tooltip, TooltipContent, TooltipProvider } from "@radix-ui/react-tooltip";
-import {TooltipTrigger} from "@/components/ui/tooltip";
+import { Info, Palette } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+} from "@radix-ui/react-tooltip";
+import { TooltipTrigger } from "@/components/ui/tooltip";
 import { getUsersWithClerk } from "@/features/customers/users/_actions/users-actions";
 
 interface CustomerWizardFormProps {
@@ -38,10 +40,10 @@ interface CustomerWizardFormProps {
 }
 
 export default function CustomerWizardForm({
-                                             customer,
-                                             profiles,
-                                             activeTabDefault = "step1",
-                                           }: CustomerWizardFormProps) {
+  customer,
+  profiles,
+  activeTabDefault = "step1",
+}: CustomerWizardFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -50,7 +52,7 @@ export default function CustomerWizardForm({
 
   const [activeTab, setActiveTab] = useState(stepFromUrl);
   const [newCustomerId, setNewCustomerId] = useState<number | null>(
-      customer.id || null
+    customer.id || null
   );
   const [isFirstStepComplete, setIsFirstStepComplete] = useState(!!customer.id);
   const [users, setUsers] = useState<UserDetail[]>([]);
@@ -95,18 +97,18 @@ export default function CustomerWizardForm({
 
   function hslToHex(hsl: string): string {
     const [h, s, l] = hsl
-        .split(" ")
-        .map((value, index) =>
-            index === 0 ? parseFloat(value) : parseFloat(value) / 100
-        );
+      .split(" ")
+      .map((value, index) =>
+        index === 0 ? parseFloat(value) : parseFloat(value) / 100
+      );
 
     const a = s * Math.min(l, 1 - l);
     const f = (n: number) => {
       const k = (n + h / 30) % 12;
       const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
       return Math.round(255 * color)
-          .toString(16)
-          .padStart(2, "0");
+        .toString(16)
+        .padStart(2, "0");
     };
 
     return `#${f(0)}${f(8)}${f(4)}`;
@@ -116,13 +118,15 @@ export default function CustomerWizardForm({
   const handleStepChange = (value: string) => {
     if (value === "step2" && !isFirstStepComplete) {
       toast.error(
-          "É necessário criar o cliente antes de configurar os usuários"
+        "É necessário criar o cliente antes de configurar os usuários"
       );
       return;
     }
     setActiveTab(value);
     if (newCustomerId) {
-      router.replace(`/customers/${newCustomerId}?step=${value}`, { scroll: false });
+      router.replace(`/customers/${newCustomerId}?step=${value}`, {
+        scroll: false,
+      });
     }
   };
 
@@ -217,307 +221,348 @@ export default function CustomerWizardForm({
     }
   }, [customizationData?.subdomain]);
 
+  // Handler para impedir troca de aba ao clicar nas tabs
+  const handleTabClick = (value: string, e: React.MouseEvent) => {
+    if (value !== activeTab) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
   return (
-      <div className="w-full">
-        <Tabs
-            value={activeTab}
-            onValueChange={handleStepChange}
-            className="space-y-6"
-        >
-          <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted">
-            <TabsTrigger
-                value="step1"
-                className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-2 sm:px-4 data-[state=active]:bg-background data-[state=active]:text-foreground"
-            >
-              1. Criar ISO
-            </TabsTrigger>
-            <TabsTrigger
-                value="step2"
-                className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-2 sm:px-4 data-[state=active]:bg-background data-[state=active]:text-foreground"
-                disabled={!isFirstStepComplete}
-            >
-              2. Configurar Usuários
-            </TabsTrigger>
-            <TabsTrigger
-                value="step3"
-                className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-2 sm:px-4 data-[state=active]:bg-background data-[state=active]:text-foreground"
-                disabled={!isFirstStepComplete}
-            >
-              3. Personalização
-            </TabsTrigger>
-          </TabsList>
+    <div className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={handleStepChange}
+        className="space-y-6"
+      >
+        <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted">
+          <TabsTrigger
+            value="step1"
+            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-2 sm:px-4 data-[state=active]:bg-background data-[state=active]:text-foreground"
+            onMouseDown={(e) => handleTabClick("step1", e)}
+          >
+            1. Criar ISO
+          </TabsTrigger>
+          <TabsTrigger
+            value="step2"
+            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-2 sm:px-4 data-[state=active]:bg-background data-[state=active]:text-foreground"
+            onMouseDown={(e) => handleTabClick("step2", e)}
+          >
+            2. Configurar Usuários
+          </TabsTrigger>
+          <TabsTrigger
+            value="step3"
+            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-2 sm:px-4 data-[state=active]:bg-background data-[state=active]:text-foreground "
+            onMouseDown={(e) => handleTabClick("step3", e)}
+          >
+            3. Personalização
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="step1" className="space-y-4">
-            <Card className="border-0 shadow-none">
-              <CardContent className="p-0">
-                <CustomerForm
-                    customer={customer}
-                    onSuccess={handleFirstStepComplete}
-                />
-              </CardContent>
-            </Card>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button
-                  variant="outline"
-                  onClick={() => handleStepChange("step2")}
-                  disabled={!isFirstStepComplete}
-              >
-                Próximo →
-              </Button>
-            </div>
-          </TabsContent>
+        <TabsContent value="step1" className="space-y-4">
+          <Card className="border-0 shadow-none">
+            <CardContent className="p-0">
+              <CustomerForm
+                customer={customer}
+                onSuccess={handleFirstStepComplete}
+              />
+            </CardContent>
+          </Card>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => handleStepChange("step2")}
+              disabled={!isFirstStepComplete}
+              className="cursor-pointer"
+            >
+              Próximo →
+            </Button>
+          </div>
+        </TabsContent>
 
-          <TabsContent value="step2" className="space-y-4">
-            <Card className="border-0 shadow-none">
-              {isFirstStepComplete && (
-                  <>
-                    {selectedUser === null ? (
-                        <div className="space-y-6">
-                          <UserCustomerForm
-                              customerId={newCustomerId || undefined}
-                              onSuccess={handleUserSuccess}
-                              profiles={profiles}
-                          />
+        <TabsContent value="step2" className="space-y-4">
+          <Card className="border-0 shadow-none">
+            {isFirstStepComplete && (
+              <>
+                {selectedUser === null ? (
+                  <div className="space-y-6">
+                    <UserCustomerForm
+                      customerId={newCustomerId || undefined}
+                      onSuccess={handleUserSuccess}
+                      profiles={profiles}
+                    />
 
-                          {isLoadingUsers ? (
-                              <div className="text-center p-8">
-                                <p>Carregando usuários...</p>
-                              </div>
-                          ) : (
-                              <UsersCustomerList
-                                  users={users}
-                                  customerId={newCustomerId || 0}
-                                  onRefresh={() => loadUsers(newCustomerId || 0)}
-                              />
-                          )}
-                        </div>
+                    {isLoadingUsers ? (
+                      <div className="text-center p-8">
+                        <p>Carregando usuários...</p>
+                      </div>
                     ) : (
-                        <div className="space-y-4">
-                          <Card>
-                            <div className="flex justify-between items-center mb-4">
-                              <h3 className="text-lg font-medium">Editar Usuário</h3>
-                              <Button
-                                  variant="outline"
-                                  onClick={() => setSelectedUser(null)}
-                              >
-                                Voltar
-                              </Button>
-                            </div>
-
-                            {isLoadingUser ? (
-                                <div className="text-center p-4">
-                                  <p>Carregando dados do usuário...</p>
-                                </div>
-                            ) : (
-                                <UserCustomerForm
-                                    user={userToEdit || undefined}
-                                    customerId={newCustomerId || undefined}
-                                    onSuccess={handleUserSuccess}
-                                    profiles={profiles}
-                                />
-                            )}
-                          </Card>
-                        </div>
+                      <UsersCustomerList
+                        users={users}
+                        customerId={newCustomerId || 0}
+                        onRefresh={() => loadUsers(newCustomerId || 0)}
+                      />
                     )}
-                  </>
-              )}
-            </Card>
-            <div className="flex justify-between gap-2 mt-4">
-              <Button variant="outline" onClick={() => handleStepChange("step1")}>
-                ← Voltar
-              </Button>
-              <Button variant="outline" onClick={() => handleStepChange("step3")}>
-                Próximo →
-              </Button>
-            </div>
-          </TabsContent>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <Card>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">Editar Usuário</h3>
+                        <Button
+                          variant="outline"
+                          onClick={() => setSelectedUser(null)}
+                          className="cursor-pointer"
+                        >
+                          Voltar
+                        </Button>
+                      </div>
 
-          <TabsContent value="step3">
-            <form
-                action={customizationData ? updateCustomization : saveCustomization}
-                className="space-y-6"
-            >
-              <Card className="border-1">
-                <CardHeader className="border-b border-border">
-                  <CardTitle className="flex items-center gap-2 text-foreground">
-                    <Palette className="h-5 w-5" />
-                    Customização do ISO
-                  </CardTitle>
-                </CardHeader>
-                {isFirstStepComplete && (
-                    <>
-                      <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          {/* Coluna Esquerda - Subdomínio e Imagem */}
-                          <div className="space-y-4">
-                            {/* Subdomínio */}
-                            <div>
-                              <label className="block text-sm font-medium text-foreground mb-1">
-                                <div className="flex items-center gap-1">
-                                  <span>Nome do subdomínio</span>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <button type="button" className="text-muted-foreground p-1">
-                                          <Info className="w-4 h-4 text-muted-foreground" />
-                                        </button>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top" className="z-50">
-                                        <p>Este será o seu endereço de acesso ao portal: meusubdominio.consolle.one.com</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </div>
-                              </label>
-                              <Input
-                                  maxLength={15}
-                                  value={subdomainValue}
-                                  onChange={(e) => {
-                                    const sanitized = e.target.value.replace(/[^a-zA-Z0-9À-ÿ\s]/g, "");
-                                    setSubdomainValue(sanitized);
-                                  }}
-                                  className="w-full"
-                                  placeholder="Meu subdomínio"
-                                  name="subdomain"
-                              />
+                      {isLoadingUser ? (
+                        <div className="text-center p-4">
+                          <p>Carregando dados do usuário...</p>
+                        </div>
+                      ) : (
+                        <UserCustomerForm
+                          user={userToEdit || undefined}
+                          customerId={newCustomerId || undefined}
+                          onSuccess={handleUserSuccess}
+                          profiles={profiles}
+                        />
+                      )}
+                    </Card>
+                  </div>
+                )}
+              </>
+            )}
+          </Card>
+          <div className="flex justify-between gap-2 mt-4">
+            <Button variant="outline" className="cursor-pointer" onClick={() => handleStepChange("step1")}>
+              ← Voltar
+            </Button>
+            <Button variant="outline" className="cursor-pointer" onClick={() => handleStepChange("step3")}>
+              Próximo →
+            </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="step3">
+          <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+
+                const formData = new FormData(e.currentTarget);
+
+                try {
+                  if (customizationData) {
+                    await updateCustomization(formData);
+                  } else {
+                    await saveCustomization(formData);
+                  }
+
+                  toast.success("Customização salva com sucesso!");
+                } catch (error) {
+                  console.error("Erro ao salvar a customização", error);
+                  toast.error("Erro ao salvar a customização");
+                }
+              }}
+              className="space-y-6"
+          >
+            <Card className="border-1">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Palette className="h-5 w-5" />
+                  Customização do ISO
+                </CardTitle>
+              </CardHeader>
+              {isFirstStepComplete && (
+                <>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {/* Coluna Esquerda - Subdomínio e Imagem */}
+                      <div className="space-y-4">
+                        {/* Subdomínio */}
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-1">
+                            <div className="flex items-center gap-1">
+                              <span>Nome do subdomínio</span>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="text-muted-foreground p-1"
+                                    >
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="z-50">
+                                    <p>
+                                      Este será o seu endereço de acesso ao
+                                      portal: meusubdominio.consolle.one
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </div>
+                          </label>
+                          <Input
+                            maxLength={15}
+                            value={subdomainValue}
+                            onChange={(e) => {
+                              const sanitized = e.target.value
+                                  .replace(/[^a-zA-Z0-9À-ÿ\s]/g, "")
+                                  .toLowerCase();
+                              setSubdomainValue(sanitized);
+                            }}
+                            className="w-full"
+                            placeholder="Meu subdomínio"
+                            name="subdomain"
+                          />
+                        </div>
 
-                            {/* Upload de Imagem */}
-                            <div>
-                              <label className="block text-sm font-medium text-foreground mb-2">
-                                Imagem ou Logotipo
-                              </label>
-                              <input
-                                  type="file"
-                                  accept="image/*"
-                                  name="image"
-                                  id="image"
-                                  onChange={handleImageChange}
-                                  className="block w-full text-sm text-foreground
+                        {/* Upload de Imagem */}
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Imagem ou Logotipo
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            name="image"
+                            id="image"
+                            onChange={handleImageChange}
+                            className="block w-full text-sm text-foreground
                               file:mr-4 file:py-2 file:px-4
                               file:rounded file:border-0
                               file:text-sm file:font-semibold
                               file:bg-secondary file:text-gray-700
-                              hover:file:bg-blue-400
+                              hover:file:bg-gray-300
                               file:cursor-pointer
                               dark:file:bg-white"
-                              />
-                            </div>
-
-                            {/* Preview da Imagem Selecionada */}
-                            {imagePreview && (
-                                <div>
-                                  <p className="text-sm text-foreground mb-1">
-                                    Pré-visualização:
-                                  </p>
-                                  {/* Usa img simples pra evitar problemas com next/image */}
-                                  <Image
-                                      src={imagePreview}
-                                      alt={"image preview"}
-                                      height={100}
-                                      width={100}
-                                  ></Image>
-                                </div>
-                            )}
-
-                            {/* Preview da Imagem Atual */}
-                            {customizationData?.imageUrl && !imagePreview && (
-                                <div>
-                                  <p className="text-sm text-foreground mb-1">
-                                    Logo atual:
-                                  </p>
-                                  <Image
-                                      src={customizationData.imageUrl}
-                                      alt={""}
-                                      height={100}
-                                      width={100}
-                                  ></Image>
-                                </div>
-                            )}
-                          </div>
-
-                          {/* Coluna Direita - Cores */}
-                          <div className="space-y-4">
-                            {/* Cor Primária */}
-                            <div>
-                              <label className="block text-sm font-medium text-foreground mb-1">
-                                <div className="flex items-center gap-1">
-                                  <span>Cor Primária</span>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <button type="button" className="text-foreground p-1">
-                                          <Info className="w-4 h-4 text-muted-foreground" />
-                                        </button>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top">
-                                        <p>A cor primária deve ser uma cor escura.</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </div>
-                              </label>
-                              <input
-                                  type="color"
-                                  name="primaryColor"
-                                  defaultValue={
-                                    customizationData?.primaryColor
-                                        ? hslToHex(customizationData.primaryColor)
-                                        : "#ffffff"
-                                  }
-                                  className="h-10 w-full p-0 border rounded"
-                              />
-                            </div>
-
-                            {/* Cor Secundária */}
-                            <div>
-                              <label className="block text-sm font-medium text-foreground mb-1">
-                                Cor Secundária
-                              </label>
-                              <input
-                                  type="color"
-                                  name="secondaryColor"
-                                  defaultValue={
-                                    customizationData?.secondaryColor
-                                        ? hslToHex(customizationData.secondaryColor)
-                                        : "#ffffff"
-                                  }
-                                  className="h-10 w-full p-0 border rounded"
-                              />
-                            </div>
-                          </div>
+                          />
                         </div>
 
-                        {/* Campos ocultos */}
-                        {customizationData?.id && (
-                            <input
-                                type="hidden"
-                                name="id"
-                                value={customizationData.id}
-                            />
+                        {/* Preview da Imagem Selecionada */}
+                        {imagePreview && (
+                          <div>
+                            <p className="text-sm text-foreground mb-1">
+                              Pré-visualização:
+                            </p>
+                            {/* Usa img simples pra evitar problemas com next/image */}
+                            <Image
+                              src={imagePreview}
+                              alt={"image preview"}
+                              height={100}
+                              width={100}
+                            ></Image>
+                          </div>
                         )}
-                        <input
-                            type="hidden"
-                            name="customerId"
-                            value={newCustomerId || ""}
-                        />
-                      </CardContent>
-                    </>
-                )}
-                <div className="flex justify-end space-x-2 mt-4 pr-3">
-                  <Button type="submit" className="mt-6 p-2">
-                    Salvar personalização
-                  </Button>
-                </div>
-              </Card>
-            </form>
-            <div className="flex justify-start space-x-2 mt-4 p-1">
-              <Button variant="outline" onClick={() => handleStepChange("step2")}>
-                ← Voltar
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+
+                        {/* Preview da Imagem Atual */}
+                        {customizationData?.imageUrl && !imagePreview && (
+                          <div>
+                            <p className="text-sm text-foreground mb-1">
+                              Logo atual:
+                            </p>
+                            <Image
+                              src={customizationData.imageUrl}
+                              alt={""}
+                              height={100}
+                              width={100}
+                            ></Image>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Coluna Direita - Cores */}
+                      <div className="space-y-4">
+                        {/* Cor Primária */}
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-1">
+                            <div className="flex items-center gap-1">
+                              <span>Cor Primária</span>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="text-foreground p-1"
+                                    >
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    <p>
+                                      A cor primária deve ser uma cor escura.
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </label>
+                          <input
+                            type="color"
+                            name="primaryColor"
+                            defaultValue={
+                              customizationData?.primaryColor
+                                ? hslToHex(customizationData.primaryColor)
+                                : "#ffffff"
+                            }
+                            className="h-10 w-full p-0 border rounded cursor-pointer"
+                          />
+                        </div>
+
+                        {/* Cor Secundária */}
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-1">
+                            Cor Secundária
+                          </label>
+                          <input
+                            type="color"
+                            name="secondaryColor"
+                            defaultValue={
+                              customizationData?.secondaryColor
+                                ? hslToHex(customizationData.secondaryColor)
+                                : "#ffffff"
+                            }
+                            className="h-10 w-full p-0 border rounded cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Campos ocultos */}
+                    {customizationData?.id && (
+                      <input
+                        type="hidden"
+                        name="id"
+                        value={customizationData.id}
+                      />
+                    )}
+                    <input
+                      type="hidden"
+                      name="customerId"
+                      value={newCustomerId || ""}
+                    />
+                  </CardContent>
+                </>
+              )}
+              <div className="flex justify-end space-x-2 mt-4 pr-3">
+                <Button type="submit" className="mt-6 p-2 cursor-pointer">
+                  Salvar personalização
+                </Button>
+              </div>
+            </Card>
+          </form>
+          <div className="flex justify-start space-x-2 mt-4 p-1">
+            <Button variant="outline" className="cursor-pointer" onClick={() => handleStepChange("step2")}>
+              ← Voltar
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

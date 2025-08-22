@@ -26,7 +26,8 @@ export default async function CustomerDetail({ params }: PageProps) {
         breadcrumbItems={[{ title: "ISOS", url: "/customers" }]}
       />
       <BaseBody title="ISO" subtitle={`Visualização do ISO`} actions={<div className="flex items-center space-x-2">
-          <DeactivateCustomerButton />
+         
+         {Customer?.id && <DeactivateCustomerButton />}
       </div>}>
         <CustomerWizardForm 
           customer={Customer ? {

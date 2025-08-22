@@ -25,7 +25,7 @@ export function CustomersFilterButton({
         <Button
           variant="outline"
           onClick={() => onVisibilityChange(!isFiltersVisible)}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 cursor-pointer"
         >
           <FilterIcon className="h-4 w-4" />
           Filtros
@@ -37,7 +37,7 @@ export function CustomersFilterButton({
           <Button
             variant="ghost"
             onClick={onClearFilters}
-            className="text-sm text-muted-foreground"
+            className="text-sm text-muted-foreground cursor"
           >
             Limpar Filtros
           </Button>

@@ -326,7 +326,8 @@ type SolicitationFeeWithTaxesResult = {
 export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditForm | null> {
   console.log("Iniciando consulta de taxas para solicitação ID:", id);
   
-  const result = await db
+  try {
+    const result = await db
     .select({
       solicitationFee: {
         id: solicitationFee.id,
@@ -525,6 +526,10 @@ export async function getSolicitationFeeWithTaxes(id: number): Promise<TaxEditFo
       solicitationFeeBrands: Array.from(brandsMap.values())
     }
   };
+  } catch (error) {
+    console.error("Erro na consulta getSolicitationFeeWithTaxes:", error);
+    throw error;
+  }
 }
 
 

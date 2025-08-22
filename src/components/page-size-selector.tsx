@@ -26,7 +26,7 @@ const PageSizeSelector: React.FC<PageSizeSelectorProps> = ({
   const handlePageSizeChange = (value: string) => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams?.toString());
-      params.set("pageSize", value);
+      params.set("perPage", value);
       params.set("page", "1");
       router.push(`/${pageName}?${params.toString()}`);
     });
@@ -40,7 +40,7 @@ const PageSizeSelector: React.FC<PageSizeSelectorProps> = ({
         onValueChange={handlePageSizeChange}
         disabled={isPending}
       >
-        <SelectTrigger className="w-20 h-8">
+        <SelectTrigger className="w-20 h-8 cursor-pointer">
           <SelectValue placeholder="20" />
         </SelectTrigger>
         <SelectContent>

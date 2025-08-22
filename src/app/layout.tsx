@@ -32,12 +32,11 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+
             <SidebarProvider>
               <AppSidebar variant="inset" />
               <SidebarInset className="bg-card rounded-lg shadow">
                 {children}
-                <Toaster richColors position="top-right" />
-
                 <Toaster richColors position="top-right" />
               </SidebarInset>
             </SidebarProvider>

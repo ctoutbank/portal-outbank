@@ -1,20 +1,36 @@
 import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
 import SolicitationFeeCard from "@/features/solicitationfee/_componentes/solicitationfee-card";
-import { TaxEditForm1 } from "@/features/solicitationfee/_componentes/tax-form";
-import { getSolicitationFeeById, getSolicitationFeeWithTaxes } from "@/features/solicitationfee/server/solicitationfee";
-import { brandList, SolicitationFeeProductTypeList } from "@/lib/lookuptables/lookuptables-tax";
-import { TaxEditForm, TaXEditFormSchema, SolicitationFeeBrand, SolicitationBrandProductType, FormSolicitationFee } from "@/features/solicitationfee/types/types";
+import {
+  getSolicitationFeeById,
+  getSolicitationFeeWithTaxes,
+} from "@/features/solicitationfee/server/solicitationfee";
+import {
+  brandList,
+  SolicitationFeeProductTypeList,
+} from "@/lib/lookuptables/lookuptables-tax";
+import {
+  TaxEditForm,
+  TaXEditFormSchema,
+  SolicitationFeeBrand,
+  SolicitationBrandProductType,
+  FormSolicitationFee,
+} from "@/features/solicitationfee/types/types";
 import DownloadDocumentsButton from "@/features/solicitationfee/_componentes/dowload-button";
+
+import { getPricingSolicitationById } from "@/features/pricingSolicitation/server/pricing-solicitation";
+import { TaxEditForm1 } from "@/features/solicitationfee/_componentes/tax-form";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 // Função para converter o formato retornado pela API para o formato do formulário
-async function convertToTaxEditFormSchema(Data: unknown): Promise<TaXEditFormSchema> {
+async function convertToTaxEditFormSchema(
+  Data: unknown
+): Promise<TaXEditFormSchema> {
   const data = Data as TaxEditForm | null;
-  
+
   if (!data) {
     const emptyFormData: FormSolicitationFee = {
       id: 0,
@@ -56,60 +72,69 @@ async function convertToTaxEditFormSchema(Data: unknown): Promise<TaXEditFormSch
       eventualAnticipationFeeDock: null,
       nonCardEventualAnticipationFee: null,
       nonCardEventualAnticipationFeeAdmin: null,
-      nonCardEventualAnticipationFeeDock: null
+      nonCardEventualAnticipationFeeDock: null,
     };
-    
+
     return { solicitationFee: emptyFormData };
   }
 
-  const allBrands: SolicitationFeeBrand[] = brandList.map(brandItem => {
+  const allBrands: SolicitationFeeBrand[] = brandList.map((brandItem) => {
     const existingBrand = data.solicitationFee.solicitationFeeBrands?.find(
       (b) => b.brand === brandItem.value
     );
 
-    const allProductTypes: SolicitationBrandProductType[] = SolicitationFeeProductTypeList.map(productTypeItem => {
-      const cleanProductTypeValue = productTypeItem.value.trim();
-      
-      const existingProductType = existingBrand?.solicitationBrandProductTypes?.find(
-        (p) => {
-          const dbProductType = p?.productType?.trim();
-          return dbProductType === cleanProductTypeValue && 
-                 String(p.transactionFeeStart) === productTypeItem.transactionFeeStart && 
-                 String(p.transactionFeeEnd) === productTypeItem.transactionFeeEnd;
+    const allProductTypes: SolicitationBrandProductType[] =
+      SolicitationFeeProductTypeList.map((productTypeItem) => {
+        const cleanProductTypeValue = productTypeItem.value.trim();
+
+        const existingProductType =
+          existingBrand?.solicitationBrandProductTypes?.find((p) => {
+            const dbProductType = p?.productType?.trim();
+            return (
+              dbProductType === cleanProductTypeValue &&
+              String(p.transactionFeeStart) ===
+                productTypeItem.transactionFeeStart &&
+              String(p.transactionFeeEnd) === productTypeItem.transactionFeeEnd
+            );
+          });
+
+        if (existingProductType) {
+          return {
+            ...existingProductType,
+            fee: existingProductType.fee || null,
+            feeAdmin: existingProductType.feeAdmin || null,
+            feeDock: existingProductType.feeDock || null,
+            transactionFeeStart: String(
+              existingProductType.transactionFeeStart ||
+                productTypeItem.transactionFeeStart
+            ),
+            transactionFeeEnd: String(
+              existingProductType.transactionFeeEnd ||
+                productTypeItem.transactionFeeEnd
+            ),
+          };
         }
-      );
 
-      if (existingProductType) {
         return {
-          ...existingProductType,
-          fee: existingProductType.fee || null,
-          feeAdmin: existingProductType.feeAdmin || null,
-          feeDock: existingProductType.feeDock || null,
-          transactionFeeStart: String(existingProductType.transactionFeeStart || productTypeItem.transactionFeeStart),
-          transactionFeeEnd: String(existingProductType.transactionFeeEnd || productTypeItem.transactionFeeEnd)
+          id: 0,
+          slug: null,
+          productType: cleanProductTypeValue,
+          fee: null,
+          feeAdmin: null,
+          feeDock: null,
+          transactionFeeStart: String(productTypeItem.transactionFeeStart),
+          transactionFeeEnd: String(productTypeItem.transactionFeeEnd),
+          pixMinimumCostFee: null,
+          pixCeilingFee: null,
+          transactionAnticipationMdr: null,
+          noCardFee: null,
+          noCardFeeAdmin: null,
+          noCardFeeDock: null,
+          noCardTransactionAnticipationMdr: null,
+          dtinsert: null,
+          dtupdate: null,
         };
-      }
-
-      return {
-        id: 0,
-        slug: null,
-        productType: cleanProductTypeValue,
-        fee: null,
-        feeAdmin: null,
-        feeDock: null,
-        transactionFeeStart: String(productTypeItem.transactionFeeStart),
-        transactionFeeEnd: String(productTypeItem.transactionFeeEnd),
-        pixMinimumCostFee: null,
-        pixCeilingFee: null,
-        transactionAnticipationMdr: null,
-        noCardFee: null,
-        noCardFeeAdmin: null,
-        noCardFeeDock: null,
-        noCardTransactionAnticipationMdr: null,
-        dtinsert: null,
-        dtupdate: null
-      };
-    });
+      });
 
     return {
       id: existingBrand?.id || 0,
@@ -118,7 +143,7 @@ async function convertToTaxEditFormSchema(Data: unknown): Promise<TaXEditFormSch
       solicitationFeeId: data.solicitationFee.id,
       dtinsert: existingBrand?.dtinsert || null,
       dtupdate: existingBrand?.dtupdate || null,
-      solicitationBrandProductTypes: allProductTypes
+      solicitationBrandProductTypes: allProductTypes,
     };
   });
 
@@ -205,51 +230,94 @@ async function convertToTaxEditFormSchema(Data: unknown): Promise<TaXEditFormSch
     eventualAnticipationFeeAdmin: eventualAnticipationFeeAdmin || null,
     eventualAnticipationFeeDock: eventualAnticipationFeeDock || null,
     nonCardEventualAnticipationFee: nonCardEventualAnticipationFee || null,
-    nonCardEventualAnticipationFeeAdmin: nonCardEventualAnticipationFeeAdmin || null,
-    nonCardEventualAnticipationFeeDock: nonCardEventualAnticipationFeeDock || null,
+    nonCardEventualAnticipationFeeAdmin:
+      nonCardEventualAnticipationFeeAdmin || null,
+    nonCardEventualAnticipationFeeDock:
+      nonCardEventualAnticipationFeeDock || null,
     // Outros campos
-    cnaeInUse: data.solicitationFee.cnaeInUse === "true" || data.solicitationFee.cnaeInUse === "1",
-    solicitationFeeBrands: allBrands
+    cnaeInUse:
+      data.solicitationFee.cnaeInUse === "true" ||
+      data.solicitationFee.cnaeInUse === "1",
+    solicitationFeeBrands: allBrands,
   };
 
   return {
-    solicitationFee: formData
+    solicitationFee: formData,
   };
 }
 
 export default async function SolicitationFeeDetail({ params }: PageProps) {
-  const { id } = await params;
-  const solicitationFee = await getSolicitationFeeById(parseInt(id));
-  const solicitationFeeWithTaxes = await getSolicitationFeeWithTaxes(parseInt(id));
-  const formattedData = await convertToTaxEditFormSchema(solicitationFeeWithTaxes);
-  console.log("formattedData",formattedData)
-  
-  return (
-    <>
-      <BaseHeader
-        breadcrumbItems={[{ title: "Solicitações de Taxas", url: "/solicitationfee" }]}
-      />
-      
-      <BaseBody title="Solicitação de Taxa" subtitle="Visualização da solicitação de taxa">
-        <div className="mt-8">
-          <SolicitationFeeCard solicitationFee={solicitationFee ?? undefined} />
-        </div>
+  try {
+    const { id } = await params;
+    const solicitationFee = await getSolicitationFeeById(parseInt(id));
+    const solicitationFeeWithTaxes = await getSolicitationFeeWithTaxes(
+      parseInt(id)
+    );
+    const formattedData = await convertToTaxEditFormSchema(
+      solicitationFeeWithTaxes
+    );
 
-        <div className="mt-4 flex">
-          <DownloadDocumentsButton solicitationFeeId={parseInt(id)} />
-        </div>
+    const pricingSolicitationById = await getPricingSolicitationById(
+      solicitationFee?.id || 0
+    );
 
-        <div className="mt-8">
-          {solicitationFeeWithTaxes ? (
-            <TaxEditForm1 
-              solicitationFeetax={formattedData} 
-              idsolicitationFee={parseInt(id)} 
+    console.log("formattedData", formattedData);
+    console.log("pricingSolicitationById", pricingSolicitationById);
+
+    return (
+      <>
+        <BaseHeader
+          breadcrumbItems={[
+            { title: "Solicitações de Taxas", url: "/solicitationfee" },
+          ]}
+        />
+
+        <BaseBody
+          title="Solicitação de Taxa"
+          subtitle="Visualização da solicitação de taxa"
+        >
+          <div className="mt-8">
+            <SolicitationFeeCard
+              solicitationFee={solicitationFee ?? undefined}
             />
-          ) : (
-            <p>Carregando dados de taxas...</p>
-          )}
-        </div>
-      </BaseBody>
-    </>
-  );
-} 
+          </div>
+
+          <div className="mt-4 flex">
+            <DownloadDocumentsButton solicitationFeeId={parseInt(id)} />
+          </div>
+
+          <div className="mt-8">
+            {solicitationFeeWithTaxes ? (
+              <TaxEditForm1
+                idsolicitationFee={parseInt(id)}
+                solicitationFeetax={formattedData}
+              />
+            ) : (
+              <p>Carregando dados de taxas...</p>
+            )}
+          </div>
+        </BaseBody>
+      </>
+    );
+  } catch (error) {
+    console.error("Erro ao carregar solicitação de taxa:", error);
+    return (
+      <>
+        <BaseHeader
+          breadcrumbItems={[
+            { title: "Solicitações de Taxas", url: "/solicitationfee" },
+          ]}
+        />
+        <BaseBody title="Erro" subtitle="Erro ao carregar solicitação de taxa">
+          <div className="mt-8">
+            <p>Erro ao carregar a solicitação de taxa. Tente novamente.</p>
+            <p>
+              Detalhes do erro:{" "}
+              {error instanceof Error ? error.message : "Erro desconhecido"}
+            </p>
+          </div>
+        </BaseBody>
+      </>
+    );
+  }
+}
