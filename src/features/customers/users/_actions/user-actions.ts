@@ -87,6 +87,17 @@ export async function InsertUser(data: UserInsert) {
   }
 
   try {
+    // Verificar se o usuário já existe no banco de dados
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, data.email))
+      .limit(1);
+
+    if (existingUser.length > 0) {
+      throw new Error("Usuário já existe com este email");
+    }
+
     const clerk = await clerkClient();
     const clerkUser = await clerk.users.createUser({
       firstName: data.firstName,
@@ -128,7 +139,58 @@ export async function InsertUser(data: UserInsert) {
   } catch (error: unknown) {
     console.error("Erro ao criar usuário:", error);
 
-    // Verificar se é um erro de segurança de senha
+    // Tratamento específico para erros do Clerk
+    if (error && typeof error === "object" && "errors" in error) {
+      const clerkError = error as {
+        errors: Array<{ code: string; message: string }>;
+      };
+
+      // Verificar se é erro de email duplicado no Clerk
+      const duplicateEmailError = clerkError.errors.find(
+        (err) =>
+          err.code === "email_address_already_exists" ||
+          err.message.includes("already exists") ||
+          err.message.includes("duplicate")
+      );
+
+      if (duplicateEmailError) {
+        throw new Error("Usuário já existe com este email");
+      }
+
+      // Verificar outros erros comuns do Clerk
+      const invalidEmailError = clerkError.errors.find(
+        (err) =>
+          err.code === "form_identifier_exists" ||
+          err.message.includes("identifier")
+      );
+
+      if (invalidEmailError) {
+        throw new Error("Email inválido ou já está em uso");
+      }
+    }
+
+    // Se for um erro de string simples, verificar se contém informações sobre duplicação
+    if (
+      typeof error === "string" &&
+      (error.includes("already exists") ||
+        error.includes("duplicate") ||
+        error.includes("já existe"))
+    ) {
+      throw new Error("Usuário já existe com este email");
+    }
+
+    // Se for um Error object, verificar a mensagem
+    if (error instanceof Error) {
+      if (
+        error.message.includes("already exists") ||
+        error.message.includes("duplicate") ||
+        error.message.includes("já existe")
+      ) {
+        throw new Error("Usuário já existe com este email");
+      }
+    }
+
+    // Para outros erros, manter o comportamento original
     throw error;
   }
 }

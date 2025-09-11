@@ -214,7 +214,23 @@ export async function updateCustomization(formData: FormData) {
       .returning({ id: file.id });
 
     fileId = result[0].id;
+  } else {
+    // Se não há nova imagem, manter a imagem existente
+    const existingCustomization = await getCustomizationByCustomerId(
+      validated.data.customerId
+    );
+    if (existingCustomization?.imageUrl) {
+      imageUrl = existingCustomization.imageUrl;
+      // Buscar o fileId existente
+      const existingFile = await db
+        .select({ id: file.id })
+        .from(file)
+        .where(eq(file.fileUrl, existingCustomization.imageUrl))
+        .limit(1);
+      fileId = existingFile[0]?.id || null;
+    }
   }
+
 
   const primaryHSL = hexToHsl(primaryColor);
   const secondaryHSL = hexToHsl(secondaryColor);
@@ -227,7 +243,7 @@ export async function updateCustomization(formData: FormData) {
       primaryColor: primaryHSL,
       secondaryColor: secondaryHSL,
       ...(imageUrl && { imageUrl: imageUrl }),
-      ...(fileId && { fileId: fileId }),
+      fileId: fileId,
     })
     .where(eq(customerCustomization.id, id));
 
