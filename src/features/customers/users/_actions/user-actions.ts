@@ -6,11 +6,19 @@ import { generateSlug } from "@/lib/utils";
 import { clerkClient } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { profiles, userMerchants, users } from "../../../../../drizzle/schema";
+import {
+  customerCustomization,
+  customers,
+  file,
+  profiles,
+  userMerchants,
+  users,
+} from "../../../../../drizzle/schema";
 
 import { sendWelcomePasswordEmail } from "@/lib/send-email";
 import { ilike } from "drizzle-orm";
 import { getCustomizationByCustomerId } from "@/utils/serverActions";
+import { getCustomerById } from "../../server/customers";
 
 export type UserDetail = typeof users.$inferSelect;
 
@@ -238,12 +246,30 @@ export async function InsertUser(data: InsertUserInput) {
         hashedPassword,
       })
       .returning({ id: users.id });
-
+    const customerImage = await db
+      .select({
+        name: customers.name,
+        fileUrl: file.fileUrl,
+      })
+      .from(customerCustomization)
+      .innerJoin(customers, eq(customerCustomization.customerId, customers.id))
+      .innerJoin(file, eq(customerCustomization.fileId, file.id))
+      .where(eq(customerCustomization.customerId, idCustomer ?? 0));
     const domain = await getCustomizationByCustomerId(idCustomer ?? 0);
 
-    const logo = "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
-    const link = domain?.name ? `https://${domain.name}.consolle.one` : undefined;
-    await sendWelcomePasswordEmail(email, finalPassword, logo, link);
+    const logo =
+      customerImage[0].fileUrl ||
+      "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
+    const link = domain?.name
+      ? `https://${domain.name}.consolle.one`
+      : undefined;
+    await sendWelcomePasswordEmail(
+      email,
+      finalPassword,
+      logo,
+      customerImage[0].name ?? "",
+      link
+    );
 
     console.log("logo", logo);
 
