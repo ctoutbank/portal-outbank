@@ -18,8 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useState } from "react";
-import { deleteUser } from "../_actions/use-Actions";
-import {getUserDetailWithClerk, UserDetailForm} from "../_actions/user-actions";
+import {getUserDetailWithClerk, UserDetailForm, deleteUser} from "../_actions/user-actions";
 import UserCustomerForm from "./user-form";
 
 interface UserTableProps {

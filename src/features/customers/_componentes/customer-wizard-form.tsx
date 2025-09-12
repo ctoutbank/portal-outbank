@@ -7,14 +7,16 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import CustomerForm from "./customer-form";
 import { CustomerSchema } from "../schema/schema";
+import { CustomizationSchema } from "../schema/customizationSchema";
 import UserCustomerForm from "../users/_components/user-form";
 import UsersCustomerList from "../users/_components/user-table-updated";
 import { useSearchParams, useRouter } from "next/navigation";
-import { UserDetail } from "../users/_actions/use-Actions";
 import {
   ProfileDD,
   UserDetailForm,
   getUserDetailWithClerk,
+  UserDetail,
+  getUsersWithClerk,
 } from "../users/_actions/user-actions";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,7 +32,6 @@ import {
   TooltipProvider,
 } from "@radix-ui/react-tooltip";
 import { TooltipTrigger } from "@/components/ui/tooltip";
-import { getUsersWithClerk } from "@/features/customers/users/_actions/users-actions";
 
 interface CustomerWizardFormProps {
   customer: CustomerSchema;
@@ -78,9 +79,11 @@ export default function CustomerWizardForm({
 
   useEffect(() => {
     const loadCustomization = async () => {
+      console.log("newCustomerId", newCustomerId);
       if (newCustomerId) {
         const response = await getCustomizationByCustomerId(newCustomerId);
         if (response) {
+          console.log("response", response);
           setCustomizationData({
             imageUrl: response.imageUrl ?? undefined,
             id: response.id ?? 0,
@@ -131,10 +134,35 @@ export default function CustomerWizardForm({
   };
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    setImageError(null); // Limpa erros anteriores
+
     if (file) {
+      // Validação de extensão
+      const allowedExtensions = ["jpg", "jpeg", "png"];
+      const fileExtension = file.name.split(".").pop()?.toLowerCase();
+
+      if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+        setImageError("Apenas arquivos JPG, JPEG e PNG são aceitos");
+        setImagePreview(null);
+        e.target.value = ""; // Limpa o input
+        return;
+      }
+
+      // Validação de tipo MIME
+      const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
+      if (!allowedMimeTypes.includes(file.type)) {
+        setImageError(
+          "Formato de arquivo inválido. Apenas JPG, JPEG e PNG são aceitos"
+        );
+        setImagePreview(null);
+        e.target.value = ""; // Limpa o input
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -215,6 +243,11 @@ export default function CustomerWizardForm({
   console.log("CUSTOMERID", newCustomerId);
 
   const [subdomainValue, setSubdomainValue] = useState("");
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
+  const [isSavingCustomization, setIsSavingCustomization] = useState(false);
+
   useEffect(() => {
     if (customizationData?.subdomain) {
       setSubdomainValue(customizationData.subdomain);
@@ -338,10 +371,18 @@ export default function CustomerWizardForm({
             )}
           </Card>
           <div className="flex justify-between gap-2 mt-4">
-            <Button variant="outline" className="cursor-pointer" onClick={() => handleStepChange("step1")}>
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => handleStepChange("step1")}
+            >
               ← Voltar
             </Button>
-            <Button variant="outline" className="cursor-pointer" onClick={() => handleStepChange("step3")}>
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => handleStepChange("step3")}
+            >
               Próximo →
             </Button>
           </div>
@@ -349,25 +390,73 @@ export default function CustomerWizardForm({
 
         <TabsContent value="step3">
           <form
-              onSubmit={async (e) => {
-                e.preventDefault();
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setValidationErrors({});
+              setIsSavingCustomization(true);
 
-                const formData = new FormData(e.currentTarget);
+              const formData = new FormData(e.currentTarget);
 
-                try {
-                  if (customizationData) {
-                    await updateCustomization(formData);
-                  } else {
-                    await saveCustomization(formData);
+              // Preparar dados para validação
+              const validationData = {
+                subdomain: subdomainValue,
+                primaryColor: formData.get("primaryColor") as string,
+                secondaryColor: formData.get("secondaryColor") as string,
+                image: formData.get("image"),
+                customerId: formData.get("customerId") as string,
+                id: customizationData?.id,
+              };
+
+              // Validar usando o schema
+              const validationResult =
+                CustomizationSchema.safeParse(validationData);
+
+              if (!validationResult.success) {
+                const errors: Record<string, string> = {};
+                validationResult.error.errors.forEach((error) => {
+                  if (error.path[0]) {
+                    errors[error.path[0] as string] = error.message;
                   }
+                });
+                setValidationErrors(errors);
+                toast.error("Por favor, corrija os erros antes de continuar");
+                setIsSavingCustomization(false);
+                return;
+              }
 
-                  toast.success("Customização salva com sucesso!");
-                } catch (error) {
-                  console.error("Erro ao salvar a customização", error);
-                  toast.error("Erro ao salvar a customização");
+              try {
+                if (customizationData) {
+                  await updateCustomization(formData);
+                } else {
+                  await saveCustomization(formData);
                 }
-              }}
-              className="space-y-6"
+
+                // Atualizar o customizationData com os dados salvos
+                if (newCustomerId) {
+                  const updatedCustomization =
+                    await getCustomizationByCustomerId(newCustomerId);
+                  if (updatedCustomization) {
+                    setCustomizationData({
+                      imageUrl: updatedCustomization.imageUrl ?? undefined,
+                      id: updatedCustomization.id ?? 0,
+                      subdomain: updatedCustomization.name ?? undefined,
+                      primaryColor:
+                        updatedCustomization.primaryColor ?? undefined,
+                      secondaryColor:
+                        updatedCustomization.secondaryColor ?? undefined,
+                    });
+                  }
+                }
+
+                toast.success("Customização salva com sucesso!");
+              } catch (error) {
+                console.error("Erro ao salvar a customização", error);
+                toast.error("Erro ao salvar a customização");
+              } finally {
+                setIsSavingCustomization(false);
+              }
+            }}
+            className="space-y-6"
           >
             <Card className="border-1">
               <CardHeader className="border-b border-border">
@@ -412,14 +501,27 @@ export default function CustomerWizardForm({
                             value={subdomainValue}
                             onChange={(e) => {
                               const sanitized = e.target.value
-                                  .replace(/[^a-zA-Z0-9À-ÿ\s]/g, "")
-                                  .toLowerCase();
+                                .replace(/[^a-zA-Z0-9À-ÿ\s]/g, "")
+                                .toLowerCase();
                               setSubdomainValue(sanitized);
+                              // Limpar erro quando o usuário começar a digitar
+                              if (validationErrors.subdomain) {
+                                setValidationErrors((prev) => {
+                                  const newErrors = { ...prev };
+                                  delete newErrors.subdomain;
+                                  return newErrors;
+                                });
+                              }
                             }}
-                            className="w-full"
+                            className={`w-full ${validationErrors.subdomain ? "border-red-500" : ""}`}
                             placeholder="Meu subdomínio"
                             name="subdomain"
                           />
+                          {validationErrors.subdomain && (
+                            <p className="mt-1 text-xs text-red-500 font-medium">
+                              {validationErrors.subdomain}
+                            </p>
+                          )}
                         </div>
 
                         {/* Upload de Imagem */}
@@ -429,7 +531,7 @@ export default function CustomerWizardForm({
                           </label>
                           <input
                             type="file"
-                            accept="image/*"
+                            accept="image/jpeg,image/jpg,image/png"
                             name="image"
                             id="image"
                             onChange={handleImageChange}
@@ -442,6 +544,15 @@ export default function CustomerWizardForm({
                               file:cursor-pointer
                               dark:file:bg-white"
                           />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Apenas arquivos nos formatos JPG, JPEG e PNG são
+                            aceitos
+                          </p>
+                          {imageError && (
+                            <p className="mt-1 text-xs text-red-500 font-medium">
+                              {imageError}
+                            </p>
+                          )}
                         </div>
 
                         {/* Preview da Imagem Selecionada */}
@@ -550,14 +661,24 @@ export default function CustomerWizardForm({
                 </>
               )}
               <div className="flex justify-end space-x-2 mt-4 pr-3">
-                <Button type="submit" className="mt-6 p-2 cursor-pointer">
-                  Salvar personalização
+                <Button
+                  type="submit"
+                  className="mt-6 p-2 cursor-pointer"
+                  disabled={isSavingCustomization}
+                >
+                  {isSavingCustomization
+                    ? "Salvando..."
+                    : "Salvar personalização"}
                 </Button>
               </div>
             </Card>
           </form>
           <div className="flex justify-start space-x-2 mt-4 p-1">
-            <Button variant="outline" className="cursor-pointer" onClick={() => handleStepChange("step2")}>
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => handleStepChange("step2")}
+            >
               ← Voltar
             </Button>
           </div>
