@@ -107,7 +107,7 @@ export default function CustomerFormm({
                     <FormControl>
                       <Input
                         placeholder="Nome do cliente"
-                        maxLength={12}
+                        maxLength={200}
                         {...field}
                         onChange={(e) => {
                           const sanitized = e.target.value.replace(
