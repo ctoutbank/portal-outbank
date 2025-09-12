@@ -4,19 +4,20 @@ export async function sendWelcomePasswordEmail(
   to: string,
   password: string,
   logo: string,
+  customerName: string,
   link?: string
 ) {
   await resend.emails.send({
     from: "noreply@outbank.cloud",
     to,
-    subject: "Sua senha de acesso ao Outbank",
+    subject: "Sua senha de acesso ao "+customerName,
     html: `
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Bem-vindo ao Outbank</title>
+            <title>Bem-vindo ao ${customerName}</title>
         </head>
         <body style="margin: 0; padding: 0; background-color: #2c2c2c !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; min-height: 100vh;">
             <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #2c2c2c; min-height: 100vh; padding: 40px 0;">
@@ -31,7 +32,7 @@ export async function sendWelcomePasswordEmail(
                             
                             <!-- Main Title - Left aligned -->
                             <h1 style="color: #333333; font-size: 32px; font-weight: 600; margin: 0 0 24px 0; line-height: 1.2; text-align: left;">
-                                Bem-vindo ao Outbank.
+                                Bem-vindo ao ${customerName}.
                             </h1>
                             
                             <!-- Welcome Message - Left aligned, black text -->
@@ -78,7 +79,7 @@ export async function sendWelcomePasswordEmail(
                                     Atenciosamente,
                                 </p>
                                 <p style="color: #333333; font-size: 16px; font-weight: 600; margin: 4px 0 0 0;">
-                                    Equipe Outbank
+                                    Equipe ${customerName}
                                 </p>
                             </div>
                         </div>
