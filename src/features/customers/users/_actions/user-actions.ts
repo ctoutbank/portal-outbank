@@ -16,9 +16,8 @@ import {
 } from "../../../../../drizzle/schema";
 
 import { sendWelcomePasswordEmail } from "@/lib/send-email";
-import { ilike } from "drizzle-orm";
 import { getCustomizationByCustomerId } from "@/utils/serverActions";
-import { getCustomerById } from "../../server/customers";
+import { ilike } from "drizzle-orm";
 
 export type UserDetail = typeof users.$inferSelect;
 
