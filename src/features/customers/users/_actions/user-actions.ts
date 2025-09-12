@@ -6,14 +6,11 @@ import { generateSlug } from "@/lib/utils";
 import { clerkClient } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import {
-  profiles,
-  userMerchants,
-  users
-} from "../../../../../drizzle/schema";
+import { profiles, userMerchants, users } from "../../../../../drizzle/schema";
 
 import { sendWelcomePasswordEmail } from "@/lib/send-email";
 import { ilike } from "drizzle-orm";
+import { getCustomizationByCustomerId } from "@/utils/serverActions";
 
 export type UserDetail = typeof users.$inferSelect;
 
@@ -54,14 +51,13 @@ export interface UserDetailForm extends UserDetail {
 
 export async function generateRandomPassword(length = 6) {
   const chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let randomPassword = "";
   for (let i = 0; i < length; i++) {
-      randomPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+    randomPassword += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return randomPassword;
 }
-
 
 export async function updateUserWithClerk(id: number, data: UserInsert) {
   if (!id) {
@@ -183,74 +179,75 @@ interface InsertUserInput {
 
 export async function InsertUser(data: InsertUserInput) {
   try {
-  const {
-    firstName,
-    lastName,
-    email,
-    password,
-    idCustomer,
-    active = true,
-  } = data;
-
-  const finalPassword =
-    password && password.trim() !== ""
-      ? password
-      : await generateRandomPassword();
-
-  const hashedPassword = hashPassword(finalPassword);
-
-  // Buscar o profile ADMIN dinamicamente
-  const adminProfile = await db
-    .select()
-    .from(profiles)
-    .where(ilike(profiles.name, "%ADMIN%"))
-    .limit(1)
-    .execute();
-
-  if (!adminProfile || adminProfile.length === 0) {
-    throw new Error("Profile ADMIN não encontrado no banco.");
-  }
-
-  const idProfile = adminProfile[0].id;
-
-  // Criação no Clerk
-  const clerk = await clerkClient(); // chamar a função e obter o cliente
-  const clerkUser = await clerk.users.createUser({
-    firstName,
-    lastName,
-    emailAddress: [email],
-    skipPasswordRequirement: true,
-    publicMetadata: {
-      isFirstLogin: true,
-    },
-  });
-
-  // Criação no banco
-  const created = await db
-    .insert(users)
-    .values({
-      slug: generateSlug(),
-      dtinsert: new Date().toISOString(),
-      dtupdate: new Date().toISOString(),
-      active,
+    const {
+      firstName,
+      lastName,
       email,
-      idCustomer: idCustomer ?? null,
-      idClerk: clerkUser.id,
-      idProfile, // aqui usa o idProfile dinâmico
-      idAddress: null,
-      fullAccess: false,
-      hashedPassword,
-    })
-    .returning({ id: users.id });
+      password,
+      idCustomer,
+      active = true,
+    } = data;
 
+    const finalPassword =
+      password && password.trim() !== ""
+        ? password
+        : await generateRandomPassword();
 
-  const logo = "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
+    const hashedPassword = hashPassword(finalPassword);
 
-  await sendWelcomePasswordEmail(email, finalPassword, logo);
+    // Buscar o profile ADMIN dinamicamente
+    const adminProfile = await db
+      .select()
+      .from(profiles)
+      .where(ilike(profiles.name, "%ADMIN%"))
+      .limit(1)
+      .execute();
 
-  console.log("logo", logo);
+    if (!adminProfile || adminProfile.length === 0) {
+      throw new Error("Profile ADMIN não encontrado no banco.");
+    }
 
-  return created[0].id;
+    const idProfile = adminProfile[0].id;
+
+    // Criação no Clerk
+    const clerk = await clerkClient(); // chamar a função e obter o cliente
+    const clerkUser = await clerk.users.createUser({
+      firstName,
+      lastName,
+      emailAddress: [email],
+      skipPasswordRequirement: true,
+      publicMetadata: {
+        isFirstLogin: true,
+      },
+    });
+
+    // Criação no banco
+    const created = await db
+      .insert(users)
+      .values({
+        slug: generateSlug(),
+        dtinsert: new Date().toISOString(),
+        dtupdate: new Date().toISOString(),
+        active,
+        email,
+        idCustomer: idCustomer ?? null,
+        idClerk: clerkUser.id,
+        idProfile, // aqui usa o idProfile dinâmico
+        idAddress: null,
+        fullAccess: false,
+        hashedPassword,
+      })
+      .returning({ id: users.id });
+
+    const domain = await getCustomizationByCustomerId(idCustomer ?? 0);
+
+    const logo = "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
+    const link = domain?.name ? `https://${domain.name}.consolle.one` : undefined;
+    await sendWelcomePasswordEmail(email, finalPassword, logo, link);
+
+    console.log("logo", logo);
+
+    return created[0].id;
   } catch (error: unknown) {
     console.error("Erro ao criar usuário:", error);
 
@@ -375,5 +372,3 @@ export async function deleteUser(id: number): Promise<boolean> {
     return false;
   }
 }
-
-
