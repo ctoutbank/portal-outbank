@@ -18,7 +18,7 @@ export async function insertCustomerFormAction(data: CustomerSchema) {
       name: data.name,
       customerId: data.customerId || null,
       settlementManagementType: data.settlementManagementType || null,
-      isActive: false,
+      isActive: true,
       idParent: idParent,
     };
 

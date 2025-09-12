@@ -1,11 +1,15 @@
-import {resend} from "./resend"
+import { resend } from "./resend";
 
-export async function sendWelcomePasswordEmail(to: string, password: string) {
-    await resend.emails.send({
-        from: "noreply@outbank.cloud",
-        to,
-        subject: "Sua senha de acesso ao Outbank",
-        html: `
+export async function sendWelcomePasswordEmail(
+  to: string,
+  password: string,
+  logo: string
+) {
+  await resend.emails.send({
+    from: "noreply@outbank.cloud",
+    to,
+    subject: "Sua senha de acesso ao Outbank",
+    html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -21,11 +25,7 @@ export async function sendWelcomePasswordEmail(to: string, password: string) {
                             
                             <!-- Logo Section - Rectangle with circle inside, aligned left -->
                             <div style="margin-bottom: 32px;">
-                                <div style="display: inline-block; width: 120px; height: 80px; background-color: #000000; position: relative;">
-                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                        <span style="color: black; font-size: 18px; font-weight: bold;">O</span>
-                                    </div>
-                                </div>
+                                <div style="width: 120px; height: 120px; background-image: url('${logo}'); background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
                             </div>
                             
                             <!-- Main Title - Left aligned -->
@@ -87,5 +87,5 @@ export async function sendWelcomePasswordEmail(to: string, password: string) {
         </body>
         </html>
         `,
-    });
+  });
 }
