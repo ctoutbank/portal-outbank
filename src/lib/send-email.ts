@@ -3,7 +3,8 @@ import { resend } from "./resend";
 export async function sendWelcomePasswordEmail(
   to: string,
   password: string,
-  logo: string
+  logo: string,
+  link?: string
 ) {
   await resend.emails.send({
     from: "noreply@outbank.cloud",
@@ -37,11 +38,18 @@ export async function sendWelcomePasswordEmail(
                             <p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 24px 0; text-align: left;">
                                 Sua conta foi criada com sucesso! Estamos felizes em tê-lo conosco.
                             </p>
+                        
                             
                             <p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 32px 0; text-align: left;">
                                 Esperamos que tudo esteja conforme esperado, mas se precisar de ajuda, você pode entrar em contato conosco através do nosso atendimento ao cliente.
                             </p>
-                            
+                                ${
+                                  link
+                                    ? `<p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 24px 0; text-align: left;">
+                                Clique <a href="${link + "/auth/sign-in"}" target="_blank">aqui</a> para acessar o sistema.
+                            </p>`
+                                    : ""
+                                }
                             <!-- Password Section -->
                             <div style="margin: 32px 0;">
                                 <p style="color: #333333; font-size: 16px; margin: 0 0 12px 0; font-weight: 600; text-align: left;">

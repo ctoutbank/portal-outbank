@@ -282,14 +282,14 @@ export default function CustomerWizardForm({
             className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-2 sm:px-4 data-[state=active]:bg-background data-[state=active]:text-foreground"
             onMouseDown={(e) => handleTabClick("step2", e)}
           >
-            2. Configurar Usuários
+            2. Personalização
           </TabsTrigger>
           <TabsTrigger
             value="step3"
             className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-2 sm:px-4 data-[state=active]:bg-background data-[state=active]:text-foreground "
             onMouseDown={(e) => handleTabClick("step3", e)}
           >
-            3. Personalização
+            3. Configurar Usuários
           </TabsTrigger>
         </TabsList>
 
@@ -314,81 +314,7 @@ export default function CustomerWizardForm({
           </div>
         </TabsContent>
 
-        <TabsContent value="step2" className="space-y-4">
-          <Card className="border-0 shadow-none">
-            {isFirstStepComplete && (
-              <>
-                {selectedUser === null ? (
-                  <div className="space-y-6">
-                    <UserCustomerForm
-                      customerId={newCustomerId || undefined}
-                      onSuccess={handleUserSuccess}
-                      profiles={profiles}
-                    />
-
-                    {isLoadingUsers ? (
-                      <div className="text-center p-8">
-                        <p>Carregando usuários...</p>
-                      </div>
-                    ) : (
-                      <UsersCustomerList
-                        users={users}
-                        customerId={newCustomerId || 0}
-                        onRefresh={() => loadUsers(newCustomerId || 0)}
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <Card>
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium">Editar Usuário</h3>
-                        <Button
-                          variant="outline"
-                          onClick={() => setSelectedUser(null)}
-                          className="cursor-pointer"
-                        >
-                          Voltar
-                        </Button>
-                      </div>
-
-                      {isLoadingUser ? (
-                        <div className="text-center p-4">
-                          <p>Carregando dados do usuário...</p>
-                        </div>
-                      ) : (
-                        <UserCustomerForm
-                          user={userToEdit || undefined}
-                          customerId={newCustomerId || undefined}
-                          onSuccess={handleUserSuccess}
-                          profiles={profiles}
-                        />
-                      )}
-                    </Card>
-                  </div>
-                )}
-              </>
-            )}
-          </Card>
-          <div className="flex justify-between gap-2 mt-4">
-            <Button
-              variant="outline"
-              className="cursor-pointer"
-              onClick={() => handleStepChange("step1")}
-            >
-              ← Voltar
-            </Button>
-            <Button
-              variant="outline"
-              className="cursor-pointer"
-              onClick={() => handleStepChange("step3")}
-            >
-              Próximo →
-            </Button>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="step3">
+        <TabsContent value="step2">
           <form
             onSubmit={async (e) => {
               e.preventDefault();
@@ -673,7 +599,81 @@ export default function CustomerWizardForm({
               </div>
             </Card>
           </form>
-          <div className="flex justify-start space-x-2 mt-4 p-1">
+          <div className="flex justify-between space-x-2 mt-4 p-1">
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => handleStepChange("step1")}
+            >
+              ← Voltar
+            </Button>
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => handleStepChange("step3")}
+            >
+              Próximo →
+            </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="step3" className="space-y-4">
+          <Card className="border-0 shadow-none">
+            {isFirstStepComplete && (
+              <>
+                {selectedUser === null ? (
+                  <div className="space-y-6">
+                    <UserCustomerForm
+                      customerId={newCustomerId || undefined}
+                      onSuccess={handleUserSuccess}
+                      profiles={profiles}
+                    />
+
+                    {isLoadingUsers ? (
+                      <div className="text-center p-8">
+                        <p>Carregando usuários...</p>
+                      </div>
+                    ) : (
+                      <UsersCustomerList
+                        users={users}
+                        customerId={newCustomerId || 0}
+                        onRefresh={() => loadUsers(newCustomerId || 0)}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <Card>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">Editar Usuário</h3>
+                        <Button
+                          variant="outline"
+                          onClick={() => setSelectedUser(null)}
+                          className="cursor-pointer"
+                        >
+                          Voltar
+                        </Button>
+                      </div>
+
+                      {isLoadingUser ? (
+                        <div className="text-center p-4">
+                          <p>Carregando dados do usuário...</p>
+                        </div>
+                      ) : (
+                        <UserCustomerForm
+                          user={userToEdit || undefined}
+                          customerId={newCustomerId || undefined}
+                          onSuccess={handleUserSuccess}
+                          profiles={profiles}
+                        />
+                      )}
+                    </Card>
+                  </div>
+                )}
+              </>
+            )}
+          </Card>
+          <div className="flex justify-start gap-2 mt-4">
             <Button
               variant="outline"
               className="cursor-pointer"
