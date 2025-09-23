@@ -17,7 +17,7 @@ export default function SessionTimeout({ children }: SessionTimeoutProps) {
     }
   };
 
-  const { getRemainingTime, getLastActiveTime } = useIdleTimer({
+  const { getRemainingTime } = useIdleTimer({
     timeout: 1000 * 60 * 2, // 2 minutes in milliseconds
     onIdle: handleOnIdle,
     debounce: 500,
