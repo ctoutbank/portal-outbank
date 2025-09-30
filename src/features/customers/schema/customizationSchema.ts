@@ -13,6 +13,8 @@ export const CustomizationSchema = z.object({
   primaryColor: z.string().optional(),
   secondaryColor: z.string().optional(),
   image: z.any().optional(), // File input
+  loginImage: z.any().optional(), // Login background image file input
+  favicon: z.any().optional(), // Favicon file input
   customerId: z.string().min(1, "ID do cliente é obrigatório"),
   id: z.number().optional(),
 });

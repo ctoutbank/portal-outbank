@@ -15,6 +15,8 @@ export type CustomerCustomization = {
   primaryColor: string | null;
   secondaryColor: string | null;
   imageUrl: string | null;
+  loginImageUrl: string | null;
+  faviconUrl: string | null;
   customerId: number | null;
 };
 
@@ -75,6 +77,8 @@ export async function getCustomizationByCustomerId(
         primaryColor: customerCustomization.primaryColor,
         secondaryColor: customerCustomization.secondaryColor,
         imageUrl: file.fileUrl,
+        loginImageUrl: customerCustomization.loginImageUrl,
+        faviconUrl: customerCustomization.faviconUrl,
         customerId: customerCustomization.customerId,
       })
       .from(customerCustomization)
@@ -85,6 +89,34 @@ export async function getCustomizationByCustomerId(
     return result[0] || null;
   } catch (error) {
     console.error("Erro ao buscar customização por customerId:", error);
+    return null;
+  }
+}
+
+export async function getCustomizationBySubdomain(
+  subdomain: string
+): Promise<CustomerCustomization | null> {
+  try {
+    const result = await db
+      .select({
+        id: customerCustomization.id,
+        name: customerCustomization.name,
+        slug: customerCustomization.slug,
+        primaryColor: customerCustomization.primaryColor,
+        secondaryColor: customerCustomization.secondaryColor,
+        imageUrl: file.fileUrl,
+        loginImageUrl: customerCustomization.loginImageUrl,
+        faviconUrl: customerCustomization.faviconUrl,
+        customerId: customerCustomization.customerId,
+      })
+      .from(customerCustomization)
+      .leftJoin(file, eq(customerCustomization.fileId, file.id))
+      .where(eq(customerCustomization.slug, subdomain))
+      .limit(1);
+
+    return result[0] || null;
+  } catch (error) {
+    console.error("Erro ao buscar customização por subdomínio:", error);
     return null;
   }
 }
@@ -108,6 +140,10 @@ export async function saveCustomization(formData: FormData) {
 
   let imageUrl = "";
   let fileId: number | null = null;
+  let loginImageUrl = "";
+  let loginImageFileId: number | null = null;
+  let faviconUrl = "";
+  let faviconFileId: number | null = null;
 
   const image = formData.get("image") as File | null;
   if (image) {
@@ -142,6 +178,70 @@ export async function saveCustomization(formData: FormData) {
     fileId = result[0].id;
   }
 
+  const loginImage = formData.get("loginImage") as File | null;
+  if (loginImage) {
+    const arrayBuffer = await loginImage.arrayBuffer();
+    const imageBuffer = Buffer.from(arrayBuffer);
+    const imageId = nanoid(8);
+    const extension = loginImage.name.split(".").pop() || "jpg";
+    const fileType = loginImage.type || "image/jpeg";
+
+    const uploadCommand = new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: `login-${imageId}.${extension}`,
+      Body: imageBuffer,
+      ContentType: fileType,
+    });
+
+    await s3Client.send(uploadCommand);
+
+    loginImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/login-${imageId}.${extension}`;
+    const result = await db
+      .insert(file)
+      .values({
+        fileUrl: loginImageUrl,
+        fileName: loginImage.name,
+        extension: extension,
+        fileType: fileType,
+        active: true,
+      })
+      .returning({ id: file.id });
+
+    loginImageFileId = result[0].id;
+  }
+
+  const favicon = formData.get("favicon") as File | null;
+  if (favicon) {
+    const arrayBuffer = await favicon.arrayBuffer();
+    const imageBuffer = Buffer.from(arrayBuffer);
+    const imageId = nanoid(8);
+    const extension = favicon.name.split(".").pop() || "ico";
+    const fileType = favicon.type || "image/x-icon";
+
+    const uploadCommand = new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: `favicon-${imageId}.${extension}`,
+      Body: imageBuffer,
+      ContentType: fileType,
+    });
+
+    await s3Client.send(uploadCommand);
+
+    faviconUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/favicon-${imageId}.${extension}`;
+    const result = await db
+      .insert(file)
+      .values({
+        fileUrl: faviconUrl,
+        fileName: favicon.name,
+        extension: extension,
+        fileType: fileType,
+        active: true,
+      })
+      .returning({ id: file.id });
+
+    faviconFileId = result[0].id;
+  }
+
   const primaryHSL = hexToHsl(primaryColor);
   const secondaryHSL = hexToHsl(secondaryColor);
 
@@ -152,6 +252,10 @@ export async function saveCustomization(formData: FormData) {
     secondaryColor: secondaryHSL,
     customerId: customerId,
     fileId: fileId,
+    loginImageUrl: loginImageUrl || null,
+    loginImageFileId: loginImageFileId,
+    faviconUrl: faviconUrl || null,
+    faviconFileId: faviconFileId,
   });
 
   revalidatePath("/");
@@ -180,6 +284,10 @@ export async function updateCustomization(formData: FormData) {
 
   let imageUrl = "";
   let fileId: number | null = null;
+  let loginImageUrl = "";
+  let loginImageFileId: number | null = null;
+  let faviconUrl = "";
+  let faviconFileId: number | null = null;
 
   const image = formData.get("image") as File | null;
   if (image && image.size > 0) {
@@ -231,6 +339,97 @@ export async function updateCustomization(formData: FormData) {
     }
   }
 
+  const loginImage = formData.get("loginImage") as File | null;
+  if (loginImage && loginImage.size > 0) {
+    const arrayBuffer = await loginImage.arrayBuffer();
+    const imageBuffer = Buffer.from(arrayBuffer);
+    const imageId = nanoid();
+    const extension = loginImage.name.split(".").pop() || "jpg";
+    const fileType = loginImage.type || "image/jpeg";
+
+    const uploadCommand = new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: `login-${imageId}.${extension}`,
+      Body: imageBuffer,
+      ContentType: fileType,
+    });
+
+    await s3Client.send(uploadCommand);
+
+    loginImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/login-${imageId}.${extension}`;
+    const result = await db
+      .insert(file)
+      .values({
+        fileUrl: loginImageUrl,
+        fileName: loginImage.name,
+        extension: extension,
+        fileType: fileType,
+        active: true,
+      })
+      .returning({ id: file.id });
+
+    loginImageFileId = result[0].id;
+  } else {
+    // Manter login image existente
+    const existingCustomization = await getCustomizationByCustomerId(
+      validated.data.customerId
+    );
+    if (existingCustomization?.loginImageUrl) {
+      loginImageUrl = existingCustomization.loginImageUrl;
+      const existingFile = await db
+        .select({ id: file.id })
+        .from(file)
+        .where(eq(file.fileUrl, existingCustomization.loginImageUrl))
+        .limit(1);
+      loginImageFileId = existingFile[0]?.id || null;
+    }
+  }
+
+  const favicon = formData.get("favicon") as File | null;
+  if (favicon && favicon.size > 0) {
+    const arrayBuffer = await favicon.arrayBuffer();
+    const imageBuffer = Buffer.from(arrayBuffer);
+    const imageId = nanoid();
+    const extension = favicon.name.split(".").pop() || "ico";
+    const fileType = favicon.type || "image/x-icon";
+
+    const uploadCommand = new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: `favicon-${imageId}.${extension}`,
+      Body: imageBuffer,
+      ContentType: fileType,
+    });
+
+    await s3Client.send(uploadCommand);
+
+    faviconUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/favicon-${imageId}.${extension}`;
+    const result = await db
+      .insert(file)
+      .values({
+        fileUrl: faviconUrl,
+        fileName: favicon.name,
+        extension: extension,
+        fileType: fileType,
+        active: true,
+      })
+      .returning({ id: file.id });
+
+    faviconFileId = result[0].id;
+  } else {
+    // Manter favicon existente
+    const existingCustomization = await getCustomizationByCustomerId(
+      validated.data.customerId
+    );
+    if (existingCustomization?.faviconUrl) {
+      faviconUrl = existingCustomization.faviconUrl;
+      const existingFile = await db
+        .select({ id: file.id })
+        .from(file)
+        .where(eq(file.fileUrl, existingCustomization.faviconUrl))
+        .limit(1);
+      faviconFileId = existingFile[0]?.id || null;
+    }
+  }
 
   const primaryHSL = hexToHsl(primaryColor);
   const secondaryHSL = hexToHsl(secondaryColor);
@@ -244,6 +443,10 @@ export async function updateCustomization(formData: FormData) {
       secondaryColor: secondaryHSL,
       ...(imageUrl && { imageUrl: imageUrl }),
       fileId: fileId,
+      ...(loginImageUrl && { loginImageUrl: loginImageUrl }),
+      loginImageFileId: loginImageFileId,
+      ...(faviconUrl && { faviconUrl: faviconUrl }),
+      faviconFileId: faviconFileId,
     })
     .where(eq(customerCustomization.id, id));
 
