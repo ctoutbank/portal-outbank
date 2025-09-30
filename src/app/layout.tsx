@@ -8,6 +8,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import ThemeInitializer from "@/components/themeInitializer";
 import { getCurrentTenantCustomization } from "@/lib/tenant-detection";
+import SessionTimeout from "@/components/session-timeout";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -57,14 +58,15 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-
-            <SidebarProvider>
-              <AppSidebar variant="inset" />
-              <SidebarInset className="bg-card rounded-lg shadow">
-                {children}
-                <Toaster richColors position="top-right" />
-              </SidebarInset>
-            </SidebarProvider>
+            <SessionTimeout>
+              <SidebarProvider>
+                <AppSidebar variant="inset" />
+                <SidebarInset className="bg-card rounded-lg shadow">
+                  {children}
+                  <Toaster richColors position="top-right" />
+                </SidebarInset>
+              </SidebarProvider>
+            </SessionTimeout>
           </ThemeProvider>
         </body>
       </html>
