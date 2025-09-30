@@ -3,8 +3,24 @@ import { getCustomizationBySubdomain } from "../utils/serverActions";
 
 export async function getCurrentTenantCustomization() {
   try {
-    const headersList = await headers();
-    const host = headersList.get('host') || '';
+    if (typeof window !== 'undefined') {
+      const host = window.location.host;
+      const subdomain = host.split('.')[0];
+      
+      if (subdomain === 'consolle' || subdomain === 'localhost' || host.includes('localhost')) {
+        return null;
+      }
+      
+      return null;
+    }
+    
+    let host = '';
+    try {
+      const headersList = await headers();
+      host = headersList.get('host') || '';
+    } catch {
+      return null;
+    }
     
     const subdomain = host.split('.')[0];
     
