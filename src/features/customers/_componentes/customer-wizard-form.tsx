@@ -511,6 +511,54 @@ export default function CustomerWizardForm({
                             ></Image>
                           </div>
                         )}
+
+                        {/* Upload de Imagem de Login */}
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Imagem de Fundo do Login
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png"
+                            name="loginImage"
+                            id="loginImage"
+                            className="block w-full text-sm text-foreground
+                              file:mr-4 file:py-2 file:px-4
+                              file:rounded file:border-0
+                              file:text-sm file:font-semibold
+                              file:bg-secondary file:text-gray-700
+                              hover:file:bg-gray-300
+                              file:cursor-pointer
+                              dark:file:bg-white"
+                          />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Imagem que será exibida como fundo na tela de login (JPG, JPEG, PNG)
+                          </p>
+                        </div>
+
+                        {/* Upload de Favicon */}
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Favicon
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/x-icon,image/vnd.microsoft.icon,image/ico,image/png"
+                            name="favicon"
+                            id="favicon"
+                            className="block w-full text-sm text-foreground
+                              file:mr-4 file:py-2 file:px-4
+                              file:rounded file:border-0
+                              file:text-sm file:font-semibold
+                              file:bg-secondary file:text-gray-700
+                              hover:file:bg-gray-300
+                              file:cursor-pointer
+                              dark:file:bg-white"
+                          />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Ícone que aparecerá na aba do navegador (ICO, PNG - 16x16 ou 32x32 pixels)
+                          </p>
+                        </div>
                       </div>
 
                       {/* Coluna Direita - Cores */}

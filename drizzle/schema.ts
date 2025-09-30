@@ -1485,12 +1485,16 @@ export const customerCustomization = pgTable("customer_customization", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 	imageUrl: varchar("image_url", { length: 100 }),
+	loginImageUrl: varchar("login_image_url", { length: 100 }),
+	faviconUrl: varchar("favicon_url", { length: 100 }),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	customerId: bigint("customer_id", { mode: "number" }),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	id: bigint({ mode: "number" }).generatedAlwaysAsIdentity({ name: "tenants_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	fileId: bigint("file_id", { mode: "number" }),
+	loginImageFileId: bigint("login_image_file_id", { mode: "number" }),
+	faviconFileId: bigint("favicon_file_id", { mode: "number" }),
 }, (table) => [
 	unique("tenants_slug_key").on(table.slug),
 ]);
