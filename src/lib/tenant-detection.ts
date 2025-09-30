@@ -4,13 +4,6 @@ import { getCustomizationBySubdomain } from "../utils/serverActions";
 export async function getCurrentTenantCustomization() {
   try {
     if (typeof window !== 'undefined') {
-      const host = window.location.host;
-      const subdomain = host.split('.')[0];
-      
-      if (subdomain === 'consolle' || subdomain === 'localhost' || host.includes('localhost')) {
-        return null;
-      }
-      
       return null;
     }
     
@@ -22,9 +15,13 @@ export async function getCurrentTenantCustomization() {
       return null;
     }
     
+    if (!host || host.includes('localhost') || host.includes('127.0.0.1')) {
+      return null;
+    }
+    
     const subdomain = host.split('.')[0];
     
-    if (subdomain === 'consolle' || subdomain === 'localhost' || host.includes('localhost')) {
+    if (subdomain === 'consolle' || subdomain === 'portal-outbank') {
       return null;
     }
     
