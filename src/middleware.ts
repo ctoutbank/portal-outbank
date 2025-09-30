@@ -11,19 +11,15 @@ function isClerkConfigured() {
          !publishableKey.includes('placeholder');
 }
 
-export default function middleware(request: any, event?: any) {
+export default clerkMiddleware(async (auth, request) => {
   if (process.env.NODE_ENV === 'development' && !isClerkConfigured()) {
     return NextResponse.next();
   }
   
-  const clerkHandler = clerkMiddleware(async (auth, req) => {
-    if (!isPublicRoute(req)) {
-      await auth.protect();
-    }
-  });
-  
-  return clerkHandler(request, event);
-}
+  if (!isPublicRoute(request)) {
+    await auth.protect();
+  }
+});
 
 export const config = {
   matcher: [
