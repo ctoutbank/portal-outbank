@@ -9,10 +9,28 @@ interface SessionTimeoutProps {
 }
 
 export default function SessionTimeout({ children }: SessionTimeoutProps) {
-  const { signOut, isSignedIn } = useAuth();
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const isDevelopmentMode = process.env.NODE_ENV === 'development' && 
+    (!publishableKey || 
+     publishableKey === 'pk_test_placeholder' ||
+     publishableKey.includes('bGVhcm5pbmctZGVtby0xMjM0NTY3ODkw') ||
+     publishableKey.includes('placeholder'));
+
+  let signOut: (() => void) | undefined;
+  let isSignedIn: boolean = false;
+
+  try {
+    const auth = useAuth();
+    signOut = auth.signOut;
+    isSignedIn = auth.isSignedIn || false;
+  } catch (error) {
+    if (!isDevelopmentMode) {
+      console.error("Clerk authentication error:", error);
+    }
+  }
 
   const handleOnIdle = () => {
-    if (isSignedIn) {
+    if (isSignedIn && signOut) {
       signOut();
     }
   };
@@ -25,6 +43,8 @@ export default function SessionTimeout({ children }: SessionTimeoutProps) {
   });
 
   useEffect(() => {
+    if (!isSignedIn || !getRemainingTime) return;
+
     const interval = setInterval(() => {
       if (isSignedIn) {
         console.log("Session timeout remaining:", Math.round(getRemainingTime() / 1000), "seconds");

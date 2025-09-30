@@ -10,7 +10,16 @@ import Image from 'next/image'
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { user } = useUser();
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let user: any = null;
+  
+  try {
+    const userHook = useUser();
+    user = userHook.user;
+  } catch (error) {
+    console.warn("Clerk user hook not available:", error);
+  }
 
   const router = useRouter();
 
@@ -30,7 +39,22 @@ export function UserMenu() {
     };
   }, []);
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <div className="cursor-pointer flex items-center gap-2 rounded-full bg-white px-3 py-2 shadow-sm">
+          <div className="h-8 w-8 overflow-hidden rounded-full bg-gray-400">
+            <div className="flex h-full w-full items-center justify-center text-white">
+              D
+            </div>
+          </div>
+          <span className="hidden text-sm font-medium md:block">
+            Dev Mode
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative" ref={dropdownRef}>
