@@ -38,7 +38,7 @@ export default function SessionTimeout({ children }: SessionTimeoutProps) {
   const { getRemainingTime } = useIdleTimer({
     timeout: 1000 * 60 * 2, // 2 minutes in milliseconds
     onIdle: handleOnIdle,
-    throttle: 500,
+    debounce: 500,
   });
 
   useEffect(() => {

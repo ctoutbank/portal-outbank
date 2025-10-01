@@ -3,9 +3,10 @@
 import { MerchantData } from "@/app/dashboard/actions"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, CreditCard, DollarSign, TrendingDown, TrendingUp } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import RefreshButton from "@/app/dashboard/refresh-button"
+import ClientOnlyChart from "./ClientOnlyChart"
 
 interface DashboardProps {
   dashboardData: {
@@ -52,10 +53,32 @@ function formatLastUpdate(date?: Date) {
 }
 
 export default function Dashboard({ dashboardData = defaultData }: DashboardProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Efeito para logging de debug
   useEffect(() => {
     console.log("Dashboard data received:", dashboardData);
   }, [dashboardData]);
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-pulse space-y-6 w-full max-w-6xl">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+          <div className="h-[320px] bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   // Garantir que dashboardData tenha valores válidos usando defaults onde necessário
   const data = {
@@ -153,30 +176,32 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
         </CardHeader>
         <CardContent className="pl-2">
           {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="name"
-                  tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
-                />
-                <YAxis 
-                  tickFormatter={(value) => new Intl.NumberFormat('pt-BR', { 
-                    notation: 'compact',
-                    compactDisplay: 'short',
-                    style: 'currency', 
-                    currency: 'BRL'
-                  }).format(value)}
-                />
-                <Tooltip 
-                  formatter={(value: number) => new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  }).format(value)}
-                />
-                <Bar dataKey="bruto" name="Valor Bruto" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <ClientOnlyChart>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name"
+                    tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
+                  />
+                  <YAxis 
+                    tickFormatter={(value) => new Intl.NumberFormat('pt-BR', { 
+                      notation: 'compact',
+                      compactDisplay: 'short',
+                      style: 'currency', 
+                      currency: 'BRL'
+                    }).format(value)}
+                  />
+                  <Tooltip 
+                    formatter={(value: number) => new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }).format(value)}
+                  />
+                  <Bar dataKey="bruto" name="Valor Bruto" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ClientOnlyChart>
           ) : (
             <div className="flex items-center justify-center h-[350px] text-center">
               <div className="text-gray-500">
@@ -366,4 +391,4 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
       </Card>
     </div>
   )
-} 
+}  
