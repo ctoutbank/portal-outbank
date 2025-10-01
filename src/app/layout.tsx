@@ -10,6 +10,7 @@ import ThemeInitializer from "@/components/themeInitializer";
 import { getCurrentTenantCustomization } from "@/lib/tenant-detection";
 import SessionTimeout from "@/components/session-timeout";
 import { getClerkConfig } from "@/lib/clerk-config";
+import { validateEnvironment } from "@/lib/env-validation";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,6 +24,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      validateEnvironment();
+    } catch (error) {
+      console.error('Environment validation failed:', error);
+    }
+  }
+  
   let tenantCustomization = null;
   let clerkConfig = null;
   
@@ -52,27 +61,43 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <div className="min-h-screen bg-background p-8">
-              <div className="max-w-4xl mx-auto">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                  <h2 className="text-lg font-semibold text-yellow-800 mb-2">
-                    Development Mode
-                  </h2>
-                  <p className="text-yellow-700">
-                    Clerk authentication is not configured. Running in development mode without authentication.
+            {process.env.NODE_ENV === 'development' ? (
+              <div className="min-h-screen bg-background p-8">
+                <div className="max-w-4xl mx-auto">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <h2 className="text-lg font-semibold text-blue-800 mb-2">
+                      🔧 Development Mode
+                    </h2>
+                    <p className="text-blue-700">
+                      Clerk authentication is not configured. Running in development mode without authentication.
+                    </p>
+                  </div>
+                  <SessionTimeout>
+                    <SidebarProvider>
+                      <AppSidebar variant="inset" />
+                      <SidebarInset className="bg-card rounded-lg shadow">
+                        {children}
+                        <Toaster richColors position="top-right" />
+                      </SidebarInset>
+                    </SidebarProvider>
+                  </SessionTimeout>
+                </div>
+              </div>
+            ) : (
+              <div className="min-h-screen bg-red-50 flex items-center justify-center p-8">
+                <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+                  <h1 className="text-2xl font-bold text-red-800 mb-4">
+                    ❌ Configuration Error
+                  </h1>
+                  <p className="text-red-600 mb-4">
+                    Authentication service is not properly configured.
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Please contact the system administrator.
                   </p>
                 </div>
-                <SessionTimeout>
-                  <SidebarProvider>
-                    <AppSidebar variant="inset" />
-                    <SidebarInset className="bg-card rounded-lg shadow">
-                      {children}
-                      <Toaster richColors position="top-right" />
-                    </SidebarInset>
-                  </SidebarProvider>
-                </SessionTimeout>
               </div>
-            </div>
+            )}
           </ThemeProvider>
         </body>
       </html>

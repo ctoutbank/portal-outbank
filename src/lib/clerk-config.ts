@@ -1,15 +1,19 @@
 export function getClerkConfig() {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   
-  if (!publishableKey || 
+  const isInvalidKey = !publishableKey || 
       publishableKey === 'pk_test_placeholder' ||
       publishableKey.includes('bGVhcm5pbmctZGVtby0xMjM0NTY3ODkw') ||
-      publishableKey.includes('placeholder')) {
+      publishableKey.includes('placeholder') ||
+      publishableKey === 'pk_test_bGVhcm5pbmctZGVtby0xMjM0NTY3ODkwLmNsZXJrLmFjY291bnRzLmRldg';
+  
+  if (isInvalidKey) {
     if (process.env.NODE_ENV === 'development') {
-      console.warn('Clerk publishable key not configured for development');
+      console.warn('🔧 Clerk not configured - running in development mode without authentication');
       return null;
     }
-    throw new Error('Clerk publishable key is required for production');
+    console.error('❌ Clerk publishable key is invalid or missing in production');
+    return null;
   }
   
   return {
@@ -21,4 +25,8 @@ export function getClerkConfig() {
 export function isClerkConfigured(): boolean {
   const config = getClerkConfig();
   return config !== null;
+}
+
+export function shouldUseClerk(): boolean {
+  return isClerkConfigured();
 }

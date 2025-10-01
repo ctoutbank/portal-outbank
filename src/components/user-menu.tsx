@@ -9,19 +9,15 @@ import Image from 'next/image'
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let user: any = null;
-  
-  try {
-    const userHook = useUser();
-    user = userHook.user;
-  } catch (error) {
-    console.warn("Clerk user hook not available:", error);
-  }
-
+  const { user } = useUser();
   const router = useRouter();
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -38,6 +34,23 @@ export function UserMenu() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  if (!hasMounted) {
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <div className="cursor-pointer flex items-center gap-2 rounded-full bg-white px-3 py-2 shadow-sm">
+          <div className="h-8 w-8 overflow-hidden rounded-full bg-gray-400">
+            <div className="flex h-full w-full items-center justify-center text-white">
+              ...
+            </div>
+          </div>
+          <span className="hidden text-sm font-medium md:block">
+            Loading...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
