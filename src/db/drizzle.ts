@@ -8,6 +8,7 @@ config({ path: ".env" });
 
 const dbUrl = process.env.DATABASE_URL || "sua_url_de_fallback";
 
+
 if (!dbUrl) {
   throw new Error("DATABASE_URL não está definida!");
 }

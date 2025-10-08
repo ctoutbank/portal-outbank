@@ -1,6 +1,6 @@
 -- Current sql file was generated after introspecting the database
 -- If you want to run this migration please uncomment this code before executing migrations
-/*
+
 CREATE TABLE "terminals" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"slug" varchar(255),
@@ -865,4 +865,3 @@ ALTER TABLE "merchant_settlements" ADD CONSTRAINT "merchantsettlements_id_custom
 ALTER TABLE "merchant_settlements" ADD CONSTRAINT "merchantsettlements_id_settlement_fkey" FOREIGN KEY ("id_settlement") REFERENCES "public"."settlements"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "merchant_settlement_orders" ADD CONSTRAINT "merchant_settlement_orders_id_payment_institution_fkey" FOREIGN KEY ("id_payment_institution") REFERENCES "public"."payment_institution"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "merchant_settlement_orders" ADD CONSTRAINT "merchant_settlement_orders_id_merchant_settlements_fkey" FOREIGN KEY ("id_merchant_settlements") REFERENCES "public"."merchant_settlements"("id") ON DELETE no action ON UPDATE no action;
-*/
