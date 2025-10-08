@@ -21,7 +21,7 @@ export default function SessionTimeout({ children }: SessionTimeoutProps) {
     timeout: 1000 * 60 * 2, // 2 minutes in milliseconds
     onIdle: handleOnIdle,
     debounce: 500,
-    throttle: 500,
+    //throttle: 500,
   });
 
   useEffect(() => {
