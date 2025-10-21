@@ -28,17 +28,24 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        console.log("POST INICIADO")
         const data: FornecedorFormData = await request.json();
+        console.log("DATA RECEBIDA:", data);
+
         if (!data.nome || !data.cnpj || !data.email) {
+            console.log("DADOS INCOMPLETOS");
             return NextResponse.json({ error: "Nome, CNPJ e Email são obrigatórios." }, { status: 400 });
         }
+
+        console.log("VERIFICANDO EXISTÊNCIA POR CNPJ:", data.cnpj);
 
         const exists = await fornecedoresRepository.existsByCnpj(data.cnpj);
         if (exists) {
             return NextResponse.json({ error: "Fornecedor com este CNPJ já existe." }, { status: 400 });
         }
-
+        console.log("CRIANDO FORNECEDOR:", data);
         const result = await fornecedoresRepository.create(data);
+        console.log("FORNECEDOR CRIADO COM SUCESSO:", result);
         return NextResponse.json(result, { status: 201 });
     } catch (error) {
         console.error("Error creating fornecedor in API route:", error);

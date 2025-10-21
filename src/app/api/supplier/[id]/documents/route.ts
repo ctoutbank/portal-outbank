@@ -23,7 +23,7 @@ export async function POST(request: NextRequest, { params }: { params: {id: stri
 
             await writeFile(filePath, buffer);
 
-            const doc = await fornecedoresRepository.uploadDocument(
+            const doc = await fornecedoresRepository.addDocument(
                 params.id,
                
                 `/uploads/fornecedores/${fileName}`

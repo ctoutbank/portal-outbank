@@ -6,7 +6,7 @@ import * as schema from "../../drizzle/schema";
 
 config({ path: ".env" });
 
-const dbUrl = process.env.DATABASE_URL || "sua_url_de_fallback";
+const dbUrl = process.env.POSTGRES_URL || "sua_url_de_fallback";
 
 
 if (!dbUrl) {

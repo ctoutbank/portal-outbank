@@ -15,7 +15,7 @@ export default function FornecedoresPage() {
     const handleSave = async (formData: FornecedorFormData) => {
         try{
         setLoading(true);
-        const response = await fetch('/api/supplier', {
+        const response = await fetch('/api/supplier/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData),

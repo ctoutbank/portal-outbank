@@ -7,7 +7,7 @@ export async function GET(
     { params }: { params: {id: string} }
 ) {
     try{
-    const supplier = await fornecedoresRepository.getById(params.id);
+    const supplier = await fornecedoresRepository.findById(params.id);
 
     if (!supplier) {
         return NextResponse.json({ error: 'Fornecedor não encontrado' }, { status: 404 });
@@ -26,7 +26,7 @@ export async function PUT(
     try{
         const data: Partial<FornecedorFormData> = await request.json();
         if(data.cnpj){
-            const exists = await fornecedoresRepository.existsByCNPJ(data.cnpj, params.id);
+            const exists = await fornecedoresRepository.existsByCnpj(data.cnpj, params.id);
             if (exists) {
                 return NextResponse.json({ error: "Fornecedor com este CNPJ já existe." }, { status: 400 });
             }

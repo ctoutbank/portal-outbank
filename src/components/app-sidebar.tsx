@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, ChartPie, Table, Users } from "lucide-react";
+import { Briefcase, ChartPie, Table, Truck, Users } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
@@ -38,6 +38,7 @@ const data = {
       isActive: false,
     },
     { title: "CNAE", url: "/categories", icon: Briefcase, isActive: false },
+    {title: "Fornecedores", url: "/supplier", icon: Truck, isActive: false},
   ],
 };
 

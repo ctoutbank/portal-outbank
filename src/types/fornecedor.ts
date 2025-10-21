@@ -1,3 +1,11 @@
+export interface Cnae {
+  id: string;
+  codigo: string;
+  descricao: string;
+  created_at: Date;
+}
+
+
 export interface Fornecedor {
   id: string;
   nome: string;
@@ -9,6 +17,9 @@ export interface Fornecedor {
   cidade: string;
   estado: string;
   cep: string;
+  cnae_id: string;
+  cnae?: Cnae;
+  fornecedor_document?: FornecedorDocument[];
   createdAt: Date;
   updatedAt: Date;
   observacoes: string;
@@ -25,6 +36,7 @@ export interface FornecedorFormData {
   cidade?: string;
   estado?: string;
   cep?: string;
+  cnae_codigo?: string;
   observacoes?: string;
   contato_principal?: string;
   ativo?: boolean;

@@ -34,7 +34,7 @@ export function FornecedoresList({ role, onEdit, onDelete, refreshKey }: Fornece
                 
                 params.append('status', statusFilter);
             }
-            const res = await fetch(`/api/supplier?${params}`,
+            const res = await fetch(`api/supplier?${params}`,
                 {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' },
@@ -43,7 +43,7 @@ export function FornecedoresList({ role, onEdit, onDelete, refreshKey }: Fornece
             );
             if (!res.ok) {
                 const text = await res.text();
-                console.error('Error response from /api/supplier', res.status, text);
+                console.error('Error response from app/api/supplier', res.status, text);
                 
                 setFornecedores([]);
                 setTotalPages(1);
@@ -55,7 +55,7 @@ export function FornecedoresList({ role, onEdit, onDelete, refreshKey }: Fornece
             } catch {
                 // body wasn't valid JSON — capture raw text to help debugging
                 const text = await res.clone().text();
-                console.error('Invalid JSON from /api/supplier:', text);
+                console.error('Invalid JSON from ./app/api/supplier:', text);
                 setFornecedores([]);
                 setTotalPages(1);
                 return;

@@ -28,6 +28,7 @@ export function FornecedorForm({
         endereco: initialData?.endereco || '',
         cep: initialData?.cep || '',
         observacoes: initialData?.observacoes || '',
+        cnae_codigo: initialData?.cnae_codigo || '',
         ativo: initialData?.ativo ?? true,
     });
 
@@ -188,6 +189,18 @@ export function FornecedorForm({
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             required
                             placeholder='(00) 0000-0000'
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">CNAE *</label>
+                        <input
+                            type="text"
+                            name="cnae_codigo"
+                            value={formData.cnae_codigo}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required
+                            placeholder='CNAE do fornecedor'
                         />
                     </div>
 
