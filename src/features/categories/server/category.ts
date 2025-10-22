@@ -119,6 +119,32 @@ export async function getCategories(
   };
 }
 
+export async function getAllCnaeOptions(
+  search: string       // opcional
+): Promise<Array<{ id: number; name: string; cnae: string }>> {
+    const rows = await db
+    .select({
+      id: categories.id,
+      name: categories.name,
+      cnae: categories.cnae,
+    })
+    .from(categories)
+    .where(
+      or(
+        ilike(categories.name, `%${search}%`),
+        ilike(categories.cnae, `%${search}%`)
+      )
+    )
+    .orderBy(asc(categories.name))
+    .limit(7);
+
+    return rows.map(r => ({
+        id: r.id,
+        name: r.name || '',
+        cnae: r.cnae || '',
+    }));
+}
+
 function calculateAverage(categories: { waiting_period_cp: number | null; waiting_period_cnp: number | null; anticipation_risk_factor_cp: number | null; anticipation_risk_factor_cnp: number | null }[], field: keyof typeof categories[0]): number {
   const values = categories.map(c => Number(c[field])).filter(Boolean);
   return values.length ? values.reduce((a, b) => a + b) / values.length : 0;

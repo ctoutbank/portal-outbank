@@ -2,6 +2,8 @@
 
 import { Fornecedor } from "@/types/fornecedor";
 import {Building2, Mail, Phone, MapPin, Edit, Trash2, CopyIcon} from "lucide-react";
+import { useState } from "react";
+import { FornecedorForm } from "./FornecedorForm";
 
 interface FornecedorCardProps {
     fornecedor: Fornecedor;
@@ -12,7 +14,18 @@ interface FornecedorCardProps {
     canDelete: boolean;
 }
 
+
+
 export function FornecedorCard({ fornecedor, onEdit, onDelete, canEdit, canDelete }: FornecedorCardProps) {
+    const [fornecedorEdit, setFornecedorEdit] = useState<Fornecedor[]>([]);
+
+    const handleEdit = (id: any) => {
+        const editForm = fornecedorEdit.find((fornecedor: { id: any; }) => fornecedor.id === id);
+        if(editForm){
+            
+            setFornecedorEdit([...fornecedorEdit, editForm])
+        }
+    };
     return (
         <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
             <div className="flex justify-between items-start mb-4">
@@ -52,7 +65,7 @@ export function FornecedorCard({ fornecedor, onEdit, onDelete, canEdit, canDelet
 
             <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
             <span className="text-sm text-gray-600">
-            <span className="font-medium">CNAEs:</span> {fornecedor.total_cnaes || 0}
+            <span className="font-medium">CNAEs:</span> {fornecedor.mccs || 0}
             </span>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
@@ -64,7 +77,7 @@ export function FornecedorCard({ fornecedor, onEdit, onDelete, canEdit, canDelet
                     
                 </div>
                     {canEdit && (
-                        <button onClick={() => onEdit(fornecedor)}
+                        <button onClick={() => handleEdit(fornecedor.id)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer">
                             <Edit className="w-5 h-5"/>
                         </button>

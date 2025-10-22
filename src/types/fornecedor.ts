@@ -1,15 +1,17 @@
-export interface Cnae {
-  id: string;
-  codigo: string;
-  descricao: string;
-  created_at: Date;
+export interface Category {
+  id: number;
+  slug: string;
+  name: string;
+  mcc: string;
+  cnae: string;
+  active: boolean;
+  dtinsert?: Date;
+  dtupdate?: Date;
 }
-
 
 export interface Fornecedor {
   id: string;
   nome: string;
-  documento: string;
   cnpj: string;
   email: string;
   telefone: string;
@@ -17,18 +19,30 @@ export interface Fornecedor {
   cidade: string;
   estado: string;
   cep: string;
-  cnae_id: string;
-  cnae?: Cnae[];
-  total_cnaes: number;
-  fornecedor_document?: FornecedorDocument[];
-  createdAt: Date;
-  updatedAt: Date;
-  observacoes: string;
-  contato_principal: string;
-  ativo: boolean;
-}
-export interface FornecedorFormData {
   
+  // ✅ Categories (MCC/CNAE)
+  categories?: Category[];     // Array de categories
+  total_categories?: number;   // Contador
+  mccs?: string[];            // Array de MCCs
+  cnaes?: string[];           // Array de CNAEs
+  
+  // Documentos
+  fornecedor_document?: FornecedorDocument[];
+  documentos?: FornecedorDocument[];
+  
+  // Campos opcionais
+  observacoes?: string;
+  contato_principal?: string;
+  ativo: boolean;
+  
+  // Timestamps
+  created_at?: Date;
+  updated_at?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface FornecedorFormData {
   nome: string;
   cnpj: string;
   email: string;
@@ -37,7 +51,7 @@ export interface FornecedorFormData {
   cidade?: string;
   estado?: string;
   cep?: string;
-  cnae_codigos?: string[];
+  mcc?: number[];  // Array de IDs de categories
   observacoes?: string;
   contato_principal?: string;
   ativo?: boolean;
@@ -46,8 +60,10 @@ export interface FornecedorFormData {
 export interface FornecedorDocument {
   id: string;
   fornecedor_id: string;
-  
+  nome?: string;
+  tipo?: string;
   url: string;
   size: number;
-  createdAt: Date;
+  uploaded_at?: Date;
+  createdAt?: Date;
 }

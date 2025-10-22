@@ -1,10 +1,16 @@
 'use client';
 
 import {useState, useEffect} from 'react';
-import { FornecedorFormData } from '@/types/fornecedor';
+import { FornecedorFormData, Fornecedor, Category } from '@/types/fornecedor';
 import {Upload, X } from 'lucide-react';
+import { getCategories } from '@/features/categories/server/category';
+import { Select } from '@radix-ui/react-select';
+
+
+
 
 interface FornecedorFormProps {
+    
     initialData?: Partial<FornecedorFormData>;
     onSubmit: (data: FornecedorFormData, files: File[]) => Promise<void>;
     onCancel: () => void;
@@ -12,11 +18,13 @@ interface FornecedorFormProps {
 }
 
 export function FornecedorForm({
+    
     initialData,
     onSubmit,
     onCancel,
     isEditing = false,
 }: FornecedorFormProps) {
+
     const [formData, setFormData] = useState<FornecedorFormData>({
         nome: initialData?.nome || '',
         cnpj: initialData?.cnpj || '',
@@ -28,12 +36,39 @@ export function FornecedorForm({
         endereco: initialData?.endereco || '',
         cep: initialData?.cep || '',
         observacoes: initialData?.observacoes || '',
-        cnae_codigo: initialData?.cnae_codigo || '',
+        mcc: initialData?.mcc || [],
         ativo: initialData?.ativo ?? true,
     });
-
+    const [categories, setCategories] = useState<Array<{id: number; label: string}>>([]);
     const [cnpjError, setCnpjError] = useState<string | null>(null);
+    const [fornecedorEdit, setFornecedorEdit] = useState<Fornecedor[]>([]);
 
+    type Option = { value: number; label: string };
+
+    const handleEdit = (id: any) => {
+        const editForm = fornecedorEdit.find((fornecedor: { id: any; }) => fornecedor.id === id);
+        if(editForm){
+            setFornecedorEdit([...fornecedorEdit, editForm])
+        }
+    };
+
+    async function fetchCnaeOptions(q = ''){
+        const res = await fetch(`/api/cnaes?q=${encodeURIComponent(q)}`);
+        return res.json() as Promise<Array<{id: number; name: string; cnae: string}>>;
+    }
+
+            useEffect(() => {
+                fetchCnaeOptions().then(data => setCategories(data.map(d => ({
+                    id: d.id,
+                    label: `${d.name} (${d.cnae})`
+                })))
+            );
+               
+        }, []); 
+
+      
+
+        
     // Helper: keep only digits
     const normalizeCNPJ = (input: string) => (input ?? '').replace(/\D/g, '');
 
@@ -81,6 +116,12 @@ export function FornecedorForm({
 
     const handleChange = (e: React.ChangeEvent <HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
+
+        if (name === 'mcc' && e.target instanceof HTMLSelectElement && e.target.multiple) {
+        const selectedOptions = Array.from(e.target.selectedOptions).map(option => Number(option.value));
+        setFormData(prev => ({ ...prev, mcc: selectedOptions }));
+        return;
+    }
         if (name === 'cnpj') {
             // apply mask while typing
             const digits = normalizeCNPJ(value);
@@ -193,16 +234,16 @@ export function FornecedorForm({
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">CNAE *</label>
-                        <input
-                            type="text"
-                            name="cnae_codigo"
-                            value={formData.cnae_codigo}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            required
-                            placeholder='CNAE do fornecedor'
-                        />
+                        
+                       <Select
+                            multiple
+                            name="mcc"
+                            value={categories.filter(c => formData.mcc?.includes(c.id)).map(c => c.id)}
+                            onChange={fetchCnaeOptions}
+                            placeholder="Selecione o CNAE…"
+                            />
                     </div>
+                        
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Contato Principal</label>

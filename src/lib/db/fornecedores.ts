@@ -2,7 +2,7 @@ import { sql } from '@vercel/postgres';
 import { FornecedorFormData } from '@/types/fornecedor';
 
 export class FornecedoresRepository {
-  // Listar com paginação, filtros e CNAEs
+  // Listar com paginação, filtros e Categories
   async getAll(
     page: number = 1,
     limit: number = 10,
@@ -43,21 +43,23 @@ export class FornecedoresRepository {
       params
     );
 
-    // Buscar CNAEs para cada fornecedor
-    const fornecedoresComCnaes = await Promise.all(
+    // Buscar Categories para cada fornecedor
+    const fornecedoresComCategories = await Promise.all(
       rows.map(async (fornecedor: any) => {
-        const { rows: cnaes } = await sql.query(
-          `SELECT c.id, c.codigo, c.descricao, c.created_at
-           FROM cnaes c
-           INNER JOIN fornecedor_cnaes fc ON c.codigo = fc.cnae_codigo
-           WHERE fc.fornecedor_id = $1`,
+        const { rows: categories } = await sql.query(
+          `SELECT c.id, c.slug, c.name, c.mcc, c.cnae, c.active
+           FROM categories c
+           INNER JOIN fornecedor_categories fc ON c.id = fc.category_id
+           WHERE fc.fornecedor_id = $1 AND c.active = true`,
           [fornecedor.id]
         );
 
         return {
           ...fornecedor,
-          cnaes: cnaes,
-          total_cnaes: cnaes.length
+          categories: categories,
+          total_categories: categories.length,
+          mccs: categories.map(c => c.mcc).filter(Boolean),
+          cnaes: categories.map(c => c.cnae).filter(Boolean)
         };
       })
     );
@@ -72,14 +74,14 @@ export class FornecedoresRepository {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data: fornecedoresComCnaes,
+      data: fornecedoresComCategories,
       total,
       page,
       totalPages
     };
   }
 
-  // Buscar por ID com CNAEs
+  // Buscar por ID com Categories
   async findById(id: string) {
     const { rows } = await sql.query(
       `SELECT * FROM fornecedores WHERE id = $1`,
@@ -90,12 +92,12 @@ export class FornecedoresRepository {
       return null;
     }
 
-    // Buscar CNAEs
-    const { rows: cnaes } = await sql.query(
-      `SELECT c.id, c.codigo, c.descricao, c.created_at
-       FROM cnaes c
-       INNER JOIN fornecedor_cnaes fc ON c.codigo = fc.cnae_codigo
-       WHERE fc.fornecedor_id = $1`,
+    // Buscar Categories
+    const { rows: categories } = await sql.query(
+      `SELECT c.id, c.slug, c.name, c.mcc, c.cnae, c.active
+       FROM categories c
+       INNER JOIN fornecedor_categories fc ON c.id = fc.category_id
+       WHERE fc.fornecedor_id = $1 AND c.active = true`,
       [id]
     );
 
@@ -107,8 +109,10 @@ export class FornecedoresRepository {
 
     return {
       ...rows[0],
-      cnaes: cnaes,
-      total_cnaes: cnaes.length,
+      categories: categories,
+      total_categories: categories.length,
+      mccs: categories.map(c => c.mcc).filter(Boolean),
+      cnaes: categories.map(c => c.cnae).filter(Boolean),
       documentos: docs
     };
   }
@@ -135,9 +139,9 @@ export class FornecedoresRepository {
 
     const fornecedor = rows[0];
 
-    // Adicionar CNAEs se fornecidos
-    if (data.cnae_codigos && data.cnae_codigos.length > 0) {
-      await this.setCnaes(fornecedor.id, data.cnae_codigos);
+    // Adicionar Categories se fornecidos
+    if (data.mcc && data.mcc.length > 0) {
+      await this.setCategories(fornecedor.id, data.mcc);
     }
 
     return this.findById(fornecedor.id);
@@ -207,9 +211,9 @@ export class FornecedoresRepository {
       );
     }
 
-    // Atualizar CNAEs se fornecidos
-    if (data.cnae_codigos !== undefined) {
-      await this.setCnaes(id, data.cnae_codigos);
+    // Atualizar Categories se fornecidos
+    if (data.mcc !== undefined) {
+      await this.setCategories(id, data.mcc);
     }
 
     return this.findById(id);
@@ -242,53 +246,62 @@ export class FornecedoresRepository {
   }
 
   // ====================================
-  // MÉTODOS PARA GERENCIAR CNAEs
+  // MÉTODOS PARA GERENCIAR CATEGORIES
   // ====================================
 
-  // Definir CNAEs do fornecedor (substitui todos)
-  async setCnaes(fornecedorId: string, cnaeCodigos: string[]) {
-    // Remover CNAEs existentes
+  // Definir Categories do fornecedor (substitui todos)
+  async setCategories(fornecedorId: string, categoryIds: number[]) {
+    // Remover Categories existentes
     await sql.query(
-      'DELETE FROM fornecedor_cnaes WHERE fornecedor_id = $1',
+      'DELETE FROM fornecedor_categories WHERE fornecedor_id = $1',
       [fornecedorId]
     );
 
-    // Adicionar novos CNAEs
-    if (cnaeCodigos.length > 0) {
-      const values = cnaeCodigos.map((codigo, i) => 
+    // Adicionar novas Categories
+    if (categoryIds.length > 0) {
+      const values = categoryIds.map((id, i) => 
         `($1, $${i + 2})`
       ).join(', ');
 
       await sql.query(
-        `INSERT INTO fornecedor_cnaes (fornecedor_id, cnae_codigo) 
+        `INSERT INTO fornecedor_categories (fornecedor_id, category_id) 
          VALUES ${values}`,
-        [fornecedorId, ...cnaeCodigos]
+        [fornecedorId, ...categoryIds]
       );
     }
   }
 
-  // Adicionar um CNAE
-  async addCnae(fornecedorId: string, cnaeCodigo: string) {
+  // Adicionar uma Category
+  async addCategory(fornecedorId: string, categoryId: number) {
     await sql.query(
-      `INSERT INTO fornecedor_cnaes (fornecedor_id, cnae_codigo) 
+      `INSERT INTO fornecedor_categories (fornecedor_id, category_id) 
        VALUES ($1, $2)
        ON CONFLICT DO NOTHING`,
-      [fornecedorId, cnaeCodigo]
+      [fornecedorId, categoryId]
     );
   }
 
-  // Remover um CNAE
-  async removeCnae(fornecedorId: string, cnaeCodigo: string) {
+  // Remover uma Category
+  async removeCategory(fornecedorId: string, categoryId: number) {
     await sql.query(
-      'DELETE FROM fornecedor_cnaes WHERE fornecedor_id = $1 AND cnae_codigo = $2',
-      [fornecedorId, cnaeCodigo]
+      'DELETE FROM fornecedor_categories WHERE fornecedor_id = $1 AND category_id = $2',
+      [fornecedorId, categoryId]
     );
   }
 
-  // Listar CNAEs disponíveis
-  async getAllCnaes() {
+  // Listar Categories disponíveis
+  async getAllCategories() {
     const { rows } = await sql.query(
-      'SELECT * FROM cnaes ORDER BY codigo'
+      'SELECT * FROM categories WHERE active = true ORDER BY mcc, name'
+    );
+    return rows;
+  }
+
+  // Buscar Categories por MCC
+  async getCategoriesByMcc(mcc: string) {
+    const { rows } = await sql.query(
+      'SELECT * FROM categories WHERE mcc = $1 AND active = true',
+      [mcc]
     );
     return rows;
   }
