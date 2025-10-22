@@ -44,29 +44,25 @@ export function FornecedorCard({ fornecedor, onEdit, onDelete, canEdit, canDelet
                     <Phone className="w-4 h-4"/>
                     <span>{fornecedor.telefone}</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-600">
+                
+                
+            </div>
+
+            
+
+            <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+            <span className="text-sm text-gray-600">
+            <span className="font-medium">CNAEs:</span> {fornecedor.total_cnaes || 0}
+            </span>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                
+
+                <div className="flex gap-2">
+                    <div className="flex items-center gap-2 text-gray-600 cursor-pointer">
                     <CopyIcon className="w-4 h-4"/>
                     
                 </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                    <MapPin className="w-4 h-4"/>
-                    <span>{fornecedor.cidade} - {fornecedor.estado}</span>
-                </div>
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-                
-                {fornecedor.cnae ? fornecedor.cnae.codigo : 'Sem CNAE'}
-                
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-                
-                <span className="text-xs text-gray-500">
-                    Contato: {fornecedor.contato_principal}
-                </span>
-
-                <div className="flex gap-2">
                     {canEdit && (
                         <button onClick={() => onEdit(fornecedor)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer">

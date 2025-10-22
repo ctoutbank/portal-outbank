@@ -18,7 +18,8 @@ export interface Fornecedor {
   estado: string;
   cep: string;
   cnae_id: string;
-  cnae?: Cnae;
+  cnae?: Cnae[];
+  total_cnaes: number;
   fornecedor_document?: FornecedorDocument[];
   createdAt: Date;
   updatedAt: Date;
@@ -36,7 +37,7 @@ export interface FornecedorFormData {
   cidade?: string;
   estado?: string;
   cep?: string;
-  cnae_codigo?: string;
+  cnae_codigos?: string[];
   observacoes?: string;
   contato_principal?: string;
   ativo?: boolean;

@@ -1,6 +1,6 @@
 'use server';
 
-
+import { sql } from '@vercel/postgres';
 import { NextRequest, NextResponse } from "next/server";
 import { fornecedoresRepository } from "@/lib/db/fornecedores";
 import { FornecedorFormData } from "@/types/fornecedor";
@@ -8,6 +8,36 @@ import { FornecedorFormData } from "@/types/fornecedor";
 export async function GET(request: NextRequest) {
 
     try {
+
+        console.log('=== DEBUG INICIO ===');
+        console.log('POSTGRES_URL:', process.env.POSTGRES_URL?.substring(0, 50) + '...');
+        
+        const dbInfo = await sql.query('SELECT current_database(), current_schema()');
+        console.log('Database conectado:', dbInfo.rows[0]);
+        
+        const tablesQuery = await sql.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            ORDER BY table_name
+        `);
+        console.log('Tabelas disponíveis:', tablesQuery.rows.map(r => r.table_name));
+        
+        const cnaesExists = tablesQuery.rows.some(r => r.table_name === 'cnaes');
+        console.log('Tabela cnaes existe?', cnaesExists);
+        console.log('=== DEBUG FIM ===');
+        
+        if (!cnaesExists) {
+            return NextResponse.json({ 
+                error: 'Tabela cnaes não existe neste banco',
+                debug: {
+                    database: dbInfo.rows[0],
+                    tables: tablesQuery.rows.map(r => r.table_name)
+                }
+            }, { status: 500 });
+        }
+
+
         const searchParams = request.nextUrl.searchParams;
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '10');

@@ -1,8 +1,8 @@
 import { sql } from '@vercel/postgres';
-import { Fornecedor, FornecedorFormData, FornecedorDocument } from '@/types/fornecedor';
+import { FornecedorFormData } from '@/types/fornecedor';
 
 export class FornecedoresRepository {
-  // Listar com paginação, filtros e CNAE
+  // Listar com paginação, filtros e CNAEs
   async getAll(
     page: number = 1,
     limit: number = 10,
@@ -14,17 +14,17 @@ export class FornecedoresRepository {
     const offset = (page - 1) * limit;
     
     let whereClause = '1=1';
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramIndex = 1;
 
     if (filters?.search) {
-      whereClause += ` AND (s.nome ILIKE $${paramIndex} OR s.cnpj ILIKE $${paramIndex})`;
+      whereClause += ` AND (f.nome ILIKE $${paramIndex} OR f.cnpj ILIKE $${paramIndex})`;
       params.push(`%${filters.search}%`);
       paramIndex++;
     }
 
     if (filters?.ativo !== undefined) {
-      whereClause += ` AND s.ativo = $${paramIndex}`;
+      whereClause += ` AND f.ativo = $${paramIndex}`;
       params.push(filters.ativo);
       paramIndex++;
     }
@@ -33,74 +33,56 @@ export class FornecedoresRepository {
     const offsetIndex = paramIndex + 1;
     params.push(limit, offset);
 
-    // Query com JOIN para incluir dados do CNAE
+    // Query principal
     const { rows } = await sql.query(
-      `SELECT 
-        s.*,
-        c.id as cnae_id,
-        c.codigo as cnae_codigo,
-        c.descricao as cnae_descricao
-       FROM fornecedores s
-       LEFT JOIN cnaes c ON s.cnae_codigo = c.codigo
+      `SELECT f.*
+       FROM fornecedores f
        WHERE ${whereClause} 
-       ORDER BY s.created_at DESC 
+       ORDER BY f.created_at DESC 
        LIMIT $${limitIndex} OFFSET $${offsetIndex}`,
       params
     );
 
+    // Buscar CNAEs para cada fornecedor
+    const fornecedoresComCnaes = await Promise.all(
+      rows.map(async (fornecedor: any) => {
+        const { rows: cnaes } = await sql.query(
+          `SELECT c.id, c.codigo, c.descricao, c.created_at
+           FROM cnaes c
+           INNER JOIN fornecedor_cnaes fc ON c.codigo = fc.cnae_codigo
+           WHERE fc.fornecedor_id = $1`,
+          [fornecedor.id]
+        );
+
+        return {
+          ...fornecedor,
+          cnaes: cnaes,
+          total_cnaes: cnaes.length
+        };
+      })
+    );
+
     const countParams = params.slice(0, -2);
     const { rows: countRows } = await sql.query(
-      `SELECT COUNT(*) as total FROM fornecedores s WHERE ${whereClause}`,
+      `SELECT COUNT(*) as total FROM fornecedores f WHERE ${whereClause}`,
       countParams
     );
 
     const total = parseInt(countRows[0].total);
     const totalPages = Math.ceil(total / limit);
 
-    // Formatar dados com CNAE aninhado
-    const data = rows.map((row: {
-      cnae_id: any; id: any; nome: any; cnpj: any; email: any; telefone: any; endereco: any; cidade: any; estado: any; cep: any; cnae_codigo: any; cnae_descricao: any; created_at: any; ativo: any; updated_at: any; 
-}) => ({
-      id: row.id,
-      nome: row.nome,
-      cnpj: row.cnpj,
-      email: row.email,
-      telefone: row.telefone,
-      endereco: row.endereco,
-      cidade: row.cidade,
-      estado: row.estado,
-      cep: row.cep,
-      cnae_codigo: row.cnae_codigo, 
-      cnae: row.cnae_id ? {
-        id: row.cnae_id,
-        codigo: row.cnae_codigo,
-        descricao: row.cnae_descricao,
-        created_at: row.created_at
-      } : null,
-      ativo: row.ativo,
-      created_at: row.created_at,
-      updated_at: row.updated_at
-    }));
-
     return {
-      data,
+      data: fornecedoresComCnaes,
       total,
       page,
       totalPages
     };
   }
 
-  // Buscar por ID com CNAE
+  // Buscar por ID com CNAEs
   async findById(id: string) {
     const { rows } = await sql.query(
-      `SELECT 
-        s.*,
-        c.id as cnae_codigo,
-        c.codigo as cnae_codigo,
-        c.descricao as cnae_descricao
-       FROM fornecedores s
-       LEFT JOIN cnaes c ON s.cnae_codigo = c.id
-       WHERE s.id = $1`,
+      `SELECT * FROM fornecedores WHERE id = $1`,
       [id]
     );
     
@@ -108,43 +90,35 @@ export class FornecedoresRepository {
       return null;
     }
 
+    // Buscar CNAEs
+    const { rows: cnaes } = await sql.query(
+      `SELECT c.id, c.codigo, c.descricao, c.created_at
+       FROM cnaes c
+       INNER JOIN fornecedor_cnaes fc ON c.codigo = fc.cnae_codigo
+       WHERE fc.fornecedor_id = $1`,
+      [id]
+    );
+
     // Buscar documentos
     const { rows: docs } = await sql.query(
       'SELECT * FROM fornecedor_documents WHERE fornecedor_id = $1 ORDER BY uploaded_at DESC',
       [id]
     );
 
-    const row = rows[0];
     return {
-      id: row.id,
-      nome: row.nome,
-      cnpj: row.cnpj,
-      email: row.email,
-      telefone: row.telefone,
-      endereco: row.endereco,
-      cidade: row.cidade,
-      estado: row.estado,
-      cep: row.cep,
-      cnae_codigo: row.cnae_codigo,
-      cnae: row.cnae_codigo ? {
-        id: row.cnae_codigo,
-        codigo: row.cnae_codigo,
-        descricao: row.cnae_descricao,
-        created_at: row.created_at
-      } : null,
-      ativo: row.ativo,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
+      ...rows[0],
+      cnaes: cnaes,
+      total_cnaes: cnaes.length,
       documentos: docs
     };
   }
 
-  // Criar com CNAE
+  // Criar fornecedor
   async create(data: FornecedorFormData) {
     const { rows } = await sql.query(
       `INSERT INTO fornecedores (
-        nome, cnpj, email, telefone, endereco, cidade, estado, cep, cnae_codigo, ativo
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        nome, cnpj, email, telefone, endereco, cidade, estado, cep, ativo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *`,
       [
         data.nome,
@@ -155,17 +129,24 @@ export class FornecedoresRepository {
         data.cidade || null,
         data.estado || null,
         data.cep || null,
-        data.cnae_codigo || null,
         data.ativo !== false
       ]
     );
-    return rows[0];
+
+    const fornecedor = rows[0];
+
+    // Adicionar CNAEs se fornecidos
+    if (data.cnae_codigos && data.cnae_codigos.length > 0) {
+      await this.setCnaes(fornecedor.id, data.cnae_codigos);
+    }
+
+    return this.findById(fornecedor.id);
   }
 
-  // Atualizar com CNAE
+  // Atualizar fornecedor
   async update(id: string, data: Partial<FornecedorFormData>) {
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramIndex = 1;
 
     if (data.nome !== undefined) {
@@ -208,40 +189,33 @@ export class FornecedoresRepository {
       values.push(data.cep);
       paramIndex++;
     }
-    if (data.cnae_codigo !== undefined) {
-      fields.push(`cnae_codigo = $${paramIndex}`);
-      values.push(data.cnae_codigo);
-      paramIndex++;
-    }
     if (data.ativo !== undefined) {
       fields.push(`ativo = $${paramIndex}`);
       values.push(data.ativo);
       paramIndex++;
     }
 
-    if (fields.length === 0) {
-      throw new Error('Nenhum campo para atualizar');
+    if (fields.length > 0) {
+      fields.push(`updated_at = NOW()`);
+      values.push(id);
+
+      await sql.query(
+        `UPDATE fornecedores 
+         SET ${fields.join(', ')}
+         WHERE id = $${paramIndex}`,
+        values
+      );
     }
 
-    fields.push(`updated_at = NOW()`);
-    values.push(id);
-
-    const { rows } = await sql.query(
-      `UPDATE fornecedores 
-       SET ${fields.join(', ')}
-       WHERE id = $${paramIndex}
-       RETURNING *`,
-      values
-    );
-
-    if (rows.length === 0) {
-      throw new Error('Fornecedor não encontrado');
+    // Atualizar CNAEs se fornecidos
+    if (data.cnae_codigos !== undefined) {
+      await this.setCnaes(id, data.cnae_codigos);
     }
 
-    return rows[0];
+    return this.findById(id);
   }
 
-  // Deletar (sem alteração)
+  // Deletar
   async delete(id: string) {
     const { rowCount } = await sql.query(
       'DELETE FROM fornecedores WHERE id = $1',
@@ -253,10 +227,10 @@ export class FornecedoresRepository {
     }
   }
 
-  // Verificar CNPJ (sem alteração)
+  // Verificar CNPJ
   async existsByCnpj(cnpj: string, excludeId?: string): Promise<boolean> {
     let query = 'SELECT COUNT(*) as count FROM fornecedores WHERE cnpj = $1';
-    const params: any[] = [cnpj];
+    const params: unknown[] = [cnpj];
 
     if (excludeId) {
       query += ' AND id != $2';
@@ -267,28 +241,80 @@ export class FornecedoresRepository {
     return parseInt(rows[0].count) > 0;
   }
 
-  // Métodos de documentos (sem alteração)
-  async addDocument(supplierId: string, url: string) {
-    // Extrair nome do arquivo da URL
+  // ====================================
+  // MÉTODOS PARA GERENCIAR CNAEs
+  // ====================================
+
+  // Definir CNAEs do fornecedor (substitui todos)
+  async setCnaes(fornecedorId: string, cnaeCodigos: string[]) {
+    // Remover CNAEs existentes
+    await sql.query(
+      'DELETE FROM fornecedor_cnaes WHERE fornecedor_id = $1',
+      [fornecedorId]
+    );
+
+    // Adicionar novos CNAEs
+    if (cnaeCodigos.length > 0) {
+      const values = cnaeCodigos.map((codigo, i) => 
+        `($1, $${i + 2})`
+      ).join(', ');
+
+      await sql.query(
+        `INSERT INTO fornecedor_cnaes (fornecedor_id, cnae_codigo) 
+         VALUES ${values}`,
+        [fornecedorId, ...cnaeCodigos]
+      );
+    }
+  }
+
+  // Adicionar um CNAE
+  async addCnae(fornecedorId: string, cnaeCodigo: string) {
+    await sql.query(
+      `INSERT INTO fornecedor_cnaes (fornecedor_id, cnae_codigo) 
+       VALUES ($1, $2)
+       ON CONFLICT DO NOTHING`,
+      [fornecedorId, cnaeCodigo]
+    );
+  }
+
+  // Remover um CNAE
+  async removeCnae(fornecedorId: string, cnaeCodigo: string) {
+    await sql.query(
+      'DELETE FROM fornecedor_cnaes WHERE fornecedor_id = $1 AND cnae_codigo = $2',
+      [fornecedorId, cnaeCodigo]
+    );
+  }
+
+  // Listar CNAEs disponíveis
+  async getAllCnaes() {
+    const { rows } = await sql.query(
+      'SELECT * FROM cnaes ORDER BY codigo'
+    );
+    return rows;
+  }
+
+  // ====================================
+  // MÉTODOS DE DOCUMENTOS
+  // ====================================
+
+  async addDocument(fornecedorId: string, url: string) {
     const fileName = url.split('/').pop() || 'documento';
-    
-    // Extrair tipo/extensão do arquivo
     const extension = fileName.split('.').pop() || '';
     const tipo = extension ? `application/${extension}` : 'application/octet-stream';
 
     const { rows } = await sql.query(
-      `INSERT INTO supplier_documents (supplier_id, nome, tipo, url, size)
+      `INSERT INTO fornecedor_documents (fornecedor_id, nome, tipo, url, size)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [supplierId, fileName, tipo, url, 0] // size como 0 já que não está sendo enviado
+      [fornecedorId, fileName, tipo, url, 0]
     );
     return rows[0];
   }
 
-  async getDocuments(supplierId: string) {
+  async getDocuments(fornecedorId: string) {
     const { rows } = await sql.query(
       'SELECT * FROM fornecedor_documents WHERE fornecedor_id = $1 ORDER BY uploaded_at DESC',
-      [supplierId]
+      [fornecedorId]
     );
     return rows;
   }

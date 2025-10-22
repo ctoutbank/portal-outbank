@@ -49,7 +49,7 @@ export function FornecedoresList({ role, onEdit, onDelete, refreshKey }: Fornece
                 setTotalPages(1);
                 return;
             }
-            let data: any;
+            let data: { data: Fornecedor[]; totalPages: number };
             try {
                 data = await res.json();
             } catch {
@@ -92,7 +92,7 @@ export function FornecedoresList({ role, onEdit, onDelete, refreshKey }: Fornece
                     <select 
                     value={statusFilter}
                     onChange={(e) => {
-                        setStatusFilter(e.target.value as any);
+                        setStatusFilter(e.target.value as unknown as 'all' | 'active' | 'inactive');
                         setPage(1);
                     }}
                     className='px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
