@@ -1,16 +1,11 @@
 'use client';
 
-import {useState, useEffect} from 'react';
-import { FornecedorFormData, Fornecedor, Category } from '@/types/fornecedor';
+import {useState, useEffect, useRef} from 'react';
+import { FornecedorFormData } from '@/types/fornecedor';
 import {Upload, X } from 'lucide-react';
-import { getCategories } from '@/features/categories/server/category';
-import { Select } from '@radix-ui/react-select';
-
-
-
 
 interface FornecedorFormProps {
-    
+    categories?: Array<{id: string; label: string}>
     initialData?: Partial<FornecedorFormData>;
     onSubmit: (data: FornecedorFormData, files: File[]) => Promise<void>;
     onCancel: () => void;
@@ -23,7 +18,11 @@ export function FornecedorForm({
     onSubmit,
     onCancel,
     isEditing = false,
+    categories: categoriesProp,
 }: FornecedorFormProps) {
+     console.log('🔍 Form recebeu:', { initialData, categoriesProp });
+    console.log('📊 MCC do initialData:', initialData?.mcc);
+    
 
     const [formData, setFormData] = useState<FornecedorFormData>({
         nome: initialData?.nome || '',
@@ -39,33 +38,66 @@ export function FornecedorForm({
         mcc: initialData?.mcc || [],
         ativo: initialData?.ativo ?? true,
     });
-    const [categories, setCategories] = useState<Array<{id: number; label: string}>>([]);
+     console.log('📝 FORM - formData.mcc após inicializar:', formData.mcc);
+    const [categories, setCategories] = useState<Array<{id: string; label: string}>>([]);
     const [cnpjError, setCnpjError] = useState<string | null>(null);
-    const [fornecedorEdit, setFornecedorEdit] = useState<Fornecedor[]>([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    
+            // Fecha dropdown ao clicar fora
+        useEffect(() => {
+            const handleClickOutside = (event: MouseEvent) => {
+                if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                    setShowDropdown(false);
+                }
+            };
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }, []);
 
-    type Option = { value: number; label: string };
+        // Adiciona CNAE
+        const addCnae = (cnaeId: string) => {
+            if (!formData.mcc.includes(cnaeId)) {
+                setFormData(prev => ({ ...prev, mcc: [...prev.mcc, cnaeId] }));
+            }
+            setSearchTerm('');
+        };
 
-    const handleEdit = (id: any) => {
-        const editForm = fornecedorEdit.find((fornecedor: { id: any; }) => fornecedor.id === id);
-        if(editForm){
-            setFornecedorEdit([...fornecedorEdit, editForm])
-        }
+        // Remove CNAE
+        const removeCnae = (cnaeId: string) => {
+            setFormData(prev => ({ ...prev, mcc: prev.mcc.filter(id => id !== cnaeId) }));
+        };
+
+        const getCnaeCode = (label: string) => {
+        const match = label.match(/\(([^)]+)\)/);
+        return match ? match[1] : label.substring(0, 10);
     };
+
+
 
     async function fetchCnaeOptions(q = ''){
         const res = await fetch(`/api/cnaes?q=${encodeURIComponent(q)}`);
-        return res.json() as Promise<Array<{id: number; name: string; cnae: string}>>;
+        return res.json() as Promise<Array<{id: string; name: string; cnae: string}>>;
     }
 
-            useEffect(() => {
-                fetchCnaeOptions().then(data => setCategories(data.map(d => ({
-                    id: d.id,
-                    label: `${d.name} (${d.cnae})`
-                })))
-            );
-               
-        }, []); 
+            //  useEffect(() => {
+            //     fetchCnaeOptions().then(data => setCategories(data.map(d => ({
+            //         id: String(d.id),
+            //         label: `${d.name} (${d.cnae})`
+            //     }))));
+            // }, []);
 
+        useEffect(() => {
+            if(categoriesProp && categoriesProp.length > 0){
+                setCategories(categoriesProp)
+            } else { 
+                fetchCnaeOptions().then(data => setCategories(data.map(d => ({
+                    id: String(d.id),
+                    label: `${d.name} (${d.cnae})`
+                }))))
+            }
+        }, [categoriesProp])
       
 
         
@@ -118,7 +150,7 @@ export function FornecedorForm({
         const { name, value, type } = e.target;
 
         if (name === 'mcc' && e.target instanceof HTMLSelectElement && e.target.multiple) {
-        const selectedOptions = Array.from(e.target.selectedOptions).map(option => Number(option.value));
+        const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
         setFormData(prev => ({ ...prev, mcc: selectedOptions }));
         return;
     }
@@ -178,6 +210,12 @@ export function FornecedorForm({
         }
     }, [initialData?.cnpj]);
 
+    const handleInputClick = () => {
+    console.log('🖱️ Clicou no input');
+    console.log('📚 Categories disponíveis:', categories);
+    setShowDropdown(true);
+};
+
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             <div className='bg-white border border-gray-100 shadow-sm p-6 rounded-lg'>
@@ -232,19 +270,91 @@ export function FornecedorForm({
                             placeholder='(00) 0000-0000'
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">CNAE *</label>
-                        
-                       <Select
-                            multiple
-                            name="mcc"
-                            value={categories.filter(c => formData.mcc?.includes(c.id)).map(c => c.id)}
-                            onChange={fetchCnaeOptions}
-                            placeholder="Selecione o CNAE…"
-                            />
-                    </div>
-                        
+                    
 
+                   <div ref={dropdownRef} className="relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">CNAE *</label>
+    
+                        {/* Container que parece um input */}
+                        <div 
+                            className="w-full min-h-[42px] px-3 py-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent flex flex-wrap items-center gap-2 cursor-text"
+                            onClick={handleInputClick}
+                        >
+                            {/* Chips dos selecionados */}
+                            {formData.mcc && formData.mcc.length > 0 && formData.mcc.map(mccId => {
+                                const cnae = categories.find(c => c.id === mccId);
+                                if (!cnae) return null;
+                                
+                                const code = getCnaeCode(cnae.label);
+                                
+                                return (
+                                    <div
+                                        key={mccId}
+                                        className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap"
+                                        title={cnae.label} // mostra completo no hover
+                                    >
+                                        <span>{code}</span>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                removeCnae(mccId);
+                                            }}
+                                            className="hover:bg-blue-200 rounded-full"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                            
+                            {/* Input de busca inline */}
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    setShowDropdown(true);
+                                }}
+                                onFocus={() => setShowDropdown(true)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowDropdown(true);
+                                }}
+                                placeholder={formData.mcc.length === 0 ? "Buscar CNAEs..." : ""}
+                                className="flex-1 min-w-[120px] outline-none border-0 p-0 text-sm"
+                            />
+                        </div>
+                        
+                        {/* Dropdown */}
+                        {showDropdown && categories.length > 0 &&(
+                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {categories
+                                    .filter(c => 
+                                        c.label.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                                        !formData.mcc.includes(c.id)
+                                    )
+                                    .map(cnae => (
+                                        <div
+                                            key={cnae.id}
+                                            onClick={() => addCnae(cnae.id)}
+                                            className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-0"
+                                        >
+                                            {cnae.label}
+                                        </div>
+                                    ))
+                                }
+                                {categories.filter(c => 
+                                    c.label.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                                    !formData.mcc.includes(c.id)
+                                ).length === 0 && (
+                                    <div className="px-3 py-2 text-sm text-gray-500">
+                                        {searchTerm ? 'Nenhum CNAE encontrado' : 'Todos os CNAEs selecionados'}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Contato Principal</label>
                         <input
@@ -377,6 +487,7 @@ export function FornecedorForm({
                     </div>
                 </div>
             </div>
+            
         </form>
     )
 }

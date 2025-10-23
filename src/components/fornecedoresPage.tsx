@@ -11,6 +11,7 @@ export default function FornecedoresPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [categories, setCategories] = useState<Array<{id: string; label: string}>>
 
     const handleSave = async (formData: FornecedorFormData) => {
         try{
@@ -32,6 +33,8 @@ export default function FornecedoresPage() {
         setLoading(false);
     }
 }
+
+
     
 
     const handleDelete = async (id: string) => {

@@ -20,7 +20,7 @@ export function FornecedoresList({ role, onEdit, onDelete, refreshKey }: Fornece
     const [totalPages, setTotalPages] = useState(1);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
-
+    const [categories, setCategories] = useState<Array<{id: string; label: string}>>([])
     const canEdit = role === 'admin' || role === 'user';
     const canDelete = role === 'admin';
 
@@ -68,6 +68,18 @@ export function FornecedoresList({ role, onEdit, onDelete, refreshKey }: Fornece
             setLoading(false);
         }
     }, [page, search, statusFilter]);
+
+    useEffect(() => {
+        async function fetchCnaes() {
+            const res = await fetch('/api/cnaes');
+            const data = await res.json();
+            setCategories(data.map((d: any) => ({
+                id: String(d.id),
+                label: `${d.name} (${d.cnae})`
+            })));
+        }
+        fetchCnaes();
+    }, []);
 
     useEffect(() => {
         loadFornecedores();
@@ -121,6 +133,7 @@ export function FornecedoresList({ role, onEdit, onDelete, refreshKey }: Fornece
                             <FornecedorCard 
                             key={fornecedor.id}
                             fornecedor={fornecedor}
+                            categories={categories}
                             onEdit={onEdit}
                             onDelete={onDelete}
                             canDelete={canDelete}

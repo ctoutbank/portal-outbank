@@ -111,6 +111,7 @@ export class FornecedoresRepository {
       ...rows[0],
       categories: categories,
       total_categories: categories.length,
+       mcc: categories.map(c => String(c.id)), 
       mccs: categories.map(c => c.mcc).filter(Boolean),
       cnaes: categories.map(c => c.cnae).filter(Boolean),
       documentos: docs
@@ -250,7 +251,7 @@ export class FornecedoresRepository {
   // ====================================
 
   // Definir Categories do fornecedor (substitui todos)
-  async setCategories(fornecedorId: string, categoryIds: number[]) {
+  async setCategories(fornecedorId: string, categoryIds: string[]) {
     // Remover Categories existentes
     await sql.query(
       'DELETE FROM fornecedor_categories WHERE fornecedor_id = $1',

@@ -51,7 +51,7 @@ export interface FornecedorFormData {
   cidade?: string;
   estado?: string;
   cep?: string;
-  mcc?: number[];  // Array de IDs de categories
+  mcc?: string[];  // Array de IDs de categories
   observacoes?: string;
   contato_principal?: string;
   ativo?: boolean;
