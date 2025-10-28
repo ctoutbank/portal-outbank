@@ -10,6 +10,9 @@ export interface Category {
 }
 
 export interface Fornecedor {
+  status: string;
+  tabelasMDR: [];
+  name: string;
   id: string;
   nome: string;
   cnpj: string;
@@ -66,4 +69,65 @@ export interface FornecedorDocument {
   size: number;
   uploaded_at?: Date;
   createdAt?: Date;
+}
+
+
+    
+
+export interface FornecedorMDR{
+  bandeiras: string,
+  debitopos: string,
+  creditopos: string,
+  credito2xpos : string,
+  credito7xpos : string,
+  voucherpos : string,
+  prepos : string,
+  mdrpos : string,
+  cminpos : string,
+  cmaxpos : string,
+  antecipacao : string,
+  debitoonline: string,
+  creditoonline: string,
+  credito2xonline : string,
+  credito7xonline : string,
+  voucheronline : string,
+  preonline : string,
+  mdronline : string,
+  cminonline : string,
+  cmaxonline : string,
+  antecipacaoonline : string,
+  createdAt: Date,
+  updatedAt: Date,
+  createdBy: string;
+
+  categories?: Category[];     // Array de categories
+  total_categories?: number;   // Contador
+  mccs?: string[];            // Array de MCCs
+  cnaes?: string[];           // Array de CNAEs
+  
+}
+
+export interface FornecedorMDRForm{
+  bandeiras: string,
+  debitopos: string,
+  creditopos: string,
+  credito2xpos : string,
+  credito7xpos : string,
+  voucherpos : string,
+  prepos : string,
+  mdrpos : string,
+  cminpos : string,
+  cmaxpos : string,
+  antecipacao : string,
+  debitoonline: string,
+  creditoonline: string,
+  credito2xonline : string,
+  credito7xonline : string,
+  voucheronline : string,
+  preonline : string,
+  mdronline : string,
+  cminonline : string,
+  cmaxonline : string,
+  antecipacaoonline : string,
+  mcc?: string[];  
 }

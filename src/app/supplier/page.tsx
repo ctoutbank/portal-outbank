@@ -1,16 +1,26 @@
 
 'use client';
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+
 import { FornecedoresList } from '@/components/supplier/FornecedoresList';
 import { Fornecedor, FornecedorFormData } from '@/types/fornecedor'
 import { FornecedorModal } from '@/components/supplier/FornecedorModal';
 import { FornecedorForm } from '@/components/supplier/FornecedorForm';
+import BaseHeader from '@/components/layout/base-header';
+
+import { toast } from 'sonner';
 
 export default function FornecedoresPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null)
+
+
+    const handleAdd = async () => {
+        setEditingFornecedor(null);
+        setIsModalOpen(true);
+        };
 
     const handleSave = async (formData: FornecedorFormData) => {
         try{
@@ -20,14 +30,21 @@ export default function FornecedoresPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData),
         });
+        const result = await response.json();
+        if (!response.ok){
+            toast.error(result.error || 'Erro ao salvar o fornecedor');
+            return;
+        }
 
         if (response.ok) {
             // trigger list reload in child
+            toast.success('Fornecedor cadastrado com sucesso!')
             setRefreshKey((k) => k + 1);
             setIsModalOpen(false);
         }
     } catch (error) {
         console.error("Error saving fornecedor:", error);
+        toast.error('Erro de conexão. Tente novamente')
     }   finally {
         setLoading(false);
     }
@@ -68,25 +85,24 @@ export default function FornecedoresPage() {
 }
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-semibold text-gray-900">Fornecedores</h1>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                >
-                    <Plus className="w-5 h-5" />
-                    Adicionar Fornecedor
-                </button>
-            </div>
-
+        <>
+        <BaseHeader
+                breadcrumbItems={[{ title: <h1 className="text-2xl font-bold text-gray-900 dark:text-white px-5">Gestão de Fornecedores</h1>, 
+                                    subtitle: <p className="text-gray-600 dark:text-white px-5">
+                                    Configuração custos, taxas e parcerias com fornecedores de serviços financeiros
+                                    </p>,                 
+                                        url: "/supplier" }]}
+                
+            />
+            
             <div>
                 <div>
-                    <div className="space-y-6">
+                    
                         <FornecedorModal
                             isOpen={isModalOpen}
                             onClose={() => setIsModalOpen(false)}
                             title={'Adicionar Fornecedor'}
+                            
                         >
                             {loading ? ( 
                                 <div> Carregando...</div>
@@ -102,14 +118,15 @@ export default function FornecedoresPage() {
                         )}
                             
                         </FornecedorModal>
-                    </div>
+                    
                 </div>
             </div>
 
-            <div className="bg-gray-100 p-6 rounded-lg shadow-sm">
-                <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="bg-gray-100 dark:bg-[#171717] p-6 rounded-lg shadow-sm">
+                <div className="min-h-screen dark:bg-[#171717] bg-gray-100 p-6">
                     <div className="space-y-6">
                         <FornecedoresList
+                            onAdd={handleAdd}
                             role="admin"
                             refreshKey={refreshKey}
                             onEdit={handleEdit}
@@ -118,7 +135,8 @@ export default function FornecedoresPage() {
                     </div>
                 </div>
             </div>
-        </div>
+       
+        </>
     );
 }
 

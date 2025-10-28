@@ -1,29 +1,35 @@
 'use client';
 
-import {useState, useEffect, useRef} from 'react';
-import { FornecedorFormData } from '@/types/fornecedor';
+import {useState, useEffect} from 'react';
+import { FornecedorFormData, FornecedorMDRForm } from '@/types/fornecedor';
 import {Upload, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { MdrModal } from './MdrModal';
+import MdrForm from './MdrForm';
 
 interface FornecedorFormProps {
-    categories?: Array<{id: string; label: string}>
+    
     initialData?: Partial<FornecedorFormData>;
     onSubmit: (data: FornecedorFormData, files: File[]) => Promise<void>;
+    mdrData?: Partial<FornecedorMDRForm>;
     onCancel: () => void;
     isEditing: boolean;
+    onAdd: () => Promise<void>;
+   
 }
 
 export function FornecedorForm({
-    
+
     initialData,
     onSubmit,
     onCancel,
+    onAdd,
     isEditing = false,
-    categories: categoriesProp,
+   
 }: FornecedorFormProps) {
-     console.log('🔍 Form recebeu:', { initialData, categoriesProp });
-    console.log('📊 MCC do initialData:', initialData?.mcc);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
     
-
     const [formData, setFormData] = useState<FornecedorFormData>({
         nome: initialData?.nome || '',
         cnpj: initialData?.cnpj || '',
@@ -38,72 +44,25 @@ export function FornecedorForm({
         mcc: initialData?.mcc || [],
         ativo: initialData?.ativo ?? true,
     });
-     console.log('📝 FORM - formData.mcc após inicializar:', formData.mcc);
-    const [categories, setCategories] = useState<Array<{id: string; label: string}>>([]);
-    const [cnpjError, setCnpjError] = useState<string | null>(null);
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const dropdownRef = useRef<HTMLDivElement>(null);
+  
+    const [files, setFiles] = useState<File[]>([]);
+    const [loading, setLoading] = useState(false);
     
-            // Fecha dropdown ao clicar fora
-        useEffect(() => {
-            const handleClickOutside = (event: MouseEvent) => {
-                if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                    setShowDropdown(false);
-                }
-            };
-            document.addEventListener('mousedown', handleClickOutside);
-            return () => document.removeEventListener('mousedown', handleClickOutside);
-        }, []);
-
-        // Adiciona CNAE
-        const addCnae = (cnaeId: string) => {
-            if (!formData.mcc.includes(cnaeId)) {
-                setFormData(prev => ({ ...prev, mcc: [...prev.mcc, cnaeId] }));
-            }
-            setSearchTerm('');
-        };
-
-        // Remove CNAE
-        const removeCnae = (cnaeId: string) => {
-            setFormData(prev => ({ ...prev, mcc: prev.mcc.filter(id => id !== cnaeId) }));
-        };
-
-        const getCnaeCode = (label: string) => {
-        const match = label.match(/\(([^)]+)\)/);
-        return match ? match[1] : label.substring(0, 10);
-    };
-
-
-
-    async function fetchCnaeOptions(q = ''){
-        const res = await fetch(`/api/cnaes?q=${encodeURIComponent(q)}`);
-        return res.json() as Promise<Array<{id: string; name: string; cnae: string}>>;
-    }
-
-            //  useEffect(() => {
-            //     fetchCnaeOptions().then(data => setCategories(data.map(d => ({
-            //         id: String(d.id),
-            //         label: `${d.name} (${d.cnae})`
-            //     }))));
-            // }, []);
-
-        useEffect(() => {
-            if(categoriesProp && categoriesProp.length > 0){
-                setCategories(categoriesProp)
-            } else { 
-                fetchCnaeOptions().then(data => setCategories(data.map(d => ({
-                    id: String(d.id),
-                    label: `${d.name} (${d.cnae})`
-                }))))
-            }
-        }, [categoriesProp])
-      
-
-        
-    // Helper: keep only digits
+    const [cnpjError, setCnpjError] = useState<string | null>(null);
+    
     const normalizeCNPJ = (input: string) => (input ?? '').replace(/\D/g, '');
 
+     const handleAdd = async () => {
+        
+        setIsModalOpen(true);
+        };
+        
+    useEffect(() => {
+        if (initialData?.cnpj) {
+            const masked = formatCNPJ(normalizeCNPJ(initialData.cnpj));
+            setFormData(prev => ({ ...prev, cnpj: masked }));
+        }
+    }, [initialData?.cnpj]);
     // Helper: format digits to 00.000.000/0000-00
     const formatCNPJ = (digits: string) => {
         const d = digits.replace(/\D/g, '').slice(0, 14);
@@ -143,8 +102,6 @@ export function FornecedorForm({
         return true;
     }
 
-    const [files, setFiles] = useState<File[]>([]);
-    const [loading, setLoading] = useState(false);
 
     const handleChange = (e: React.ChangeEvent <HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
@@ -197,24 +154,48 @@ export function FornecedorForm({
             }
             const payload: FornecedorFormData = { ...formData, cnpj: normalizedCNPJ } as FornecedorFormData;
             await onSubmit(payload, files);
-        } finally{
+            
+        } catch (error: any){
+            if (error?.message?.includes('CNPJ duplicado') || error?.status === 409){
+                setCnpjError('CNPJ já cadastrado');
+                toast.error('CNPJ ja cadastrado');
+            }
+        }
+         finally{
             setLoading(false);
         }
     }
 
-    
-    useEffect(() => {
-        if (initialData?.cnpj) {
-            const masked = formatCNPJ(normalizeCNPJ(initialData.cnpj));
-            setFormData(prev => ({ ...prev, cnpj: masked }));
+     const handleSave = async (mdrForm: FornecedorMDRForm) => {
+        try{
+        setLoading(true);
+        const response = await fetch('/api/mdr', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(mdrForm),
+        });
+        const result = await response.json();
+        if (!response.ok){
+            toast.error(result.error || 'Erro ao salvar MDR');
+            return;
         }
-    }, [initialData?.cnpj]);
 
-    const handleInputClick = () => {
-    console.log('🖱️ Clicou no input');
-    console.log('📚 Categories disponíveis:', categories);
-    setShowDropdown(true);
-};
+        if (response.ok) {
+            // trigger list reload in child
+            toast.success('MDR cadastrado com sucesso!')
+            setRefreshKey((k) => k + 1);
+            setIsModalOpen(false);
+        }
+    } catch (error) {
+        console.error("Error saving MDR:", error);
+        toast.error('Erro de conexão. Tente novamente')
+    }   finally {
+        setLoading(false);
+    }
+}
+    
+
+
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -272,89 +253,37 @@ export function FornecedorForm({
                     </div>
                     
 
-                   <div ref={dropdownRef} className="relative">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">CNAE *</label>
-    
-                        {/* Container que parece um input */}
-                        <div 
-                            className="w-full min-h-[42px] px-3 py-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent flex flex-wrap items-center gap-2 cursor-text"
-                            onClick={handleInputClick}
-                        >
-                            {/* Chips dos selecionados */}
-                            {formData.mcc && formData.mcc.length > 0 && formData.mcc.map(mccId => {
-                                const cnae = categories.find(c => c.id === mccId);
-                                if (!cnae) return null;
-                                
-                                const code = getCnaeCode(cnae.label);
-                                
-                                return (
-                                    <div
-                                        key={mccId}
-                                        className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap"
-                                        title={cnae.label} // mostra completo no hover
-                                    >
-                                        <span>{code}</span>
-                                        <button
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                removeCnae(mccId);
-                                            }}
-                                            className="hover:bg-blue-200 rounded-full"
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                );
-                            })}
+                   
+
+                    <div>
+                        <button 
+                         className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg"
+                        type="button" 
+                        onClick={handleAdd}> + Tabela MDR
+                        <MdrModal
+                            isOpen={isModalOpen}
+                            onClose={() => setIsModalOpen(false)}
+                            title={'Tabela MDR'}
                             
-                            {/* Input de busca inline */}
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => {
-                                    setSearchTerm(e.target.value);
-                                    setShowDropdown(true);
-                                }}
-                                onFocus={() => setShowDropdown(true)}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowDropdown(true);
-                                }}
-                                placeholder={formData.mcc.length === 0 ? "Buscar CNAEs..." : ""}
-                                className="flex-1 min-w-[120px] outline-none border-0 p-0 text-sm"
-                            />
-                        </div>
+                        >
+                            {loading ? ( 
+                                <div> Carregando...</div>
+                            ) : (
+                            <MdrForm
+                                                       
+                            onSubmit={async (data) => {
+                                await handleSave(data);
+                            } }
+                            onCancel={() => setIsModalOpen(false)}
+                            isEditing={false} onAdd={function (): Promise<void> {
+                                throw new Error('Function not implemented.');
+                            } } isOpen={false}                            />
                         
-                        {/* Dropdown */}
-                        {showDropdown && categories.length > 0 &&(
-                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                {categories
-                                    .filter(c => 
-                                        c.label.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                                        !formData.mcc.includes(c.id)
-                                    )
-                                    .map(cnae => (
-                                        <div
-                                            key={cnae.id}
-                                            onClick={() => addCnae(cnae.id)}
-                                            className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-0"
-                                        >
-                                            {cnae.label}
-                                        </div>
-                                    ))
-                                }
-                                {categories.filter(c => 
-                                    c.label.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                                    !formData.mcc.includes(c.id)
-                                ).length === 0 && (
-                                    <div className="px-3 py-2 text-sm text-gray-500">
-                                        {searchTerm ? 'Nenhum CNAE encontrado' : 'Todos os CNAEs selecionados'}
-                                    </div>
-                                )}
-                            </div>
                         )}
-                    </div>
+                            
+                        </MdrModal>
+                        </button>
+                        </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Contato Principal</label>
                         <input

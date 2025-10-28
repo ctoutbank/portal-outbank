@@ -21,18 +21,19 @@ export async function GET(
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: {id: string}}
+    { params }: { params: Promise<{id: string}>}
 ){
     try{
+        const {id} = await params;
         const data: Partial<FornecedorFormData> = await request.json();
         if(data.cnpj){
-            const exists = await fornecedoresRepository.existsByCnpj(data.cnpj, params.id);
+            const exists = await fornecedoresRepository.existsByCnpj(data.cnpj, id);
             if (exists) {
                 return NextResponse.json({ error: "Fornecedor com este CNPJ já existe." }, { status: 400 });
             }
         }
 
-        const result = await fornecedoresRepository.update(params.id, data);
+        const result = await fornecedoresRepository.update(id, data);
         return NextResponse.json(result);
     } catch (error) {
         console.error("Error updating fornecedor in API route:", error);

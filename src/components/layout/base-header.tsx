@@ -13,7 +13,8 @@ import ThemeSwitcher from "../theme-switcher";
 import { SidebarTrigger } from "../ui/sidebar";
 
 export type BreadcrumbItem = {
-  title: string;
+  title: string | React.ReactNode;
+  subtitle: string | React.ReactNode;
   url?: string;
 };
 
@@ -23,7 +24,7 @@ const BaseHeader = ({
   breadcrumbItems: BreadcrumbItem[];
 }) => {
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-6 justify-between pt-4">
+    <header className="flex h-auto min-h-20 shrink-0 items-center gap-2 border-b px-6 justify-between py-4">
       <SidebarTrigger />
       <Separator orientation="vertical" className="h-6" />
       <div className="flex flex-1 items-center justify-between">
@@ -35,6 +36,7 @@ const BaseHeader = ({
                   {item.url ? (
                     <BreadcrumbLink href={item.url}>
                       {item.title}
+                      {item.subtitle}
                     </BreadcrumbLink>
                   ) : (
                     <BreadcrumbPage>{item.title}</BreadcrumbPage>
