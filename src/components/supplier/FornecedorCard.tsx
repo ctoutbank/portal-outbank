@@ -198,7 +198,7 @@ export function FornecedorCard({ fornecedor, onEdit, onDelete, canEdit, canDelet
                                     const category = categories.find(c => c.label.includes(cnaeCode));
                                     return category?.id;
                                 }).filter(Boolean) as string[] || []}}
-                                categories={categories}
+                                
                                 onSubmit={async (data) => {
                                     console.log("dados sendo salvos: ", data)
                                     await onEdit({ ...fornecedor, ...data });

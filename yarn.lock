@@ -4922,6 +4922,11 @@ path-to-regexp@^8.0.0:
   resolved "https://registry.npmjs.org/path-to-regexp/-/path-to-regexp-8.2.0.tgz"
   integrity sha512-TdrF7fW9Rphjq4RjrW0Kp2AW0Ahwu9sRGTkS6bvDi0SCwZlEZYmcfDbEsTz8RVk0EHIS/Vd1bv3JhG+1xZuAyQ==
 
+payment-icons@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.npmjs.org/payment-icons/-/payment-icons-1.2.1.tgz"
+  integrity sha512-nfIgiz/QoD63Gtv6VWYxJdUYDAJvh9B+MX3B2qJafVfyb4/Qx7O3K87pTJVeG1K0tOC+5eZPPnACVEaaQG7zxw==
+
 peberminta@^0.9.0:
   version "0.9.0"
   resolved "https://registry.npmjs.org/peberminta/-/peberminta-0.9.0.tgz"

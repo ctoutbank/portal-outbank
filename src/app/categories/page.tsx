@@ -48,7 +48,7 @@ export default async function CategoriesPage({
     return (
         <>
             <BaseHeader
-                breadcrumbItems={[{ title: "Categorias", url: "/portal/categories" }]}
+                breadcrumbItems={[{ title: "Categorias", subtitle: "", url: "/portal/categories" }]}
             />
 
             <BaseBody

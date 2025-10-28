@@ -2,34 +2,28 @@
 
 import {useState, useEffect} from 'react';
 import { FornecedorFormData, FornecedorMDRForm } from '@/types/fornecedor';
-import {Upload, X } from 'lucide-react';
+import {Plus, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MdrModal } from './MdrModal';
 import MdrForm from './MdrForm';
 
 interface FornecedorFormProps {
-    
     initialData?: Partial<FornecedorFormData>;
     onSubmit: (data: FornecedorFormData, files: File[]) => Promise<void>;
     mdrData?: Partial<FornecedorMDRForm>;
     onCancel: () => void;
     isEditing: boolean;
-    onAdd: () => Promise<void>;
-   
 }
 
 export function FornecedorForm({
-
     initialData,
     onSubmit,
     onCancel,
-    onAdd,
     isEditing = false,
    
 }: FornecedorFormProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
-    
     const [formData, setFormData] = useState<FornecedorFormData>({
         nome: initialData?.nome || '',
         cnpj: initialData?.cnpj || '',
@@ -47,13 +41,10 @@ export function FornecedorForm({
   
     const [files, setFiles] = useState<File[]>([]);
     const [loading, setLoading] = useState(false);
-    
     const [cnpjError, setCnpjError] = useState<string | null>(null);
-    
     const normalizeCNPJ = (input: string) => (input ?? '').replace(/\D/g, '');
 
      const handleAdd = async () => {
-        
         setIsModalOpen(true);
         };
         
@@ -252,38 +243,6 @@ export function FornecedorForm({
                         />
                     </div>
                     
-
-                   
-
-                    <div>
-                        <button 
-                         className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg"
-                        type="button" 
-                        onClick={handleAdd}> + Tabela MDR
-                        <MdrModal
-                            isOpen={isModalOpen}
-                            onClose={() => setIsModalOpen(false)}
-                            title={'Tabela MDR'}
-                            
-                        >
-                            {loading ? ( 
-                                <div> Carregando...</div>
-                            ) : (
-                            <MdrForm
-                                                       
-                            onSubmit={async (data) => {
-                                await handleSave(data);
-                            } }
-                            onCancel={() => setIsModalOpen(false)}
-                            isEditing={false} onAdd={function (): Promise<void> {
-                                throw new Error('Function not implemented.');
-                            } } isOpen={false}                            />
-                        
-                        )}
-                            
-                        </MdrModal>
-                        </button>
-                        </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Contato Principal</label>
                         <input
@@ -363,6 +322,40 @@ export function FornecedorForm({
                         />
                         <label htmlFor="ativo" className="ml-2 text-sm text-gray-700">Ativo</label>
                     </div>
+
+                    <div>
+
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                        >
+                            <Plus className="w-5 h-5" />
+                            MDR
+                        </button>
+                        
+                        <MdrModal
+                            isOpen={isModalOpen}
+                            onClose={() => setIsModalOpen(false)}
+                            title={'Tabela MDR'}
+                            
+                        >
+                            {loading ? ( 
+                                <div> Carregando...</div>
+                            ) : (
+                            <MdrForm
+                                   isOpen={isModalOpen}                    
+                            onSubmit={async (data) => {
+                                await handleSave(data);
+                            } }
+                            onCancel={() => setIsModalOpen(false)}
+                            isEditing={false} 
+                                                     />
+                        
+                        )}
+                            
+                        </MdrModal>
+                       
+                        </div>
 
                     <div className="col-span-2">
                         <div className='bg-gray-50 p-4 rounded-lg'>

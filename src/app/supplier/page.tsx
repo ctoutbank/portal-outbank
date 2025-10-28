@@ -108,12 +108,12 @@ export default function FornecedoresPage() {
                                 <div> Carregando...</div>
                             ) : (
                             <FornecedorForm
-                                onSubmit={async (data) => {
-                                    await handleSave(data);
-                                }}
-                                onCancel={() => setIsModalOpen(false)}
-                                isEditing={false}
-                            />
+                                    onSubmit={async (data) => {
+                                        await handleSave(data);
+                                    } }
+                                    onCancel={() => setIsModalOpen(false)}
+                                    isEditing={false} 
+                                                             />
                         
                         )}
                             
