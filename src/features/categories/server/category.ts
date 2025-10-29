@@ -120,7 +120,7 @@ export async function getCategories(
 }
 
 export async function getAllCnaeOptions(
-  search: string       // opcional
+  search: string 
 ): Promise<Array<{ id: number; name: string; cnae: string }>> {
     const rows = await db
     .select({

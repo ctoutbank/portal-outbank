@@ -9,7 +9,7 @@ import MdrForm from './MdrForm';
 
 interface FornecedorFormProps {
     initialData?: Partial<FornecedorFormData>;
-    onSubmit: (data: FornecedorFormData, files: File[]) => Promise<void>;
+    onSubmit: (data: FornecedorFormData, files: File[], mdr?: FornecedorMDRForm) => Promise<void>; // ← Adiciona MDR
     mdrData?: Partial<FornecedorMDRForm>;
     onCancel: () => void;
     isEditing: boolean;
@@ -20,10 +20,8 @@ export function FornecedorForm({
     onSubmit,
     onCancel,
     isEditing = false,
-   
 }: FornecedorFormProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [refreshKey, setRefreshKey] = useState(0);
     const [formData, setFormData] = useState<FornecedorFormData>({
         nome: initialData?.nome || '',
         cnpj: initialData?.cnpj || '',
@@ -42,19 +40,20 @@ export function FornecedorForm({
     const [files, setFiles] = useState<File[]>([]);
     const [loading, setLoading] = useState(false);
     const [cnpjError, setCnpjError] = useState<string | null>(null);
+    
+    // ✅ NOVO STATE PARA GUARDAR O MDR
+    const [mdrData, setMdrData] = useState<FornecedorMDRForm | null>(null);
+    const [hasMdr, setHasMdr] = useState(false);
+
     const normalizeCNPJ = (input: string) => (input ?? '').replace(/\D/g, '');
 
-     const handleAdd = async () => {
-        setIsModalOpen(true);
-        };
-        
     useEffect(() => {
         if (initialData?.cnpj) {
             const masked = formatCNPJ(normalizeCNPJ(initialData.cnpj));
             setFormData(prev => ({ ...prev, cnpj: masked }));
         }
     }, [initialData?.cnpj]);
-    // Helper: format digits to 00.000.000/0000-00
+
     const formatCNPJ = (digits: string) => {
         const d = digits.replace(/\D/g, '').slice(0, 14);
         if (d.length <= 2) return d;
@@ -64,11 +63,9 @@ export function FornecedorForm({
         return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12,14)}`;
     }
 
-    // Helper: validate CNPJ checksum
     const validateCNPJ = (raw: string) => {
         const cnpj = normalizeCNPJ(raw);
         if (!cnpj || cnpj.length !== 14) return false;
-        // reject same digits
         if (/^([0-9])\1+$/.test(cnpj)) return false;
 
         const calc = (cnpjSlice: string, factors: number[]) => {
@@ -93,21 +90,19 @@ export function FornecedorForm({
         return true;
     }
 
-
-    const handleChange = (e: React.ChangeEvent <HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
 
         if (name === 'mcc' && e.target instanceof HTMLSelectElement && e.target.multiple) {
-        const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
-        setFormData(prev => ({ ...prev, mcc: selectedOptions }));
-        return;
-    }
+            const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
+            setFormData(prev => ({ ...prev, mcc: selectedOptions }));
+            return;
+        }
+
         if (name === 'cnpj') {
-            // apply mask while typing
             const digits = normalizeCNPJ(value);
             const masked = formatCNPJ(digits);
             setFormData(prev => ({ ...prev, cnpj: masked }));
-            // validate when has full length
             if (digits.length === 14) {
                 setCnpjError(validateCNPJ(digits) ? null : 'CNPJ inválido');
             } else {
@@ -122,71 +117,60 @@ export function FornecedorForm({
         }));
     }
 
-    const handleFileChange = (e: React.ChangeEvent <HTMLInputElement>) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             setFiles(Array.from(e.target.files))
         }
     }
 
-    const removeFile = (index: number) =>{
+    const removeFile = (index: number) => {
         setFiles(prevFiles => prevFiles.filter((_, i) => i !== index))
     };
 
+    // ✅ SALVAR MDR NO STATE (não envia para API ainda)
+    const handleSaveMDR = async (mdrForm: FornecedorMDRForm) => {
+        try {
+            setMdrData(mdrForm);
+            setHasMdr(true);
+            setIsModalOpen(false);
+            toast.success('MDR adicionado! Salve o fornecedor para confirmar.');
+        } catch (error) {
+            console.error("Error saving MDR:", error);
+            toast.error('Erro ao adicionar MDR');
+        }
+    };
+
+    // ✅ SUBMETER FORNECEDOR + MDR JUNTOS
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        
         try {
-            // normalize CNPJ to digits-only before submitting
             const normalizedCNPJ = normalizeCNPJ(formData.cnpj);
+            
             if (!validateCNPJ(normalizedCNPJ)) {
                 setCnpjError('CNPJ inválido');
                 setLoading(false);
                 return;
             }
-            const payload: FornecedorFormData = { ...formData, cnpj: normalizedCNPJ } as FornecedorFormData;
-            await onSubmit(payload, files);
+
+            const payload: FornecedorFormData = { 
+                ...formData, 
+                cnpj: normalizedCNPJ 
+            };
             
-        } catch (error: any){
-            if (error?.message?.includes('CNPJ duplicado') || error?.status === 409){
+            // ✅ Envia fornecedor + arquivos + MDR (se tiver)
+            await onSubmit(payload, files, mdrData || undefined);
+            
+        } catch (error: any) {
+            if (error?.message?.includes('CNPJ duplicado') || error?.status === 409) {
                 setCnpjError('CNPJ já cadastrado');
-                toast.error('CNPJ ja cadastrado');
+                toast.error('CNPJ já cadastrado');
             }
-        }
-         finally{
+        } finally {
             setLoading(false);
         }
     }
-
-     const handleSave = async (mdrForm: FornecedorMDRForm) => {
-        try{
-        setLoading(true);
-        const response = await fetch('/api/mdr', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(mdrForm),
-        });
-        const result = await response.json();
-        if (!response.ok){
-            toast.error(result.error || 'Erro ao salvar MDR');
-            return;
-        }
-
-        if (response.ok) {
-            // trigger list reload in child
-            toast.success('MDR cadastrado com sucesso!')
-            setRefreshKey((k) => k + 1);
-            setIsModalOpen(false);
-        }
-    } catch (error) {
-        console.error("Error saving MDR:", error);
-        toast.error('Erro de conexão. Tente novamente')
-    }   finally {
-        setLoading(false);
-    }
-}
-    
-
-
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -324,38 +308,32 @@ export function FornecedorForm({
                     </div>
 
                     <div>
-
                         <button
+                            type="button"
                             onClick={() => setIsModalOpen(true)}
-                            className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                                hasMdr 
+                                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                    : 'bg-gray-600 hover:bg-gray-700 text-white'
+                            }`}
                         >
                             <Plus className="w-5 h-5" />
-                            MDR
+                            {hasMdr ? 'MDR Adicionado ✓' : 'Adicionar MDR'}
                         </button>
                         
                         <MdrModal
                             isOpen={isModalOpen}
                             onClose={() => setIsModalOpen(false)}
                             title={'Tabela MDR'}
-                            
                         >
-                            {loading ? ( 
-                                <div> Carregando...</div>
-                            ) : (
                             <MdrForm
-                                   isOpen={isModalOpen}                    
-                            onSubmit={async (data) => {
-                                await handleSave(data);
-                            } }
-                            onCancel={() => setIsModalOpen(false)}
-                            isEditing={false} 
-                                                     />
-                        
-                        )}
-                            
+                                isOpen={isModalOpen}                    
+                                onSubmit={handleSaveMDR}
+                                onCancel={() => setIsModalOpen(false)}
+                                isEditing={false} 
+                            />
                         </MdrModal>
-                       
-                        </div>
+                    </div>
 
                     <div className="col-span-2">
                         <div className='bg-gray-50 p-4 rounded-lg'>
@@ -401,7 +379,6 @@ export function FornecedorForm({
                                 type="submit"
                                 disabled={loading}
                                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                onClick={handleSubmit}
                             >
                                 {loading ? 'Salvando...' : isEditing ? 'Atualizar' : 'Cadastrar'}
                             </button>
@@ -409,7 +386,6 @@ export function FornecedorForm({
                     </div>
                 </div>
             </div>
-            
         </form>
     )
 }

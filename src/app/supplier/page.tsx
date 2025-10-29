@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { FornecedoresList } from '@/components/supplier/FornecedoresList';
-import { Fornecedor, FornecedorFormData } from '@/types/fornecedor'
+import { Fornecedor, FornecedorFormData, FornecedorMDRForm } from '@/types/fornecedor'
 import { FornecedorModal } from '@/components/supplier/FornecedorModal';
 import { FornecedorForm } from '@/components/supplier/FornecedorForm';
 import BaseHeader from '@/components/layout/base-header';
@@ -22,14 +22,15 @@ export default function FornecedoresPage() {
         setIsModalOpen(true);
         };
 
-    const handleSave = async (formData: FornecedorFormData) => {
+    const handleSave = async (formData: FornecedorFormData, files: File[], mdr?: FornecedorMDRForm ) => {
         try{
         setLoading(true);
         const response = await fetch('/api/supplier', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
+            body: JSON.stringify({fornecedor: formData, mdr: mdr}),
         });
+
         const result = await response.json();
         if (!response.ok){
             toast.error(result.error || 'Erro ao salvar o fornecedor');
@@ -108,8 +109,8 @@ export default function FornecedoresPage() {
                                 <div> Carregando...</div>
                             ) : (
                             <FornecedorForm
-                                    onSubmit={async (data) => {
-                                        await handleSave(data);
+                                    onSubmit={async (data, files, mdr) => {
+                                        await handleSave(data, files, mdr);
                                     } }
                                     onCancel={() => setIsModalOpen(false)}
                                     isEditing={false} 

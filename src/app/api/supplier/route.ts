@@ -3,7 +3,7 @@
 import { sql } from '@vercel/postgres';
 import { NextRequest, NextResponse } from "next/server";
 import { fornecedoresRepository } from "@/lib/db/fornecedores";
-import { FornecedorFormData } from "@/types/fornecedor";
+import { FornecedorFormData, FornecedorMDRForm } from "@/types/fornecedor";
 import { error } from 'console';
 
 export async function GET(request: NextRequest) {
@@ -48,10 +48,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
        
-        const data: FornecedorFormData = await request.json();
+        const data = await request.json();
+        const { fornecedor, mdr } = data as {
+            fornecedor: FornecedorFormData;
+            mdr?: FornecedorMDRForm;
+        } 
         
 
-        if (!data.nome || !data.cnpj || !data.email) {
+        if (!fornecedor.nome || !fornecedor.cnpj || !fornecedor.email) {
             
             return NextResponse.json({ error: "Nome, CNPJ e Email são obrigatórios." }, { status: 400 });
         }
@@ -64,9 +68,54 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Fornecedor com este CNPJ já existe." }, { status: 400 });
         }
         
-        const result = await fornecedoresRepository.create(data);
+        const createdFornecedor = await fornecedoresRepository.create(fornecedor);
+
+        let createdMdr = null;
+        if(mdr && createdFornecedor.id){
+            try{
+                const mdrResult = await sql.query(
+                    `INSERT INTO mdr (
+                        fornecedor_id,
+                        bandeiras,
+                        debitopos, creditopos, credito2xpos, credito7xpos, voucherpos,
+                        prepos, mdrpos, cminpos, cmaxpos, antecipacao,
+                        debitoonline, creditoonline, credito2xonline, credito7xonline, voucheronline,
+                        preonline, mdronline, cminonline, cmaxonline, antecipacaoonline,
+                        created_at, updated_at
+                    ) VALUES (
+                        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+                        $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,
+                        NOW(), NOW()
+                    ) RETURNING *`,
+                    [
+                        createdFornecedor.id,
+                        mdr.bandeiras,
+                        mdr.debitopos, mdr.creditopos, mdr.credito2xpos, mdr.credito7xpos, mdr.voucherpos,
+                        mdr.prepos, mdr.mdrpos, mdr.cminpos, mdr.cmaxpos, mdr.antecipacao,
+                        mdr.debitoonline, mdr.creditoonline, mdr.credito2xonline, mdr.credito7xonline, mdr.voucheronline,
+                        mdr.preonline, mdr.mdronline, mdr.cminonline, mdr.cmaxonline, mdr.antecipacaoonline
+                    ]
+                );
+                createdMdr = mdrResult.rows[0];
+
+                if (mdr.mcc && mdr.mcc.length > 0 ){
+                    const values = mdr.mcc.map((categoyId, i) => `($1, $${i + 2})`).join(', ');
+                    await sql.query(
+                        `INSERT INTO fornecedor_categories (fornecedor_id, category_id) VALUES ${values}`,
+                        [createdFornecedor.id, ...mdr.mcc.map(id => parseInt(id))]
+                    );
+                }
+            } catch (mdrError: any){
+                console.error("Error creating MDR:", mdrError);
+                return NextResponse.json({
+                    fornecedor: createdFornecedor,
+                    warning: "Fornecedor criado, mas houve um erro ao criar o MDR. " + mdrError.message
+                }, { status: 201});
+            }
+        }
+
         
-        return NextResponse.json(result, { status: 201 });
+        return NextResponse.json({fornecedor: createdFornecedor, mdr: createdMdr, message: createdMdr? "Fornecedor e MDR criados com sucesso" : "Fonecedor: Status OK"}, { status: 201 });
     } catch (error: any) {
         if (error.message.includes('duplicate key value')) {
         return NextResponse.json({ error: 'CNPJ duplicado' }, { status: 409 });
