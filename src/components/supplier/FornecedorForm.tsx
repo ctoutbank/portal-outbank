@@ -162,6 +162,7 @@ export function FornecedorForm({
             // ✅ Envia fornecedor + arquivos + MDR (se tiver)
             await onSubmit(payload, files, mdrData || undefined);
             
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             if (error?.message?.includes('CNPJ duplicado') || error?.status === 409) {
                 setCnpjError('CNPJ já cadastrado');
