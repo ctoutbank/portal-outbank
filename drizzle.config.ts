@@ -8,7 +8,8 @@ dotenv.config({
 export default defineConfig({
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL || '',
+    url: process.env.POSTGRES_URL || '',
   },
-  schema: './src/server/db/schema',
+  schema: './drizzle/schema.ts',
+  out: './drizzle/migrations',
 });

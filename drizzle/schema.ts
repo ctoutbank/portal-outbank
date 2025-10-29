@@ -1498,3 +1498,64 @@ export const customerCustomization = pgTable("customer_customization", {
 }, (table) => [
 	unique("tenants_slug_key").on(table.slug),
 ]);
+
+
+export const cnaes = pgTable("cnaes", {
+  id: uuid().primaryKey().defaultRandom(),
+  codigo: varchar({ length: 10 }).notNull().unique(),
+  descricao: text().notNull(),
+  createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  unique("cnaes_codigo_key").on(table.codigo),
+]);
+
+export const fornecedores = pgTable("fornecedores", {
+  id: uuid().primaryKey().defaultRandom(),
+  nome: varchar({ length: 255 }).notNull(),
+  cnpj: varchar({ length: 18 }).notNull().unique(),
+  email: varchar({ length: 255 }).notNull(),
+  telefone: varchar({ length: 20 }),
+  endereco: text(),
+  cidade: varchar({ length: 100 }),
+  estado: varchar({ length: 2 }),
+  cep: varchar({ length: 10 }),
+  cnaecodigo: varchar("cnae_codigo", { length: 10 }),
+  ativo: boolean().default(true),
+  createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  unique("fornecedores_cnpj_key").on(table.cnpj),
+  foreignKey({
+    columns: [table.cnaecodigo],
+    foreignColumns: [cnaes.codigo],
+    name: "fk_fornecedor_cnae"
+  }),
+]);
+
+export const fornecedorDocuments = pgTable("fornecedor_documents", {
+  id: uuid().primaryKey().defaultRandom(),
+  fornecedorId: uuid("fornecedor_id").notNull(),
+  nome: varchar({ length: 255 }).notNull(),
+  tipo: varchar({ length: 100 }).notNull(),
+  url: text().notNull(),
+  size: integer().default(0),
+  uploadedAt: timestamp("uploaded_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  foreignKey({
+    columns: [table.fornecedorId],
+    foreignColumns: [fornecedores.id],
+    name: "fk_document_fornecedor"
+  }).onDelete("cascade"),
+]);
+
+export type InsertCnae = typeof cnaes.$inferInsert;
+export type SelectCnae = typeof cnaes.$inferSelect;
+
+// Tipo para inserção de Fornecedor
+export type InsertFornecedor = typeof fornecedores.$inferInsert;
+export type SelectFornecedor = typeof fornecedores.$inferSelect;
+
+// Tipo para inserção de Documento
+export type InsertFornecedorDocument = typeof fornecedorDocuments.$inferInsert;
+export type SelectFornecedorDocument = typeof fornecedorDocuments.$inferSelect;
