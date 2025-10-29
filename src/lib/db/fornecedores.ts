@@ -2,7 +2,9 @@ import { sql } from '@vercel/postgres';
 import { FornecedorFormData } from '@/types/fornecedor';
 
 export class FornecedoresRepository {
-  // Listar com paginação, filtros e Categories
+ 
+ 
+
   async getAll(
     page: number = 1,
     limit: number = 10,

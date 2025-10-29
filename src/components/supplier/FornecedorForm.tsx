@@ -307,33 +307,7 @@ export function FornecedorForm({
                         <label htmlFor="ativo" className="ml-2 text-sm text-gray-700">Ativo</label>
                     </div>
 
-                    <div>
-                        <button
-                            type="button"
-                            onClick={() => setIsModalOpen(true)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-                                hasMdr 
-                                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                                    : 'bg-gray-600 hover:bg-gray-700 text-white'
-                            }`}
-                        >
-                            <Plus className="w-5 h-5" />
-                            {hasMdr ? 'MDR Adicionado ✓' : 'Adicionar MDR'}
-                        </button>
-                        
-                        <MdrModal
-                            isOpen={isModalOpen}
-                            onClose={() => setIsModalOpen(false)}
-                            title={'Tabela MDR'}
-                        >
-                            <MdrForm
-                                isOpen={isModalOpen}                    
-                                onSubmit={handleSaveMDR}
-                                onCancel={() => setIsModalOpen(false)}
-                                isEditing={false} 
-                            />
-                        </MdrModal>
-                    </div>
+                    
 
                     <div className="col-span-2">
                         <div className='bg-gray-50 p-4 rounded-lg'>
@@ -368,6 +342,33 @@ export function FornecedorForm({
                         </div>
 
                         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                            <div>
+                        <button
+                            type="button"
+                            onClick={() => setIsModalOpen(true)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+                                hasMdr 
+                                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                    : 'bg-gray-600 hover:bg-gray-700 text-white'
+                            }`}
+                        >
+                            <Plus className="w-5 h-5" />
+                            {hasMdr ? 'MDR Adicionado ✓' : 'Adicionar MDR'}
+                        </button>
+                        
+                        <MdrModal
+                            isOpen={isModalOpen}
+                            onClose={() => setIsModalOpen(false)}
+                            title={'Tabela MDR'}
+                        >
+                            <MdrForm
+                                isOpen={isModalOpen}                    
+                                onSubmit={handleSaveMDR}
+                                onCancel={() => setIsModalOpen(false)}
+                                isEditing={false} 
+                            />
+                        </MdrModal>
+                    </div>
                             <button
                                 type="button"
                                 onClick={onCancel}
