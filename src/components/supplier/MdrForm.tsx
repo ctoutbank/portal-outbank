@@ -17,7 +17,7 @@ type TaxaFields = {
   credito7x: string;
   voucher: string;
 };
-//teste 
+//test for need
 type TaxasPorBandeira = Record<Bandeira, TaxaFields>;
 
 interface MdrFormState {
