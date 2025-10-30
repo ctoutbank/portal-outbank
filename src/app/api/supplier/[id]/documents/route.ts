@@ -3,7 +3,8 @@ import { fornecedoresRepository } from "@/lib/db/fornecedores";
 import { writeFile } from "fs/promises";
 import path from "path";
 
-export async function POST(request: NextRequest, { params }: { params: {id: string} }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{id: string}> }) {
+    const {id} = await params;
 
     try{
         const formData = await request.formData();
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: {id: stri
             await writeFile(filePath, buffer);
 
             const doc = await fornecedoresRepository.addDocument(
-                params.id,
+                id,
                
                 `/uploads/fornecedores/${fileName}`
             );
