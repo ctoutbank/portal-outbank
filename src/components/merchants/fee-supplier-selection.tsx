@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FeeDetail, FeeBrand, FeeProductType } from "@/types/fee";
+import { FeeDetail } from "@/types/fee";
 import Image from "next/image";
 
 import { getCardImage } from "@/utils/actions";
