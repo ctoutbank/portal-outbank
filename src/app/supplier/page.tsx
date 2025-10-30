@@ -14,11 +14,8 @@ export default function FornecedoresPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [loading, setLoading] = useState(false);
-    const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null)
-
 
     const handleAdd = async () => {
-        setEditingFornecedor(null);
         setIsModalOpen(true);
         };
 
