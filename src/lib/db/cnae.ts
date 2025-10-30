@@ -4,8 +4,8 @@ import { Category } from '@/types/fornecedor';
 export class CnaesRepository {
   // Listar todos os CNAEs
   async getAll(search?: string) {
-    let query = 'SELECT * FROM cnaes';
-    const params: any[] = [];
+  let query = 'SELECT * FROM cnaes';
+  const params: string[] = [];
 
     if (search) {
       query += ' WHERE codigo ILIKE $1 OR descricao ILIKE $1';
