@@ -1,11 +1,11 @@
 ' use client ';
 
-import { Cnae } from "@/types/fornecedor";
+import { Category } from "@/types/fornecedor";
 import {Building2, Edit, Trash2} from "lucide-react";
 
 interface CnaeCardProps {
-    cnae: Cnae;
-    onEdit: (cnae: Cnae) => void;
+    cnae: Category;
+    onEdit: (cnae: Category) => void;
     onDelete: (id: string) => void;
     
     canEdit: boolean;
@@ -21,8 +21,8 @@ export function CnaeCard({ cnae, onEdit, onDelete, canEdit, canDelete }: CnaeCar
                         <Building2 className="w-6 h-6 text-blue-600"/>
                     </div>
                     <div>
-                        <h3 className="font-semibold text-lg text-gray-900">{cnae.codigo}</h3>
-                        <p className="text-sm text-gray-500">Descricao: {cnae.descricao}</p>
+                        <h3 className="font-semibold text-lg text-gray-900">{cnae.cnae}</h3>
+                        <p className="text-sm text-gray-500">Descricao: {cnae.name}</p>
                     </div>
                 </div>
 
@@ -35,7 +35,7 @@ export function CnaeCard({ cnae, onEdit, onDelete, canEdit, canDelete }: CnaeCar
                     )}
 
                     {canDelete && (
-                        <button onClick={() => onDelete(cnae.id)}
+                        <button onClick={() => onDelete(cnae.id.toString())}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
                             <Trash2 className="w-5 h-5"/>
                         </button>
