@@ -42,9 +42,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 }
 
-export async function GET(request: NextRequest, { params }: { params: {id: string} }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{id: string}> }) {
+    const {id} = await params;
     try{
-        const documents = await fornecedoresRepository.getDocuments(params.id);
+        const documents = await fornecedoresRepository.getDocuments(id);
         return NextResponse.json(documents);
     }
     catch (error){
