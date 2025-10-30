@@ -162,10 +162,14 @@ export function FornecedorForm({
             // ✅ Envia fornecedor + arquivos + MDR (se tiver)
             await onSubmit(payload, files, mdrData || undefined);
             
-        } catch (error: any) {
-            if (error?.message?.includes('CNPJ duplicado') || error?.status === 409) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            const maybeStatus = (error as { status?: number }).status;
+            if (message.includes('CNPJ duplicado') || maybeStatus === 409) {
                 setCnpjError('CNPJ já cadastrado');
                 toast.error('CNPJ já cadastrado');
+            } else {
+                console.error('Unhandled error submitting fornecedor:', error);
             }
         } finally {
             setLoading(false);

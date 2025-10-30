@@ -1,11 +1,11 @@
 import { sql } from '@vercel/postgres';
-import { Cnae } from '@/types/fornecedor';
+import { Category } from '@/types/fornecedor';
 
 export class CnaesRepository {
   // Listar todos os CNAEs
   async getAll(search?: string) {
-    let query = 'SELECT * FROM cnaes';
-    const params: any[] = [];
+  let query = 'SELECT * FROM cnaes';
+  const params: string[] = [];
 
     if (search) {
       query += ' WHERE codigo ILIKE $1 OR descricao ILIKE $1';
@@ -15,7 +15,7 @@ export class CnaesRepository {
     query += ' ORDER BY codigo ASC';
 
     const { rows } = await sql.query(query, params);
-    return rows as Cnae[];
+    return rows as Category[];
   }
 
   // Buscar por ID
@@ -24,7 +24,7 @@ export class CnaesRepository {
       'SELECT * FROM cnaes WHERE id = $1',
       [id]
     );
-    return rows[0] as Cnae || null;
+    return rows[0] as Category || null;
   }
 
   // Buscar por código
@@ -33,7 +33,7 @@ export class CnaesRepository {
       'SELECT * FROM cnaes WHERE codigo = $1',
       [codigo]
     );
-    return rows[0] as Cnae || null;
+    return rows[0] as Category || null;
   }
 
   // Criar CNAE
@@ -44,7 +44,7 @@ export class CnaesRepository {
        RETURNING *`,
       [codigo, descricao]
     );
-    return rows[0] as Cnae;
+    return rows[0] as Category;
   }
 
   // Atualizar CNAE
@@ -56,7 +56,7 @@ export class CnaesRepository {
        RETURNING *`,
       [codigo, descricao, id]
     );
-    return rows[0] as Cnae;
+    return rows[0] as Category;
   }
 
   // Deletar CNAE

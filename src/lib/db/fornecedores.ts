@@ -1,5 +1,5 @@
 import { sql } from '@vercel/postgres';
-import { FornecedorFormData } from '@/types/fornecedor';
+import { FornecedorFormData, Fornecedor } from '@/types/fornecedor';
 
 export class FornecedoresRepository {
  
@@ -47,7 +47,7 @@ export class FornecedoresRepository {
 
     // Buscar Categories para cada fornecedor
     const fornecedoresComCategories = await Promise.all(
-      rows.map(async (fornecedor: any) => {
+      rows.map(async (fornecedor: Fornecedor) => {
         const { rows: categories } = await sql.query(
           `SELECT c.id, c.slug, c.name, c.mcc, c.cnae, c.active
            FROM categories c

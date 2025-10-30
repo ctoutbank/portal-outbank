@@ -4,7 +4,12 @@ import { sql } from '@vercel/postgres';
 import { NextRequest, NextResponse } from "next/server";
 import { fornecedoresRepository } from "@/lib/db/fornecedores";
 import { FornecedorFormData, FornecedorMDRForm } from "@/types/fornecedor";
-import { error } from 'console';
+
+function getErrorMessage(error: unknown) {
+    if (typeof error === 'string') return error;
+    if (error instanceof Error) return error.message;
+    try { return JSON.stringify(error); } catch { return String(error); }
+}
 
 export async function GET(request: NextRequest) {
 
@@ -38,18 +43,20 @@ export async function GET(request: NextRequest) {
 
         console.log('Resultado retornado: ', result.data.length)
         return NextResponse.json(result);
-        } catch (error: any) {
-            console.error("Error fetching fornecedores in API route:", error);
-            const message = error?.message || String(error) || 'Error fetching fornecedores';
-            return NextResponse.json({ error: message }, { status: 500 });
-        }
+    } catch (error: unknown) {
+        const message = getErrorMessage(error) || 'Error fetching fornecedores';
+        console.error("Error fetching fornecedores in API route:", message);
+        return NextResponse.json({ error: message }, { status: 500 });
+    }
 }
+
+//Post comentado para testes locais
 
 export async function POST(request: NextRequest) {
     try {
        
-        const data = await request.json();
-        const { fornecedor, mdr } = data as {
+        const body = await request.json() as unknown;
+        const { fornecedor, mdr } = body as {
             fornecedor: FornecedorFormData;
             mdr?: FornecedorMDRForm;
         } 
@@ -63,14 +70,14 @@ export async function POST(request: NextRequest) {
 
         
 
-        const exists = await fornecedoresRepository.existsByCnpj(data.cnpj);
+    const exists = await fornecedoresRepository.existsByCnpj(fornecedor.cnpj);
         if (exists) {
             return NextResponse.json({ error: "Fornecedor com este CNPJ já existe." }, { status: 400 });
         }
         
         const createdFornecedor = await fornecedoresRepository.create(fornecedor);
 
-        let createdMdr = null;
+    let createdMdr: unknown = null;
         if(mdr && createdFornecedor.id){
             try{
                 const mdrResult = await sql.query(
@@ -98,31 +105,33 @@ export async function POST(request: NextRequest) {
                 );
                 createdMdr = mdrResult.rows[0];
 
-                if (mdr.mcc && mdr.mcc.length > 0 ){
+                if (mdr.mcc && Array.isArray(mdr.mcc) && mdr.mcc.length > 0 ){
                     const values = mdr.mcc.map((categoyId, i) => `($1, $${i + 2})`).join(', ');
+                    const categoryIds = mdr.mcc.map(id => parseInt(id as unknown as string, 10));
                     await sql.query(
                         `INSERT INTO fornecedor_categories (fornecedor_id, category_id) VALUES ${values}`,
-                        [createdFornecedor.id, ...mdr.mcc.map(id => parseInt(id))]
+                        [createdFornecedor.id, ...categoryIds]
                     );
                 }
-            } catch (mdrError: any){
-                console.error("Error creating MDR:", mdrError);
+            } catch (mdrError: unknown){
+                const msg = getErrorMessage(mdrError);
+                console.error("Error creating MDR:", msg);
                 return NextResponse.json({
                     fornecedor: createdFornecedor,
-                    warning: "Fornecedor criado, mas houve um erro ao criar o MDR. " + mdrError.message
+                    warning: "Fornecedor criado, mas houve um erro ao criar o MDR. " + msg
                 }, { status: 201});
             }
         }
 
         
         return NextResponse.json({fornecedor: createdFornecedor, mdr: createdMdr, message: createdMdr? "Fornecedor e MDR criados com sucesso" : "Fonecedor: Status OK"}, { status: 201 });
-    } catch (error: any) {
-        if (error.message.includes('duplicate key value')) {
-        return NextResponse.json({ error: 'CNPJ duplicado' }, { status: 409 });
+    } catch (error: unknown) {
+        const message = getErrorMessage(error);
+        if (message.includes('duplicate key value')) {
+            return NextResponse.json({ error: 'CNPJ duplicado' }, { status: 409 });
         }
-        console.error("Error creating fornecedor in API route:", error);
+        console.error("Error creating fornecedor in API route:", message);
         return NextResponse.json({ error: "Error creating fornecedor" }, { status: 500 });
-        
     }
 
 }

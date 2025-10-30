@@ -11,7 +11,7 @@ export default function FornecedoresPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [loading, setLoading] = useState(false);
-    const [categories, setCategories] = useState<Array<{id: string; label: string}>>
+   
 
     const handleSave = async (formData: FornecedorFormData) => {
         try{
@@ -116,8 +116,10 @@ export default function FornecedoresPage() {
                             role="admin"
                             refreshKey={refreshKey}
                             onEdit={handleEdit}
-                            onDelete={handleDelete}
-                        />
+                            onDelete={handleDelete} 
+                            onAdd={function (): Promise<void> {
+                                throw new Error('Function not implemented.');
+                            } }                        />
                     </div>
                 </div>
             </div>

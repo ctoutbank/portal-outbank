@@ -10,6 +10,7 @@ import type { CSSProperties } from "react"
 import { useWatch } from "react-hook-form"
 import { Control } from "react-hook-form";
 import { PricingSolicitationSchema } from "@/features/pricingSolicitation/schema/schema";
+import Image from "next/image";
 
 interface FeesSectionProps {
   control: Control<PricingSolicitationSchema>
@@ -178,7 +179,7 @@ function POSBrandTable({
                   <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
                     <div className="flex items-center gap-2">
                       {getCardImage(brand.value) && (
-                          <img
+                          <Image
                               src={getCardImage(brand.value) || "/placeholder.svg"}
                               alt={brand.label}
                               width={40}
@@ -347,7 +348,7 @@ function OnlineBrandTable({
                   <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
                     <div className="flex items-center gap-2">
                       {getCardImage(brand.value) && (
-                          <img
+                          <Image
                               src={getCardImage(brand.value) || "/placeholder.svg"}
                               alt={brand.label}
                               width={40}

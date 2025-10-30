@@ -45,7 +45,7 @@ export default async function Customerspage({
 
   return (
     <>
-      <BaseHeader breadcrumbItems={[{ title: "Iso", url: "/customers" }]} />
+      <BaseHeader breadcrumbItems={[{ title: "Iso", subtitle:"", url: "/customers" }]} />
 
       <BaseBody title="Isos" subtitle={`visualização de todos os Isos`}>
         <div className="flex flex-col space-y-4">

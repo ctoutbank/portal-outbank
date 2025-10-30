@@ -2,9 +2,39 @@
 import { FornecedorMDRForm } from "@/types/fornecedor";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Input } from "../ui/input";
+
 import { Card, CardContent } from "../ui/card";
 import Image from "next/image";
+
+// Tipos locais para corrigir erros de tipagem sem alterar lógica
+const BANDEIRAS = ["Visa", "Mastercard", "Elo", "Amex", "Hipercard"] as const;
+type Bandeira = (typeof BANDEIRAS)[number];
+
+type TaxaFields = {
+  debito: string;
+  credito: string;
+  credito2x: string;
+  credito7x: string;
+  voucher: string;
+};
+//test for need
+type TaxasPorBandeira = Record<Bandeira, TaxaFields>;
+
+interface MdrFormState {
+  mcc: string[];
+  taxasPos: TaxasPorBandeira;
+  taxasOnline: TaxasPorBandeira;
+  prepos: string;
+  mdrpos: string;
+  cminpos: string;
+  cmaxpos: string;
+  antecipacao: string;
+  preonline: string;
+  mdronline: string;
+  cminonline: string;
+  cmaxonline: string;
+  antecipacaoonline: string;
+}
 
 interface MdrProps {
   onSubmit: (data: FornecedorMDRForm) => Promise<void>;
@@ -28,7 +58,7 @@ export default function MdrForm({
   const [categories, setCategories] = useState<Array<{ id: string; label: string; mcc?: string }>>([]);
   const [searchTerm, setSearchTerm] = useState("");
   
-  const [mdrForm, setMdrForm] = useState({
+  const [mdrForm, setMdrForm] = useState<MdrFormState>({
     mcc: mdrData?.mcc || [],
     
     // Taxas POS por bandeira
@@ -64,10 +94,32 @@ export default function MdrForm({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setMdrForm((prev) => ({ ...prev, [name]: value }));
+    // Atualiza apenas campos top-level string conhecidos — evita indexação insegura
+    setMdrForm((prev) => {
+      if (
+        name === 'prepos' ||
+        name === 'mdrpos' ||
+        name === 'cminpos' ||
+        name === 'cmaxpos' ||
+        name === 'antecipacao' ||
+        name === 'preonline' ||
+        name === 'mdronline' ||
+        name === 'cminonline' ||
+        name === 'cmaxonline' ||
+        name === 'antecipacaoonline'
+      ) {
+        return { ...prev, [name]: value } as MdrFormState;
+      }
+      return prev;
+    });
   };
 
-  const handleTaxaChange = (tipo: 'taxasPos' | 'taxasOnline', bandeira: string, campo: string, value: string) => {
+  const handleTaxaChange = (
+    tipo: 'taxasPos' | 'taxasOnline',
+    bandeira: Bandeira,
+    campo: keyof TaxaFields,
+    value: string
+  ) => {
     setMdrForm(prev => ({
       ...prev,
       [tipo]: {
@@ -77,7 +129,7 @@ export default function MdrForm({
           [campo]: value
         }
       }
-    }));
+    } as MdrFormState));
   };
 
   // 🔥 FUNÇÃO QUE TRANSFORMA OS DADOS POR BANDEIRA EM DADOS POR TIPO
@@ -184,7 +236,7 @@ export default function MdrForm({
     }
   }, [categoriesProp]);
 
-  const BANDEIRAS = ["Visa", "Mastercard", "Elo", "Amex", "Hipercard"];
+  
 
   const getCardImage = (brandName: string): string => {
     const brandMap: Record<string, string> = {
