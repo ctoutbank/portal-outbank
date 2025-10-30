@@ -48,10 +48,10 @@ export function FornecedorCard({ fornecedor, onEdit, onDelete, canEdit, canDelet
     console.log('updatedAt:', fornecedor.updatedAt);
     console.log('Tipo:', typeof fornecedor.updatedAt);
 
-    const getTabelasCount = () => {
-        // Ajuste conforme a estrutura do seu fornecedor
-        return fornecedor.tabelasMDR?.length || 0;
-    };
+    // const getTabelasCount = () => {
+    //     // Ajuste conforme a estrutura do seu fornecedor
+    //     return fornecedor.tabelasMDR?.length || 0;
+    // };
 
 
    const formatDate = (date: string | Date | undefined): string => {
