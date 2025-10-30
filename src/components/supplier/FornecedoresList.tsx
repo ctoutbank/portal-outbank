@@ -191,6 +191,12 @@ export function FornecedoresList({ role, onAdd, onEdit, onDelete, refreshKey }: 
   const canEdit = role === 'admin' || role === 'user';
   const canDelete = role === 'admin';
 
+  interface CnaeResponse {
+    id: string | number;
+    name: string;
+    cnae: string;
+  }
+
   const loadFornecedores = useCallback(async () => {
     setLoading(true);
     try {
@@ -238,7 +244,7 @@ export function FornecedoresList({ role, onAdd, onEdit, onDelete, refreshKey }: 
         const res = await fetch('/api/cnaes');
         const data = await res.json();
         setCategories(
-          data.map((d: any) => ({
+          data.map((d: CnaeResponse) => ({
             id: String(d.id),
             label: `${d.name} (${d.cnae})`,
           }))
