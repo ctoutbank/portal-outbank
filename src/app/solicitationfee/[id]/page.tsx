@@ -268,7 +268,7 @@ export default async function SolicitationFeeDetail({ params }: PageProps) {
       <>
         <BaseHeader
           breadcrumbItems={[
-            { title: "Solicitações de Taxas", url: "/solicitationfee" },
+            { title: "Solicitações de Taxas", subtitle:"", url: "/solicitationfee" },
           ]}
         />
 
@@ -305,7 +305,7 @@ export default async function SolicitationFeeDetail({ params }: PageProps) {
       <>
         <BaseHeader
           breadcrumbItems={[
-            { title: "Solicitações de Taxas", url: "/solicitationfee" },
+            { title: "Solicitações de Taxas", subtitle:"", url: "/solicitationfee" },
           ]}
         />
         <BaseBody title="Erro" subtitle="Erro ao carregar solicitação de taxa">
