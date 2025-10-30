@@ -45,6 +45,8 @@ export async function GET(request: NextRequest) {
         }
 }
 
+//Post comentado para testes locais
+
 export async function POST(request: NextRequest) {
     try {
        
