@@ -2,9 +2,7 @@ import { sql } from '@vercel/postgres';
 import { FornecedorFormData, Fornecedor } from '@/types/fornecedor';
 
 export class FornecedoresRepository {
- 
- 
-
+  
   async getAll(
     page: number = 1,
     limit: number = 10,
@@ -14,7 +12,6 @@ export class FornecedoresRepository {
     }
   ) {
     const offset = (page - 1) * limit;
-    
     let whereClause = '1=1';
     const params: unknown[] = [];
     let paramIndex = 1;
@@ -39,8 +36,8 @@ export class FornecedoresRepository {
     const { rows } = await sql.query(
       `SELECT f.*
        FROM fornecedores f
-       WHERE ${whereClause} 
-       ORDER BY f.created_at DESC 
+       WHERE ${whereClause}
+       ORDER BY f.created_at DESC
        LIMIT $${limitIndex} OFFSET $${offsetIndex}`,
       params
     );
@@ -60,7 +57,7 @@ export class FornecedoresRepository {
           ...fornecedor,
           categories: categories,
           total_categories: categories.length,
-          mccs: categories.map(c => c.mcc).filter(Boolean),
+          mccs: categories.map(c => String(c.id)),  // ✅ CORRIGIDO - retorna IDs
           cnaes: categories.map(c => c.cnae).filter(Boolean)
         };
       })
@@ -89,7 +86,7 @@ export class FornecedoresRepository {
       `SELECT * FROM fornecedores WHERE id = $1`,
       [id]
     );
-    
+
     if (rows.length === 0) {
       return null;
     }
@@ -113,8 +110,8 @@ export class FornecedoresRepository {
       ...rows[0],
       categories: categories,
       total_categories: categories.length,
-       mcc: categories.map(c => String(c.id)), 
-      mccs: categories.map(c => c.mcc).filter(Boolean),
+      mcc: categories.map(c => String(c.id)),  // Para edição (envia de volta os IDs)
+      mccs: categories.map(c => String(c.id)),  // ✅ CORRIGIDO - retorna IDs
       cnaes: categories.map(c => c.cnae).filter(Boolean),
       documentos: docs
     };
@@ -161,41 +158,49 @@ export class FornecedoresRepository {
       values.push(data.nome);
       paramIndex++;
     }
+
     if (data.cnpj !== undefined) {
       fields.push(`cnpj = $${paramIndex}`);
       values.push(data.cnpj);
       paramIndex++;
     }
+
     if (data.email !== undefined) {
       fields.push(`email = $${paramIndex}`);
       values.push(data.email);
       paramIndex++;
     }
+
     if (data.telefone !== undefined) {
       fields.push(`telefone = $${paramIndex}`);
       values.push(data.telefone);
       paramIndex++;
     }
+
     if (data.endereco !== undefined) {
       fields.push(`endereco = $${paramIndex}`);
       values.push(data.endereco);
       paramIndex++;
     }
+
     if (data.cidade !== undefined) {
       fields.push(`cidade = $${paramIndex}`);
       values.push(data.cidade);
       paramIndex++;
     }
+
     if (data.estado !== undefined) {
       fields.push(`estado = $${paramIndex}`);
       values.push(data.estado);
       paramIndex++;
     }
+
     if (data.cep !== undefined) {
       fields.push(`cep = $${paramIndex}`);
       values.push(data.cep);
       paramIndex++;
     }
+
     if (data.ativo !== undefined) {
       fields.push(`ativo = $${paramIndex}`);
       values.push(data.ativo);
@@ -207,7 +212,7 @@ export class FornecedoresRepository {
       values.push(id);
 
       await sql.query(
-        `UPDATE fornecedores 
+        `UPDATE fornecedores
          SET ${fields.join(', ')}
          WHERE id = $${paramIndex}`,
         values
@@ -262,12 +267,12 @@ export class FornecedoresRepository {
 
     // Adicionar novas Categories
     if (categoryIds.length > 0) {
-      const values = categoryIds.map((id, i) => 
+      const values = categoryIds.map((id, i) =>
         `($1, $${i + 2})`
       ).join(', ');
 
       await sql.query(
-        `INSERT INTO fornecedor_categories (fornecedor_id, category_id) 
+        `INSERT INTO fornecedor_categories (fornecedor_id, category_id)
          VALUES ${values}`,
         [fornecedorId, ...categoryIds]
       );
@@ -277,7 +282,7 @@ export class FornecedoresRepository {
   // Adicionar uma Category
   async addCategory(fornecedorId: string, categoryId: number) {
     await sql.query(
-      `INSERT INTO fornecedor_categories (fornecedor_id, category_id) 
+      `INSERT INTO fornecedor_categories (fornecedor_id, category_id)
        VALUES ($1, $2)
        ON CONFLICT DO NOTHING`,
       [fornecedorId, categoryId]
@@ -324,6 +329,7 @@ export class FornecedoresRepository {
        RETURNING *`,
       [fornecedorId, fileName, tipo, url, 0]
     );
+
     return rows[0];
   }
 
