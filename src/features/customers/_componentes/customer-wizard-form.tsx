@@ -74,7 +74,7 @@ export default function CustomerWizardForm({
     if (stepFromUrl !== activeTab) {
       setActiveTab(stepFromUrl);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, [stepFromUrl]);
 
   useEffect(() => {

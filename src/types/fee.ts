@@ -16,7 +16,10 @@ export interface FeeProductType {
 export interface FeeBrand {
     id: number;
     brand: string | null;
-    productTypes: FeeProductType[];
+    // DB relation is called `feeBrandProductType` in returned payloads
+    feeBrandProductType?: FeeProductType[];
+    // keep old name for compatibility
+    productTypes?: FeeProductType[];
 }
 
 export interface FeeDetail {

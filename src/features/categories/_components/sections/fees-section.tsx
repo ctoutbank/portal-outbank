@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-
+import Image from "next/image"
 import { FormControl, FormField } from "@/components/ui/form"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { SolicitationFeeProductTypeList } from "@/lib/lookuptables/lookuptables"
@@ -162,7 +162,7 @@ function POSBrandTable({
                   <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
                     <div className="flex items-center gap-2">
                       {getCardImage(brand.value) && (
-                          <img
+                          <Image
                               src={getCardImage(brand.value) || "/placeholder.svg"}
                               alt={brand.label}
                               width={40}
@@ -251,7 +251,7 @@ function OnlineBrandTable({
                   <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
                     <div className="flex items-center gap-2">
                       {getCardImage(brand.value) && (
-                          <img
+                          <Image
                               src={getCardImage(brand.value) || "/placeholder.svg"}
                               alt={brand.label}
                               width={40}

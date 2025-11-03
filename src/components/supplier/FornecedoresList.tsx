@@ -95,10 +95,10 @@ export function FornecedoresList({ role, onAdd, onEdit, onDelete, refreshKey }: 
   return (
     <div className="space-y-6">
       {/* Topbar: busca pequena + filtro (left)  |  botão Novo (right) */}
-      <div className="flex items-center dark:bg-[#171717] text-white justify-between gap-4">
+      <div className="flex items-center dark:bg-[#171717] dark:text-white justify-between gap-4">
         {/* left group: busca pequena + filtro */}
         <div className="flex items-center gap-3">
-          <div className="relative border border-gray-200 dark:bg-[#171717] text-white rounded-lg shadow-sm px-3 py-2 flex items-center gap-2 min-w-[320px]">
+          <div className="relative border border-gray-200 dark:bg-[#171717] dark:text-white rounded-lg shadow-sm px-3 py-2 flex items-center gap-2 min-w-[320px]">
             <Search className="w-4 h-4 text-gray-400 dark:bg-[#171717] dark:text-white" />
             <input
               type="text"
