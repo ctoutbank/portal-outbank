@@ -6,7 +6,7 @@ export class CnaesRepository {
   async getAll(search?: string) {
     let query = 'SELECT * FROM cnaes';
     // @typescript-eslint/no-explicit-any
-    const params: any[] = [];
+    const params: unknown[] = [];
 
     if (search) {
       query += ' WHERE codigo ILIKE $1 OR descricao ILIKE $1';
