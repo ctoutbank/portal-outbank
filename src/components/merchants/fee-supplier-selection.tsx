@@ -9,14 +9,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+interface TransactionType {
+  producttype: string;
+  installmentTransactionFeeStart: number;
+  installmentTransactionFeeEnd: number;
+  cardTransactionMdr?: number;
+  nonCardTransactionMdr?: number;
+}
+
+interface BrandTransactions {
+  name: string | null;
+  transactions: {
+    credit: {
+      vista: FeeProductType | undefined;
+      parcela2_6: FeeProductType | undefined;
+      parcela7_12: FeeProductType | undefined;
+    };
+    debit: FeeProductType | undefined;
+    prepaid: FeeProductType | undefined;
+  };
+}
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FeeDetail } from "@/types/fee";
+
+import { FeeDetail, FeeProductType, FeeBrand } from "@/types/fee";
 import Image from "next/image";
 
-import { getCardImage } from "@/utils/actions";
+import { getCardImage } from "../supplier/card-image-utils";
+import { ReactElement, JSXElementConstructor, ReactNode, ReactPortal, Key } from "react";
 
 export interface FeeSelectionProps {
-  availableFees: FeeDetail[];
+  availableFees: FeeDetail[ ];
   selectedFeeId: string;
   selectedFee: FeeDetail | null;
   isCreatingMerchantPrice: boolean;
@@ -37,42 +60,42 @@ export default function FeeSelectionView({
   // Renderizar dados da fee selecionada em formato de preview
   const renderFeePreview = (fee: FeeDetail) => {
     // Organizar dados da fee para exibição similar ao merchantprice
-    const organizedFeeBrand =
-      fee.feeBrand?.map((brand) => {
-        const transactions = brand.feeBrandProductType || [];
+    const organizedFeeData =
+      fee.brands?.map((brand: FeeBrand) => {
+        const transactions = brand.productTypes || [];
         return {
           name: brand.brand,
           transactions: {
             credit: {
               vista: transactions.find(
-                (tx) =>
+                (tx: FeeProductType) =>
                   (tx.producttype?.toLowerCase() === "credit" ||
                     tx.producttype === "Crédito à Vista") &&
                   tx.installmentTransactionFeeStart === 1 &&
                   tx.installmentTransactionFeeEnd === 1
               ),
               parcela2_6: transactions.find(
-                (tx) =>
+                (tx: FeeProductType) =>
                   (tx.producttype?.toLowerCase() === "credit" ||
                     tx.producttype?.includes("Crédito Parcelado")) &&
                   tx.installmentTransactionFeeStart === 2 &&
                   tx.installmentTransactionFeeEnd === 6
               ),
               parcela7_12: transactions.find(
-                (tx) =>
+                (tx: FeeProductType) =>
                   (tx.producttype?.toLowerCase() === "credit" ||
                     tx.producttype?.includes("Crédito Parcelado")) &&
                   tx.installmentTransactionFeeStart === 7 &&
                   tx.installmentTransactionFeeEnd === 12
               ),
             },
-            debit: transactions.find(
-              (tx) =>
+              debit: transactions.find(
+              (tx: FeeProductType) =>
                 tx.producttype?.toLowerCase() === "debit" ||
                 tx.producttype === "Débito"
             ),
             prepaid: transactions.find(
-              (tx) =>
+              (tx: FeeProductType) =>
                 tx.producttype?.toLowerCase() === "prepaid" ||
                 tx.producttype === "Pré-Pago"
             ),
@@ -178,14 +201,14 @@ export default function FeeSelectionView({
                   </tr>
                 </thead>
                 <tbody>
-                  {organizedFeeBrand.map((group, index) => (
+                  {organizedFeeData.map((group: BrandTransactions, index: Key | null | undefined) => (
                     <tr key={index} className="border-t border-gray-200">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
-                          {getCardImage(group.name ?? '') && (
+                          {typeof group.name === 'string' && getCardImage(group.name) && (
                             <Image
-                              src={getCardImage(group.name ?? '')}
-                              alt={group.name ?? ''}
+                              src={getCardImage(group.name as string)}
+                              alt={String(group.name)}
                               width={40}
                               height={24}
                               className="object-contain"
@@ -284,15 +307,15 @@ export default function FeeSelectionView({
                     <th className="text-left py-2 px-4">Pré-pago</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {organizedFeeBrand.map((group, index) => (
+              <tbody>
+                  {organizedFeeData.map((group: BrandTransactions, index: Key | null | undefined) => (
                     <tr key={index} className="border-t border-gray-200">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
-                          {getCardImage(group.name ?? '') && (
+                          {typeof group.name === 'string' && getCardImage(group.name) && (
                             <Image
-                              src={getCardImage(group.name ?? '')}
-                              alt={group.name ?? ''}
+                              src={getCardImage(group.name as string)}
+                              alt={String(group.name)}
                               width={40}
                               height={24}
                               className="object-contain"
@@ -395,14 +418,14 @@ export default function FeeSelectionView({
                   </tr>
                 </thead>
                 <tbody>
-                  {organizedFeeBrand.map((group, index) => (
+                  {organizedFeeData.map((group: BrandTransactions, index: Key | null | undefined) => (
                     <tr key={index} className="border-t border-gray-200">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
-                          {getCardImage(group.name ?? '') && (
+                          {typeof group.name === 'string' && getCardImage(group.name) && (
                             <Image
-                              src={getCardImage(group.name ?? '')}
-                              alt={group.name ?? ''}
+                              src={getCardImage(group.name as string)}
+                              alt={String(group.name)}
                               width={40}
                               height={24}
                               className="object-contain"
@@ -504,14 +527,14 @@ export default function FeeSelectionView({
                   </tr>
                 </thead>
                 <tbody>
-                  {organizedFeeBrand.map((group, index) => (
+                  {organizedFeeData.map((group: BrandTransactions, index: Key | null | undefined) => (
                     <tr key={index} className="border-t border-gray-200">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
-                          {getCardImage(group.name ?? '') && (
+                          {typeof group.name === 'string' && getCardImage(group.name) && (
                             <Image
-                              src={getCardImage(group.name ?? '')}
-                              alt={group.name ?? ''}
+                              src={getCardImage(group.name)}
+                              alt={String(group.name)}
                               width={40}
                               height={24}
                               className="object-contain"

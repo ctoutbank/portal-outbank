@@ -1,18 +1,17 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import { FornecedorFormData, FornecedorMDRForm } from '@/types/fornecedor';
-import {Plus, Upload, X } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { MdrModal } from './MdrModal';
-import MdrForm from './MdrForm';
 
 interface FornecedorFormProps {
     initialData?: Partial<FornecedorFormData>;
-    onSubmit: (data: FornecedorFormData, files: File[], mdr?: FornecedorMDRForm) => Promise<void>; // ← Adiciona MDR
+    onSubmit: (data: FornecedorFormData, files: File[], mdr?: FornecedorMDRForm) => Promise<void>;
     mdrData?: Partial<FornecedorMDRForm>;
     onCancel: () => void;
     isEditing: boolean;
+    categories: Array<{ id: string; label: string; mcc?: string }>;
 }
 
 export function FornecedorForm({
@@ -20,8 +19,14 @@ export function FornecedorForm({
     onSubmit,
     onCancel,
     isEditing = false,
+    categories: categoriesProp,
 }: FornecedorFormProps) {
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [categories, setCategories] = useState<Array<{ id: string; label: string; mcc?: string }>>([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [showDropdown, setShowDropdown] = useState(false);
+    
     const [formData, setFormData] = useState<FornecedorFormData>({
         nome: initialData?.nome || '',
         cnpj: initialData?.cnpj || '',
@@ -40,12 +45,48 @@ export function FornecedorForm({
     const [files, setFiles] = useState<File[]>([]);
     const [loading, setLoading] = useState(false);
     const [cnpjError, setCnpjError] = useState<string | null>(null);
-    
-    // ✅ NOVO STATE PARA GUARDAR O MDR
     const [mdrData, setMdrData] = useState<FornecedorMDRForm | null>(null);
-    const [hasMdr, setHasMdr] = useState(false);
 
     const normalizeCNPJ = (input: string) => (input ?? '').replace(/\D/g, '');
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const addCnae = (cnaeId: string) => {
+  // cnaeId aqui é o ID do CNAE (ex: "67"), NÃO o MCC
+  const currentMcc = formData.mcc || [];
+  if (!currentMcc.includes(cnaeId)) {
+    setFormData((prev) => ({ ...prev, mcc: [...currentMcc, cnaeId] }));
+  }
+  setSearchTerm("");
+};
+
+
+    useEffect(() => {
+        if (categoriesProp && categoriesProp.length > 0) {
+            setCategories(categoriesProp);
+        } else {
+            fetchCnaeOptions().then((data) =>
+                setCategories(data.map((d) => ({ 
+                    id: String(d.id), 
+                    label: `${d.name} (${d.cnae})`,
+                    mcc: d.mcc 
+                })))
+            );
+        }
+    }, [categoriesProp]);
+
+    async function fetchCnaeOptions(q = "") {
+        const res = await fetch(`/api/cnaes?q=${encodeURIComponent(q)}`);
+        return res.json() as Promise<Array<{ id: string; name: string; cnae: string; mcc: string }>>;
+    }
 
     useEffect(() => {
         if (initialData?.cnpj) {
@@ -127,20 +168,15 @@ export function FornecedorForm({
         setFiles(prevFiles => prevFiles.filter((_, i) => i !== index))
     };
 
-    // ✅ SALVAR MDR NO STATE (não envia para API ainda)
-    const handleSaveMDR = async (mdrForm: FornecedorMDRForm) => {
-        try {
-            setMdrData(mdrForm);
-            setHasMdr(true);
-            setIsModalOpen(false);
-            toast.success('MDR adicionado! Salve o fornecedor para confirmar.');
-        } catch (error) {
-            console.error("Error saving MDR:", error);
-            toast.error('Erro ao adicionar MDR');
-        }
+    const removeCnae = (cnaeId: string) => {
+        setFormData((prev) => ({ ...prev, mcc: (prev.mcc ?? []).filter((id) => id !== cnaeId) }));
+    };
+    
+    const getCnaeCode = (label: string) => {
+        const match = label.match(/\(([^)]+)\)/);
+        return match ? match[1] : label.substring(0, 10);
     };
 
-    // ✅ SUBMETER FORNECEDOR + MDR JUNTOS
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -159,7 +195,9 @@ export function FornecedorForm({
                 cnpj: normalizedCNPJ 
             };
             
-            // ✅ Envia fornecedor + arquivos + MDR (se tiver)
+            console.log('📤 Enviando dados:', payload);
+            console.log('📤 MCCs selecionados:', payload.mcc);
+            
             await onSubmit(payload, files, mdrData || undefined);
             
         } catch (error: unknown) {
@@ -177,7 +215,7 @@ export function FornecedorForm({
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" onClick={(e) => e.stopPropagation()}>
             <div className='bg-white border border-gray-100 shadow-sm p-6 rounded-lg'>
                 <h3 className="font-semibold text-gray-900 mb-4">Cadastro</h3>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -230,7 +268,105 @@ export function FornecedorForm({
                             placeholder='(00) 0000-0000'
                         />
                     </div>
-                    
+
+                    {/* CNAE */}
+                    <div ref={dropdownRef} className="relative">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">CNAE *</label>
+                        <div
+                            className="min-h-[44px] px-3 py-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 bg-white cursor-text"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowDropdown(true);
+                            }}
+                        >
+                            <div className="flex flex-wrap gap-2">
+                                {formData.mcc?.map((mccId: string) => {
+                                    const cnae = categories.find((c) => c.id === mccId);
+                                    if (!cnae) return null;
+                                    return (
+                                        <span
+                                            key={mccId}
+                                            className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm"
+                                        >
+                                            {getCnaeCode(cnae.label)}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    removeCnae(mccId);
+                                                }}
+                                                className="hover:bg-blue-200 rounded-full p-0.5"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </span>
+                                    );
+                                })}
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => {
+                                        setSearchTerm(e.target.value);
+                                        setShowDropdown(true);
+                                    }}
+                                    onFocus={(e) => {
+                                        e.stopPropagation();
+                                        setShowDropdown(true);
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    placeholder={formData.mcc?.length === 0 ? "Buscar CNAEs..." : ""}
+                                    className="flex-1 min-w-[120px] outline-none border-0 p-0 text-sm bg-transparent"
+                                />
+                            </div>
+                        </div>
+                        {showDropdown && categories.length > 0 && (
+                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {categories
+                                    .filter(
+                                        (c) =>
+                                            c.label.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                                            !formData.mcc?.includes(c.id)
+                                    )
+                                    .map((cnae) => (
+                                        <div
+                                            key={cnae.id}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                addCnae(cnae.id);
+                                            }}
+                                            className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-0"
+                                        >
+                                            {cnae.label}
+                                        </div>
+                                    ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* MCC Display */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">MCC (Gerado automaticamente)</label>
+                        <div className="min-h-[44px] px-3 py-2 border border-gray-200 rounded-lg bg-gray-50">
+                            <div className="flex flex-wrap gap-2">
+                                {formData.mcc?.map((mccId: string) => {
+                                    const cnae = categories.find((c) => c.id === mccId);
+                                    if (!cnae || !cnae.mcc) return null;
+                                    return (
+                                        <span
+                                            key={mccId}
+                                            className="inline-flex items-center bg-green-100 text-green-800 px-2 py-1 rounded text-sm"
+                                        >
+                                            {cnae.mcc}
+                                        </span>
+                                    );
+                                })}
+                                {(!formData.mcc || formData.mcc.length === 0) && (
+                                    <span className="text-gray-400 text-sm">Selecione um CNAE</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Contato Principal</label>
                         <input
@@ -311,8 +447,6 @@ export function FornecedorForm({
                         <label htmlFor="ativo" className="ml-2 text-sm text-gray-700">Ativo</label>
                     </div>
 
-                    
-
                     <div className="col-span-2">
                         <div className='bg-gray-50 p-4 rounded-lg'>
                             <h3 className="font-semibold text-gray-900 mb-4">Documentos</h3>
@@ -346,33 +480,6 @@ export function FornecedorForm({
                         </div>
 
                         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                            <div>
-                        <button
-                            type="button"
-                            onClick={() => setIsModalOpen(true)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-                                hasMdr 
-                                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                                    : 'bg-gray-600 hover:bg-gray-700 text-white'
-                            }`}
-                        >
-                            <Plus className="w-5 h-5" />
-                            {hasMdr ? 'MDR Adicionado ✓' : 'Adicionar MDR'}
-                        </button>
-                        
-                        <MdrModal
-                            isOpen={isModalOpen}
-                            onClose={() => setIsModalOpen(false)}
-                            title={'Tabela MDR'}
-                        >
-                            <MdrForm
-                                isOpen={isModalOpen}                    
-                                onSubmit={handleSaveMDR}
-                                onCancel={() => setIsModalOpen(false)}
-                                isEditing={false} 
-                            />
-                        </MdrModal>
-                    </div>
                             <button
                                 type="button"
                                 onClick={onCancel}

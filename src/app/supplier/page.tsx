@@ -111,7 +111,7 @@ export default function FornecedoresPage() {
                                     } }
                                     onCancel={() => setIsModalOpen(false)}
                                     isEditing={false} 
-                                                             />
+                                    categories={[]}                                                             />
                         
                         )}
                             

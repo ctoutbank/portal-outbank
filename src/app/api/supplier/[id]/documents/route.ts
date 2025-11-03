@@ -4,9 +4,9 @@ import { writeFile } from "fs/promises";
 import path from "path";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{id: string}> }) {
-    const {id} = await params;
 
     try{
+         const { id } = await params;
         const formData = await request.formData();
         const files = formData.getAll('files') as File[];
 
@@ -43,8 +43,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{id: string}> }) {
-    const {id} = await params;
     try{
+        const { id } = await params;
         const documents = await fornecedoresRepository.getDocuments(id);
         return NextResponse.json(documents);
     }

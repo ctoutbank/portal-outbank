@@ -94,10 +94,10 @@ export default async function CategoryDetailPage({ params }: PageProps) {
         <>
             <BaseHeader
                 breadcrumbItems={[
-                    { title: "Categorias", subtitle: "", url: "/categories" },
+                    { title: "Categorias", subtitle: '', url: "/categories" },
                     {
                         title: `Categoria #${category.id}`,
-                        subtitle: category.name,
+                        subtitle: "",
                         url: `/categories/${category.id}`,
                     },
                 ]}

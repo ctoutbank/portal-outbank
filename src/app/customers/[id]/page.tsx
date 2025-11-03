@@ -23,7 +23,7 @@ export default async function CustomerDetail({ params }: PageProps) {
     return (
     <>
     <BaseHeader
-        breadcrumbItems={[{ title: "ISOS", subtitle:"", url: "/customers" }]}
+        breadcrumbItems={[{ title: "ISOS",subtitle: "",url: "/customers" }]}
       />
       <BaseBody title="ISO" subtitle={`Visualização do ISO`} actions={<div className="flex items-center space-x-2">
          
