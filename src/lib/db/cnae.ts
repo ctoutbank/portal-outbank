@@ -5,6 +5,7 @@ export class CnaesRepository {
   // Listar todos os CNAEs
   async getAll(search?: string) {
     let query = 'SELECT * FROM cnaes';
+    // @typescript-eslint/no-explicit-any
     const params: any[] = [];
 
     if (search) {
