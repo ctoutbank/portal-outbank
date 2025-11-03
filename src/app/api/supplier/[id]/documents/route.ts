@@ -3,9 +3,10 @@ import { fornecedoresRepository } from "@/lib/db/fornecedores";
 import { writeFile } from "fs/promises";
 import path from "path";
 
-export async function POST(request: NextRequest, { params }: { params: {id: string} }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{id: string}> }) {
 
     try{
+         const { id } = await params;
         const formData = await request.formData();
         const files = formData.getAll('files') as File[];
 
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: {id: stri
             await writeFile(filePath, buffer);
 
             const doc = await fornecedoresRepository.addDocument(
-                params.id,
+                id,
                
                 `/uploads/fornecedores/${fileName}`
             );
@@ -41,9 +42,10 @@ export async function POST(request: NextRequest, { params }: { params: {id: stri
 
 }
 
-export async function GET(request: NextRequest, { params }: { params: {id: string} }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{id: string}> }) {
     try{
-        const documents = await fornecedoresRepository.getDocuments(params.id);
+        const { id } = await params;
+        const documents = await fornecedoresRepository.getDocuments(id);
         return NextResponse.json(documents);
     }
     catch (error){
