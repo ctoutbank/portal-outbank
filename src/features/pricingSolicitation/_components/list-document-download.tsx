@@ -109,7 +109,7 @@ export default function ListDocumentDownload({
 
   useEffect(() => {
     fetchDocuments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [solicitationId, refreshKey]);
 
   const handleDownload = (item: DownloadItem) => {

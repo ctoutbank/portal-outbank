@@ -13,7 +13,7 @@ export default async function Dashboardpage() {
     
     return (
       <>
-        <BaseHeader breadcrumbItems={[{ title: "Dashboard", url: "/" }]} />
+        <BaseHeader breadcrumbItems={[{ title: "Dashboard", subtitle:'', url: "/" }]} />
 
         <BaseBody title="Dashboard" subtitle={`Visualização geral dos Estabelecimentos`}>
           <div className="flex flex-col space-y-4">
@@ -37,7 +37,7 @@ export default async function Dashboardpage() {
     
     return (
       <>
-        <BaseHeader breadcrumbItems={[{ title: "Dashboard", url: "/" }]} />
+        <BaseHeader breadcrumbItems={[{ title: "Dashboard", subtitle:"", url: "/" }]} />
 
         <BaseBody title="Dashboard" subtitle={`Visualização geral dos Estabelecimentos`}>
           <div className="flex flex-col space-y-4">

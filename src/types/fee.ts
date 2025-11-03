@@ -3,8 +3,11 @@
 export interface FeeProductType {
     id: number;
     name: string | null;
+    producttype: string;
     cardTransactionFee: number | null;
+    cardTransactionMdr: number | null;
     nonCardTransactionFee: number | null;
+    nonCardTransactionMdr: number | null;
     installmentTransactionFeeStart: number | null;
     installmentTransactionFeeEnd: number | null;
     transactionAnticipationMdr: number | null;
@@ -13,11 +16,17 @@ export interface FeeProductType {
 export interface FeeBrand {
     id: number;
     brand: string | null;
-    productTypes: FeeProductType[];
+    // DB relation is called `feeBrandProductType` in returned payloads
+    feeBrandProductType?: FeeProductType[];
+    // keep old name for compatibility
+    productTypes?: FeeProductType[];
 }
 
 export interface FeeDetail {
     id: number;
+    name: string;
+    code: string;
+    anticipationType: 'NOANTECIPATION' | 'EVENTUAL' | 'COMPULSORY';
     cnpjQuantity: number | null;
     monthlyPosFee: string | number | null;
     averageTicket: string | number | null;
