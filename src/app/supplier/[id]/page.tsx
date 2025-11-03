@@ -8,11 +8,11 @@ import { toast } from 'sonner';
 
 interface CnaeData {
   id: number | string;
-  name?: string;
-  cnae?: string;
-  mcc?: string;
-  codigo?: string;
-  nome?: string;
+  name: string | undefined;
+  cnae: string | undefined;
+  mcc: string;
+  codigo: string;
+  nome: string;
 }
 
 export default function FornecedorDetailsPage() {

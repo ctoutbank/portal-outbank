@@ -59,7 +59,7 @@ export default function FeeSelectionView({
                   tx.installmentTransactionFeeEnd === 6
               ),
               parcela7_12: transactions.find(
-                (tx) =>
+                (tx: { producttype: string; installmentTransactionFeeStart: number; installmentTransactionFeeEnd: number; }) =>
                   (tx.producttype?.toLowerCase() === "credit" ||
                     tx.producttype?.includes("Crédito Parcelado")) &&
                   tx.installmentTransactionFeeStart === 7 &&
