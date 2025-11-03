@@ -452,6 +452,7 @@ export default function MdrForm({
               </button>
             </div>
           </div>
+          </div>
         </CardContent>
       </Card>
     </div>

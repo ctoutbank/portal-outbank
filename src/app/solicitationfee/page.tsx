@@ -32,7 +32,7 @@ export default async function SolicitationFeePage({
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Solicitações de Taxas", url: "/solicitationfee" },
+          { title: "Solicitações de Taxas", subtitle:"", url: "/solicitationfee" },
         ]}
       />
 

@@ -136,7 +136,7 @@ export default function FornecedorDetailsPage() {
         </p>
       </div>
 
-      <div className="container mx-auto p-6">
+      <div className="container p-6">
         {/* Botão voltar */}
         <button
           onClick={() => router.push('/supplier')}
