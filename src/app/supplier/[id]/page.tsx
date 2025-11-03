@@ -176,9 +176,15 @@ export default function FornecedorDetailsPage() {
                 ) : (
                   cnaes.map((cnae) => (
                     <tr key={cnae.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400">
-                        {cnae.codigo || '-'}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => router.push(`/supplier/${params.id}/cnae/${cnae.id}`)}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition"
+                          >
+                            {cnae.codigo || '-'}
+                          </button>
                       </td>
+
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                         {cnae.mcc || '-'}
                       </td>
