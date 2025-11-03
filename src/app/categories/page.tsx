@@ -30,7 +30,7 @@ export default async function CategoriesPage({
     const mcc = typeof params.mcc === "string" ? params.mcc : undefined;
     const cnae = typeof params.cnae === "string" ? params.cnae : undefined;
     const status = typeof params.status === "string" ? params.status : undefined;
-
+//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
     const categories = await getCategories(
         search,
         page,
