@@ -14,6 +14,7 @@ import { type FeeData } from "@/features/newTax/server/fee-db";
 import Image from "next/image";
 
 import { getCardImage } from "./card-image-utils";
+import { ReactElement, JSXElementConstructor, ReactNode, ReactPortal, Key } from "react";
 
 export interface FeeSelectionProps {
   availableFees: FeeData[];
@@ -38,21 +39,21 @@ export default function FeeSelectionView({
   const renderFeePreview = (fee: FeeData) => {
     // Organizar dados da fee para exibição similar ao merchantprice
     const organizedFeeData =
-      fee.feeBrand?.map((brand) => {
+      fee.feeBrand?.map((brand: { feeBrandProductType: never[]; brand: any; }) => {
         const transactions = brand.feeBrandProductType || [];
         return {
           name: brand.brand,
           transactions: {
             credit: {
               vista: transactions.find(
-                (tx) =>
+                (tx: { producttype: string; installmentTransactionFeeStart: number; installmentTransactionFeeEnd: number; }) =>
                   (tx.producttype?.toLowerCase() === "credit" ||
                     tx.producttype === "Crédito à Vista") &&
                   tx.installmentTransactionFeeStart === 1 &&
                   tx.installmentTransactionFeeEnd === 1
               ),
               parcela2_6: transactions.find(
-                (tx) =>
+                (tx: { producttype: string; installmentTransactionFeeStart: number; installmentTransactionFeeEnd: number; }) =>
                   (tx.producttype?.toLowerCase() === "credit" ||
                     tx.producttype?.includes("Crédito Parcelado")) &&
                   tx.installmentTransactionFeeStart === 2 &&
@@ -67,12 +68,12 @@ export default function FeeSelectionView({
               ),
             },
             debit: transactions.find(
-              (tx) =>
+              (tx: { producttype: string; }) =>
                 tx.producttype?.toLowerCase() === "debit" ||
                 tx.producttype === "Débito"
             ),
             prepaid: transactions.find(
-              (tx) =>
+              (tx: { producttype: string; }) =>
                 tx.producttype?.toLowerCase() === "prepaid" ||
                 tx.producttype === "Pré-Pago"
             ),
@@ -178,14 +179,14 @@ export default function FeeSelectionView({
                   </tr>
                 </thead>
                 <tbody>
-                  {organizedFeeData.map((group, index) => (
+                  {organizedFeeData.map((group: { name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; transactions: { credit: { vista: { cardTransactionMdr: any; }; parcela2_6: { cardTransactionMdr: any; }; parcela7_12: { cardTransactionMdr: any; }; }; debit: { cardTransactionMdr: any; }; prepaid: { cardTransactionMdr: any; }; }; }, index: Key | null | undefined) => (
                     <tr key={index} className="border-t border-gray-200">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
                           {getCardImage(group.name) && (
                             <Image
                               src={getCardImage(group.name)}
-                              alt={group.name}
+                              alt={String(group.name)}
                               width={40}
                               height={24}
                               className="object-contain"
@@ -285,14 +286,14 @@ export default function FeeSelectionView({
                   </tr>
                 </thead>
                 <tbody>
-                  {organizedFeeData.map((group, index) => (
+                  {organizedFeeData.map((group: { name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; transactions: { credit: { vista: { nonCardTransactionMdr: any; }; parcela2_6: { nonCardTransactionMdr: any; }; parcela7_12: { nonCardTransactionMdr: any; }; }; debit: { nonCardTransactionMdr: any; }; prepaid: { nonCardTransactionMdr: any; }; }; }, index: Key | null | undefined) => (
                     <tr key={index} className="border-t border-gray-200">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
                           {getCardImage(group.name) && (
                             <Image
                               src={getCardImage(group.name)}
-                              alt={group.name}
+                              alt={String(group.name)}
                               width={40}
                               height={24}
                               className="object-contain"
@@ -395,14 +396,14 @@ export default function FeeSelectionView({
                   </tr>
                 </thead>
                 <tbody>
-                  {organizedFeeData.map((group, index) => (
+                  {organizedFeeData.map((group: { name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; transactions: { credit: { vista: { cardTransactionMdr: any; }; parcela2_6: { cardTransactionMdr: any; }; parcela7_12: { cardTransactionMdr: any; }; }; debit: { cardTransactionMdr: any; }; prepaid: { cardTransactionMdr: any; }; }; }, index: Key | null | undefined) => (
                     <tr key={index} className="border-t border-gray-200">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
                           {getCardImage(group.name) && (
                             <Image
                               src={getCardImage(group.name)}
-                              alt={group.name}
+                              alt={String(group.name)}
                               width={40}
                               height={24}
                               className="object-contain"
@@ -504,14 +505,14 @@ export default function FeeSelectionView({
                   </tr>
                 </thead>
                 <tbody>
-                  {organizedFeeData.map((group, index) => (
+                  {organizedFeeData.map((group: { name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; transactions: { credit: { vista: { nonCardTransactionMdr: any; }; parcela2_6: { nonCardTransactionMdr: any; }; parcela7_12: { nonCardTransactionMdr: any; }; }; debit: { nonCardTransactionMdr: any; }; prepaid: { nonCardTransactionMdr: any; }; }; }, index: Key | null | undefined) => (
                     <tr key={index} className="border-t border-gray-200">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
                           {getCardImage(group.name) && (
                             <Image
                               src={getCardImage(group.name)}
-                              alt={group.name}
+                              alt={String(group.name)}
                               width={40}
                               height={24}
                               className="object-contain"
