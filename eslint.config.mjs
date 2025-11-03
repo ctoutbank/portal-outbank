@@ -6,13 +6,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 import { defineConfig, globalIgnores } from 'eslint/config'
-import nextVitals from 'eslint-config-next/core-web-vitals'
+
+
   const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
-const eslintConfig = defineConfig([
+
+
+const eslintConfig = [
  
-  ...nextVitals,
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
       'react/no-unescaped-entities': 'off',
@@ -20,15 +23,17 @@ const eslintConfig = defineConfig([
     },
   },
   // Override default ignores of eslint-config-next.
-  globalIgnores([
+  {
+  ignores: [
     // Default ignores of eslint-config-next:
     '.next/**',
     'out/**',
     'build/**',
     'next-env.d.ts',
-  ]),
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-])
+    'node_modules/**',
+  ],
+}
+]
  
 
 
