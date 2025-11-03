@@ -3,8 +3,11 @@
 export interface FeeProductType {
     id: number;
     name: string | null;
+    producttype: string;
     cardTransactionFee: number | null;
+    cardTransactionMdr: number | null;
     nonCardTransactionFee: number | null;
+    nonCardTransactionMdr: number | null;
     installmentTransactionFeeStart: number | null;
     installmentTransactionFeeEnd: number | null;
     transactionAnticipationMdr: number | null;
@@ -18,6 +21,9 @@ export interface FeeBrand {
 
 export interface FeeDetail {
     id: number;
+    name: string;
+    code: string;
+    anticipationType: 'NOANTECIPATION' | 'EVENTUAL' | 'COMPULSORY';
     cnpjQuantity: number | null;
     monthlyPosFee: string | number | null;
     averageTicket: string | number | null;
