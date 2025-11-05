@@ -1,7 +1,8 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-const isPublicRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)", "/create-password", "/api/create-password"]);
+// TODAS AS ROTAS SÃO PÚBLICAS AGORA - MEDIDA TEMPORÁRIA
+const isPublicRoute = createRouteMatcher(["/(.*)"]);
 
 export default clerkMiddleware(async (auth, request) => {
   // Handle CORS preflight requests
@@ -19,6 +20,7 @@ export default clerkMiddleware(async (auth, request) => {
     });
   }
 
+  // TEMPORARIAMENTE TODAS AS ROTAS SÃO PÚBLICAS
   if (!isPublicRoute(request)) {
     await auth.protect();
   }
