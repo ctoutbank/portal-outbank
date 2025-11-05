@@ -24,30 +24,30 @@ export async function sendWelcomePasswordEmail(
                 <tr>
                     <td align="center" style="padding: 20px;">
                         <div style="background-color: #ffffff; border-radius: 0; padding: 48px 40px; max-width: 500px; width: 100%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);">
-                            
+
                             <!-- Logo Section - Rectangle with circle inside, aligned left -->
                             <div style="margin-bottom: 32px;">
                                 <div style="width: 120px; height: 120px; background-image: url('${logo}'); background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
                             </div>
-                            
+
                             <!-- Main Title - Left aligned -->
                             <h1 style="color: #333333; font-size: 32px; font-weight: 600; margin: 0 0 24px 0; line-height: 1.2; text-align: left;">
                                 Bem-vindo ao ${customerName}.
                             </h1>
-                            
+
                             <!-- Welcome Message - Left aligned, black text -->
                             <p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 24px 0; text-align: left;">
                                 Sua conta foi criada com sucesso! Estamos felizes em tê-lo conosco.
                             </p>
-                        
-                            
+
+
                             <p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 32px 0; text-align: left;">
                                 Esperamos que tudo esteja conforme esperado, mas se precisar de ajuda, você pode entrar em contato conosco através do nosso atendimento ao cliente.
                             </p>
                                 ${
                                   link
                                     ? `<p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 24px 0; text-align: left;">
-                                Clique <a href="${link + "/auth/sign-in"}" target="_blank">aqui</a> para acessar o sistema.
+                                Clique <a href="${link + "/create-password"}" target="_blank" style="color: #0066cc; text-decoration: none; font-weight: bold;">aqui</a> para criar sua nova senha e acessar o sistema.
                             </p>`
                                     : ""
                                 }
@@ -65,14 +65,14 @@ export async function sendWelcomePasswordEmail(
                                     Você poderá alterá-la no primeiro login.
                                 </p>
                             </div>
-                            
+
                             <!-- Security Notice -->
                             <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 16px; margin: 24px 0;">
                                 <p style="color: #856404; font-size: 14px; margin: 0; text-align: left;">
                                     Se não foi você quem fez esse cadastro, ignore este e-mail.
                                 </p>
                             </div>
-                            
+
                             <!-- Signature - Left aligned -->
                             <div style="margin-top: 40px; text-align: left;">
                                 <p style="color: #333333; font-size: 16px; margin: 0;">
@@ -83,7 +83,7 @@ export async function sendWelcomePasswordEmail(
                                 </p>
                             </div>
                         </div>
-                        
+
                         <!-- Footer -->
                         <div style="text-align: center; padding: 20px 0; color: #888888;">
                             <p style="font-size: 12px; margin: 0;">

@@ -3,11 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db/drizzle";
 import { users } from "../../../../drizzle/schema";
 import { eq } from "drizzle-orm";
-import { hashPassword } from "@/app/utils/password";
+import { hashPassword, matchPassword } from "@/app/utils/password";
 
 export async function POST(request: NextRequest) {
   try {
     const { email, tempPassword, newPassword } = await request.json();
+
+    console.log("Create password request:", { email, hasPassword: !!tempPassword, hasNewPassword: !!newPassword });
 
     if (!email || !tempPassword || !newPassword) {
       return NextResponse.json(
@@ -23,6 +25,8 @@ export async function POST(request: NextRequest) {
       .where(eq(users.email, email))
       .limit(1);
 
+    console.log("Database query result:", { found: dbUser.length > 0, email });
+
     if (!dbUser || dbUser.length === 0) {
       return NextResponse.json(
         { error: "Usuário não encontrado" },
@@ -31,10 +35,21 @@ export async function POST(request: NextRequest) {
     }
 
     const user = dbUser[0];
+    console.log("User found:", { id: user.id, hasHashedPassword: !!user.hashedPassword, hasClerkId: !!user.idClerk });
 
     // Verificar se a senha temporária está correta
-    const hashedTempPassword = hashPassword(tempPassword);
-    if (user.hashedPassword !== hashedTempPassword) {
+    if (!user.hashedPassword) {
+      console.log("User has no hashed password");
+      return NextResponse.json(
+        { error: "Usuário não possui senha temporária configurada" },
+        { status: 400 }
+      );
+    }
+
+    const passwordMatch = matchPassword(tempPassword, user.hashedPassword);
+    console.log("Password match result:", passwordMatch);
+
+    if (!passwordMatch) {
       return NextResponse.json(
         { error: "Senha temporária incorreta" },
         { status: 401 }
@@ -42,12 +57,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Atualizar senha no Clerk
+    if (!user.idClerk) {
+      console.log("User has no Clerk ID");
+      return NextResponse.json(
+        { error: "Usuário não está configurado no sistema de autenticação" },
+        { status: 400 }
+      );
+    }
+
     const clerk = await clerkClient();
-    
+
     try {
-      await clerk.users.updateUser(user.idClerk!, {
+      console.log("Updating Clerk password for user:", user.idClerk);
+      await clerk.users.updateUser(user.idClerk, {
         password: newPassword,
       });
+      console.log("Clerk password updated successfully");
     } catch (clerkError) {
       console.error("Erro ao atualizar senha no Clerk:", clerkError);
       return NextResponse.json(
@@ -66,9 +91,9 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(users.id, user.id));
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: "Senha atualizada com sucesso" 
+      message: "Senha atualizada com sucesso"
     });
 
   } catch (error) {

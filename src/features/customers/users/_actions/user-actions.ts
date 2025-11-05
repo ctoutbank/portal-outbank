@@ -259,9 +259,8 @@ export async function InsertUser(data: InsertUserInput) {
     const logo =
       customerImage[0].fileUrl ||
       "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
-    const link = domain?.name
-      ? `https://${domain.name}.consolle.one`
-      : undefined;
+    // Usar o portal principal para criar senha
+    const link = 'https://portal.outbank.cloud';
     await sendWelcomePasswordEmail(
       email,
       finalPassword,
