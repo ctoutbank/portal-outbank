@@ -1,5 +1,3 @@
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -8,7 +6,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import ThemeInitializer from "@/components/themeInitializer";
 import { getCurrentTenantCustomization } from "@/lib/tenant-detection";
-import SessionTimeout from "@/components/session-timeout";
+import LayoutWrapper from "@/components/layout-wrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,9 +21,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const tenantCustomization = await getCurrentTenantCustomization();
-  
+
   const loginBackgroundImage = tenantCustomization?.loginImageUrl || '/bg_login.jpg';
-  
+
   return (
     <ClerkProvider
       appearance={{
@@ -58,15 +56,10 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <SessionTimeout>
-              <SidebarProvider>
-                <AppSidebar variant="inset" />
-                <SidebarInset className="bg-card rounded-lg shadow">
-                  {children}
-                  <Toaster richColors position="top-right" />
-                </SidebarInset>
-              </SidebarProvider>
-            </SessionTimeout>
+            <LayoutWrapper>
+              {children}
+            </LayoutWrapper>
+            <Toaster richColors position="top-right" />
           </ThemeProvider>
         </body>
       </html>
