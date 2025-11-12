@@ -105,7 +105,7 @@ export async function InsertUser(data: InsertUserInput) {
           })
           .from(customers)
           .leftJoin(customerCustomization, eq(customerCustomization.customerId, customers.id))
-          .leftJoin(file, eq(file.id, customerCustomization.imageId))
+          .leftJoin(file, eq(file.id, customerCustomization.fileId))
           .where(eq(customers.id, idCustomer))
           .limit(1);
 
