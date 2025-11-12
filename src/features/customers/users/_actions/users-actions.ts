@@ -100,7 +100,7 @@ export async function InsertUser(data: InsertUserInput) {
         const customerData = await db
           .select({
             name: customers.name,
-            imageUrl: file.url,
+            imageUrl: file.fileUrl,
             subdomain: customerCustomization.name,
           })
           .from(customers)
