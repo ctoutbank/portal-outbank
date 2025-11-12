@@ -174,3 +174,12 @@ export async function deactivateCustomer(id: number) {
     .set({ isActive: false })
     .where(eq(customers.id, id));
 }
+
+export async function getAllCustomersIncludingInactive(): Promise<CustomersDetail[]> {
+  const result = await db
+    .select()
+    .from(customers)
+    .orderBy(desc(customers.id));
+  
+  return result;
+}
