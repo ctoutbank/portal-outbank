@@ -1,7 +1,7 @@
 "use server";
 import { db } from "@/db/drizzle";
-import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import { customers } from "../../../../drizzle/schema";
+import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import { CustomerSchema } from "../schema/schema";
 
 export type CustomersInsert = typeof customers.$inferInsert;

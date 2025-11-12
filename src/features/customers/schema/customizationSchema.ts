@@ -12,9 +12,7 @@ export const CustomizationSchema = z.object({
     .transform((val) => val.toLowerCase().trim()),
   primaryColor: z.string().optional(),
   secondaryColor: z.string().optional(),
-  image: z.any().optional(), // File input
-  loginImage: z.any().optional(), // Login background image file input
-  favicon: z.any().optional(), // Favicon file input
+  image: z.any().optional(),
   customerId: z.string().min(1, "ID do cliente é obrigatório"),
   id: z.number().optional(),
 });
