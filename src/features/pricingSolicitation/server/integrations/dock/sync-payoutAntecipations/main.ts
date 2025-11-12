@@ -12,11 +12,11 @@ async function fetchAntecipations() {
 
   while (hasMoreData) {
     const response = await fetch(
-      `https://settlement.acquiring.dock.tech/v1/payout_anticipations/statement?limit=${limit}&offset=${offset}`,
+      `${process.env.DOCK_API_URL_SETTLEMENT}/v1/payout_anticipations/statement?limit=${limit}&offset=${offset}`,
       {
         headers: {
-          Authorization: `${process.env.DOCK_API_KEY}`,
-          "X-Customer": "B68046D590EB402288F90E1147B6BC9F",
+          Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
+          "X-Customer": process.env.DOCK_X_CUSTOMER || "",
         },
       }
     );
@@ -43,6 +43,11 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
 }
 
 export async function syncPayoutAntecipations() {
+  if (process.env.DOCK_SYNC_ENABLED !== "true") {
+    console.log("Dock sync is disabled. Set DOCK_SYNC_ENABLED=true to enable.");
+    return;
+  }
+
   try {
     console.log("Truncando tabelas de antecipações...");
     await truncateAntecipationTables();

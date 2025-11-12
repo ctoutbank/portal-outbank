@@ -13,10 +13,10 @@ async function fetchPaymentLink() {
 
   while (hasMoreData) {
     const response = await fetch(
-      `https://serviceorder.acquiring.dock.tech/v1/external_payment_links?limit=${limit}&offset=${offset}`,
+      `${process.env.DOCK_API_URL_SERVICEORDER}/v1/external_payment_links?limit=${limit}&offset=${offset}`,
       {
         headers: {
-          Authorization: `${process.env.DOCK_API_KEY}`,
+          Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
         },
       }
     );
@@ -121,6 +121,11 @@ async function atualizarLinksExistentes(
 
 // Modifique a função syncPaymentLink para incluir a atualização de links existentes
 export async function syncPaymentLink() {
+  if (process.env.DOCK_SYNC_ENABLED !== "true") {
+    console.log("Dock sync is disabled. Set DOCK_SYNC_ENABLED=true to enable.");
+    return;
+  }
+
   try {
     console.log("Iniciando sincronização completa de payment links...");
 
@@ -311,13 +316,13 @@ type UpdatePaymentLinkResponse = {
 // Função para atualizar um link específico na API
 async function updateAPIPaymentLink(slug: string, data: UpdatePaymentLinkData): Promise<UpdatePaymentLinkResponse> {
   const response = await fetch(
-    `https://serviceorder.acquiring.hml.dock.tech/v1/external_payment_links/${slug}`,
+    `${process.env.DOCK_API_URL_SERVICEORDER}/v1/external_payment_links/${slug}`,
     {
       method: "PUT",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        Authorization: `${process.env.DOCK_API_KEY}`,
+        Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
       },
       body: JSON.stringify(data),
     }

@@ -20,11 +20,11 @@ async function fetchPayout(offset: number, startDate: string, endDate: string) {
     console.log(`Buscando payouts entre ${from} e ${to}, offset: ${offset}`);
 
     const response = await fetch(
-      `https://settlement.acquiring.dock.tech/v1/payouts/statement?transactionDate__goe=${from}&transactionDate__loe=${to}&limit=1000&offset=${offset}`,
+      `${process.env.DOCK_API_URL_SETTLEMENT}/v1/payouts/statement?transactionDate__goe=${from}&transactionDate__loe=${to}&limit=1000&offset=${offset}`,
       {
         headers: {
-          Authorization: `${process.env.DOCK_API_KEY}`,
-          "X-Customer": "B68046D590EB402288F90E1147B6BC9F",
+          Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
+          "X-Customer": process.env.DOCK_X_CUSTOMER || "",
         },
       }
     );
@@ -44,6 +44,11 @@ async function fetchPayout(offset: number, startDate: string, endDate: string) {
 }
 
 export async function syncPayouts() {
+  if (process.env.DOCK_SYNC_ENABLED !== "true") {
+    console.log("Dock sync is disabled. Set DOCK_SYNC_ENABLED=true to enable.");
+    return;
+  }
+
   try {
     console.log("Iniciando sincronização de payouts...");
 

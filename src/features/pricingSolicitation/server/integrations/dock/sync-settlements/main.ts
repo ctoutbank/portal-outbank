@@ -24,10 +24,10 @@ async function fetchSettlements() {
 
   while (hasMoreData) {
     const response = await fetch(
-      `https://settlement.acquiring.dock.tech/v1/settlements?limit=${limit}&offset=${offset}`,
+      `${process.env.DOCK_API_URL_SETTLEMENT}/v1/settlements?limit=${limit}&offset=${offset}`,
       {
         headers: {
-          Authorization: `${process.env.DOCK_API_KEY}`,
+          Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
         },
       }
     );
@@ -57,10 +57,10 @@ async function fetchMerchantSettlements() {
 
   while (hasMoreData) {
     const response = await fetch(
-      `https://settlement.acquiring.dock.tech/v1/merchant_settlements/order?limit=${limit}&offset=${offset}`,
+      `${process.env.DOCK_API_URL_SETTLEMENT}/v1/merchant_settlements/order?limit=${limit}&offset=${offset}`,
       {
         headers: {
-          Authorization: `${process.env.DOCK_API_KEY}`,
+          Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
         },
       }
     );
@@ -90,10 +90,10 @@ async function fetchMerchantSettlementsOrders() {
 
   while (hasMoreData) {
     const response = await fetch(
-      `https://settlement.acquiring.dock.tech/v1/merchant_settlement_orders?limit=${limit}&offset=${offset}`,
+      `${process.env.DOCK_API_URL_SETTLEMENT}/v1/merchant_settlement_orders?limit=${limit}&offset=${offset}`,
       {
         headers: {
-          Authorization: `${process.env.DOCK_API_KEY}`,
+          Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
         },
       }
     );
@@ -123,10 +123,10 @@ async function fetchPixMerchantSettlementsOrders() {
 
   while (hasMoreData) {
     const response = await fetch(
-      `https://settlement.acquiring.dock.tech/v1/pix_merchant_settlement_orders?limit=${limit}&offset=${offset}`,
+      `${process.env.DOCK_API_URL_SETTLEMENT}/v1/pix_merchant_settlement_orders?limit=${limit}&offset=${offset}`,
       {
         headers: {
-          Authorization: `${process.env.DOCK_API_KEY}`,
+          Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
         },
       }
     );
@@ -157,6 +157,11 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
 }
 
 export async function syncSettlements() {
+  if (process.env.DOCK_SYNC_ENABLED !== "true") {
+    console.log("Dock sync is disabled. Set DOCK_SYNC_ENABLED=true to enable.");
+    return;
+  }
+
   try {
     console.log("Truncando tabelas de settlements...");
     await truncateSettlementTables();

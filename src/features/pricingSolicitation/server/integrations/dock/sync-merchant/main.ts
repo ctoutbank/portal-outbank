@@ -6,10 +6,10 @@ import { Merchant } from "./types";
 
 async function fetchMerchants() {
   const response = await fetch(
-    "https://merchant.acquiring.dock.tech/v1/merchants?limit=40",
+    `${process.env.DOCK_API_URL_MERCHANTS}/v1/merchants?limit=40`,
     {
       headers: {
-        Authorization: `eyJraWQiOiJJTlRFR1JBVElPTiIsInR5cCI6IkpXVCIsImFsZyI6IkhTNTEyIn0.eyJpc3MiOiJGNDBFQTZCRTQxMUM0RkQwODVDQTBBMzJCQUVFMTlBNSIsInNpcCI6IjUwQUYxMDdFMTRERDQ2RTJCQjg5RkE5OEYxNTI2M0RBIn0.2urCljTPGjtwk6oSlGoOBfM16igLfFUNRqDg63WvzSFpB79gYf3lw1jEgVr4RCH_NU6A-5XKbuzIJtAXyETvzw`,
+        Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
       },
     }
   );
@@ -19,6 +19,11 @@ async function fetchMerchants() {
 }
 
 export async function syncMerchant() {
+  if (process.env.DOCK_SYNC_ENABLED !== "true") {
+    console.log("Dock sync is disabled. Set DOCK_SYNC_ENABLED=true to enable.");
+    return;
+  }
+
   try {
     console.log("Buscando merchants...");
 

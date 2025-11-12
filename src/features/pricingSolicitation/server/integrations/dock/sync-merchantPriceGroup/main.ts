@@ -8,10 +8,10 @@ export async function fetchMerchantPriceGroups(
 ) {
   try {
     const response = await fetch(
-      `https://merchant.acquiring.dock.tech/v1/merchants/${slugMerchant}/merchant_prices/${slugMerchantPrice}/merchant_price_groups`,
+      `${process.env.DOCK_API_URL_MERCHANTS}/v1/merchants/${slugMerchant}/merchant_prices/${slugMerchantPrice}/merchant_price_groups`,
       {
         headers: {
-          Authorization: `${process.env.DOCK_API_KEY}`,
+          Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
         },
       }
     );
