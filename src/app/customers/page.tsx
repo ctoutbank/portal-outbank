@@ -83,6 +83,7 @@ export default async function Customerspage({
                   customer.settlementManagementType || "",
                 slug: customer.slug,
                 idParent: customer.idParent || 0,
+                isActive: customer.isActive,
               })),
               totalCount: customers.totalCount,
             }}

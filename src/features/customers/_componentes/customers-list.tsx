@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { ChevronDown } from "lucide-react";
 
 export default function CustomersList({
@@ -32,6 +33,10 @@ export default function CustomersList({
                 Tipo de Gerenciamento de Liquidação
                 <ChevronDown className="ml-2 h-4 w-4 inline" />
               </TableHead>
+
+              <TableHead>
+                Status
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -46,6 +51,17 @@ export default function CustomersList({
                   </Link>
                 </TableCell>
                 <TableCell>{customer.settlementManagementType}</TableCell>
+                <TableCell>
+                  {customer.isActive ? (
+                    <Badge variant="default" className="bg-green-600">
+                      Ativo
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">
+                      Inativo
+                    </Badge>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
