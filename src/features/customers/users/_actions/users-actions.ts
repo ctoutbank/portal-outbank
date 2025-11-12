@@ -6,7 +6,7 @@ import { generateSlug } from "@/lib/utils";
 import { hashPassword } from "@/app/utils/password";
 import { generateRandomPassword } from "@/features/customers/users/server/users";
 import { sendWelcomePasswordEmail } from "@/lib/send-email";
-import { users, profiles } from "../../../../../drizzle/schema";
+import { users, profiles, customers, customerCustomization, file } from "../../../../../drizzle/schema";
 import { eq, ilike } from "drizzle-orm";
 
 interface InsertUserInput {
@@ -91,7 +91,35 @@ export async function InsertUser(data: InsertUserInput) {
       })
       .returning({ id: users.id });
 
-    await sendWelcomePasswordEmail(email, finalPassword);
+    let customerName = "Outbank";
+    let logo = "";
+    let link = "";
+
+    if (idCustomer) {
+      try {
+        const customerData = await db
+          .select({
+            name: customers.name,
+            imageUrl: file.url,
+            subdomain: customerCustomization.name,
+          })
+          .from(customers)
+          .leftJoin(customerCustomization, eq(customerCustomization.customerId, customers.id))
+          .leftJoin(file, eq(file.id, customerCustomization.imageId))
+          .where(eq(customers.id, idCustomer))
+          .limit(1);
+
+        if (customerData.length > 0) {
+          customerName = customerData[0].name || "Outbank";
+          logo = customerData[0].imageUrl || "";
+          link = customerData[0].subdomain ? `https://${customerData[0].subdomain}.outbank.cloud` : "";
+        }
+      } catch (error) {
+        console.error("Erro ao buscar dados do customer:", error);
+      }
+    }
+
+    await sendWelcomePasswordEmail(email, finalPassword, logo, customerName, link);
 
     return created[0].id;
   } catch (error: unknown) {
