@@ -1,7 +1,7 @@
 "use server";
 import { db } from "@/db/drizzle";
 import { customers } from "../../../../drizzle/schema";
-import { and, count, desc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, or } from "drizzle-orm";
 import { CustomerSchema } from "../schema/schema";
 
 export type CustomersInsert = typeof customers.$inferInsert;
@@ -59,17 +59,17 @@ export async function getCustomers(
       const fieldOrderBy =
         sortOrder === "desc"
           ? desc(customers[sortField])
-          : customers[sortField];
+          : asc(customers[sortField]);
       orderByClauses.push(fieldOrderBy);
     } else {
       // Se não for válido, usamos o id como fallback
-      const idOrderBy = sortOrder === "desc" ? desc(customers.id) : customers.id;
+      const idOrderBy = sortOrder === "desc" ? desc(customers.id) : asc(customers.id);
       orderByClauses.push(idOrderBy);
     }
   } catch (error) {
     console.error("Erro ao criar cláusula de ordenação:", error);
     // Fallback seguro
-    const idOrderBy = sortOrder === "desc" ? desc(customers.id) : customers.id;
+    const idOrderBy = sortOrder === "desc" ? desc(customers.id) : asc(customers.id);
     orderByClauses.push(idOrderBy);
   }
 
