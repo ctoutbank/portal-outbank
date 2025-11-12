@@ -17,13 +17,12 @@ import { User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { SchemaUser } from "../schema/schema";
-import { useParams } from "next/navigation";
 import {
   InsertUser,
-  updateUserWithClerk,
-  UserDetailForm,
-} from "@/features/customers/users/_actions/user-actions";
+} from "../_actions/users-actions";
+import { SchemaUser } from "../schema/schema";
+import {useParams} from "next/navigation";
+import {updateUserWithClerk, UserDetailForm} from "@/features/customers/users/_actions/user-actions";
 
 interface UserFormProps {
   user?: UserDetailForm;
@@ -47,10 +46,10 @@ type FormValues = {
 };
 
 export default function UserCustomerForm({
-  user,
-  customerId,
-  onSuccess,
-}: UserFormProps) {
+                                           user,
+                                           customerId,
+                                           onSuccess,
+                                         }: UserFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const isEditing = !!user?.id;
 
@@ -93,6 +92,7 @@ export default function UserCustomerForm({
       });
     }
   }, [user, customerId, form]);
+
 
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
@@ -229,11 +229,7 @@ export default function UserCustomerForm({
             />
           </CardContent>
           <div className="flex justify-end space-x-2 mr-4 mt-2">
-            <Button
-              type="submit"
-              className="cursor-pointer"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="cursor-pointer" disabled={isLoading}>
               {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
             </Button>
           </div>

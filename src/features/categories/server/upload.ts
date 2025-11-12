@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { s3Client } from "@/lib/s3-client/s3Client";
+import { s3Client } from "../../pricingSolicitation/server/integrations/s3client";
 import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";

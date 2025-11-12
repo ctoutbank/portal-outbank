@@ -163,7 +163,7 @@ export async function saveCustomization(formData: FormData) {
     await s3Client.send(uploadCommand);
 
     imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${imageId}.jpg`;
-    console.log("info here: ", imageUrl, image.name, extension, fileType);
+    console.log("info here: ",imageUrl, image.name, extension, fileType);
     const result = await db
       .insert(file)
       .values({
