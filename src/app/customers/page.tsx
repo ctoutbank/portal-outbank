@@ -57,7 +57,7 @@ export default async function Customerspage({
       <BaseBody title="Isos" subtitle={`visualização de todos os Isos`}>
         <div className="flex flex-col space-y-4">
           <div className="mb-1 flex items-center justify-between">
-            <div className="flex-1">
+            <div className="flex-1 flex items-center gap-4">
               <CustomersFilter
                 nameIn={params.name || ""}
                 customerIdIn={params.customerId || ""}
@@ -66,6 +66,9 @@ export default async function Customerspage({
                 }
                 statusIn={params.status || ""}
               />
+              <div className="text-sm text-muted-foreground">
+                {totalCount} {totalCount === 1 ? "resultado encontrado" : "resultados encontrados"}
+              </div>
             </div>
             <Button asChild className="ml-2">
               <Link href="/customers/0">
