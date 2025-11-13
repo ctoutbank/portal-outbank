@@ -509,6 +509,7 @@ export default function CustomerWizardForm({
                           <input
                             type="color"
                             name="primaryColor"
+                            id="primaryColorInput"
                             defaultValue={customizationData?.primaryColor ? hslToHex(customizationData.primaryColor) : "#ffffff"}
                             className="h-10 w-full p-0 border rounded cursor-pointer"
                           />
@@ -518,9 +519,43 @@ export default function CustomerWizardForm({
                           <input
                             type="color"
                             name="secondaryColor"
+                            id="secondaryColorInput"
                             defaultValue={customizationData?.secondaryColor ? hslToHex(customizationData.secondaryColor) : "#ffffff"}
                             className="h-10 w-full p-0 border rounded cursor-pointer"
                           />
+                        </div>
+                      </div>
+
+                      {/* Paleta de Cores Sugeridas */}
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Paleta de Cores Sugeridas</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {[
+                            { name: "Profissional", primary: "#1E40AF", secondary: "#3B82F6" },
+                            { name: "Moderno", primary: "#7C3AED", secondary: "#EC4899" },
+                            { name: "Vibrante", primary: "#EA580C", secondary: "#F59E0B" },
+                            { name: "Minimalista", primary: "#374151", secondary: "#06B6D4" },
+                            { name: "Corporativo", primary: "#1F2937", secondary: "#F59E0B" },
+                            { name: "Tech", primary: "#047857", secondary: "#10B981" },
+                          ].map((palette) => (
+                            <button
+                              key={palette.name}
+                              type="button"
+                              onClick={() => {
+                                const primaryInput = document.getElementById("primaryColorInput") as HTMLInputElement;
+                                const secondaryInput = document.getElementById("secondaryColorInput") as HTMLInputElement;
+                                if (primaryInput) primaryInput.value = palette.primary;
+                                if (secondaryInput) secondaryInput.value = palette.secondary;
+                              }}
+                              className="flex items-center gap-2 p-2 border rounded hover:bg-muted transition-colors cursor-pointer"
+                            >
+                              <div className="flex gap-1">
+                                <div className="w-6 h-6 rounded" style={{ backgroundColor: palette.primary }} />
+                                <div className="w-6 h-6 rounded" style={{ backgroundColor: palette.secondary }} />
+                              </div>
+                              <span className="text-xs font-medium">{palette.name}</span>
+                            </button>
+                          ))}
                         </div>
                       </div>
 
