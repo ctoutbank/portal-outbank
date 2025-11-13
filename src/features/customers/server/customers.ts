@@ -84,7 +84,7 @@ export async function getCustomers(
       isActive: customers.isActive,
       userCount: sql<number>`(SELECT COUNT(*) FROM users WHERE users.id_customer = ${customers.id})`,
       hasCustomization: sql<boolean>`EXISTS(SELECT 1 FROM customer_customization WHERE customer_customization.customer_id = ${customers.id})`,
-      subdomain: customerCustomization.name,
+      subdomain: customerCustomization.slug,
       createdAt: sql<string>`${customers.id}::text`,
       updatedAt: sql<string>`${customers.id}::text`,
     })

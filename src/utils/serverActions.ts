@@ -273,6 +273,8 @@ export async function saveCustomization(formData: FormData) {
   });
 
   revalidatePath("/");
+  revalidatePath("/customers");
+  revalidatePath(`/customers/${customerId}`);
 }
 
 export async function updateCustomization(formData: FormData) {
@@ -465,4 +467,6 @@ export async function updateCustomization(formData: FormData) {
     .where(eq(customerCustomization.id, id));
 
   revalidatePath("/");
+  revalidatePath("/customers");
+  revalidatePath(`/customers/${validated.data.customerId}`);
 }

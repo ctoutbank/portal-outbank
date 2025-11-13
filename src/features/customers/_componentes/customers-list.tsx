@@ -81,6 +81,7 @@ export default function CustomersList({
                     isActive={customer.isActive ?? true}
                     hasCustomization={customer.hasCustomization}
                     hasUsers={customer.userCount}
+                    subdomain={customer.subdomain}
                   />
                 </TableCell>
               </TableRow>
