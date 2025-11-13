@@ -67,6 +67,7 @@ export default function CustomerWizardForm({
     subdomain?: string;
     primaryColor?: string;
     secondaryColor?: string;
+    loginImageUrl?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export default function CustomerWizardForm({
             subdomain: response.name ?? undefined,
             primaryColor: response.primaryColor ?? undefined,
             secondaryColor: response.secondaryColor ?? undefined,
+            loginImageUrl: response.loginImageUrl ?? undefined,
           });
         }
       }
@@ -135,31 +137,31 @@ export default function CustomerWizardForm({
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [loginImagePreview, setLoginImagePreview] = useState<string | null>(null);
+  const [loginImageError, setLoginImageError] = useState<string | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    setImageError(null); // Limpa erros anteriores
+    setImageError(null);
 
     if (file) {
-      // Validação de extensão
       const allowedExtensions = ["jpg", "jpeg", "png"];
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
 
       if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
         setImageError("Apenas arquivos JPG, JPEG e PNG são aceitos");
         setImagePreview(null);
-        e.target.value = ""; // Limpa o input
+        e.target.value = "";
         return;
       }
 
-      // Validação de tipo MIME
       const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
       if (!allowedMimeTypes.includes(file.type)) {
         setImageError(
           "Formato de arquivo inválido. Apenas JPG, JPEG e PNG são aceitos"
         );
         setImagePreview(null);
-        e.target.value = ""; // Limpa o input
+        e.target.value = "";
         return;
       }
 
@@ -170,6 +172,49 @@ export default function CustomerWizardForm({
       reader.readAsDataURL(file);
     } else {
       setImagePreview(null);
+    }
+  };
+
+  const handleLoginImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setLoginImageError(null);
+
+    if (file) {
+      const allowedExtensions = ["jpg", "jpeg", "png"];
+      const fileExtension = file.name.split(".").pop()?.toLowerCase();
+
+      if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+        setLoginImageError("Apenas arquivos JPG, JPEG e PNG são aceitos");
+        setLoginImagePreview(null);
+        e.target.value = "";
+        return;
+      }
+
+      const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
+      if (!allowedMimeTypes.includes(file.type)) {
+        setLoginImageError(
+          "Formato de arquivo inválido. Apenas JPG, JPEG e PNG são aceitos"
+        );
+        setLoginImagePreview(null);
+        e.target.value = "";
+        return;
+      }
+
+      const MAX_SIZE = 5 * 1024 * 1024;
+      if (file.size > MAX_SIZE) {
+        setLoginImageError("Arquivo muito grande. Tamanho máximo: 5MB");
+        setLoginImagePreview(null);
+        e.target.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLoginImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setLoginImagePreview(null);
     }
   };
 
@@ -269,6 +314,42 @@ export default function CustomerWizardForm({
         onValueChange={handleStepChange}
         className="space-y-6"
       >
+        {/* Progress Indicator */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${isFirstStepComplete ? 'bg-green-600 text-white' : activeTab === 'step1' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                {isFirstStepComplete ? '✓' : '1'}
+              </div>
+              <span className={`text-sm font-medium hidden sm:inline ${activeTab === 'step1' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Criar ISO
+              </span>
+            </div>
+            <div className="flex-1 h-1 mx-2 sm:mx-4 bg-muted rounded-full overflow-hidden">
+              <div className={`h-full transition-all duration-300 ${isFirstStepComplete ? 'bg-green-600 w-full' : 'bg-muted w-0'}`} />
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${activeTab === 'step2' && isFirstStepComplete ? 'bg-primary text-primary-foreground' : isFirstStepComplete ? 'bg-muted text-muted-foreground' : 'bg-muted text-muted-foreground'}`}>
+                2
+              </div>
+              <span className={`text-sm font-medium hidden sm:inline ${activeTab === 'step2' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Personalização
+              </span>
+            </div>
+            <div className="flex-1 h-1 mx-2 sm:mx-4 bg-muted rounded-full overflow-hidden">
+              <div className={`h-full transition-all duration-300 ${activeTab === 'step3' ? 'bg-primary w-full' : 'bg-muted w-0'}`} />
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${activeTab === 'step3' && isFirstStepComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                3
+              </div>
+              <span className={`text-sm font-medium hidden sm:inline ${activeTab === 'step3' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Usuários
+              </span>
+            </div>
+          </div>
+        </div>
+
         <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted">
           <TabsTrigger
             value="step1"
@@ -522,6 +603,7 @@ export default function CustomerWizardForm({
                             accept="image/jpeg,image/jpg,image/png"
                             name="loginImage"
                             id="loginImage"
+                            onChange={handleLoginImageChange}
                             className="block w-full text-sm text-foreground
                               file:mr-4 file:py-2 file:px-4
                               file:rounded file:border-0
@@ -532,9 +614,50 @@ export default function CustomerWizardForm({
                               dark:file:bg-white"
                           />
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Imagem que será exibida como fundo na tela de login (JPG, JPEG, PNG)
+                            Imagem que será exibida como fundo na tela de login (JPG, JPEG, PNG - máx. 5MB)
                           </p>
+                          {loginImageError && (
+                            <p className="mt-1 text-xs text-red-500 font-medium">
+                              {loginImageError}
+                            </p>
+                          )}
                         </div>
+
+                        {/* Preview da Imagem de Login */}
+                        {loginImagePreview && (
+                          <div className="mt-4">
+                            <p className="text-sm text-foreground mb-2">
+                              Preview da Imagem de Fundo:
+                            </p>
+                            <div className="border rounded-lg overflow-hidden">
+                              <Image
+                                src={loginImagePreview}
+                                alt="Login background preview"
+                                width={400}
+                                height={225}
+                                className="w-full h-48 object-cover"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Preview da Imagem de Login Atual */}
+                        {customizationData?.loginImageUrl && !loginImagePreview && (
+                          <div className="mt-4">
+                            <p className="text-sm text-foreground mb-2">
+                              Imagem de fundo atual:
+                            </p>
+                            <div className="border rounded-lg overflow-hidden">
+                              <Image
+                                src={customizationData.loginImageUrl}
+                                alt="Current login background"
+                                width={400}
+                                height={225}
+                                className="w-full h-48 object-cover"
+                              />
+                            </div>
+                          </div>
+                        )}
 
                         {/* Upload de Favicon */}
                         <div>
