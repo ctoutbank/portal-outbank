@@ -10,6 +10,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Table,
   TableBody,
   TableCell,
@@ -17,6 +23,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { deleteUser } from "../_actions/use-Actions";
 import {getUserDetailWithClerk, UserDetailForm} from "../_actions/user-actions";
@@ -140,47 +149,85 @@ export default function UserTable({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
+                  <TableHead>Usuário</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Data de Inserção</TableHead>
-                  <TableHead>Data de Atualização</TableHead>
-                  <TableHead>Ações</TableHead>
+                  <TableHead>Criado em</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{`${user.firstName} ${user.lastName}`.trim() || "-"}</TableCell>
-                    <TableCell>
-                      {user.active ? "Ativo" : "Inativo"}
-                    </TableCell>
-                    <TableCell>
-                      {user.dtinsert
-                        ? new Date(user.dtinsert).toLocaleDateString()
-                        : "-"}
-                    </TableCell>
-                    <TableCell>
-                      {user.dtupdate
-                        ? new Date(user.dtupdate).toLocaleDateString()
-                        : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button onClick={() => handleEditUser(user.id)} disabled={isLoading} className="cursor-pointer">
-                          Editar
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={() => handleDeleteUser(user.id)}
-                          disabled={isLoading}
-                          className="cursor-pointer"
-                        >
-                          Excluir
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {users.map((user) => {
+                  const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+                  const initials = fullName
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2) || "?";
+                  
+                  return (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{fullName || "-"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">
+                          {user.email || "-"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.active ? "default" : "secondary"}>
+                          {user.active ? "Ativo" : "Inativo"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">
+                          {user.dtinsert
+                            ? new Date(user.dtinsert).toLocaleDateString("pt-BR")
+                            : "-"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={isLoading}
+                              className="h-8 w-8"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleEditUser(user.id)}
+                              className="cursor-pointer"
+                            >
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="cursor-pointer text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
@@ -188,4 +235,4 @@ export default function UserTable({
       </Card>
     </div>
   );
-} 
+}    
