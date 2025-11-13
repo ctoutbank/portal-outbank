@@ -770,7 +770,7 @@ export default function CustomerWizardForm({
           </div>
         </TabsContent>
 
-        <TabsContent value="step3" className="space-y-4">
+        <TabsContent value="step2" className="space-y-4">
           <Card className="border-0 shadow-none">
             {isFirstStepComplete && (
               <>
@@ -830,7 +830,7 @@ export default function CustomerWizardForm({
             <Button
               variant="outline"
               className="cursor-pointer"
-              onClick={() => handleStepChange("step2")}
+              onClick={() => handleStepChange("step1")}
             >
               ← Voltar
             </Button>
