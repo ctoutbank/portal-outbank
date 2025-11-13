@@ -24,7 +24,7 @@ export default async function RootLayout({
 }>) {
   const tenantCustomization = await getCurrentTenantCustomization();
   
-  const loginBackgroundImage = tenantCustomization?.loginImageUrl || '/bg_login.jpg';
+  const loginBackgroundImage = tenantCustomization?.loginImageUrl || tenantCustomization?.imageUrl || '/bg_login.jpg';
   
   return (
     <ClerkProvider

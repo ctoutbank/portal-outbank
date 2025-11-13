@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCustomizationBySubdomain } from "@/utils/serverActions";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ subdomain: string }> }
