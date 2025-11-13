@@ -763,7 +763,7 @@ export default function CustomerWizardForm({
             <Button
               variant="outline"
               className="cursor-pointer"
-              onClick={() => handleStepChange("step3")}
+              onClick={() => handleStepChange("step2")}
             >
               Próximo →
             </Button>
