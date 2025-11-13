@@ -3,10 +3,10 @@ import { getCustomizationBySubdomain } from "@/utils/serverActions";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { subdomain: string } }
+  { params }: { params: Promise<{ subdomain: string }> }
 ) {
   try {
-    const { subdomain } = params;
+    const { subdomain } = await params;
     
     if (!subdomain) {
       return NextResponse.json(
