@@ -67,6 +67,7 @@ export default function CustomerWizardForm({
     subdomain?: string;
     primaryColor?: string;
     secondaryColor?: string;
+    loginImageUrl?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export default function CustomerWizardForm({
             subdomain: response.name ?? undefined,
             primaryColor: response.primaryColor ?? undefined,
             secondaryColor: response.secondaryColor ?? undefined,
+            loginImageUrl: response.loginImageUrl ?? undefined,
           });
         }
       }
