@@ -43,14 +43,14 @@ export function StatusBadge({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Badge className="gap-1 bg-green-700 hover:bg-green-800">
+            <Badge className="gap-1 bg-green-600 hover:bg-green-700">
               <CheckCircle className="h-3 w-3" />
-              Ativo Completo
+              Ativo
             </Badge>
           </TooltipTrigger>
           <TooltipContent>
-            <p>ISO ativo com configuração completa</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="font-medium">ISO configurado e ativo</p>
+            <p className="text-xs text-muted-foreground mt-1">
               ✓ Personalização configurada
             </p>
             <p className="text-xs text-muted-foreground">
@@ -66,21 +66,21 @@ export function StatusBadge({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge className="gap-1 bg-yellow-600 hover:bg-yellow-700">
+          <Badge className="gap-1 bg-amber-500 hover:bg-amber-600">
             <AlertCircle className="h-3 w-3" />
-            Config. Incompleta
+            Em Configuração
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
-          <p>ISO ativo mas com configuração incompleta</p>
+          <p className="font-medium">ISO ativo mas incompleto</p>
           {!hasCustomization && (
-            <p className="text-xs text-muted-foreground">
-              ⚠ Personalização não configurada
+            <p className="text-xs text-muted-foreground mt-1">
+              ⚠ Falta configurar personalização
             </p>
           )}
           {hasUsers === 0 && (
             <p className="text-xs text-muted-foreground">
-              ⚠ Nenhum usuário cadastrado
+              ⚠ Falta cadastrar usuários
             </p>
           )}
         </TooltipContent>
