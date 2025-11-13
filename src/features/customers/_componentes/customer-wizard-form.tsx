@@ -139,6 +139,8 @@ export default function CustomerWizardForm({
   const [imageError, setImageError] = useState<string | null>(null);
   const [loginImagePreview, setLoginImagePreview] = useState<string | null>(null);
   const [loginImageError, setLoginImageError] = useState<string | null>(null);
+  const [previewPrimaryColor, setPreviewPrimaryColor] = useState<string>("#1E40AF");
+  const [previewSecondaryColor, setPreviewSecondaryColor] = useState<string>("#3B82F6");
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -511,6 +513,7 @@ export default function CustomerWizardForm({
                             name="primaryColor"
                             id="primaryColorInput"
                             defaultValue={customizationData?.primaryColor ? hslToHex(customizationData.primaryColor) : "#ffffff"}
+                            onChange={(e) => setPreviewPrimaryColor(e.target.value)}
                             className="h-10 w-full p-0 border rounded cursor-pointer"
                           />
                         </div>
@@ -521,6 +524,7 @@ export default function CustomerWizardForm({
                             name="secondaryColor"
                             id="secondaryColorInput"
                             defaultValue={customizationData?.secondaryColor ? hslToHex(customizationData.secondaryColor) : "#ffffff"}
+                            onChange={(e) => setPreviewSecondaryColor(e.target.value)}
                             className="h-10 w-full p-0 border rounded cursor-pointer"
                           />
                         </div>
@@ -546,6 +550,8 @@ export default function CustomerWizardForm({
                                 const secondaryInput = document.getElementById("secondaryColorInput") as HTMLInputElement;
                                 if (primaryInput) primaryInput.value = palette.primary;
                                 if (secondaryInput) secondaryInput.value = palette.secondary;
+                                setPreviewPrimaryColor(palette.primary);
+                                setPreviewSecondaryColor(palette.secondary);
                               }}
                               className="flex items-center gap-2 p-2 border rounded hover:bg-muted transition-colors cursor-pointer"
                             >
@@ -655,9 +661,92 @@ export default function CustomerWizardForm({
                   <CardTitle className="text-sm font-medium">Preview em Tempo Real</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6">
-                  <div className="text-center text-sm text-muted-foreground">
-                    <p>Preview da tela de login será exibido aqui</p>
-                    <p className="mt-2 text-xs">(Em desenvolvimento)</p>
+                  {/* Login Page Mockup */}
+                  <div className="border rounded-lg overflow-hidden bg-background shadow-sm">
+                    <div className="flex h-[400px]">
+                      {/* Left side - Background Image (60%) */}
+                      <div className="w-[60%] relative bg-gradient-to-br from-blue-500 to-purple-600">
+                        {(loginImagePreview || customizationData?.loginImageUrl) ? (
+                          <Image
+                            src={loginImagePreview || customizationData?.loginImageUrl || ""}
+                            alt="Login Background"
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-white/50 text-xs">
+                            Imagem de Fundo
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Right side - Login Form (40%) */}
+                      <div className="w-[40%] bg-background p-6 flex flex-col justify-center">
+                        {/* Logo */}
+                        <div className="mb-6 flex justify-center">
+                          {(imagePreview || customizationData?.imageUrl) ? (
+                            <div className="relative w-16 h-16">
+                              <Image
+                                src={imagePreview || customizationData?.imageUrl || ""}
+                                alt="Logo"
+                                fill
+                                className="object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                              Logo
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* ISO Name */}
+                        <h2 className="text-lg font-semibold text-center mb-6">
+                          {customer.name || "Nome do ISO"}
+                        </h2>
+                        
+                        {/* Login Form Fields (mockup) */}
+                        <div className="space-y-3">
+                          <div>
+                            <div className="h-8 bg-muted rounded text-xs flex items-center px-2 text-muted-foreground">
+                              Email
+                            </div>
+                          </div>
+                          <div>
+                            <div className="h-8 bg-muted rounded text-xs flex items-center px-2 text-muted-foreground">
+                              Senha
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="w-full h-9 rounded text-sm font-medium text-white transition-colors"
+                            style={{
+                              backgroundColor: previewPrimaryColor
+                            }}
+                          >
+                            Entrar
+                          </button>
+                        </div>
+                        
+                        {/* Footer link */}
+                        <div className="mt-4 text-center">
+                          <a
+                            href="#"
+                            className="text-xs transition-colors"
+                            style={{
+                              color: previewSecondaryColor
+                            }}
+                          >
+                            Esqueci minha senha
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Preview Info */}
+                  <div className="mt-4 text-xs text-muted-foreground text-center">
+                    <p>Preview atualiza conforme você altera os campos acima</p>
                   </div>
                 </CardContent>
               </Card>
