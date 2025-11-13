@@ -77,6 +77,7 @@ export async function getCustomizationByCustomerId(
         primaryColor: customerCustomization.primaryColor,
         secondaryColor: customerCustomization.secondaryColor,
         imageUrl: file.fileUrl,
+        imageUrlDirect: customerCustomization.imageUrl,
         loginImageUrl: customerCustomization.loginImageUrl,
         faviconUrl: customerCustomization.faviconUrl,
         customerId: customerCustomization.customerId,
@@ -86,7 +87,13 @@ export async function getCustomizationByCustomerId(
       .where(eq(customerCustomization.customerId, customerId))
       .limit(1);
 
-    return result[0] || null;
+    const row = result[0];
+    if (!row) return null;
+
+    return {
+      ...row,
+      imageUrl: row.imageUrl || row.imageUrlDirect || null,
+    };
   } catch (error) {
     console.error("Erro ao buscar customização por customerId:", error);
     return null;
@@ -105,6 +112,7 @@ export async function getCustomizationBySubdomain(
         primaryColor: customerCustomization.primaryColor,
         secondaryColor: customerCustomization.secondaryColor,
         imageUrl: file.fileUrl,
+        imageUrlDirect: customerCustomization.imageUrl,
         loginImageUrl: customerCustomization.loginImageUrl,
         faviconUrl: customerCustomization.faviconUrl,
         customerId: customerCustomization.customerId,
@@ -114,7 +122,13 @@ export async function getCustomizationBySubdomain(
       .where(eq(customerCustomization.slug, subdomain))
       .limit(1);
 
-    return result[0] || null;
+    const row = result[0];
+    if (!row) return null;
+
+    return {
+      ...row,
+      imageUrl: row.imageUrl || row.imageUrlDirect || null,
+    };
   } catch (error) {
     console.error("Erro ao buscar customização por subdomínio:", error);
     return null;
