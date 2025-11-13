@@ -479,12 +479,33 @@ export default function CustomerWizardForm({
 
               const formData = new FormData(e.currentTarget);
 
+              const subdomain = (step1Subdomain || customizationData?.subdomain || "").trim();
+              const customerId = newCustomerId || customer.id;
+
+              if (!subdomain) {
+                toast.error("Por favor, defina o Domínio do ISO no passo 1 antes de salvar a personalização");
+                setIsSavingCustomization(false);
+                return;
+              }
+
+              if (!customerId) {
+                toast.error("Por favor, crie o ISO no passo 1 antes de salvar a personalização");
+                setIsSavingCustomization(false);
+                return;
+              }
+
+              formData.set("subdomain", subdomain);
+              formData.set("customerId", String(customerId));
+              if (customizationData?.id) {
+                formData.set("id", String(customizationData.id));
+              }
+
               const validationData = {
-                subdomain: step1Subdomain || customizationData?.subdomain,
+                subdomain: subdomain,
                 primaryColor: formData.get("primaryColor") as string,
                 secondaryColor: formData.get("secondaryColor") as string,
                 image: formData.get("image"),
-                customerId: formData.get("customerId") as string,
+                customerId: String(customerId),
                 id: customizationData?.id,
               };
 
@@ -492,6 +513,7 @@ export default function CustomerWizardForm({
                 CustomizationSchema.safeParse(validationData);
 
               if (!validationResult.success) {
+                console.error("Validation errors:", validationResult.error.flatten());
                 toast.error("Por favor, corrija os erros antes de continuar");
                 setIsSavingCustomization(false);
                 return;
@@ -505,9 +527,9 @@ export default function CustomerWizardForm({
                 }
 
                 // Atualizar o customizationData com os dados salvos
-                if (newCustomerId) {
+                if (customerId) {
                   const updatedCustomization =
-                    await getCustomizationByCustomerId(newCustomerId);
+                    await getCustomizationByCustomerId(customerId);
                   if (updatedCustomization) {
                     setCustomizationData({
                       imageUrl: updatedCustomization.imageUrl ?? undefined,
