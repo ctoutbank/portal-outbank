@@ -3,6 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import CustomerForm from "./customer-form";
@@ -25,7 +33,7 @@ import {
   updateCustomization,
 } from "@/utils/serverActions";
 import Image from "next/image";
-import { Info, Palette } from "lucide-react";
+import { Info, Palette, CheckCircle2, ExternalLink } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -143,6 +151,7 @@ export default function CustomerWizardForm({
   const [colorSecondaryHex, setColorSecondaryHex] = useState<string>("#3B82F6");
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   useEffect(() => {
     if (customizationData?.primaryColor) {
@@ -369,6 +378,10 @@ export default function CustomerWizardForm({
     }
     setSelectedUser(null);
     setUserToEdit(null);
+    
+    if (users.length === 0) {
+      setShowCompletionModal(true);
+    }
   };
 
   console.log("CUSTOMERID", newCustomerId);
@@ -934,6 +947,79 @@ export default function CustomerWizardForm({
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Completion Modal */}
+      <Dialog open={showCompletionModal} onOpenChange={setShowCompletionModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="h-6 w-6 text-green-500" />
+              <DialogTitle>ISO Configurado com Sucesso!</DialogTitle>
+            </div>
+            <DialogDescription>
+              Seu ISO foi criado e configurado. Veja o resumo abaixo:
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-sm font-medium text-muted-foreground">Nome do ISO:</span>
+                <span className="text-sm font-semibold">{customer.name}</span>
+              </div>
+              
+              {customizationData?.subdomain && (
+                <div className="flex justify-between items-center py-2 border-b">
+                  <span className="text-sm font-medium text-muted-foreground">Subdomínio:</span>
+                  <a
+                    href={`https://${customizationData.subdomain}.consolle.one`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    {customizationData.subdomain}.consolle.one
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              )}
+              
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-sm font-medium text-muted-foreground">Usuários cadastrados:</span>
+                <span className="text-sm font-semibold">{users.length + 1}</span>
+              </div>
+              
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-sm font-medium text-muted-foreground">Personalização:</span>
+                <span className="text-sm font-semibold">
+                  {customizationData ? "✓ Configurada" : "Pendente"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCompletionModal(false);
+                setActiveTab("step1");
+              }}
+              className="cursor-pointer"
+            >
+              Continuar Editando
+            </Button>
+            <Button
+              onClick={() => {
+                setShowCompletionModal(false);
+                router.push("/customers");
+              }}
+              className="cursor-pointer"
+            >
+              Voltar à Lista
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
