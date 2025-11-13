@@ -312,6 +312,42 @@ export default function CustomerWizardForm({
         onValueChange={handleStepChange}
         className="space-y-6"
       >
+        {/* Progress Indicator */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${isFirstStepComplete ? 'bg-green-600 text-white' : activeTab === 'step1' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                {isFirstStepComplete ? '✓' : '1'}
+              </div>
+              <span className={`text-sm font-medium hidden sm:inline ${activeTab === 'step1' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Criar ISO
+              </span>
+            </div>
+            <div className="flex-1 h-1 mx-2 sm:mx-4 bg-muted rounded-full overflow-hidden">
+              <div className={`h-full transition-all duration-300 ${isFirstStepComplete ? 'bg-green-600 w-full' : 'bg-muted w-0'}`} />
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${activeTab === 'step2' && isFirstStepComplete ? 'bg-primary text-primary-foreground' : isFirstStepComplete ? 'bg-muted text-muted-foreground' : 'bg-muted text-muted-foreground'}`}>
+                2
+              </div>
+              <span className={`text-sm font-medium hidden sm:inline ${activeTab === 'step2' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Personalização
+              </span>
+            </div>
+            <div className="flex-1 h-1 mx-2 sm:mx-4 bg-muted rounded-full overflow-hidden">
+              <div className={`h-full transition-all duration-300 ${activeTab === 'step3' ? 'bg-primary w-full' : 'bg-muted w-0'}`} />
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${activeTab === 'step3' && isFirstStepComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                3
+              </div>
+              <span className={`text-sm font-medium hidden sm:inline ${activeTab === 'step3' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Usuários
+              </span>
+            </div>
+          </div>
+        </div>
+
         <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted">
           <TabsTrigger
             value="step1"
