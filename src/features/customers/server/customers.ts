@@ -196,3 +196,14 @@ export async function getAllCustomersIncludingInactive(): Promise<CustomersDetai
   
   return result;
 }
+
+export async function deleteAllCustomersExcept(keepId: number): Promise<number> {
+  const { sql } = await import("drizzle-orm");
+  
+  const result = await db
+    .delete(customers)
+    .where(sql`${customers.id} != ${keepId}`)
+    .returning({ id: customers.id });
+  
+  return result.length;
+}
