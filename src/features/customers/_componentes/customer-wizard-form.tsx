@@ -141,6 +141,8 @@ export default function CustomerWizardForm({
   const [loginImageError, setLoginImageError] = useState<string | null>(null);
   const [colorPrimaryHex, setColorPrimaryHex] = useState<string>("#1E40AF");
   const [colorSecondaryHex, setColorSecondaryHex] = useState<string>("#3B82F6");
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
 
   useEffect(() => {
     if (customizationData?.primaryColor) {
@@ -152,6 +154,36 @@ export default function CustomerWizardForm({
       setColorSecondaryHex(secondaryHex);
     }
   }, [customizationData?.primaryColor, customizationData?.secondaryColor]);
+
+  useEffect(() => {
+    if (!newCustomerId || !isFirstStepComplete || activeTab !== "step1") {
+      return;
+    }
+
+    const autoSaveInterval = setInterval(async () => {
+      setIsAutoSaving(true);
+      try {
+        const form = document.getElementById("customizationForm") as HTMLFormElement;
+        if (form) {
+          const formData = new FormData(form);
+          
+          if (customizationData) {
+            await updateCustomization(formData);
+          } else {
+            await saveCustomization(formData);
+          }
+
+          setLastAutoSave(new Date());
+        }
+      } catch (error) {
+        console.error("Erro ao salvar automaticamente", error);
+      } finally {
+        setIsAutoSaving(false);
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(autoSaveInterval);
+  }, [newCustomerId, isFirstStepComplete, activeTab, customizationData]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -705,6 +737,18 @@ export default function CustomerWizardForm({
 
             {/* Right Column (40% - 2/5 cols) - Preview */}
             <div className="lg:col-span-2">
+              {/* Auto-save indicator */}
+              {isAutoSaving && (
+                <div className="mb-2 text-xs text-muted-foreground flex items-center gap-1">
+                  <span className="animate-pulse">●</span>
+                  <span>Salvando automaticamente...</span>
+                </div>
+              )}
+              {!isAutoSaving && lastAutoSave && (
+                <div className="mb-2 text-xs text-muted-foreground">
+                  Salvo há {Math.floor((new Date().getTime() - lastAutoSave.getTime()) / 1000)}s
+                </div>
+              )}
               <Card className="border lg:sticky lg:top-4">
                 <CardHeader className="border-b border-border">
                   <CardTitle className="text-sm font-medium">Preview em Tempo Real</CardTitle>
