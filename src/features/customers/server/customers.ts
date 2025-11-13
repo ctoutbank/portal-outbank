@@ -1,7 +1,7 @@
 "use server";
 import { db } from "@/db/drizzle";
 import { customers } from "../../../../drizzle/schema";
-import { and, count, desc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, or } from "drizzle-orm";
 import { CustomerSchema } from "../schema/schema";
 
 export type CustomersInsert = typeof customers.$inferInsert;
@@ -47,33 +47,37 @@ export async function getCustomers(
     );
   }
 
-  whereConditions.push(eq(customers.isActive, true));
+  // whereConditions.push(eq(customers.isActive, true));
 
+  const orderByClauses = [desc(customers.isActive)];
+  
   // Verificamos se sortField existe em customers e se não é undefined
-  let orderByClause;
   try {
     // Primeiro garantimos que é uma propriedade válida do objeto customers
     if (sortField && sortField in customers) {
       // Agora criamos a cláusula de ordenação baseada na direção
-      orderByClause =
+      const fieldOrderBy =
         sortOrder === "desc"
           ? desc(customers[sortField])
-          : customers[sortField];
+          : asc(customers[sortField]);
+      orderByClauses.push(fieldOrderBy);
     } else {
       // Se não for válido, usamos o id como fallback
-      orderByClause = sortOrder === "desc" ? desc(customers.id) : customers.id;
+      const idOrderBy = sortOrder === "desc" ? desc(customers.id) : asc(customers.id);
+      orderByClauses.push(idOrderBy);
     }
   } catch (error) {
     console.error("Erro ao criar cláusula de ordenação:", error);
     // Fallback seguro
-    orderByClause = sortOrder === "desc" ? desc(customers.id) : customers.id;
+    const idOrderBy = sortOrder === "desc" ? desc(customers.id) : asc(customers.id);
+    orderByClauses.push(idOrderBy);
   }
 
   const result = await db
     .select()
     .from(customers)
     .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-    .orderBy(orderByClause)
+    .orderBy(...orderByClauses)
     .limit(pageSize)
     .offset(offset);
 
@@ -92,6 +96,7 @@ export async function getCustomers(
       settlementManagementType: customer.settlementManagementType || "",
       slug: customer.slug,
       idParent: customer.idParent || 0,
+      isActive: customer.isActive ?? true,
     })),
     totalCount,
   };
@@ -103,7 +108,7 @@ export async function getCustomerById(
   const customer = await db
     .select()
     .from(customers)
-    .where(and(eq(customers.id, id), eq(customers.isActive, true)));
+    .where(eq(customers.id, id));
   return customer[0] || null;
 }
 
@@ -161,6 +166,7 @@ export type CustomerFull = {
   settlementManagementType: string;
   slug: string;
   idParent: number;
+  isActive: boolean;
 };
 
 export interface Customerslist {
@@ -172,6 +178,13 @@ export async function deactivateCustomer(id: number) {
   await db
     .update(customers)
     .set({ isActive: false })
+    .where(eq(customers.id, id));
+}
+
+export async function activateCustomer(id: number) {
+  await db
+    .update(customers)
+    .set({ isActive: true })
     .where(eq(customers.id, id));
 }
 
