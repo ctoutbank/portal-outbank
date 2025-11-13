@@ -95,7 +95,7 @@ export default function CustomerFormm({
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -116,23 +116,6 @@ export default function CustomerFormm({
                           );
                           field.onChange(sanitized);
                         }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="settlementManagementType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Gerenciamento de Liquidação</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Tipo de gestão (opcional)"
-                        {...field}
                       />
                     </FormControl>
                     <FormMessage />

@@ -20,66 +20,63 @@ export default function CustomersList({
 }) {
   return (
     <div>
-      <div className="border rounded-lg">
+      <div className="border rounded-lg shadow-sm bg-card overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="font-semibold text-sm">
                 Nome
-                <ChevronDown className="ml-2 h-4 w-4 inline" />
+                <ChevronDown className="ml-2 h-4 w-4 inline opacity-50" />
               </TableHead>
 
-              <TableHead>
-                Tipo de Gerenciamento de Liquidação
-                <ChevronDown className="ml-2 h-4 w-4 inline" />
-              </TableHead>
-
-              <TableHead>
+              <TableHead className="font-semibold text-sm">
                 Subdomínio
               </TableHead>
 
-              <TableHead>
+              <TableHead className="font-semibold text-sm">
                 Usuários
               </TableHead>
 
-              <TableHead>
+              <TableHead className="font-semibold text-sm">
                 Status
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {Customers?.customers.map((customer) => (
-              <TableRow key={customer.id}>
-                <TableCell>
+              <TableRow 
+                key={customer.id}
+                className="hover:bg-muted/30 transition-colors"
+              >
+                <TableCell className="py-3">
                   <Link
-                    className="text-primary underline"
+                    className="text-primary hover:underline font-medium text-sm"
                     href={"/customers/" + customer.id}
                   >
                     {customer.name}
                   </Link>
                 </TableCell>
-                <TableCell>{customer.settlementManagementType}</TableCell>
-                <TableCell>
+                <TableCell className="py-3">
                   {customer.subdomain ? (
                     <a
                       href={`https://${customer.subdomain}.consolle.one`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline inline-flex items-center gap-1"
+                      className="text-primary hover:underline inline-flex items-center gap-1 text-sm"
                     >
-                      {customer.subdomain}
-                      <ExternalLink className="h-3 w-3" />
+                      <span className="font-mono">{customer.subdomain}</span>
+                      <ExternalLink className="h-3 w-3 opacity-60" />
                     </a>
                   ) : (
                     <span className="text-muted-foreground text-sm">--</span>
                   )}
                 </TableCell>
-                <TableCell>
-                  <span className="text-sm">
+                <TableCell className="py-3">
+                  <span className="text-sm font-medium tabular-nums">
                     {customer.userCount || 0}
                   </span>
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-3">
                   <StatusBadge
                     isActive={customer.isActive ?? true}
                     hasCustomization={customer.hasCustomization}
