@@ -18,7 +18,6 @@ import {
   UserDetail,
   getUsersWithClerk,
 } from "../users/_actions/user-actions";
-import { Input } from "@/components/ui/input";
 import {
   getCustomizationByCustomerId,
   saveCustomization,
@@ -226,8 +225,38 @@ export default function CustomerWizardForm({
     router.replace(`/customers/${id}?step=step2`, { scroll: false });
   };
 
-  // Função que será passada para o CustomerForm para notificar quando o cliente for criado
-  const handleFirstStepComplete = (id: number) => {
+  // Função que será passada para o CustomerForm para notificar quando o cliente foi criado
+  const handleFirstStepComplete = async (id: number) => {
+    if (step1Subdomain && step1Subdomain.trim() !== "") {
+      try {
+        const formData = new FormData();
+        formData.append("customerId", id.toString());
+        formData.append("subdomain", step1Subdomain);
+        
+        if (customizationData?.id) {
+          formData.append("id", customizationData.id.toString());
+          await updateCustomization(formData);
+        } else {
+          await saveCustomization(formData);
+        }
+        
+        const updatedCustomization = await getCustomizationByCustomerId(id);
+        if (updatedCustomization) {
+          setCustomizationData({
+            imageUrl: updatedCustomization.imageUrl ?? undefined,
+            id: updatedCustomization.id ?? 0,
+            subdomain: updatedCustomization.slug ?? undefined,
+            primaryColor: updatedCustomization.primaryColor ?? undefined,
+            secondaryColor: updatedCustomization.secondaryColor ?? undefined,
+            loginImageUrl: updatedCustomization.loginImageUrl ?? undefined,
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao salvar subdomain:", error);
+        toast.error("Erro ao salvar subdomain");
+      }
+    }
+    
     onCustomerCreated(id);
   };
 
@@ -286,15 +315,12 @@ export default function CustomerWizardForm({
 
   console.log("CUSTOMERID", newCustomerId);
 
-  const [subdomainValue, setSubdomainValue] = useState("");
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
   const [isSavingCustomization, setIsSavingCustomization] = useState(false);
+  const [step1Subdomain, setStep1Subdomain] = useState("");
 
   useEffect(() => {
     if (customizationData?.subdomain) {
-      setSubdomainValue(customizationData.subdomain);
+      setStep1Subdomain(customizationData.subdomain);
     }
   }, [customizationData?.subdomain]);
 
@@ -356,78 +382,81 @@ export default function CustomerWizardForm({
         </TabsList>
 
         <TabsContent value="step1" className="space-y-6">
-          <div className={`grid gap-6 ${isFirstStepComplete ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-            {/* Card 1: Criar ISO */}
-            <Card className="border-0 shadow-none">
-              <CardHeader>
-                <CardTitle>Informações do ISO</CardTitle>
-              </CardHeader>
-              <CardContent>
+          {/* Single large card with 3 blocks */}
+          <Card className="p-8">
+            <CardContent className="space-y-8 p-0">
+              {/* Block 1: ISO Data (2-column grid) */}
+              <div className="space-y-4">
                 <CustomerForm
                   customer={customer}
                   onSuccess={handleFirstStepComplete}
+                  hideWrapper={true}
+                  subdomain={step1Subdomain}
+                  onSubdomainChange={setStep1Subdomain}
                 />
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Card 2: Gerenciar Usuários (só aparece após criar ISO) */}
-            {isFirstStepComplete && (
-              <Card className="border-0 shadow-none">
-                <CardHeader>
-                  <CardTitle>Gerenciar Usuários</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {selectedUser === null ? (
-                    <div className="space-y-6">
-                      <UserCustomerForm
-                        customerId={newCustomerId || undefined}
-                        onSuccess={handleUserSuccess}
-                        profiles={profiles}
-                      />
+              {/* Block 2: User Creation Form (only after ISO created) */}
+              {isFirstStepComplete && selectedUser === null && (
+                <div className="space-y-4 pt-8 border-t">
+                  <UserCustomerForm
+                    customerId={newCustomerId || undefined}
+                    onSuccess={handleUserSuccess}
+                    profiles={profiles}
+                    hideWrapper={true}
+                  />
+                </div>
+              )}
 
-                      {isLoadingUsers ? (
-                        <div className="text-center p-8">
-                          <p>Carregando usuários...</p>
-                        </div>
-                      ) : (
-                        <UsersCustomerList
-                          users={users}
-                          customerId={newCustomerId || 0}
-                          onRefresh={() => loadUsers(newCustomerId || 0)}
-                        />
-                      )}
+              {/* Block 3: User List Table (only after ISO created) */}
+              {isFirstStepComplete && selectedUser === null && (
+                <div className="space-y-4 pt-8 border-t">
+                  <h3 className="text-lg font-semibold">Usuários</h3>
+                  {isLoadingUsers ? (
+                    <div className="text-center p-8">
+                      <p>Carregando usuários...</p>
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium">Editar Usuário</h3>
-                        <Button
-                          variant="outline"
-                          onClick={() => setSelectedUser(null)}
-                          className="cursor-pointer"
-                        >
-                          Voltar
-                        </Button>
-                      </div>
-
-                      {isLoadingUser ? (
-                        <div className="text-center p-4">
-                          <p>Carregando dados do usuário...</p>
-                        </div>
-                      ) : (
-                        <UserCustomerForm
-                          user={userToEdit || undefined}
-                          customerId={newCustomerId || undefined}
-                          onSuccess={handleUserSuccess}
-                          profiles={profiles}
-                        />
-                      )}
-                    </div>
+                    <UsersCustomerList
+                      users={users}
+                      customerId={newCustomerId || 0}
+                      onRefresh={() => loadUsers(newCustomerId || 0)}
+                    />
                   )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                </div>
+              )}
+
+              {/* Edit User Mode */}
+              {isFirstStepComplete && selectedUser !== null && (
+                <div className="space-y-4 pt-8 border-t">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium">Editar Usuário</h3>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedUser(null)}
+                      className="cursor-pointer"
+                    >
+                      Voltar
+                    </Button>
+                  </div>
+
+                  {isLoadingUser ? (
+                    <div className="text-center p-4">
+                      <p>Carregando dados do usuário...</p>
+                    </div>
+                  ) : (
+                    <UserCustomerForm
+                      user={userToEdit || undefined}
+                      customerId={newCustomerId || undefined}
+                      onSuccess={handleUserSuccess}
+                      profiles={profiles}
+                      hideWrapper={true}
+                    />
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Navigation */}
           <div className="flex justify-end gap-2 mt-4">
@@ -446,14 +475,12 @@ export default function CustomerWizardForm({
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              setValidationErrors({});
               setIsSavingCustomization(true);
 
               const formData = new FormData(e.currentTarget);
 
-              // Preparar dados para validação
               const validationData = {
-                subdomain: subdomainValue,
+                subdomain: step1Subdomain || customizationData?.subdomain,
                 primaryColor: formData.get("primaryColor") as string,
                 secondaryColor: formData.get("secondaryColor") as string,
                 image: formData.get("image"),
@@ -461,18 +488,10 @@ export default function CustomerWizardForm({
                 id: customizationData?.id,
               };
 
-              // Validar usando o schema
               const validationResult =
                 CustomizationSchema.safeParse(validationData);
 
               if (!validationResult.success) {
-                const errors: Record<string, string> = {};
-                validationResult.error.errors.forEach((error) => {
-                  if (error.path[0]) {
-                    errors[error.path[0] as string] = error.message;
-                  }
-                });
-                setValidationErrors(errors);
                 toast.error("Por favor, corrija os erros antes de continuar");
                 setIsSavingCustomization(false);
                 return;
@@ -524,61 +543,8 @@ export default function CustomerWizardForm({
                 <>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {/* Coluna Esquerda - Subdomínio e Imagem */}
+                      {/* Coluna Esquerda - Imagens */}
                       <div className="space-y-4">
-                        {/* Subdomínio */}
-                        <div>
-                          <label className="block text-sm font-medium text-foreground mb-1">
-                            <div className="flex items-center gap-1">
-                              <span>Nome do subdomínio</span>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      type="button"
-                                      className="text-muted-foreground p-1"
-                                    >
-                                      <Info className="w-4 h-4 text-muted-foreground" />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="z-50">
-                                    <p>
-                                      Este será o seu endereço de acesso ao
-                                      portal: meusubdominio.consolle.one
-                                    </p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          </label>
-                          <Input
-                            maxLength={15}
-                            value={subdomainValue}
-                            onChange={(e) => {
-                              const sanitized = e.target.value
-                                .replace(/[^a-zA-Z0-9À-ÿ\s]/g, "")
-                                .toLowerCase();
-                              setSubdomainValue(sanitized);
-                              // Limpar erro quando o usuário começar a digitar
-                              if (validationErrors.subdomain) {
-                                setValidationErrors((prev) => {
-                                  const newErrors = { ...prev };
-                                  delete newErrors.subdomain;
-                                  return newErrors;
-                                });
-                              }
-                            }}
-                            className={`w-full ${validationErrors.subdomain ? "border-red-500" : ""}`}
-                            placeholder="Meu subdomínio"
-                            name="subdomain"
-                          />
-                          {validationErrors.subdomain && (
-                            <p className="mt-1 text-xs text-red-500 font-medium">
-                              {validationErrors.subdomain}
-                            </p>
-                          )}
-                        </div>
-
                         {/* Upload de Imagem */}
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-2">
@@ -801,6 +767,11 @@ export default function CustomerWizardForm({
                       type="hidden"
                       name="customerId"
                       value={newCustomerId || ""}
+                    />
+                    <input
+                      type="hidden"
+                      name="subdomain"
+                      value={step1Subdomain || customizationData?.subdomain || ""}
                     />
                   </CardContent>
                 </>

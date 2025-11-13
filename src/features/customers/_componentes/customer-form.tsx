@@ -25,11 +25,17 @@ import { useRouter } from "next/navigation";
 interface CustomerFormProps {
   customer?: CustomerSchema;
   onSuccess?: (id: number) => void;
+  hideWrapper?: boolean;
+  subdomain?: string;
+  onSubdomainChange?: (subdomain: string) => void;
 }
 
 export default function CustomerFormm({
   customer,
   onSuccess,
+  hideWrapper = false,
+  subdomain = "",
+  onSubdomainChange,
 }: CustomerFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const isEditing = !!customer?.id;
@@ -84,6 +90,81 @@ export default function CustomerFormm({
     }
   };
 
+  const formFields = (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <FormField
+        control={form.control}
+        name="name"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>
+              Nome do ISO <span className="text-destructive">*</span>
+            </FormLabel>
+            <FormControl>
+              <Input
+                placeholder="Nome do cliente"
+                maxLength={200}
+                {...field}
+                onChange={(e) => {
+                  const sanitized = e.target.value.replace(
+                    /[^a-zA-Z0-9À-ÿ\s]/g,
+                    ""
+                  );
+                  field.onChange(sanitized);
+                }}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {hideWrapper && (
+        <div>
+          <FormLabel>
+            Domínio do ISO <span className="text-destructive">*</span>
+          </FormLabel>
+          <Input
+            value={subdomain}
+            onChange={(e) => {
+              const sanitized = e.target.value
+                .toLowerCase()
+                .replace(/[^a-z0-9-]/g, "");
+              if (onSubdomainChange) {
+                onSubdomainChange(sanitized);
+              }
+            }}
+            placeholder="meudominio"
+            maxLength={63}
+            className="w-full"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            {subdomain || "meudominio"}.consolle.one
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
+  if (hideWrapper) {
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {formFields}
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="cursor-pointer"
+            >
+              {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    );
+  }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -95,34 +176,7 @@ export default function CustomerFormm({
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Nome do ISO <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Nome do cliente"
-                        maxLength={200}
-                        {...field}
-                        onChange={(e) => {
-                          const sanitized = e.target.value.replace(
-                            /[^a-zA-Z0-9À-ÿ\s]/g,
-                            ""
-                          );
-                          field.onChange(sanitized);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {formFields}
 
             <div className="flex justify-end space-x-2 mt-4">
               <Button
