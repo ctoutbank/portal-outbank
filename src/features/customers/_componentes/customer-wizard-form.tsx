@@ -31,7 +31,6 @@ import {
   TooltipProvider,
 } from "@radix-ui/react-tooltip";
 import { TooltipTrigger } from "@/components/ui/tooltip";
-import CustomerActionButtons from "./buttonIsActive";
 
 interface CustomerWizardFormProps {
   customer: CustomerSchema;
@@ -456,13 +455,6 @@ export default function CustomerWizardForm({
                   )}
                 </div>
               )}
-
-              {/* Action Buttons (only when ISO exists) */}
-              {isFirstStepComplete && (
-                <div className="flex justify-end pt-8 border-t">
-                  <CustomerActionButtons isActive={customer.active ?? false} />
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -483,7 +475,6 @@ export default function CustomerWizardForm({
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              setValidationErrors({});
               setIsSavingCustomization(true);
 
               const formData = new FormData(e.currentTarget);
@@ -497,18 +488,10 @@ export default function CustomerWizardForm({
                 id: customizationData?.id,
               };
 
-              // Validar usando o schema
               const validationResult =
                 CustomizationSchema.safeParse(validationData);
 
               if (!validationResult.success) {
-                const errors: Record<string, string> = {};
-                validationResult.error.errors.forEach((error) => {
-                  if (error.path[0]) {
-                    errors[error.path[0] as string] = error.message;
-                  }
-                });
-                setValidationErrors(errors);
                 toast.error("Por favor, corrija os erros antes de continuar");
                 setIsSavingCustomization(false);
                 return;
