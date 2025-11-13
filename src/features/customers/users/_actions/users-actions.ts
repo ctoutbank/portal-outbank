@@ -18,7 +18,11 @@ interface InsertUserInput {
   active?: boolean;
 }
 
-export async function InsertUser(data: InsertUserInput) {
+type InsertUserResult = 
+  | { ok: true; userId: number; reused: boolean }
+  | { ok: false; code: 'invalid_email' | 'email_in_use' | 'unknown'; message: string };
+
+export async function InsertUser(data: InsertUserInput): Promise<InsertUserResult> {
   const {
     firstName,
     lastName,
@@ -27,6 +31,17 @@ export async function InsertUser(data: InsertUserInput) {
     idCustomer,
     active = true,
   } = data;
+
+  const normalizedEmail = email.trim().toLowerCase();
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(normalizedEmail)) {
+    return {
+      ok: false,
+      code: 'invalid_email',
+      message: 'E-mail inválido. Por favor, insira um e-mail válido.'
+    };
+  }
 
   const finalPassword =
     password && password.trim() !== ""
@@ -44,7 +59,11 @@ export async function InsertUser(data: InsertUserInput) {
     .execute();
 
   if (!adminProfile || adminProfile.length === 0) {
-    throw new Error("Profile ADMIN não encontrado no banco.");
+    return {
+      ok: false,
+      code: 'unknown',
+      message: 'Erro de configuração: Profile ADMIN não encontrado.'
+    };
   }
 
   const idProfile = adminProfile[0].id;
@@ -54,24 +73,69 @@ export async function InsertUser(data: InsertUserInput) {
     const existingUser = await db
       .select()
       .from(users)
-      .where(eq(users.email, email))
+      .where(eq(users.email, normalizedEmail))
       .limit(1);
 
     if (existingUser.length > 0) {
-      throw new Error("Usuário já existe com este email");
+      return {
+        ok: false,
+        code: 'email_in_use',
+        message: 'Este e-mail já está cadastrado no sistema. Por favor, utilize outro e-mail.'
+      };
     }
 
-    // Criação no Clerk
-    const clerk = await clerkClient(); // chamar a função e obter o cliente
-    const clerkUser = await clerk.users.createUser({
-      firstName,
-      lastName,
-      emailAddress: [email],
-      skipPasswordRequirement: true,
-      publicMetadata: {
-        isFirstLogin: true,
-      },
-    });
+    // Verificar se o usuário existe no Clerk mas não no banco
+    const clerk = await clerkClient();
+    let clerkUser;
+    
+    try {
+      const clerkUsers = await clerk.users.getUserList({
+        emailAddress: [normalizedEmail]
+      });
+      
+      if (clerkUsers.data.length > 0) {
+        clerkUser = clerkUsers.data[0];
+        
+        // Usuário existe no Clerk mas não no banco - criar registro no banco
+        const created = await db
+          .insert(users)
+          .values({
+            slug: generateSlug(),
+            dtinsert: new Date().toISOString(),
+            dtupdate: new Date().toISOString(),
+            active,
+            email: normalizedEmail,
+            idCustomer: idCustomer ?? null,
+            idClerk: clerkUser.id,
+            idProfile,
+            idAddress: null,
+            fullAccess: false,
+            hashedPassword,
+          })
+          .returning({ id: users.id });
+
+        return {
+          ok: true,
+          userId: created[0].id,
+          reused: true
+        };
+      }
+    } catch (clerkError) {
+      console.log("Erro ao buscar usuário no Clerk, continuando com criação:", clerkError);
+    }
+
+    // Criação no Clerk (usuário não existe em nenhum lugar)
+    if (!clerkUser) {
+      clerkUser = await clerk.users.createUser({
+        firstName,
+        lastName,
+        emailAddress: [normalizedEmail],
+        skipPasswordRequirement: true,
+        publicMetadata: {
+          isFirstLogin: true,
+        },
+      });
+    }
 
     // Criação no banco
     const created = await db
@@ -81,10 +145,10 @@ export async function InsertUser(data: InsertUserInput) {
         dtinsert: new Date().toISOString(),
         dtupdate: new Date().toISOString(),
         active,
-        email,
+        email: normalizedEmail,
         idCustomer: idCustomer ?? null,
         idClerk: clerkUser.id,
-        idProfile, // aqui usa o idProfile dinâmico
+        idProfile,
         idAddress: null,
         fullAccess: false,
         hashedPassword,
@@ -119,9 +183,13 @@ export async function InsertUser(data: InsertUserInput) {
       }
     }
 
-    await sendWelcomePasswordEmail(email, finalPassword, logo, customerName, link);
+    await sendWelcomePasswordEmail(normalizedEmail, finalPassword, logo, customerName, link);
 
-    return created[0].id;
+    return {
+      ok: true,
+      userId: created[0].id,
+      reused: false
+    };
   } catch (error: unknown) {
     console.error("Erro ao criar usuário:", error);
 
@@ -140,7 +208,11 @@ export async function InsertUser(data: InsertUserInput) {
       );
 
       if (duplicateEmailError) {
-        throw new Error("Usuário já existe com este email");
+        return {
+          ok: false,
+          code: 'email_in_use',
+          message: 'Este e-mail já está cadastrado no sistema. Por favor, utilize outro e-mail.'
+        };
       }
 
       // Verificar outros erros comuns do Clerk
@@ -151,7 +223,11 @@ export async function InsertUser(data: InsertUserInput) {
       );
 
       if (invalidEmailError) {
-        throw new Error("Email inválido ou já está em uso");
+        return {
+          ok: false,
+          code: 'invalid_email',
+          message: 'E-mail inválido ou já está em uso. Por favor, verifique o e-mail informado.'
+        };
       }
     }
 
@@ -162,7 +238,11 @@ export async function InsertUser(data: InsertUserInput) {
         error.includes("duplicate") ||
         error.includes("já existe"))
     ) {
-      throw new Error("Usuário já existe com este email");
+      return {
+        ok: false,
+        code: 'email_in_use',
+        message: 'Este e-mail já está cadastrado no sistema. Por favor, utilize outro e-mail.'
+      };
     }
 
     // Se for um Error object, verificar a mensagem
@@ -172,12 +252,20 @@ export async function InsertUser(data: InsertUserInput) {
         error.message.includes("duplicate") ||
         error.message.includes("já existe")
       ) {
-        throw new Error("Usuário já existe com este email");
+        return {
+          ok: false,
+          code: 'email_in_use',
+          message: 'Este e-mail já está cadastrado no sistema. Por favor, utilize outro e-mail.'
+        };
       }
     }
 
-    // Para outros erros, manter o comportamento original
-    throw error;
+    // Para outros erros, retornar erro genérico
+    return {
+      ok: false,
+      code: 'unknown',
+      message: 'Não foi possível criar o usuário. Por favor, tente novamente.'
+    };
   }
 }
 

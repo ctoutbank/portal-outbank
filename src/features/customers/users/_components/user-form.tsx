@@ -104,12 +104,21 @@ export default function UserCustomerForm({
         toast.success("Usuário atualizado com sucesso");
         if (onSuccess) onSuccess();
       } else {
-        await InsertUser({
+        const result = await InsertUser({
           ...data,
         });
-        toast.success("Usuário criado com sucesso");
-        form.reset();
-        if (onSuccess) onSuccess();
+        
+        if (result.ok) {
+          if (result.reused) {
+            toast.success("Usuário vinculado com sucesso ao ISO");
+          } else {
+            toast.success("Usuário criado com sucesso");
+          }
+          form.reset();
+          if (onSuccess) onSuccess();
+        } else {
+          toast.error(result.message);
+        }
       }
     } catch (error) {
       console.error("Erro ao salvar usuário:", error);
