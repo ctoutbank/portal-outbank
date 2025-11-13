@@ -357,14 +357,279 @@ export default function CustomerWizardForm({
         </TabsList>
 
         <TabsContent value="step1" className="space-y-4">
-          <Card className="border-0 shadow-none">
-            <CardContent className="p-0">
-              <CustomerForm
-                customer={customer}
-                onSuccess={handleFirstStepComplete}
-              />
-            </CardContent>
-          </Card>
+          {/* 2-Column Layout: 60% Form / 40% Preview */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            {/* Left Column (60% - 3/5 cols) - Forms */}
+            <div className="lg:col-span-3 space-y-6">
+              {/* CARD 1: Dados do ISO */}
+              <Card className="border-0 shadow-none">
+                <CardContent className="p-0">
+                  <CustomerForm
+                    customer={customer}
+                    onSuccess={handleFirstStepComplete}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* CARD 2: Personalização */}
+              {isFirstStepComplete && (
+                <Card className="border-1">
+                  <CardHeader className="border-b border-border">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
+                      <Palette className="h-5 w-5" />
+                      Personalização
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        setValidationErrors({});
+                        setIsSavingCustomization(true);
+
+                        const formData = new FormData(e.currentTarget);
+
+                        const validationData = {
+                          subdomain: subdomainValue,
+                          primaryColor: formData.get("primaryColor") as string,
+                          secondaryColor: formData.get("secondaryColor") as string,
+                          image: formData.get("image"),
+                          customerId: formData.get("customerId") as string,
+                          id: customizationData?.id,
+                        };
+
+                        const validationResult = CustomizationSchema.safeParse(validationData);
+
+                        if (!validationResult.success) {
+                          const errors: Record<string, string> = {};
+                          validationResult.error.errors.forEach((error) => {
+                            if (error.path[0]) {
+                              errors[error.path[0] as string] = error.message;
+                            }
+                          });
+                          setValidationErrors(errors);
+                          toast.error("Por favor, corrija os erros antes de continuar");
+                          setIsSavingCustomization(false);
+                          return;
+                        }
+
+                        try {
+                          if (customizationData) {
+                            await updateCustomization(formData);
+                          } else {
+                            await saveCustomization(formData);
+                          }
+
+                          if (newCustomerId) {
+                            const updatedCustomization = await getCustomizationByCustomerId(newCustomerId);
+                            if (updatedCustomization) {
+                              setCustomizationData({
+                                imageUrl: updatedCustomization.imageUrl ?? undefined,
+                                loginImageUrl: updatedCustomization.loginImageUrl ?? undefined,
+                                id: updatedCustomization.id ?? 0,
+                                subdomain: updatedCustomization.name ?? undefined,
+                                primaryColor: updatedCustomization.primaryColor ?? undefined,
+                                secondaryColor: updatedCustomization.secondaryColor ?? undefined,
+                              });
+                            }
+                          }
+
+                          toast.success("Customização salva com sucesso!");
+                        } catch (error) {
+                          console.error("Erro ao salvar a customização", error);
+                          toast.error("Erro ao salvar a customização");
+                        } finally {
+                          setIsSavingCustomization(false);
+                        }
+                      }}
+                      className="space-y-6"
+                    >
+                      {/* Subdomínio */}
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-1">
+                          <div className="flex items-center gap-1">
+                            <span>Nome do subdomínio</span>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button type="button" className="text-muted-foreground p-1">
+                                    <Info className="w-4 h-4 text-muted-foreground" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="z-50">
+                                  <p>Este será o seu endereço de acesso ao portal: meusubdominio.consolle.one</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        </label>
+                        <Input
+                          maxLength={15}
+                          value={subdomainValue}
+                          onChange={(e) => {
+                            const sanitized = e.target.value.replace(/[^a-zA-Z0-9À-ÿ\s]/g, "").toLowerCase();
+                            setSubdomainValue(sanitized);
+                            if (validationErrors.subdomain) {
+                              setValidationErrors((prev) => {
+                                const newErrors = { ...prev };
+                                delete newErrors.subdomain;
+                                return newErrors;
+                              });
+                            }
+                          }}
+                          className={`w-full ${validationErrors.subdomain ? "border-red-500" : ""}`}
+                          placeholder="Meu subdomínio"
+                          name="subdomain"
+                        />
+                        {validationErrors.subdomain && (
+                          <p className="mt-1 text-xs text-red-500 font-medium">{validationErrors.subdomain}</p>
+                        )}
+                      </div>
+
+                      {/* Cores */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-1">
+                            <div className="flex items-center gap-1">
+                              <span>Cor Primária</span>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button type="button" className="text-foreground p-1">
+                                      <Info className="w-4 h-4 text-muted-foreground" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    <p>A cor primária deve ser uma cor escura.</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </label>
+                          <input
+                            type="color"
+                            name="primaryColor"
+                            defaultValue={customizationData?.primaryColor ? hslToHex(customizationData.primaryColor) : "#ffffff"}
+                            className="h-10 w-full p-0 border rounded cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-1">Cor Secundária</label>
+                          <input
+                            type="color"
+                            name="secondaryColor"
+                            defaultValue={customizationData?.secondaryColor ? hslToHex(customizationData.secondaryColor) : "#ffffff"}
+                            className="h-10 w-full p-0 border rounded cursor-pointer"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Upload de Logo */}
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Imagem ou Logotipo</label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png"
+                          name="image"
+                          id="image"
+                          onChange={handleImageChange}
+                          className="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-secondary file:text-gray-700 hover:file:bg-gray-300 file:cursor-pointer dark:file:bg-white"
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">Apenas arquivos nos formatos JPG, JPEG e PNG são aceitos</p>
+                        {imageError && <p className="mt-1 text-xs text-red-500 font-medium">{imageError}</p>}
+                      </div>
+
+                      {imagePreview && (
+                        <div>
+                          <p className="text-sm text-foreground mb-1">Pré-visualização:</p>
+                          <Image src={imagePreview} alt="image preview" height={100} width={100} />
+                        </div>
+                      )}
+
+                      {customizationData?.imageUrl && !imagePreview && (
+                        <div>
+                          <p className="text-sm text-foreground mb-1">Logo atual:</p>
+                          <Image src={customizationData.imageUrl} alt="" height={100} width={100} />
+                        </div>
+                      )}
+
+                      {/* Upload de Imagem de Login */}
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Imagem de Fundo do Login</label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png"
+                          name="loginImage"
+                          id="loginImage"
+                          onChange={handleLoginImageChange}
+                          className="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-secondary file:text-gray-700 hover:file:bg-gray-300 file:cursor-pointer dark:file:bg-white"
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">Imagem que será exibida como fundo na tela de login (JPG, JPEG, PNG - máx. 5MB)</p>
+                        {loginImageError && <p className="mt-1 text-xs text-red-500 font-medium">{loginImageError}</p>}
+                      </div>
+
+                      {loginImagePreview && (
+                        <div className="mt-4">
+                          <p className="text-sm text-foreground mb-2">Preview da Imagem de Fundo:</p>
+                          <div className="border rounded-lg overflow-hidden">
+                            <Image src={loginImagePreview} alt="Login background preview" width={400} height={225} className="w-full h-48 object-cover" />
+                          </div>
+                        </div>
+                      )}
+
+                      {customizationData?.loginImageUrl && !loginImagePreview && (
+                        <div className="mt-4">
+                          <p className="text-sm text-foreground mb-2">Imagem de fundo atual:</p>
+                          <div className="border rounded-lg overflow-hidden">
+                            <Image src={customizationData.loginImageUrl} alt="Current login background" width={400} height={225} className="w-full h-48 object-cover" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Upload de Favicon */}
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">Favicon</label>
+                        <input
+                          type="file"
+                          accept="image/x-icon,image/vnd.microsoft.icon,image/ico,image/png"
+                          name="favicon"
+                          id="favicon"
+                          className="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-secondary file:text-gray-700 hover:file:bg-gray-300 file:cursor-pointer dark:file:bg-white"
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">Ícone que aparecerá na aba do navegador (ICO, PNG - 16x16 ou 32x32 pixels)</p>
+                      </div>
+
+                      {customizationData?.id && <input type="hidden" name="id" value={customizationData.id} />}
+                      <input type="hidden" name="customerId" value={newCustomerId || ""} />
+
+                      <div className="flex justify-end">
+                        <Button type="submit" className="cursor-pointer" disabled={isSavingCustomization}>
+                          {isSavingCustomization ? "Salvando..." : "Salvar personalização"}
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Right Column (40% - 2/5 cols) - Preview */}
+            <div className="lg:col-span-2">
+              <Card className="border-1 sticky top-4">
+                <CardHeader className="border-b border-border">
+                  <CardTitle className="text-sm font-medium">Preview em Tempo Real</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="text-center text-sm text-muted-foreground">
+                    <p>Preview da tela de login será exibido aqui</p>
+                    <p className="mt-2 text-xs">(Em desenvolvimento)</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Footer Buttons */}
           <div className="flex justify-end gap-2 mt-4">
             <Button
               variant="outline"
