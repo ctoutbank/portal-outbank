@@ -243,6 +243,49 @@ export default function CustomerWizardForm({
     onCustomerCreated(id);
   };
 
+  // Função para salvar rascunho sem validações obrigatórias
+  const handleSaveDraft = async () => {
+    if (!newCustomerId) {
+      toast.error("Crie o ISO primeiro antes de salvar o rascunho");
+      return;
+    }
+
+    setIsSavingCustomization(true);
+    try {
+      const form = document.getElementById("customizationForm") as HTMLFormElement;
+      if (form) {
+        const formData = new FormData(form);
+        
+        if (customizationData) {
+          await updateCustomization(formData);
+        } else {
+          await saveCustomization(formData);
+        }
+
+        if (newCustomerId) {
+          const updatedCustomization = await getCustomizationByCustomerId(newCustomerId);
+          if (updatedCustomization) {
+            setCustomizationData({
+              imageUrl: updatedCustomization.imageUrl ?? undefined,
+              loginImageUrl: updatedCustomization.loginImageUrl ?? undefined,
+              id: updatedCustomization.id ?? 0,
+              subdomain: updatedCustomization.name ?? undefined,
+              primaryColor: updatedCustomization.primaryColor ?? undefined,
+              secondaryColor: updatedCustomization.secondaryColor ?? undefined,
+            });
+          }
+        }
+
+        toast.success("Rascunho salvo com sucesso!");
+      }
+    } catch (error) {
+      console.error("Erro ao salvar rascunho", error);
+      toast.error("Erro ao salvar rascunho");
+    } finally {
+      setIsSavingCustomization(false);
+    }
+  };
+
   // Função para recarregar a lista de usuários
   const loadUsers = async (customerId: number) => {
     const users = await getUsersWithClerk(customerId);
@@ -393,6 +436,7 @@ export default function CustomerWizardForm({
                   </CardHeader>
                   <CardContent className="pt-6">
                     <form
+                      id="customizationForm"
                       onSubmit={async (e) => {
                         e.preventDefault();
                         setValidationErrors({});
@@ -759,7 +803,15 @@ export default function CustomerWizardForm({
           </div>
 
           {/* Footer Buttons */}
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex justify-between gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={handleSaveDraft}
+              disabled={!isFirstStepComplete || isSavingCustomization}
+              className="cursor-pointer"
+            >
+              Salvar Rascunho
+            </Button>
             <Button
               variant="outline"
               onClick={() => handleStepChange("step2")}
