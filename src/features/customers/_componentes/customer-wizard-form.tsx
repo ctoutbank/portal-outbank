@@ -75,8 +75,7 @@ export default function CustomerWizardForm({
     if (stepFromUrl !== activeTab) {
       setActiveTab(stepFromUrl);
     }
-  
-  }, [stepFromUrl]);
+  }, [stepFromUrl, activeTab]);
 
   useEffect(() => {
     const loadCustomization = async () => {
@@ -88,7 +87,7 @@ export default function CustomerWizardForm({
           setCustomizationData({
             imageUrl: response.imageUrl ?? undefined,
             id: response.id ?? 0,
-            subdomain: response.name ?? undefined,
+            subdomain: response.slug ?? undefined,
             primaryColor: response.primaryColor ?? undefined,
             secondaryColor: response.secondaryColor ?? undefined,
             loginImageUrl: response.loginImageUrl ?? undefined,
@@ -314,49 +313,38 @@ export default function CustomerWizardForm({
         onValueChange={handleStepChange}
         className="space-y-6"
       >
-        {/* Progress Indicator */}
+        {/* Progress Indicator - 2 Steps */}
         <div className="mb-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between max-w-md mx-auto">
             <div className="flex items-center gap-2">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${isFirstStepComplete ? 'bg-green-600 text-white' : activeTab === 'step1' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-medium ${isFirstStepComplete ? 'bg-green-600 text-white' : activeTab === 'step1' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                 {isFirstStepComplete ? '✓' : '1'}
               </div>
-              <span className={`text-sm font-medium hidden sm:inline ${activeTab === 'step1' ? 'text-foreground' : 'text-muted-foreground'}`}>
-                Criar ISO
+              <span className={`text-sm font-medium ${activeTab === 'step1' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                ISO + Usuários
               </span>
             </div>
-            <div className="flex-1 h-1 mx-2 sm:mx-4 bg-muted rounded-full overflow-hidden">
+            <div className="flex-1 h-1 mx-4 bg-muted rounded-full overflow-hidden">
               <div className={`h-full transition-all duration-300 ${isFirstStepComplete ? 'bg-green-600 w-full' : 'bg-muted w-0'}`} />
             </div>
             <div className="flex items-center gap-2">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${activeTab === 'step2' && isFirstStepComplete ? 'bg-primary text-primary-foreground' : isFirstStepComplete ? 'bg-muted text-muted-foreground' : 'bg-muted text-muted-foreground'}`}>
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-medium ${activeTab === 'step2' && isFirstStepComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                 2
               </div>
-              <span className={`text-sm font-medium hidden sm:inline ${activeTab === 'step2' ? 'text-foreground' : 'text-muted-foreground'}`}>
+              <span className={`text-sm font-medium ${activeTab === 'step2' ? 'text-foreground' : 'text-muted-foreground'}`}>
                 Personalização
-              </span>
-            </div>
-            <div className="flex-1 h-1 mx-2 sm:mx-4 bg-muted rounded-full overflow-hidden">
-              <div className={`h-full transition-all duration-300 ${activeTab === 'step3' ? 'bg-primary w-full' : 'bg-muted w-0'}`} />
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${activeTab === 'step3' && isFirstStepComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                3
-              </div>
-              <span className={`text-sm font-medium hidden sm:inline ${activeTab === 'step3' ? 'text-foreground' : 'text-muted-foreground'}`}>
-                Usuários
               </span>
             </div>
           </div>
         </div>
 
-        <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted">
+        <TabsList className="grid w-full grid-cols-2 h-auto p-1 bg-muted">
           <TabsTrigger
             value="step1"
             className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-2 sm:px-4 data-[state=active]:bg-background data-[state=active]:text-foreground"
             onMouseDown={(e) => handleTabClick("step1", e)}
           >
-            1. Criar ISO
+            1. ISO + Usuários
           </TabsTrigger>
           <TabsTrigger
             value="step2"
@@ -365,24 +353,81 @@ export default function CustomerWizardForm({
           >
             2. Personalização
           </TabsTrigger>
-          <TabsTrigger
-            value="step3"
-            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-2 sm:px-4 data-[state=active]:bg-background data-[state=active]:text-foreground "
-            onMouseDown={(e) => handleTabClick("step3", e)}
-          >
-            3. Configurar Usuários
-          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="step1" className="space-y-4">
+        <TabsContent value="step1" className="space-y-6">
+          {/* Card 1: Criar ISO */}
           <Card className="border-0 shadow-none">
-            <CardContent className="p-0">
+            <CardHeader>
+              <CardTitle>Informações do ISO</CardTitle>
+            </CardHeader>
+            <CardContent>
               <CustomerForm
                 customer={customer}
                 onSuccess={handleFirstStepComplete}
               />
             </CardContent>
           </Card>
+
+          {/* Card 2: Gerenciar Usuários (só aparece após criar ISO) */}
+          {isFirstStepComplete && (
+            <Card className="border-0 shadow-none">
+              <CardHeader>
+                <CardTitle>Gerenciar Usuários</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedUser === null ? (
+                  <div className="space-y-6">
+                    <UserCustomerForm
+                      customerId={newCustomerId || undefined}
+                      onSuccess={handleUserSuccess}
+                      profiles={profiles}
+                    />
+
+                    {isLoadingUsers ? (
+                      <div className="text-center p-8">
+                        <p>Carregando usuários...</p>
+                      </div>
+                    ) : (
+                      <UsersCustomerList
+                        users={users}
+                        customerId={newCustomerId || 0}
+                        onRefresh={() => loadUsers(newCustomerId || 0)}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-medium">Editar Usuário</h3>
+                      <Button
+                        variant="outline"
+                        onClick={() => setSelectedUser(null)}
+                        className="cursor-pointer"
+                      >
+                        Voltar
+                      </Button>
+                    </div>
+
+                    {isLoadingUser ? (
+                      <div className="text-center p-4">
+                        <p>Carregando dados do usuário...</p>
+                      </div>
+                    ) : (
+                      <UserCustomerForm
+                        user={userToEdit || undefined}
+                        customerId={newCustomerId || undefined}
+                        onSuccess={handleUserSuccess}
+                        profiles={profiles}
+                      />
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Navigation */}
           <div className="flex justify-end gap-2 mt-4">
             <Button
               variant="outline"
@@ -446,11 +491,12 @@ export default function CustomerWizardForm({
                     setCustomizationData({
                       imageUrl: updatedCustomization.imageUrl ?? undefined,
                       id: updatedCustomization.id ?? 0,
-                      subdomain: updatedCustomization.name ?? undefined,
+                      subdomain: updatedCustomization.slug ?? undefined,
                       primaryColor:
                         updatedCustomization.primaryColor ?? undefined,
                       secondaryColor:
                         updatedCustomization.secondaryColor ?? undefined,
+                      loginImageUrl: updatedCustomization.loginImageUrl ?? undefined,
                     });
                   }
                 }
@@ -770,85 +816,11 @@ export default function CustomerWizardForm({
               </div>
             </Card>
           </form>
-          <div className="flex justify-between space-x-2 mt-4 p-1">
+          <div className="flex justify-start gap-2 mt-4 p-1">
             <Button
               variant="outline"
               className="cursor-pointer"
               onClick={() => handleStepChange("step1")}
-            >
-              ← Voltar
-            </Button>
-            <Button
-              variant="outline"
-              className="cursor-pointer"
-              onClick={() => handleStepChange("step3")}
-            >
-              Próximo →
-            </Button>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="step3" className="space-y-4">
-          <Card className="border-0 shadow-none">
-            {isFirstStepComplete && (
-              <>
-                {selectedUser === null ? (
-                  <div className="space-y-6">
-                    <UserCustomerForm
-                      customerId={newCustomerId || undefined}
-                      onSuccess={handleUserSuccess}
-                      profiles={profiles}
-                    />
-
-                    {isLoadingUsers ? (
-                      <div className="text-center p-8">
-                        <p>Carregando usuários...</p>
-                      </div>
-                    ) : (
-                      <UsersCustomerList
-                        users={users}
-                        customerId={newCustomerId || 0}
-                        onRefresh={() => loadUsers(newCustomerId || 0)}
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <Card>
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium">Editar Usuário</h3>
-                        <Button
-                          variant="outline"
-                          onClick={() => setSelectedUser(null)}
-                          className="cursor-pointer"
-                        >
-                          Voltar
-                        </Button>
-                      </div>
-
-                      {isLoadingUser ? (
-                        <div className="text-center p-4">
-                          <p>Carregando dados do usuário...</p>
-                        </div>
-                      ) : (
-                        <UserCustomerForm
-                          user={userToEdit || undefined}
-                          customerId={newCustomerId || undefined}
-                          onSuccess={handleUserSuccess}
-                          profiles={profiles}
-                        />
-                      )}
-                    </Card>
-                  </div>
-                )}
-              </>
-            )}
-          </Card>
-          <div className="flex justify-start gap-2 mt-4">
-            <Button
-              variant="outline"
-              className="cursor-pointer"
-              onClick={() => handleStepChange("step2")}
             >
               ← Voltar
             </Button>

@@ -13,12 +13,14 @@ interface StatusBadgeProps {
   isActive: boolean;
   hasCustomization?: boolean;
   hasUsers?: number;
+  subdomain?: string;
 }
 
 export function StatusBadge({
   isActive,
   hasCustomization = false,
   hasUsers = 0,
+  subdomain,
 }: StatusBadgeProps) {
   if (!isActive) {
     return (
@@ -38,7 +40,7 @@ export function StatusBadge({
     );
   }
 
-  if (hasCustomization && hasUsers > 0) {
+  if (hasCustomization && hasUsers > 0 && subdomain) {
     return (
       <TooltipProvider>
         <Tooltip>
@@ -56,6 +58,9 @@ export function StatusBadge({
             <p className="text-xs text-muted-foreground">
               ✓ {hasUsers} usuário(s) cadastrado(s)
             </p>
+            <p className="text-xs text-muted-foreground">
+              ✓ Subdomínio configurado
+            </p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -68,7 +73,7 @@ export function StatusBadge({
         <TooltipTrigger asChild>
           <Badge className="gap-1 bg-amber-500 hover:bg-amber-600">
             <AlertCircle className="h-3 w-3" />
-            Em Configuração
+            Incompleto
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
@@ -81,6 +86,11 @@ export function StatusBadge({
           {hasUsers === 0 && (
             <p className="text-xs text-muted-foreground">
               ⚠ Falta cadastrar usuários
+            </p>
+          )}
+          {!subdomain && (
+            <p className="text-xs text-muted-foreground">
+              ⚠ Falta configurar subdomínio
             </p>
           )}
         </TooltipContent>
