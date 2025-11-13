@@ -1,6 +1,6 @@
 "use server";
 import { db } from "@/db/drizzle";
-import { customers, customerCustomization, users } from "../../../../drizzle/schema";
+import { customers, customerCustomization } from "../../../../drizzle/schema";
 import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { CustomerSchema } from "../schema/schema";
 
@@ -238,10 +238,6 @@ export async function getCustomerStatistics(): Promise<{
   createdThisMonth: number;
   createdLastWeek: number;
 }> {
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
   const activeResult = await db
     .select({ count: count() })
     .from(customers)
