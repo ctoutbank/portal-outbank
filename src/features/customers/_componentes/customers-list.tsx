@@ -10,8 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { ChevronDown } from "lucide-react";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { ChevronDown, ExternalLink } from "lucide-react";
 
 export default function CustomersList({
   Customers,
@@ -35,6 +35,14 @@ export default function CustomersList({
               </TableHead>
 
               <TableHead>
+                Subdomínio
+              </TableHead>
+
+              <TableHead>
+                Usuários
+              </TableHead>
+
+              <TableHead>
                 Status
               </TableHead>
             </TableRow>
@@ -52,15 +60,31 @@ export default function CustomersList({
                 </TableCell>
                 <TableCell>{customer.settlementManagementType}</TableCell>
                 <TableCell>
-                  {customer.isActive ? (
-                    <Badge variant="default" className="bg-green-600">
-                      Ativo
-                    </Badge>
+                  {customer.subdomain ? (
+                    <a
+                      href={`https://${customer.subdomain}.consolle.one`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline inline-flex items-center gap-1"
+                    >
+                      {customer.subdomain}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                   ) : (
-                    <Badge variant="secondary">
-                      Inativo
-                    </Badge>
+                    <span className="text-muted-foreground text-sm">--</span>
                   )}
+                </TableCell>
+                <TableCell>
+                  <span className="text-sm">
+                    {customer.userCount || 0}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <StatusBadge
+                    isActive={customer.isActive ?? true}
+                    hasCustomization={customer.hasCustomization}
+                    hasUsers={customer.userCount}
+                  />
                 </TableCell>
               </TableRow>
             ))}

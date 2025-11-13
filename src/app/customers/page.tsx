@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 
 import CustomersList from "@/features/customers/_componentes/customers-list";
 import { CustomersFilter } from "@/features/customers/_componentes/custumers-filter";
-import { getCustomers } from "@/features/customers/server/customers";
+import { getCustomers, getCustomerStatistics } from "@/features/customers/server/customers";
+import { ISOStatisticsCards } from "@/features/customers/_componentes/iso-statistics-cards";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 
@@ -41,6 +42,8 @@ export default async function Customerspage({
     params.settlementManagementType || ""
   );
 
+  const statistics = await getCustomerStatistics();
+
   const totalCount = customers.totalCount;
 
   return (
@@ -67,11 +70,12 @@ export default async function Customerspage({
             </Button>
           </div>
 
-          <div className="flex items-start justify-between gap-4">
-            <div className="max-w-md">
-              {/* Aqui você pode adicionar um componente de dashboard similar ao SalesAgentDashboardContent */}
-            </div>
-          </div>
+          <ISOStatisticsCards
+            totalActive={statistics.totalActive}
+            totalInactive={statistics.totalInactive}
+            createdThisMonth={statistics.createdThisMonth}
+            createdLastWeek={statistics.createdLastWeek}
+          />
 
           <CustomersList
             Customers={{

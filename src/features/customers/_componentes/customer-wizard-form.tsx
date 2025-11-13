@@ -135,31 +135,31 @@ export default function CustomerWizardForm({
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [loginImagePreview, setLoginImagePreview] = useState<string | null>(null);
+  const [loginImageError, setLoginImageError] = useState<string | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    setImageError(null); // Limpa erros anteriores
+    setImageError(null);
 
     if (file) {
-      // Validação de extensão
       const allowedExtensions = ["jpg", "jpeg", "png"];
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
 
       if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
         setImageError("Apenas arquivos JPG, JPEG e PNG são aceitos");
         setImagePreview(null);
-        e.target.value = ""; // Limpa o input
+        e.target.value = "";
         return;
       }
 
-      // Validação de tipo MIME
       const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
       if (!allowedMimeTypes.includes(file.type)) {
         setImageError(
           "Formato de arquivo inválido. Apenas JPG, JPEG e PNG são aceitos"
         );
         setImagePreview(null);
-        e.target.value = ""; // Limpa o input
+        e.target.value = "";
         return;
       }
 
@@ -170,6 +170,49 @@ export default function CustomerWizardForm({
       reader.readAsDataURL(file);
     } else {
       setImagePreview(null);
+    }
+  };
+
+  const handleLoginImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setLoginImageError(null);
+
+    if (file) {
+      const allowedExtensions = ["jpg", "jpeg", "png"];
+      const fileExtension = file.name.split(".").pop()?.toLowerCase();
+
+      if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+        setLoginImageError("Apenas arquivos JPG, JPEG e PNG são aceitos");
+        setLoginImagePreview(null);
+        e.target.value = "";
+        return;
+      }
+
+      const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
+      if (!allowedMimeTypes.includes(file.type)) {
+        setLoginImageError(
+          "Formato de arquivo inválido. Apenas JPG, JPEG e PNG são aceitos"
+        );
+        setLoginImagePreview(null);
+        e.target.value = "";
+        return;
+      }
+
+      const MAX_SIZE = 5 * 1024 * 1024;
+      if (file.size > MAX_SIZE) {
+        setLoginImageError("Arquivo muito grande. Tamanho máximo: 5MB");
+        setLoginImagePreview(null);
+        e.target.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLoginImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setLoginImagePreview(null);
     }
   };
 
@@ -522,6 +565,7 @@ export default function CustomerWizardForm({
                             accept="image/jpeg,image/jpg,image/png"
                             name="loginImage"
                             id="loginImage"
+                            onChange={handleLoginImageChange}
                             className="block w-full text-sm text-foreground
                               file:mr-4 file:py-2 file:px-4
                               file:rounded file:border-0
@@ -532,9 +576,50 @@ export default function CustomerWizardForm({
                               dark:file:bg-white"
                           />
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Imagem que será exibida como fundo na tela de login (JPG, JPEG, PNG)
+                            Imagem que será exibida como fundo na tela de login (JPG, JPEG, PNG - máx. 5MB)
                           </p>
+                          {loginImageError && (
+                            <p className="mt-1 text-xs text-red-500 font-medium">
+                              {loginImageError}
+                            </p>
+                          )}
                         </div>
+
+                        {/* Preview da Imagem de Login */}
+                        {loginImagePreview && (
+                          <div className="mt-4">
+                            <p className="text-sm text-foreground mb-2">
+                              Preview da Imagem de Fundo:
+                            </p>
+                            <div className="border rounded-lg overflow-hidden">
+                              <Image
+                                src={loginImagePreview}
+                                alt="Login background preview"
+                                width={400}
+                                height={225}
+                                className="w-full h-48 object-cover"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Preview da Imagem de Login Atual */}
+                        {customizationData?.loginImageUrl && !loginImagePreview && (
+                          <div className="mt-4">
+                            <p className="text-sm text-foreground mb-2">
+                              Imagem de fundo atual:
+                            </p>
+                            <div className="border rounded-lg overflow-hidden">
+                              <Image
+                                src={customizationData.loginImageUrl}
+                                alt="Current login background"
+                                width={400}
+                                height={225}
+                                className="w-full h-48 object-cover"
+                              />
+                            </div>
+                          </div>
+                        )}
 
                         {/* Upload de Favicon */}
                         <div>
