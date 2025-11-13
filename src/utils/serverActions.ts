@@ -104,7 +104,7 @@ export async function getCustomizationBySubdomain(
   subdomain: string
 ): Promise<CustomerCustomization | null> {
   try {
-    const result = await db
+    let result = await db
       .select({
         id: customerCustomization.id,
         name: customerCustomization.name,
@@ -121,6 +121,31 @@ export async function getCustomizationBySubdomain(
       .leftJoin(file, eq(customerCustomization.fileId, file.id))
       .where(eq(customerCustomization.slug, subdomain))
       .limit(1);
+
+    if (result.length === 0) {
+      console.log(`[getCustomizationBySubdomain] No record found for slug="${subdomain}", trying fallback by name`);
+      result = await db
+        .select({
+          id: customerCustomization.id,
+          name: customerCustomization.name,
+          slug: customerCustomization.slug,
+          primaryColor: customerCustomization.primaryColor,
+          secondaryColor: customerCustomization.secondaryColor,
+          imageUrl: file.fileUrl,
+          imageUrlDirect: customerCustomization.imageUrl,
+          loginImageUrl: customerCustomization.loginImageUrl,
+          faviconUrl: customerCustomization.faviconUrl,
+          customerId: customerCustomization.customerId,
+        })
+        .from(customerCustomization)
+        .leftJoin(file, eq(customerCustomization.fileId, file.id))
+        .where(eq(customerCustomization.name, subdomain))
+        .limit(1);
+      
+      if (result.length > 0) {
+        console.log(`[getCustomizationBySubdomain] Found record by name fallback for "${subdomain}"`);
+      }
+    }
 
     const row = result[0];
     if (!row) return null;

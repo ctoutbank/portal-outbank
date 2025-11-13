@@ -356,76 +356,78 @@ export default function CustomerWizardForm({
         </TabsList>
 
         <TabsContent value="step1" className="space-y-6">
-          {/* Card 1: Criar ISO */}
-          <Card className="border-0 shadow-none">
-            <CardHeader>
-              <CardTitle>Informações do ISO</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CustomerForm
-                customer={customer}
-                onSuccess={handleFirstStepComplete}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Card 2: Gerenciar Usuários (só aparece após criar ISO) */}
-          {isFirstStepComplete && (
+          <div className={`grid gap-6 ${isFirstStepComplete ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+            {/* Card 1: Criar ISO */}
             <Card className="border-0 shadow-none">
               <CardHeader>
-                <CardTitle>Gerenciar Usuários</CardTitle>
+                <CardTitle>Informações do ISO</CardTitle>
               </CardHeader>
               <CardContent>
-                {selectedUser === null ? (
-                  <div className="space-y-6">
-                    <UserCustomerForm
-                      customerId={newCustomerId || undefined}
-                      onSuccess={handleUserSuccess}
-                      profiles={profiles}
-                    />
+                <CustomerForm
+                  customer={customer}
+                  onSuccess={handleFirstStepComplete}
+                />
+              </CardContent>
+            </Card>
 
-                    {isLoadingUsers ? (
-                      <div className="text-center p-8">
-                        <p>Carregando usuários...</p>
-                      </div>
-                    ) : (
-                      <UsersCustomerList
-                        users={users}
-                        customerId={newCustomerId || 0}
-                        onRefresh={() => loadUsers(newCustomerId || 0)}
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-medium">Editar Usuário</h3>
-                      <Button
-                        variant="outline"
-                        onClick={() => setSelectedUser(null)}
-                        className="cursor-pointer"
-                      >
-                        Voltar
-                      </Button>
-                    </div>
-
-                    {isLoadingUser ? (
-                      <div className="text-center p-4">
-                        <p>Carregando dados do usuário...</p>
-                      </div>
-                    ) : (
+            {/* Card 2: Gerenciar Usuários (só aparece após criar ISO) */}
+            {isFirstStepComplete && (
+              <Card className="border-0 shadow-none">
+                <CardHeader>
+                  <CardTitle>Gerenciar Usuários</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {selectedUser === null ? (
+                    <div className="space-y-6">
                       <UserCustomerForm
-                        user={userToEdit || undefined}
                         customerId={newCustomerId || undefined}
                         onSuccess={handleUserSuccess}
                         profiles={profiles}
                       />
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+
+                      {isLoadingUsers ? (
+                        <div className="text-center p-8">
+                          <p>Carregando usuários...</p>
+                        </div>
+                      ) : (
+                        <UsersCustomerList
+                          users={users}
+                          customerId={newCustomerId || 0}
+                          onRefresh={() => loadUsers(newCustomerId || 0)}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">Editar Usuário</h3>
+                        <Button
+                          variant="outline"
+                          onClick={() => setSelectedUser(null)}
+                          className="cursor-pointer"
+                        >
+                          Voltar
+                        </Button>
+                      </div>
+
+                      {isLoadingUser ? (
+                        <div className="text-center p-4">
+                          <p>Carregando dados do usuário...</p>
+                        </div>
+                      ) : (
+                        <UserCustomerForm
+                          user={userToEdit || undefined}
+                          customerId={newCustomerId || undefined}
+                          onSuccess={handleUserSuccess}
+                          profiles={profiles}
+                        />
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
           {/* Navigation */}
           <div className="flex justify-end gap-2 mt-4">
