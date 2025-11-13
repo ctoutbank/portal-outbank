@@ -21,6 +21,7 @@ type CustomersPageProps = {
   name?: string;
   customerId?: string;
   settlementManagementType?: string;
+  status?: string;
 };
 
 export default async function Customerspage({
@@ -39,7 +40,10 @@ export default async function Customerspage({
     page,
     perPage,
     params.customerId || "",
-    params.settlementManagementType || ""
+    params.settlementManagementType || "",
+    "id",
+    "desc",
+    params.status || ""
   );
 
   const statistics = await getCustomerStatistics();
@@ -60,6 +64,7 @@ export default async function Customerspage({
                 settlementManagementTypeIn={
                   params.settlementManagementType || ""
                 }
+                statusIn={params.status || ""}
               />
             </div>
             <Button asChild className="ml-2">

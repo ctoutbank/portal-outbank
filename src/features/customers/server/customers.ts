@@ -15,7 +15,8 @@ export async function getCustomers(
   customerId?: string,
   settlementManagementType?: string,
   sortField: keyof typeof customers.$inferSelect = "id",
-  sortOrder: "asc" | "desc" = "desc"
+  sortOrder: "asc" | "desc" = "desc",
+  status?: string
 ): Promise<{
   customers: CustomerFull[];
   totalCount: number;
@@ -47,7 +48,11 @@ export async function getCustomers(
     );
   }
 
-  // whereConditions.push(eq(customers.isActive, true));
+  if (status === "active") {
+    whereConditions.push(eq(customers.isActive, true));
+  } else if (status === "inactive") {
+    whereConditions.push(eq(customers.isActive, false));
+  }
 
   const orderByClauses = [desc(customers.isActive)];
   

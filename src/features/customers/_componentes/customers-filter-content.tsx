@@ -1,26 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
-
-
-
 
 type CustomersFilterContentProps = {
     namein?: string;
-   
     settlementManagementTypein?: string;
-    onFilter: (namein: string, settlementManagementType: string) => void;
+    statusin?: string;
+    onFilter: (namein: string, settlementManagementType: string, status: string) => void;
     onClose: () => void;
 }
 
-export function CustomersFilterContent({namein, settlementManagementTypein, onFilter, onClose}: CustomersFilterContentProps) {
+export function CustomersFilterContent({namein, settlementManagementTypein, statusin, onFilter, onClose}: CustomersFilterContentProps) {
     const [name,setName] = useState(namein || "")
-    
     const [settlementManagementType,setSettlementManagementType] = useState(settlementManagementTypein || "")
-
+    const [status,setStatus] = useState(statusin || "")
 
     const applyFilters = () => {
-        onFilter(name,  settlementManagementType)
+        onFilter(name, settlementManagementType, status)
         onClose()
     }
 
@@ -40,7 +37,7 @@ export function CustomersFilterContent({namein, settlementManagementTypein, onFi
           onKeyDown={handleKeyDown}
           tabIndex={0}
         >
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <div className="text-xs font-medium mb-1.5">Nome</div>
               <Input
@@ -52,7 +49,6 @@ export function CustomersFilterContent({namein, settlementManagementTypein, onFi
               />
             </div>
 
-            
             <div>
               <div className="text-xs font-medium mb-1.5">Tipo de Gestão</div>
               <Input
@@ -62,6 +58,20 @@ export function CustomersFilterContent({namein, settlementManagementTypein, onFi
                 onKeyDown={handleKeyDown}
                 className="h-9 w-full"
               />
+            </div>
+
+            <div>
+              <div className="text-xs font-medium mb-1.5">Status</div>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="active">Ativos</SelectItem>
+                  <SelectItem value="inactive">Inativos</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

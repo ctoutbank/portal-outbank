@@ -9,6 +9,7 @@ type CustomersFilterProps = {
   nameIn?: string
   customerIdIn?: string
   settlementManagementTypeIn?: string
+  statusIn?: string
 }
 
 export function CustomersFilter(props: CustomersFilterProps) {
@@ -17,7 +18,7 @@ export function CustomersFilter(props: CustomersFilterProps) {
   const params = new URLSearchParams(searchParams?.toString() || "")
   const [isFiltersVisible, setIsFiltersVisible] = useState(false)
 
-  const handleFilter = (name: string, settlementManagementType: string) => {
+  const handleFilter = (name: string, settlementManagementType: string, status: string) => {
     if (name) {
       params.set("name", name)
     } else {
@@ -29,6 +30,13 @@ export function CustomersFilter(props: CustomersFilterProps) {
     } else {
       params.delete("settlementManagementType")
     }
+
+    if (status) {
+      params.set("status", status)
+    } else {
+      params.delete("status")
+    }
+    
     params.set("page", "1")
     router.push(`?${params.toString()}`)
   }
@@ -37,6 +45,7 @@ export function CustomersFilter(props: CustomersFilterProps) {
     params.delete("name")
     params.delete("customerId")
     params.delete("settlementManagementType")
+    params.delete("status")
     params.set("page", "1")
     router.push(`?${params.toString()}`)
   }
@@ -44,7 +53,8 @@ export function CustomersFilter(props: CustomersFilterProps) {
   const activeFiltersCount =
     (props.nameIn ? 1 : 0) +
     (props.customerIdIn ? 1 : 0) +
-    (props.settlementManagementTypeIn ? 1 : 0)
+    (props.settlementManagementTypeIn ? 1 : 0) +
+    (props.statusIn ? 1 : 0)
 
   return (
     <CustomersFilterButton
@@ -55,8 +65,8 @@ export function CustomersFilter(props: CustomersFilterProps) {
     >
       <CustomersFilterContent
         namein={props.nameIn}
-        
         settlementManagementTypein={props.settlementManagementTypeIn}
+        statusin={props.statusIn}
         onFilter={handleFilter}
         onClose={() => setIsFiltersVisible(false)}
       />
