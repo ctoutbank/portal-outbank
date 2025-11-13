@@ -139,8 +139,19 @@ export default function CustomerWizardForm({
   const [imageError, setImageError] = useState<string | null>(null);
   const [loginImagePreview, setLoginImagePreview] = useState<string | null>(null);
   const [loginImageError, setLoginImageError] = useState<string | null>(null);
-  const [previewPrimaryColor, setPreviewPrimaryColor] = useState<string>("#1E40AF");
-  const [previewSecondaryColor, setPreviewSecondaryColor] = useState<string>("#3B82F6");
+  const [colorPrimaryHex, setColorPrimaryHex] = useState<string>("#1E40AF");
+  const [colorSecondaryHex, setColorSecondaryHex] = useState<string>("#3B82F6");
+
+  useEffect(() => {
+    if (customizationData?.primaryColor) {
+      const primaryHex = hslToHex(customizationData.primaryColor);
+      setColorPrimaryHex(primaryHex);
+    }
+    if (customizationData?.secondaryColor) {
+      const secondaryHex = hslToHex(customizationData.secondaryColor);
+      setColorSecondaryHex(secondaryHex);
+    }
+  }, [customizationData?.primaryColor, customizationData?.secondaryColor]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -224,9 +235,7 @@ export default function CustomerWizardForm({
   const onCustomerCreated = (id: number) => {
     setNewCustomerId(id);
     setIsFirstStepComplete(true);
-    setActiveTab("step2");
     loadUsers(id);
-    router.replace(`/customers/${id}?step=step2`, { scroll: false });
   };
 
   // Função que será passada para o CustomerForm para notificar quando o cliente for criado
@@ -512,8 +521,8 @@ export default function CustomerWizardForm({
                             type="color"
                             name="primaryColor"
                             id="primaryColorInput"
-                            defaultValue={customizationData?.primaryColor ? hslToHex(customizationData.primaryColor) : "#ffffff"}
-                            onChange={(e) => setPreviewPrimaryColor(e.target.value)}
+                            value={colorPrimaryHex}
+                            onChange={(e) => setColorPrimaryHex(e.target.value)}
                             className="h-10 w-full p-0 border rounded cursor-pointer"
                           />
                         </div>
@@ -523,8 +532,8 @@ export default function CustomerWizardForm({
                             type="color"
                             name="secondaryColor"
                             id="secondaryColorInput"
-                            defaultValue={customizationData?.secondaryColor ? hslToHex(customizationData.secondaryColor) : "#ffffff"}
-                            onChange={(e) => setPreviewSecondaryColor(e.target.value)}
+                            value={colorSecondaryHex}
+                            onChange={(e) => setColorSecondaryHex(e.target.value)}
                             className="h-10 w-full p-0 border rounded cursor-pointer"
                           />
                         </div>
@@ -546,12 +555,8 @@ export default function CustomerWizardForm({
                               key={palette.name}
                               type="button"
                               onClick={() => {
-                                const primaryInput = document.getElementById("primaryColorInput") as HTMLInputElement;
-                                const secondaryInput = document.getElementById("secondaryColorInput") as HTMLInputElement;
-                                if (primaryInput) primaryInput.value = palette.primary;
-                                if (secondaryInput) secondaryInput.value = palette.secondary;
-                                setPreviewPrimaryColor(palette.primary);
-                                setPreviewSecondaryColor(palette.secondary);
+                                setColorPrimaryHex(palette.primary);
+                                setColorSecondaryHex(palette.secondary);
                               }}
                               className="flex items-center gap-2 p-2 border rounded hover:bg-muted transition-colors cursor-pointer"
                             >
@@ -656,7 +661,7 @@ export default function CustomerWizardForm({
 
             {/* Right Column (40% - 2/5 cols) - Preview */}
             <div className="lg:col-span-2">
-              <Card className="border-1 sticky top-4">
+              <Card className="border lg:sticky lg:top-4">
                 <CardHeader className="border-b border-border">
                   <CardTitle className="text-sm font-medium">Preview em Tempo Real</CardTitle>
                 </CardHeader>
@@ -721,7 +726,7 @@ export default function CustomerWizardForm({
                             type="button"
                             className="w-full h-9 rounded text-sm font-medium text-white transition-colors"
                             style={{
-                              backgroundColor: previewPrimaryColor
+                              backgroundColor: colorPrimaryHex
                             }}
                           >
                             Entrar
@@ -734,7 +739,7 @@ export default function CustomerWizardForm({
                             href="#"
                             className="text-xs transition-colors"
                             style={{
-                              color: previewSecondaryColor
+                              color: colorSecondaryHex
                             }}
                           >
                             Esqueci minha senha
