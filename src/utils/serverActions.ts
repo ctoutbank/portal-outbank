@@ -161,6 +161,8 @@ export async function getCustomizationBySubdomain(
 }
 
 export async function saveCustomization(formData: FormData) {
+  console.log("[saveCustomization] FormData keys:", Array.from(formData.keys()));
+  
   const rawData = {
     subdomain: formData.get("subdomain"),
     primaryColor: formData.get("primaryColor"),
@@ -170,8 +172,12 @@ export async function saveCustomization(formData: FormData) {
 
   const validated = customizationSchema.safeParse(rawData);
   if (!validated.success) {
-    console.error("Erro de validação:", validated.error.flatten());
-    return;
+    console.error("[saveCustomization] Erro de validação:", validated.error.flatten());
+    const errors = validated.error.flatten().fieldErrors;
+    const errorMessages = Object.entries(errors)
+      .map(([field, msgs]) => `${field}: ${msgs?.join(", ")}`)
+      .join("; ");
+    throw new Error(`Dados inválidos: ${errorMessages}`);
   }
 
   const { subdomain, primaryColor, secondaryColor, customerId } =
@@ -332,6 +338,8 @@ export async function saveCustomization(formData: FormData) {
 }
 
 export async function updateCustomization(formData: FormData) {
+  console.log("[updateCustomization] FormData keys:", Array.from(formData.keys()));
+  
   const rawData = {
     id: formData.get("id"),
     subdomain: formData.get("subdomain"),
@@ -346,8 +354,12 @@ export async function updateCustomization(formData: FormData) {
 
   const validated = schemaWithId.safeParse(rawData);
   if (!validated.success) {
-    console.error("Erro de validação:", validated.error.flatten());
-    return;
+    console.error("[updateCustomization] Erro de validação:", validated.error.flatten());
+    const errors = validated.error.flatten().fieldErrors;
+    const errorMessages = Object.entries(errors)
+      .map(([field, msgs]) => `${field}: ${msgs?.join(", ")}`)
+      .join("; ");
+    throw new Error(`Dados inválidos: ${errorMessages}`);
   }
 
   const { id, subdomain, primaryColor, secondaryColor } = validated.data;

@@ -232,6 +232,8 @@ export default function CustomerWizardForm({
         const formData = new FormData();
         formData.append("customerId", id.toString());
         formData.append("subdomain", step1Subdomain);
+        formData.append("primaryColor", "#000000");
+        formData.append("secondaryColor", "#ffffff");
         
         if (customizationData?.id) {
           formData.append("id", customizationData.id.toString());
@@ -253,7 +255,8 @@ export default function CustomerWizardForm({
         }
       } catch (error) {
         console.error("Erro ao salvar subdomain:", error);
-        toast.error("Erro ao salvar subdomain");
+        const errorMessage = error instanceof Error ? error.message : "Erro ao salvar subdomain";
+        toast.error(errorMessage);
       }
     }
     
@@ -547,7 +550,8 @@ export default function CustomerWizardForm({
                 toast.success("Customização salva com sucesso!");
               } catch (error) {
                 console.error("Erro ao salvar a customização", error);
-                toast.error("Erro ao salvar a customização");
+                const errorMessage = error instanceof Error ? error.message : "Erro ao salvar a customização";
+                toast.error(errorMessage);
               } finally {
                 setIsSavingCustomization(false);
               }
