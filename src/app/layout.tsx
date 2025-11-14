@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import ThemeInitializer from "@/components/themeInitializer";
 import { getCurrentTenantCustomization } from "@/lib/tenant-detection";
 import SessionTimeout from "@/components/session-timeout";
+import { ConditionalSidebar } from "@/components/conditional-sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -60,7 +61,9 @@ export default async function RootLayout({
           >
             <SessionTimeout>
               <SidebarProvider>
-                <AppSidebar variant="inset" tenantCustomization={tenantCustomization} />
+                <ConditionalSidebar>
+                  <AppSidebar variant="inset" tenantCustomization={tenantCustomization} />
+                </ConditionalSidebar>
                 <SidebarInset className="bg-card rounded-lg shadow">
                   {children}
                   <Toaster richColors position="top-right" />
