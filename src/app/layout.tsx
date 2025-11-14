@@ -60,7 +60,7 @@ export default async function RootLayout({
           >
             <SessionTimeout>
               <SidebarProvider>
-                <AppSidebar variant="inset" />
+                <AppSidebar variant="inset" tenantCustomization={tenantCustomization} />
                 <SidebarInset className="bg-card rounded-lg shadow">
                   {children}
                   <Toaster richColors position="top-right" />

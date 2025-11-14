@@ -319,17 +319,50 @@ export async function saveCustomization(formData: FormData) {
   const primaryHSL = hexToHsl(primaryColor);
   const secondaryHSL = hexToHsl(secondaryColor);
 
-  await db.insert(customerCustomization).values({
-    name: subdomain,
-    slug: subdomain,
-    primaryColor: primaryHSL,
-    secondaryColor: secondaryHSL,
-    customerId: customerId,
-    fileId: fileId,
-    loginImageUrl: loginImageUrl || null,
-    loginImageFileId: loginImageFileId,
-    faviconUrl: faviconUrl || null,
-    faviconFileId: faviconFileId,
+  const existingCustomization = await db
+    .select({ id: customerCustomization.id })
+    .from(customerCustomization)
+    .where(eq(customerCustomization.customerId, customerId))
+    .limit(1);
+
+  if (existingCustomization.length > 0) {
+    console.log(`[saveCustomization] Updating existing customization for customerId=${customerId}`);
+    await db
+      .update(customerCustomization)
+      .set({
+        name: subdomain,
+        slug: subdomain,
+        primaryColor: primaryHSL,
+        secondaryColor: secondaryHSL,
+        ...(fileId && { fileId: fileId }),
+        ...(imageUrl && { imageUrl: imageUrl }),
+        ...(loginImageUrl && { loginImageUrl: loginImageUrl }),
+        ...(loginImageFileId && { loginImageFileId: loginImageFileId }),
+        ...(faviconUrl && { faviconUrl: faviconUrl }),
+        ...(faviconFileId && { faviconFileId: faviconFileId }),
+      })
+      .where(eq(customerCustomization.id, existingCustomization[0].id));
+  } else {
+    console.log(`[saveCustomization] Creating new customization for customerId=${customerId}`);
+    await db.insert(customerCustomization).values({
+      name: subdomain,
+      slug: subdomain,
+      primaryColor: primaryHSL,
+      secondaryColor: secondaryHSL,
+      customerId: customerId,
+      fileId: fileId,
+      loginImageUrl: loginImageUrl || null,
+      loginImageFileId: loginImageFileId,
+      faviconUrl: faviconUrl || null,
+      faviconFileId: faviconFileId,
+    });
+  }
+
+  const savedCustomization = await getCustomizationByCustomerId(customerId);
+  console.log(`[saveCustomization] Final URLs saved:`, {
+    imageUrl: savedCustomization?.imageUrl,
+    loginImageUrl: savedCustomization?.loginImageUrl,
+    faviconUrl: savedCustomization?.faviconUrl,
   });
 
   revalidatePath("/");
@@ -543,6 +576,13 @@ export async function updateCustomization(formData: FormData) {
   const primaryHSL = hexToHsl(primaryColor);
   const secondaryHSL = hexToHsl(secondaryColor);
 
+  console.log(`[updateCustomization] Updating customization id=${id} for customerId=${validated.data.customerId}`);
+  console.log(`[updateCustomization] New URLs:`, {
+    imageUrl: imageUrl || '(unchanged)',
+    loginImageUrl: loginImageUrl || '(unchanged)',
+    faviconUrl: faviconUrl || '(unchanged)',
+  });
+
   await db
     .update(customerCustomization)
     .set({
@@ -558,6 +598,13 @@ export async function updateCustomization(formData: FormData) {
       faviconFileId: faviconFileId,
     })
     .where(eq(customerCustomization.id, id));
+
+  const updatedCustomization = await getCustomizationByCustomerId(validated.data.customerId);
+  console.log(`[updateCustomization] Final URLs after update:`, {
+    imageUrl: updatedCustomization?.imageUrl,
+    loginImageUrl: updatedCustomization?.loginImageUrl,
+    faviconUrl: updatedCustomization?.faviconUrl,
+  });
 
   revalidatePath("/");
   revalidatePath("/customers");
