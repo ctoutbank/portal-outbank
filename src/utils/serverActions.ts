@@ -61,7 +61,7 @@ function hexToHsl(hex: string): string {
 const customizationSchema = z.object({
   subdomain: z.string().min(1),
   primaryColor: z.string().min(1),
-  secondaryColor: z.string().min(1),
+  secondaryColor: z.string().optional(),
   customerId: z.coerce.number(),
 });
 
@@ -317,7 +317,7 @@ export async function saveCustomization(formData: FormData) {
   }
 
   const primaryHSL = hexToHsl(primaryColor);
-  const secondaryHSL = hexToHsl(secondaryColor);
+  const secondaryHSL = secondaryColor ? hexToHsl(secondaryColor) : null;
 
   const existingCustomization = await db
     .select({ id: customerCustomization.id })
@@ -333,7 +333,7 @@ export async function saveCustomization(formData: FormData) {
         name: subdomain,
         slug: subdomain,
         primaryColor: primaryHSL,
-        secondaryColor: secondaryHSL,
+        ...(secondaryHSL && { secondaryColor: secondaryHSL }),
         ...(fileId && { fileId: fileId }),
         ...(imageUrl && { imageUrl: imageUrl }),
         ...(loginImageUrl && { loginImageUrl: loginImageUrl }),
@@ -574,7 +574,7 @@ export async function updateCustomization(formData: FormData) {
   }
 
   const primaryHSL = hexToHsl(primaryColor);
-  const secondaryHSL = hexToHsl(secondaryColor);
+  const secondaryHSL = secondaryColor ? hexToHsl(secondaryColor) : null;
 
   console.log(`[updateCustomization] Updating customization id=${id} for customerId=${validated.data.customerId}`);
   console.log(`[updateCustomization] New URLs:`, {
@@ -589,7 +589,7 @@ export async function updateCustomization(formData: FormData) {
       name: subdomain,
       slug: subdomain,
       primaryColor: primaryHSL,
-      secondaryColor: secondaryHSL,
+      ...(secondaryHSL && { secondaryColor: secondaryHSL }),
       ...(imageUrl && { imageUrl: imageUrl }),
       fileId: fileId,
       ...(loginImageUrl && { loginImageUrl: loginImageUrl }),
