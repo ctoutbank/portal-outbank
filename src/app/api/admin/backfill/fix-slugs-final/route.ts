@@ -5,7 +5,7 @@ import { sql } from "drizzle-orm";
 import { generateSlug, makeSlugUnique, isHashLikeSlug } from "@/utils/slugify";
 
 interface BackfillResult {
-  customerId: number;
+  customerId: number | null;
   customerName: string;
   oldName: string;
   oldSlug: string;
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     let recordsSkipped = 0;
     let totalCollisions = 0;
 
-    const processRecords = async (tx: typeof db) => {
+    const processRecords = async (tx: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]) => {
       for (const record of recordsToFix) {
         try {
           recordsProcessed++;
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 
           const baseSlug = generateSlug(record.customerName, {
             fallbackPrefix: "iso",
-            fallbackId: record.ccCustomerId,
+            fallbackId: record.ccCustomerId ?? undefined,
           });
 
           const { slug: finalSlug, collisionCount } = makeSlugUnique(
