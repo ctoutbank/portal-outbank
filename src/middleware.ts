@@ -1,4 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { extractSubdomain, isTenantHost } from "@/lib/subdomain-auth";
 
 const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
@@ -6,12 +9,46 @@ const isPublicRoute = createRouteMatcher([
   "/auth/sign-in(.*)",
   "/auth/sign-up(.*)",
   "/api/public(.*)",
+  "/api/check-subdomain-auth(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
+export default clerkMiddleware(async (auth, request: NextRequest) => {
+  const hostname = request.headers.get("host") || "";
+  const subdomain = extractSubdomain(hostname);
+  const isTenant = isTenantHost(hostname);
+  const { userId } = await auth();
+  
+  if (isTenant && subdomain) {
+    const pathname = request.nextUrl.pathname;
+    
+    if (!userId && pathname === "/") {
+      const signInUrl = new URL("/auth/sign-in", request.url);
+      return NextResponse.redirect(signInUrl);
+    }
+    
+    if (userId && pathname === "/") {
+      const dashboardUrl = new URL("/dashboard", request.url);
+      return NextResponse.redirect(dashboardUrl);
+    }
+    
+    if (!isPublicRoute(request)) {
+      await auth.protect();
+    }
+    
+    const response = NextResponse.next();
+    response.cookies.set("tenant", subdomain, {
+      path: "/",
+      httpOnly: false,
+    });
+    
+    return response;
+  }
+  
   if (!isPublicRoute(request)) {
     await auth.protect();
   }
+  
+  return NextResponse.next();
 });
 
 export const config = {
