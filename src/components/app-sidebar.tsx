@@ -14,44 +14,49 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { UserMenu } from "./user-menu";
+import type { CustomerCustomization } from "@/utils/serverActions";
 
-const data = {
-  teams: [
+const navMainItems = [
+  { title: "Dashboard", url: "/", icon: ChartPie, isActive: false },
+  {
+    title: "ISOS",
+    url: "/customers",
+    icon: Users,
+    isActive: false,
+  },
+  {
+    title: "Solicitações de Taxa",
+    url: "/solicitationfee",
+    icon: Table,
+    isActive: false,
+  },
+  { title: "CNAE", url: "/categories", icon: Briefcase, isActive: false },
+  {title: "Fornecedores", url: "/supplier", icon: Truck, isActive: false},
+];
+
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  tenantCustomization?: CustomerCustomization | null;
+}
+
+export function AppSidebar({ tenantCustomization, ...props }: AppSidebarProps) {
+  const { state } = useSidebar();
+  
+  const teams = [
     {
-      name: "Outbank",
-      logo: "/outbank-logo.png",
+      name: tenantCustomization?.name || "Outbank",
+      logo: tenantCustomization?.imageUrl || "/outbank-logo.png",
       plan: "Empresarial",
     },
-  ],
-  navMain: [
-    { title: "Dashboard", url: "/", icon: ChartPie, isActive: false },
-    {
-      title: "ISOS",
-      url: "/customers",
-      icon: Users,
-      isActive: false,
-    },
-    {
-      title: "Solicitações de Taxa",
-      url: "/solicitationfee",
-      icon: Table,
-      isActive: false,
-    },
-    { title: "CNAE", url: "/categories", icon: Briefcase, isActive: false },
-    {title: "Fornecedores", url: "/supplier", icon: Truck, isActive: false},
-  ],
-};
-
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { state } = useSidebar();
+  ];
+  
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="flex flex-col items-center">
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={teams} />
         <Separator orientation="horizontal" className="bg-[#d2d2d2]" />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMainItems} />
       </SidebarContent>
       <SidebarFooter>{state !== "collapsed" && <UserMenu />}</SidebarFooter>
     </Sidebar>

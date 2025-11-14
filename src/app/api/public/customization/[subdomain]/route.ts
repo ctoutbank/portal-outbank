@@ -26,7 +26,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       subdomain,
       customization: {
         id: customization.id,
@@ -39,6 +39,11 @@ export async function GET(
         secondaryColor: customization.secondaryColor,
       },
     });
+
+    response.headers.set('Vary', 'Host');
+    response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
+    
+    return response;
   } catch (error) {
     console.error("Error fetching customization:", error);
     return NextResponse.json(
