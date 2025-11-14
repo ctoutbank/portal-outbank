@@ -14,6 +14,7 @@ interface StatusBadgeProps {
   hasCustomization?: boolean;
   hasUsers?: number;
   subdomain?: string;
+  isoStatus?: string;
 }
 
 export function StatusBadge({
@@ -21,7 +22,81 @@ export function StatusBadge({
   hasCustomization = false,
   hasUsers = 0,
   subdomain,
+  isoStatus,
 }: StatusBadgeProps) {
+  if (isoStatus) {
+    if (isoStatus === "Inativo") {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="secondary" className="gap-1">
+                <XCircle className="h-3 w-3" />
+                Inativo
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Este ISO está desativado</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    if (isoStatus === "Completo") {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className="gap-1 bg-green-600 hover:bg-green-700">
+                <CheckCircle className="h-3 w-3" />
+                Completo
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="font-medium">ISO completo e ativo</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                ✓ Nome configurado
+              </p>
+              <p className="text-xs text-muted-foreground">
+                ✓ Subdomínio configurado
+              </p>
+              <p className="text-xs text-muted-foreground">
+                ✓ Personalização configurada
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge className="gap-1 bg-amber-500 hover:bg-amber-600">
+              <AlertCircle className="h-3 w-3" />
+              Incompleto
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="font-medium">ISO ativo mas incompleto</p>
+            {!hasCustomization && (
+              <p className="text-xs text-muted-foreground mt-1">
+                ⚠ Falta configurar personalização
+              </p>
+            )}
+            {!subdomain && (
+              <p className="text-xs text-muted-foreground">
+                ⚠ Falta configurar subdomínio
+              </p>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
   if (!isActive) {
     return (
       <TooltipProvider>

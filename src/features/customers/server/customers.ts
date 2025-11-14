@@ -82,9 +82,18 @@ export async function getCustomers(
       slug: customers.slug,
       idParent: customers.idParent,
       isActive: customers.isActive,
-      userCount: sql<number>`(SELECT COUNT(*) FROM users WHERE users.id_customer = ${customers.id})`,
+      userCount: sql<number>`(SELECT COUNT(*) FROM users WHERE users.id_customer = ${customers.id} AND users.active = true)`,
       hasCustomization: sql<boolean>`EXISTS(SELECT 1 FROM customer_customization WHERE customer_customization.customer_id = ${customers.id})`,
       subdomain: customerCustomization.slug,
+      isoStatus: sql<string>`CASE 
+        WHEN ${customers.isActive} = false THEN 'Inativo'
+        WHEN ${customers.isActive} = true 
+          AND COALESCE(${customers.name}, '') <> '' 
+          AND COALESCE(${customers.slug}, '') <> '' 
+          AND EXISTS(SELECT 1 FROM customer_customization WHERE customer_customization.customer_id = ${customers.id}) 
+        THEN 'Completo'
+        ELSE 'Incompleto'
+      END`,
       createdAt: sql<string>`${customers.id}::text`,
       updatedAt: sql<string>`${customers.id}::text`,
     })
@@ -114,6 +123,7 @@ export async function getCustomers(
       userCount: customer.userCount || 0,
       hasCustomization: customer.hasCustomization || false,
       subdomain: customer.subdomain || "",
+      isoStatus: customer.isoStatus || "Incompleto",
       createdAt: customer.createdAt || "",
       updatedAt: customer.updatedAt || "",
     })),
@@ -189,6 +199,7 @@ export type CustomerFull = {
   userCount?: number;
   hasCustomization?: boolean;
   subdomain?: string;
+  isoStatus?: string;
   createdAt?: string;
   updatedAt?: string;
 };
