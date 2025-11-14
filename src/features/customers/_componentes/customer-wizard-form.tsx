@@ -19,9 +19,9 @@ import {
   getUsersWithClerk,
 } from "../users/_actions/user-actions";
 import {
-  getCustomizationByCustomerId,
   saveCustomization,
   updateCustomization,
+  type CustomerCustomization,
 } from "@/utils/serverActions";
 import Image from "next/image";
 import { Info, Palette } from "lucide-react";
@@ -40,20 +40,24 @@ interface CustomerWizardFormProps {
   profiles: ProfileDD[];
   permissions?: string[];
   activeTabDefault?: string;
+  customizationInitial?: CustomerCustomization | null;
 }
 
 export default function CustomerWizardForm({
   customer,
   profiles,
   activeTabDefault = "step1",
+  customizationInitial = null,
 }: CustomerWizardFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Lê o step da URL ou usa o default
+  // Lê o step da URL ou usa o default, clamping to valid values
   const stepFromUrl = searchParams.get("step") || activeTabDefault;
+  const validSteps = ["step1", "step2"];
+  const clampedStep = validSteps.includes(stepFromUrl) ? stepFromUrl : "step1";
 
-  const [activeTab, setActiveTab] = useState(stepFromUrl);
+  const [activeTab, setActiveTab] = useState(clampedStep);
   const [newCustomerId, setNewCustomerId] = useState<number | null>(
     customer.id || null
   );
@@ -70,7 +74,16 @@ export default function CustomerWizardForm({
     primaryColor?: string;
     secondaryColor?: string;
     loginImageUrl?: string;
-  } | null>(null);
+  } | null>(
+    customizationInitial ? {
+      imageUrl: customizationInitial.imageUrl ?? undefined,
+      id: customizationInitial.id ?? 0,
+      subdomain: customizationInitial.slug ?? undefined,
+      primaryColor: customizationInitial.primaryColor ?? undefined,
+      secondaryColor: customizationInitial.secondaryColor ?? undefined,
+      loginImageUrl: customizationInitial.loginImageUrl ?? undefined,
+    } : null
+  );
 
   useEffect(() => {
     // Sincroniza o activeTab com a URL se ela mudar externamente
@@ -78,28 +91,6 @@ export default function CustomerWizardForm({
       setActiveTab(stepFromUrl);
     }
   }, [stepFromUrl, activeTab]);
-
-  useEffect(() => {
-    const loadCustomization = async () => {
-      console.log("newCustomerId", newCustomerId);
-      if (newCustomerId) {
-        const response = await getCustomizationByCustomerId(newCustomerId);
-        if (response) {
-          console.log("response", response);
-          setCustomizationData({
-            imageUrl: response.imageUrl ?? undefined,
-            id: response.id ?? 0,
-            subdomain: response.slug ?? undefined,
-            primaryColor: response.primaryColor ?? undefined,
-            secondaryColor: response.secondaryColor ?? undefined,
-            loginImageUrl: response.loginImageUrl ?? undefined,
-          });
-        }
-      }
-    };
-
-    loadCustomization();
-  }, [newCustomerId]);
 
   function hslToHex(hsl: string): string {
     const [h, s, l] = hsl
@@ -235,17 +226,7 @@ export default function CustomerWizardForm({
           await saveCustomization(formData);
         }
         
-        const updatedCustomization = await getCustomizationByCustomerId(id);
-        if (updatedCustomization) {
-          setCustomizationData({
-            imageUrl: updatedCustomization.imageUrl ?? undefined,
-            id: updatedCustomization.id ?? 0,
-            subdomain: updatedCustomization.slug ?? undefined,
-            primaryColor: updatedCustomization.primaryColor ?? undefined,
-            secondaryColor: updatedCustomization.secondaryColor ?? undefined,
-            loginImageUrl: updatedCustomization.loginImageUrl ?? undefined,
-          });
-        }
+        router.refresh();
       } catch (error) {
         console.error("Erro ao salvar subdomain:", error);
         const errorMessage = error instanceof Error ? error.message : "Erro ao salvar subdomain";
@@ -260,8 +241,13 @@ export default function CustomerWizardForm({
 
   // Função para recarregar a lista de usuários
   const loadUsers = async (customerId: number) => {
-    const users = await getUsersWithClerk(customerId);
-    setUsers(users);
+    try {
+      const users = await getUsersWithClerk(customerId);
+      setUsers(users);
+    } catch (error) {
+      console.error("Erro ao carregar usuários:", error);
+      setUsers([]);
+    }
   };
 
   useEffect(() => {
@@ -500,17 +486,7 @@ export default function CustomerWizardForm({
                             await saveCustomization(formData);
                           }
                           
-                          const updatedCustomization = await getCustomizationByCustomerId(updatedId);
-                          if (updatedCustomization) {
-                            setCustomizationData({
-                              imageUrl: updatedCustomization.imageUrl ?? undefined,
-                              id: updatedCustomization.id ?? 0,
-                              subdomain: updatedCustomization.slug ?? undefined,
-                              primaryColor: updatedCustomization.primaryColor ?? undefined,
-                              secondaryColor: updatedCustomization.secondaryColor ?? undefined,
-                              loginImageUrl: updatedCustomization.loginImageUrl ?? undefined,
-                            });
-                          }
+                          router.refresh();
                         }
                       } else {
                         const slug = generateSlug();
@@ -568,7 +544,7 @@ export default function CustomerWizardForm({
               const formData = new FormData(e.currentTarget);
 
               const subdomain = (iso.subdomain || customizationData?.subdomain || "").trim();
-              const customerId = newCustomerId || customer.id;
+              const customerId = newCustomerId || customer?.id;
 
               if (!subdomain) {
                 toast.error("Por favor, defina o Domínio do ISO no passo 1 antes de salvar a personalização");
@@ -614,25 +590,9 @@ export default function CustomerWizardForm({
                   await saveCustomization(formData);
                 }
 
-                // Atualizar o customizationData com os dados salvos
-                if (customerId) {
-                  const updatedCustomization =
-                    await getCustomizationByCustomerId(customerId);
-                  if (updatedCustomization) {
-                    setCustomizationData({
-                      imageUrl: updatedCustomization.imageUrl ?? undefined,
-                      id: updatedCustomization.id ?? 0,
-                      subdomain: updatedCustomization.slug ?? undefined,
-                      primaryColor:
-                        updatedCustomization.primaryColor ?? undefined,
-                      secondaryColor:
-                        updatedCustomization.secondaryColor ?? undefined,
-                      loginImageUrl: updatedCustomization.loginImageUrl ?? undefined,
-                    });
-                  }
-                }
-
                 toast.success("Customização salva com sucesso!");
+                
+                router.refresh();
               } catch (error) {
                 console.error("Erro ao salvar a customização", error);
                 const errorMessage = error instanceof Error ? error.message : "Erro ao salvar a customização";
