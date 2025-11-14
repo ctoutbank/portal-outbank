@@ -20,42 +20,56 @@ export type CustomerCustomization = {
   customerId: number | null;
 };
 
-// Função para converter HEX → HSL
-function hexToHsl(hex: string): string {
-  hex = hex.replace(/^#/, "");
-
-  const r = parseInt(hex.substring(0, 2), 16) / 255;
-  const g = parseInt(hex.substring(2, 4), 16) / 255;
-  const b = parseInt(hex.substring(4, 6), 16) / 255;
-
-  const max = Math.max(r, g, b),
-    min = Math.min(r, g, b);
- 
-  let h = 0,
-    s = 0;
-
-  const l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r:
-        h = (g - b) / d + (g < b ? 6 : 0);
-        break;
-      case g:
-        h = (b - r) / d + 2;
-        break;
-      case b:
-        h = (r - g) / d + 4;
-        break;
+// Função para converter HEX → HSL (robusta, retorna null se inválido)
+function hexToHsl(hex: string): string | null {
+  try {
+    if (!hex || typeof hex !== 'string') {
+      return null;
     }
-    h /= 6;
-  }
+    
+    hex = hex.replace(/^#/, "").trim();
+    
+    if (!/^[0-9A-Fa-f]{6}$/.test(hex)) {
+      console.warn(`[hexToHsl] Invalid hex color format: ${hex}`);
+      return null;
+    }
 
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(
-    l * 100
-  )}%`;
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+
+    const max = Math.max(r, g, b),
+      min = Math.min(r, g, b);
+   
+    let h = 0,
+      s = 0;
+
+    const l = (max + min) / 2;
+
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r:
+          h = (g - b) / d + (g < b ? 6 : 0);
+          break;
+        case g:
+          h = (b - r) / d + 2;
+          break;
+        case b:
+          h = (r - g) / d + 4;
+          break;
+      }
+      h /= 6;
+    }
+
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(
+      l * 100
+    )}%`;
+  } catch (error) {
+    console.error(`[hexToHsl] Error converting hex to HSL:`, error);
+    return null;
+  }
 }
 
 const customizationSchema = z.object({
@@ -161,7 +175,7 @@ export async function getCustomizationBySubdomain(
 }
 
 export async function saveCustomization(formData: FormData) {
-  console.log("[saveCustomization] FormData keys:", Array.from(formData.keys()));
+  console.log("[saveCustomization] START - FormData keys:", Array.from(formData.keys()));
   
   const rawData = {
     subdomain: formData.get("subdomain"),
@@ -169,6 +183,13 @@ export async function saveCustomization(formData: FormData) {
     secondaryColor: formData.get("secondaryColor"),
     customerId: formData.get("customerId"),
   };
+
+  console.log("[saveCustomization] Raw data:", {
+    subdomain: typeof rawData.subdomain,
+    primaryColor: typeof rawData.primaryColor,
+    secondaryColor: typeof rawData.secondaryColor,
+    customerId: typeof rawData.customerId,
+  });
 
   const validated = customizationSchema.safeParse(rawData);
   if (!validated.success) {
@@ -183,6 +204,13 @@ export async function saveCustomization(formData: FormData) {
   const { subdomain, primaryColor, secondaryColor, customerId } =
     validated.data;
 
+  console.log("[saveCustomization] Validated data:", {
+    subdomain,
+    primaryColor: primaryColor ? 'present' : 'empty',
+    secondaryColor: secondaryColor ? 'present' : 'empty',
+    customerId,
+  });
+
   let imageUrl = "";
   let fileId: number | null = null;
   let loginImageUrl = "";
@@ -191,6 +219,7 @@ export async function saveCustomization(formData: FormData) {
   let faviconFileId: number | null = null;
 
   const image = formData.get("image") as File | null;
+  console.log("[saveCustomization] Image file:", image ? `present (${image.size} bytes, ${image.type})` : 'not provided');
   if (image) {
     const arrayBuffer = await image.arrayBuffer();
     const imageBuffer = Buffer.from(arrayBuffer);
@@ -233,6 +262,7 @@ export async function saveCustomization(formData: FormData) {
   }
 
   const loginImage = formData.get("loginImage") as File | null;
+  console.log("[saveCustomization] Login image file:", loginImage ? `present (${loginImage.size} bytes, ${loginImage.type})` : 'not provided');
   if (loginImage) {
     const arrayBuffer = await loginImage.arrayBuffer();
     const imageBuffer = Buffer.from(arrayBuffer);
@@ -275,6 +305,7 @@ export async function saveCustomization(formData: FormData) {
   }
 
   const favicon = formData.get("favicon") as File | null;
+  console.log("[saveCustomization] Favicon file:", favicon ? `present (${favicon.size} bytes, ${favicon.type})` : 'not provided');
   if (favicon) {
     const arrayBuffer = await favicon.arrayBuffer();
     const imageBuffer = Buffer.from(arrayBuffer);
@@ -319,11 +350,18 @@ export async function saveCustomization(formData: FormData) {
   const primaryHSL = hexToHsl(primaryColor);
   const secondaryHSL = secondaryColor ? hexToHsl(secondaryColor) : null;
 
+  console.log("[saveCustomization] Color conversion:", {
+    primaryHSL: primaryHSL ? 'converted' : 'failed',
+    secondaryHSL: secondaryHSL ? 'converted' : 'not provided or failed',
+  });
+
   const existingCustomization = await db
     .select({ id: customerCustomization.id })
     .from(customerCustomization)
     .where(eq(customerCustomization.customerId, customerId))
     .limit(1);
+
+  console.log("[saveCustomization] Existing customization check:", existingCustomization.length > 0 ? 'found (will update)' : 'not found (will create)');
 
   if (existingCustomization.length > 0) {
     console.log(`[saveCustomization] Updating existing customization for customerId=${customerId}`);
