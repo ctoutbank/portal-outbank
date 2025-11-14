@@ -188,13 +188,7 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    if (dryRun) {
-      await processRecords(db);
-    } else {
-      await db.transaction(async (tx) => {
-        await processRecords(tx);
-      });
-    }
+    await processRecords(db);
 
     const summary: BackfillSummary = {
       success: errors.length === 0,
