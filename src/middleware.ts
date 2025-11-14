@@ -6,7 +6,6 @@ const isPublicRoute = createRouteMatcher([
   "/auth/sign-in(.*)",
   "/auth/sign-up(.*)",
   "/api/public(.*)",
-  "/api/admin/backfill(.*)", // Temporary: allow admin backfill endpoint (protected by BACKFILL_TOKEN)
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
