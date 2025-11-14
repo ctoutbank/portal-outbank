@@ -1,31 +1,11 @@
+/**
+ * Main export file for subdomain authentication utilities
+ * 
+ * IMPORTANT: This file re-exports server-only functions that import the database.
+ * DO NOT import this file in Edge middleware or other Edge runtime code.
+ * 
+ * For Edge-safe hostname utilities, import from "./host" instead.
+ */
+
 export { validateUserAccessBySubdomain } from "./domain";
-
-const BASE_DOMAIN = "consolle.one";
-
-/**
- * Extract subdomain from hostname
- * @param hostname - The hostname from request headers
- * @returns The subdomain or null if not a valid tenant subdomain
- */
-export function extractSubdomain(hostname: string): string | null {
-  if (!hostname.endsWith(`.${BASE_DOMAIN}`)) {
-    return null;
-  }
-  
-  const subdomain = hostname.slice(0, -(`.${BASE_DOMAIN}`.length));
-  
-  if (["www", "lvh", "localhost"].includes(subdomain)) {
-    return null;
-  }
-  
-  return subdomain;
-}
-
-/**
- * Check if the hostname is a tenant subdomain
- * @param hostname - The hostname from request headers
- * @returns true if this is a tenant subdomain (*.consolle.one)
- */
-export function isTenantHost(hostname: string): boolean {
-  return hostname.endsWith(`.${BASE_DOMAIN}`) && extractSubdomain(hostname) !== null;
-}
+export { extractSubdomain, isTenantHost } from "./host";
