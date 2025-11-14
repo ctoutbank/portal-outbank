@@ -1,6 +1,6 @@
 "use server";
 
-import { customerCustomization, customers, db, file } from "@/lib/db";
+import { customerCustomization, db, file } from "@/lib/db";
 import { s3Client } from "@/lib/s3-client/s3Client";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { eq } from "drizzle-orm";
@@ -211,24 +211,13 @@ export async function saveCustomization(formData: FormData) {
     customerId,
   });
 
-  const customerResult = await db
-    .select({ slug: customers.slug })
-    .from(customers)
-    .where(eq(customers.id, customerId))
-    .limit(1);
-
-  if (!customerResult.length || !customerResult[0].slug) {
-    console.error(`[saveCustomization] Customer ${customerId} not found or has no slug`);
-    throw new Error(`Customer ${customerId} não encontrado ou sem slug definido`);
+  if (!subdomain || subdomain.trim() === "") {
+    console.error(`[saveCustomization] Subdomain is required but was empty`);
+    throw new Error("Subdomain é obrigatório");
   }
 
-  const canonicalSlug = customerResult[0].slug.trim();
-  
-  if (subdomain && subdomain !== canonicalSlug) {
-    console.warn(`[saveCustomization] Client subdomain "${subdomain}" doesn't match canonical slug "${canonicalSlug}"`);
-  }
-
-  console.log(`[saveCustomization] Using canonical slug: "${canonicalSlug}" for customerId=${customerId}`);
+  const normalizedSubdomain = subdomain.toLowerCase().trim();
+  console.log(`[saveCustomization] Using subdomain: "${normalizedSubdomain}" for customerId=${customerId}`);
 
   let imageUrl = "";
   let fileId: number | null = null;
@@ -387,8 +376,8 @@ export async function saveCustomization(formData: FormData) {
     await db
       .update(customerCustomization)
       .set({
-        name: canonicalSlug,
-        slug: canonicalSlug,
+        name: normalizedSubdomain,
+        slug: normalizedSubdomain,
         primaryColor: primaryHSL,
         ...(secondaryHSL && { secondaryColor: secondaryHSL }),
         ...(fileId && { fileId: fileId }),
@@ -402,8 +391,8 @@ export async function saveCustomization(formData: FormData) {
   } else {
     console.log(`[saveCustomization] Creating new customization for customerId=${customerId}`);
     await db.insert(customerCustomization).values({
-      name: canonicalSlug,
-      slug: canonicalSlug,
+      name: normalizedSubdomain,
+      slug: normalizedSubdomain,
       primaryColor: primaryHSL,
       secondaryColor: secondaryHSL,
       customerId: customerId,
@@ -454,24 +443,13 @@ export async function updateCustomization(formData: FormData) {
 
   const { id, subdomain, primaryColor, secondaryColor } = validated.data;
 
-  const customerResult = await db
-    .select({ slug: customers.slug })
-    .from(customers)
-    .where(eq(customers.id, validated.data.customerId))
-    .limit(1);
-
-  if (!customerResult.length || !customerResult[0].slug) {
-    console.error(`[updateCustomization] Customer ${validated.data.customerId} not found or has no slug`);
-    throw new Error(`Customer ${validated.data.customerId} não encontrado ou sem slug definido`);
+  if (!subdomain || subdomain.trim() === "") {
+    console.error(`[updateCustomization] Subdomain is required but was empty`);
+    throw new Error("Subdomain é obrigatório");
   }
 
-  const canonicalSlug = customerResult[0].slug.trim();
-  
-  if (subdomain && subdomain !== canonicalSlug) {
-    console.warn(`[updateCustomization] Client subdomain "${subdomain}" doesn't match canonical slug "${canonicalSlug}"`);
-  }
-
-  console.log(`[updateCustomization] Using canonical slug: "${canonicalSlug}" for customerId=${validated.data.customerId}`);
+  const normalizedSubdomain = subdomain.toLowerCase().trim();
+  console.log(`[updateCustomization] Using subdomain: "${normalizedSubdomain}" for customerId=${validated.data.customerId}`);
 
   let imageUrl = "";
   let fileId: number | null = null;
@@ -662,8 +640,8 @@ export async function updateCustomization(formData: FormData) {
   await db
     .update(customerCustomization)
     .set({
-      name: canonicalSlug,
-      slug: canonicalSlug,
+      name: normalizedSubdomain,
+      slug: normalizedSubdomain,
       primaryColor: primaryHSL,
       ...(secondaryHSL && { secondaryColor: secondaryHSL }),
       ...(imageUrl && { imageUrl: imageUrl }),

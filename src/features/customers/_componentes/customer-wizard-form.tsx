@@ -311,14 +311,14 @@ export default function CustomerWizardForm({
   });
 
   useEffect(() => {
-    const initialSubdomain = customizationData?.subdomain || customer?.slug || "";
+    const initialSubdomain = customizationData?.subdomain || "";
     const initialName = customer?.name || "";
     
     setIso({
       name: initialName,
       subdomain: initialSubdomain,
     });
-  }, [customizationData?.subdomain, customer?.slug, customer?.name]);
+  }, [customizationData?.subdomain, customer?.name]);
 
   // Handler para impedir troca de aba ao clicar nas tabs
   const handleTabClick = (value: string, e: React.MouseEvent) => {
