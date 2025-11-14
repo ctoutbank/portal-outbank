@@ -78,19 +78,7 @@ export default async function Customerspage({
           />
 
           <CustomersList
-            Customers={{
-              customers: customers.customers.map((customer) => ({
-                id: customer.id,
-                name: customer.name || "",
-                customerId: customer.customerId || "",
-                settlementManagementType:
-                  customer.settlementManagementType || "",
-                slug: customer.slug,
-                idParent: customer.idParent || 0,
-                isActive: customer.isActive,
-              })),
-              totalCount: customers.totalCount,
-            }}
+            Customers={customers}
           />
 
           {totalCount > 0 && (
