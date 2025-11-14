@@ -31,7 +31,6 @@ import {
   TooltipProvider,
 } from "@radix-ui/react-tooltip";
 import { TooltipTrigger } from "@/components/ui/tooltip";
-import { generateSlug } from "@/lib/utils";
 import { insertCustomerFormAction } from "../_actions/customers-formActions";
 import { updateCustomer } from "../server/customers";
 
@@ -220,11 +219,11 @@ export default function CustomerWizardForm({
   };
 
   const handleFirstStepComplete = async (id: number) => {
-    if (iso.subdomain && iso.subdomain.trim() !== "") {
+    if (isoData.slug && isoData.slug.trim() !== "") {
       try {
         const formData = new FormData();
         formData.append("customerId", id.toString());
-        formData.append("subdomain", iso.subdomain);
+        formData.append("subdomain", isoData.slug);
         formData.append("primaryColor", "#000000");
         formData.append("secondaryColor", "#ffffff");
         
@@ -316,23 +315,23 @@ export default function CustomerWizardForm({
   const [isSavingCustomization, setIsSavingCustomization] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const [iso, setIso] = useState<{
+  const [isoData, setIsoData] = useState<{
     name: string;
-    subdomain: string;
+    slug: string;
   }>({
     name: customer?.name || "",
-    subdomain: "",
+    slug: "",
   });
 
   useEffect(() => {
-    const initialSubdomain = customizationData?.subdomain || customer?.slug || "";
+    const initialSlug = customer?.slug || customizationData?.subdomain || "";
     const initialName = customer?.name || "";
     
-    setIso({
+    setIsoData({
       name: initialName,
-      subdomain: initialSubdomain,
+      slug: initialSlug,
     });
-  }, [customizationData?.subdomain, customer?.slug, customer?.name]);
+  }, [customer?.slug, customizationData?.subdomain, customer?.name]);
 
   // Handler para impedir troca de aba ao clicar nas tabs
   const handleTabClick = (value: string, e: React.MouseEvent) => {
@@ -394,31 +393,34 @@ export default function CustomerWizardForm({
         <TabsContent value="step1" className="space-y-6">
           <Card className="p-8">
             <CardContent className="space-y-8 p-0">
-              {/* Block A: ISO Data (2-column grid) */}
-              <div className="space-y-4">
-                <CustomerForm
-                  customer={customer}
-                  onSuccess={handleFirstStepComplete}
-                  hideWrapper={true}
-                  nameValue={iso.name}
-                  onNameChange={(name) => setIso({ ...iso, name })}
-                  subdomainValue={iso.subdomain}
-                  onSubdomainChange={(subdomain) => setIso({ ...iso, subdomain })}
-                  showSubmitButton={false}
-                />
-              </div>
-
-              {/* Block B: User Creation Form (only after ISO created) */}
-              {isFirstStepComplete && selectedUser === null && (
-                <div className="space-y-4 pt-8 border-t">
-                  <UserCustomerForm
-                    customerId={newCustomerId || undefined}
-                    onSuccess={handleUserSuccess}
-                    profiles={profiles}
+              {/* Blocks A and B side by side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Block A: ISO Data (1-column grid) */}
+                <div className="space-y-4">
+                  <CustomerForm
+                    customer={customer}
+                    onSuccess={handleFirstStepComplete}
                     hideWrapper={true}
+                    nameValue={isoData.name}
+                    onNameChange={(name) => setIsoData({ ...isoData, name })}
+                    slugValue={isoData.slug}
+                    onSlugChange={(slug) => setIsoData({ ...isoData, slug })}
+                    showSubmitButton={false}
                   />
                 </div>
-              )}
+
+                {/* Block B: User Creation Form (only after ISO created) */}
+                {isFirstStepComplete && selectedUser === null && (
+                  <div className="space-y-4">
+                    <UserCustomerForm
+                      customerId={newCustomerId || undefined}
+                      onSuccess={handleUserSuccess}
+                      profiles={profiles}
+                      hideWrapper={true}
+                    />
+                  </div>
+                )}
+              </div>
 
               {/* Block C: User List Table (only after ISO created) */}
               {isFirstStepComplete && selectedUser === null && (
@@ -472,24 +474,29 @@ export default function CustomerWizardForm({
               <div className="flex justify-end pt-8 border-t">
                 <Button
                   onClick={async () => {
+                    if (!isoData.name || !isoData.slug) {
+                      toast.error("Por favor, preencha o Nome e o Domínio do ISO");
+                      return;
+                    }
+                    
                     const isEdit = Boolean(newCustomerId || customer?.id);
                     setIsLoading(true);
                     try {
                       if (isEdit && (newCustomerId || customer?.id)) {
                         const updatedData = {
                           id: newCustomerId || customer?.id,
-                          name: iso.name,
-                          slug: customer?.slug || "",
+                          name: isoData.name,
+                          slug: isoData.slug,
                           customerId: customer?.customerId || "",
                           settlementManagementType: customer?.settlementManagementType || "",
                         };
                         const updatedId = await updateCustomer(updatedData);
                         toast.success("ISO atualizado com sucesso");
                         
-                        if (iso.subdomain && iso.subdomain.trim() !== "") {
+                        if (isoData.slug && isoData.slug.trim() !== "") {
                           const formData = new FormData();
                           formData.append("customerId", updatedId.toString());
-                          formData.append("subdomain", iso.subdomain);
+                          formData.append("subdomain", isoData.slug);
                           formData.append("primaryColor", customizationData?.primaryColor || "#000000");
                           formData.append("secondaryColor", customizationData?.secondaryColor || "#ffffff");
                           
@@ -513,10 +520,9 @@ export default function CustomerWizardForm({
                           }
                         }
                       } else {
-                        const slug = generateSlug();
                         const customerDataFixed = {
-                          slug: slug || "",
-                          name: iso.name,
+                          slug: isoData.slug,
+                          name: isoData.name,
                           customerId: customer?.customerId || undefined,
                           settlementManagementType: customer?.settlementManagementType || undefined,
                           idParent: customer?.idParent || undefined,
@@ -537,7 +543,7 @@ export default function CustomerWizardForm({
                       setIsLoading(false);
                     }
                   }}
-                  disabled={isLoading || !iso.name || !iso.subdomain}
+                  disabled={isLoading || !isoData.name || !isoData.slug}
                   className="cursor-pointer"
                 >
                   {isLoading ? "Salvando..." : (newCustomerId || customer?.id) ? "Atualizar" : "Salvar"}
@@ -567,7 +573,7 @@ export default function CustomerWizardForm({
 
               const formData = new FormData(e.currentTarget);
 
-              const subdomain = (iso.subdomain || customizationData?.subdomain || "").trim();
+              const subdomain = (isoData.slug || customizationData?.subdomain || "").trim();
               const customerId = newCustomerId || customer.id;
 
               if (!subdomain) {
@@ -882,7 +888,7 @@ export default function CustomerWizardForm({
                     <input
                       type="hidden"
                       name="subdomain"
-                      value={iso.subdomain || customizationData?.subdomain || ""}
+                      value={isoData.slug || customizationData?.subdomain || ""}
                     />
                   </CardContent>
                 </>
