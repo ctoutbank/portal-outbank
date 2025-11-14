@@ -50,7 +50,14 @@ export default async function CustomerDetail({ params }: PageProps) {
     let customizationInitial = null;
     if (Customer?.id) {
       try {
-        customizationInitial = await getCustomizationByCustomerId(Customer.id);
+        const customization = await getCustomizationByCustomerId(Customer.id);
+        if (customization) {
+          customizationInitial = JSON.parse(
+            JSON.stringify(customization, (_, value) =>
+              typeof value === 'bigint' ? Number(value) : value
+            )
+          );
+        }
       } catch (error) {
         console.error("Error fetching customization:", error);
       }
