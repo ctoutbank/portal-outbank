@@ -57,14 +57,14 @@ export default function CustomersList({
                   </Link>
                 </TableCell>
                 <TableCell className="py-3">
-                  {customer.slug ? (
+                  {customer.subdomain ? (
                     <a
-                      href={`https://${customer.slug}.consolle.one`}
+                      href={`https://${customer.subdomain}.consolle.one`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline inline-flex items-center gap-1 text-sm"
                     >
-                      <span className="font-mono">{customer.slug}.consolle.one</span>
+                      <span className="font-mono">{customer.subdomain}.consolle.one</span>
                       <ExternalLink className="h-3 w-3 opacity-60" />
                     </a>
                   ) : (
@@ -81,7 +81,7 @@ export default function CustomersList({
                     isActive={customer.isActive ?? true}
                     hasCustomization={customer.hasCustomization}
                     hasUsers={customer.userCount}
-                    subdomain={customer.slug}
+                    subdomain={customer.subdomain}
                     isoStatus={customer.isoStatus}
                   />
                 </TableCell>
