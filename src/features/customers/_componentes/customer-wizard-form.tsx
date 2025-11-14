@@ -31,6 +31,9 @@ import {
   TooltipProvider,
 } from "@radix-ui/react-tooltip";
 import { TooltipTrigger } from "@/components/ui/tooltip";
+import { generateSlug } from "@/lib/utils";
+import { insertCustomerFormAction } from "../_actions/customers-formActions";
+import { updateCustomer } from "../server/customers";
 
 interface CustomerWizardFormProps {
   customer: CustomerSchema;
@@ -216,22 +219,12 @@ export default function CustomerWizardForm({
     }
   };
 
-  // Função para marcar que o primeiro passo foi concluído e passar para o próximo
-  const onCustomerCreated = (id: number) => {
-    setNewCustomerId(id);
-    setIsFirstStepComplete(true);
-    setActiveTab("step2");
-    loadUsers(id);
-    router.replace(`/customers/${id}?step=step2`, { scroll: false });
-  };
-
-  // Função que será passada para o CustomerForm para notificar quando o cliente foi criado
   const handleFirstStepComplete = async (id: number) => {
-    if (step1Subdomain && step1Subdomain.trim() !== "") {
+    if (iso.subdomain && iso.subdomain.trim() !== "") {
       try {
         const formData = new FormData();
         formData.append("customerId", id.toString());
-        formData.append("subdomain", step1Subdomain);
+        formData.append("subdomain", iso.subdomain);
         formData.append("primaryColor", "#000000");
         formData.append("secondaryColor", "#ffffff");
         
@@ -260,7 +253,9 @@ export default function CustomerWizardForm({
       }
     }
     
-    onCustomerCreated(id);
+    setNewCustomerId(id);
+    setIsFirstStepComplete(true);
+    loadUsers(id);
   };
 
   // Função para recarregar a lista de usuários
@@ -319,13 +314,25 @@ export default function CustomerWizardForm({
   console.log("CUSTOMERID", newCustomerId);
 
   const [isSavingCustomization, setIsSavingCustomization] = useState(false);
-  const [step1Subdomain, setStep1Subdomain] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const [iso, setIso] = useState<{
+    name: string;
+    subdomain: string;
+  }>({
+    name: customer?.name || "",
+    subdomain: "",
+  });
 
   useEffect(() => {
-    if (customizationData?.subdomain) {
-      setStep1Subdomain(customizationData.subdomain);
-    }
-  }, [customizationData?.subdomain]);
+    const initialSubdomain = customizationData?.subdomain || customer?.slug || "";
+    const initialName = customer?.name || "";
+    
+    setIso({
+      name: initialName,
+      subdomain: initialSubdomain,
+    });
+  }, [customizationData?.subdomain, customer?.slug, customer?.name]);
 
   // Handler para impedir troca de aba ao clicar nas tabs
   const handleTabClick = (value: string, e: React.MouseEvent) => {
@@ -385,21 +392,23 @@ export default function CustomerWizardForm({
         </TabsList>
 
         <TabsContent value="step1" className="space-y-6">
-          {/* Single large card with 3 blocks */}
           <Card className="p-8">
             <CardContent className="space-y-8 p-0">
-              {/* Block 1: ISO Data (2-column grid) */}
+              {/* Block A: ISO Data (2-column grid) */}
               <div className="space-y-4">
                 <CustomerForm
                   customer={customer}
                   onSuccess={handleFirstStepComplete}
                   hideWrapper={true}
-                  subdomain={step1Subdomain}
-                  onSubdomainChange={setStep1Subdomain}
+                  nameValue={iso.name}
+                  onNameChange={(name) => setIso({ ...iso, name })}
+                  subdomainValue={iso.subdomain}
+                  onSubdomainChange={(subdomain) => setIso({ ...iso, subdomain })}
+                  showSubmitButton={false}
                 />
               </div>
 
-              {/* Block 2: User Creation Form (only after ISO created) */}
+              {/* Block B: User Creation Form (only after ISO created) */}
               {isFirstStepComplete && selectedUser === null && (
                 <div className="space-y-4 pt-8 border-t">
                   <UserCustomerForm
@@ -411,7 +420,7 @@ export default function CustomerWizardForm({
                 </div>
               )}
 
-              {/* Block 3: User List Table (only after ISO created) */}
+              {/* Block C: User List Table (only after ISO created) */}
               {isFirstStepComplete && selectedUser === null && (
                 <div className="space-y-4 pt-8 border-t">
                   <h3 className="text-lg font-semibold">Usuários</h3>
@@ -458,6 +467,82 @@ export default function CustomerWizardForm({
                   )}
                 </div>
               )}
+
+              {/* Single primary button at bottom of card */}
+              <div className="flex justify-end pt-8 border-t">
+                <Button
+                  onClick={async () => {
+                    const isEdit = Boolean(newCustomerId || customer?.id);
+                    setIsLoading(true);
+                    try {
+                      if (isEdit && (newCustomerId || customer?.id)) {
+                        const updatedData = {
+                          id: newCustomerId || customer?.id,
+                          name: iso.name,
+                          slug: customer?.slug || "",
+                          customerId: customer?.customerId || "",
+                          settlementManagementType: customer?.settlementManagementType || "",
+                        };
+                        const updatedId = await updateCustomer(updatedData);
+                        toast.success("ISO atualizado com sucesso");
+                        
+                        if (iso.subdomain && iso.subdomain.trim() !== "") {
+                          const formData = new FormData();
+                          formData.append("customerId", updatedId.toString());
+                          formData.append("subdomain", iso.subdomain);
+                          formData.append("primaryColor", customizationData?.primaryColor || "#000000");
+                          formData.append("secondaryColor", customizationData?.secondaryColor || "#ffffff");
+                          
+                          if (customizationData?.id) {
+                            formData.append("id", customizationData.id.toString());
+                            await updateCustomization(formData);
+                          } else {
+                            await saveCustomization(formData);
+                          }
+                          
+                          const updatedCustomization = await getCustomizationByCustomerId(updatedId);
+                          if (updatedCustomization) {
+                            setCustomizationData({
+                              imageUrl: updatedCustomization.imageUrl ?? undefined,
+                              id: updatedCustomization.id ?? 0,
+                              subdomain: updatedCustomization.slug ?? undefined,
+                              primaryColor: updatedCustomization.primaryColor ?? undefined,
+                              secondaryColor: updatedCustomization.secondaryColor ?? undefined,
+                              loginImageUrl: updatedCustomization.loginImageUrl ?? undefined,
+                            });
+                          }
+                        }
+                      } else {
+                        const slug = generateSlug();
+                        const customerDataFixed = {
+                          slug: slug || "",
+                          name: iso.name,
+                          customerId: customer?.customerId || undefined,
+                          settlementManagementType: customer?.settlementManagementType || undefined,
+                          idParent: customer?.idParent || undefined,
+                          id: customer?.id || undefined,
+                        };
+                        const newId = await insertCustomerFormAction(customerDataFixed);
+                        toast.success("ISO criado com sucesso");
+                        
+                        if (newId !== null && newId !== undefined) {
+                          await handleFirstStepComplete(newId);
+                          router.replace(`/customers/${newId}?step=step1`, { scroll: false });
+                        }
+                      }
+                    } catch (error) {
+                      console.error("Erro ao salvar ISO:", error);
+                      toast.error("Ocorreu um erro ao processar a solicitação");
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                  disabled={isLoading || !iso.name || !iso.subdomain}
+                  className="cursor-pointer"
+                >
+                  {isLoading ? "Salvando..." : (newCustomerId || customer?.id) ? "Atualizar" : "Salvar"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -482,7 +567,7 @@ export default function CustomerWizardForm({
 
               const formData = new FormData(e.currentTarget);
 
-              const subdomain = (step1Subdomain || customizationData?.subdomain || "").trim();
+              const subdomain = (iso.subdomain || customizationData?.subdomain || "").trim();
               const customerId = newCustomerId || customer.id;
 
               if (!subdomain) {
@@ -797,7 +882,7 @@ export default function CustomerWizardForm({
                     <input
                       type="hidden"
                       name="subdomain"
-                      value={step1Subdomain || customizationData?.subdomain || ""}
+                      value={iso.subdomain || customizationData?.subdomain || ""}
                     />
                   </CardContent>
                 </>
