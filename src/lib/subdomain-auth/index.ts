@@ -1,24 +1,24 @@
 export { validateUserAccessBySubdomain } from "./domain";
 
+const BASE_DOMAIN = "consolle.one";
+
 /**
  * Extract subdomain from hostname
  * @param hostname - The hostname from request headers
  * @returns The subdomain or null if not a valid tenant subdomain
  */
 export function extractSubdomain(hostname: string): string | null {
-  const parts = hostname.split(".");
-  
-  if (parts.length >= 3) {
-    const subdomain = parts[0];
-    
-    if (["www", "lvh", "localhost"].includes(subdomain)) {
-      return null;
-    }
-    
-    return subdomain;
+  if (!hostname.endsWith(`.${BASE_DOMAIN}`)) {
+    return null;
   }
   
-  return null;
+  const subdomain = hostname.slice(0, -(`.${BASE_DOMAIN}`.length));
+  
+  if (["www", "lvh", "localhost"].includes(subdomain)) {
+    return null;
+  }
+  
+  return subdomain;
 }
 
 /**
@@ -27,5 +27,5 @@ export function extractSubdomain(hostname: string): string | null {
  * @returns true if this is a tenant subdomain (*.consolle.one)
  */
 export function isTenantHost(hostname: string): boolean {
-  return extractSubdomain(hostname) !== null;
+  return hostname.endsWith(`.${BASE_DOMAIN}`) && extractSubdomain(hostname) !== null;
 }
