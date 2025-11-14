@@ -17,10 +17,9 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   const subdomain = extractSubdomain(hostname);
   const isTenant = isTenantHost(hostname);
   const { userId } = await auth();
+  const pathname = request.nextUrl.pathname;
   
   if (isTenant && subdomain) {
-    const pathname = request.nextUrl.pathname;
-    
     if (!userId && pathname === "/") {
       const signInUrl = new URL("/auth/sign-in", request.url);
       return NextResponse.redirect(signInUrl);
@@ -33,6 +32,25 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     
     if (!isPublicRoute(request)) {
       await auth.protect();
+    }
+    
+    const tenantRouteMap: Record<string, string> = {
+      "/": "/tenant",
+      "/auth/sign-in": "/tenant/auth/sign-in",
+      "/dashboard": "/tenant/dashboard",
+      "/unauthorized": "/tenant/unauthorized",
+    };
+    
+    const targetPath = tenantRouteMap[pathname];
+    
+    if (targetPath) {
+      const rewriteUrl = new URL(targetPath, request.url);
+      const response = NextResponse.rewrite(rewriteUrl);
+      response.cookies.set("tenant", subdomain, {
+        path: "/",
+        httpOnly: false,
+      });
+      return response;
     }
     
     const response = NextResponse.next();
