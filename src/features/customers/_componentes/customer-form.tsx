@@ -201,7 +201,11 @@ export default function CustomerFormm({
 
   if (hideWrapper) {
     if (!showSubmitButton) {
-      return <div className="space-y-4">{formFields}</div>;
+      return (
+        <Form {...form}>
+          <div className="space-y-4">{formFields}</div>
+        </Form>
+      );
     }
     
     return (
