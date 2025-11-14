@@ -10,6 +10,7 @@ const isPublicRoute = createRouteMatcher([
   "/auth/sign-up(.*)",
   "/api/public(.*)",
   "/api/check-subdomain-auth(.*)",
+  "/unauthorized(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, request: NextRequest) => {
@@ -36,7 +37,9 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     
     const tenantRouteMap: Record<string, string> = {
       "/": "/tenant",
+      "/sign-in": "/tenant/auth/sign-in",
       "/auth/sign-in": "/tenant/auth/sign-in",
+      "/auth/sign-up": "/tenant/auth/sign-up",
       "/dashboard": "/tenant/dashboard",
       "/unauthorized": "/tenant/unauthorized",
     };
