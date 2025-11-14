@@ -189,20 +189,29 @@ export async function saveCustomization(formData: FormData) {
     const arrayBuffer = await image.arrayBuffer();
     const imageBuffer = Buffer.from(arrayBuffer);
     const imageId = nanoid(8);
-    const extension = "png";
-    const fileType = "image/jpeg";
+    const extension = image.name.split(".").pop() || "jpg";
+    const fileType = image.type || "image/jpeg";
 
     const uploadCommand = new PutObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `${imageId}.jpg`,
+      Key: `logo-${imageId}.${extension}`,
       Body: imageBuffer,
       ContentType: fileType,
     });
 
-    await s3Client.send(uploadCommand);
+    try {
+      await s3Client.send(uploadCommand);
+      imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/logo-${imageId}.${extension}`;
+      console.log("Logo uploaded successfully:", imageUrl);
+    } catch (error: any) {
+      console.error("S3 Upload Error (logo):", {
+        name: error.name,
+        message: error.message,
+        statusCode: error.$metadata?.httpStatusCode,
+      });
+      throw new Error(`Falha no upload do logo: ${error.message}`);
+    }
 
-    imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${imageId}.jpg`;
-    console.log("info here: ",imageUrl, image.name, extension, fileType);
     const result = await db
       .insert(file)
       .values({
@@ -232,9 +241,19 @@ export async function saveCustomization(formData: FormData) {
       ContentType: fileType,
     });
 
-    await s3Client.send(uploadCommand);
+    try {
+      await s3Client.send(uploadCommand);
+      loginImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/login-${imageId}.${extension}`;
+      console.log("Login image uploaded successfully:", loginImageUrl);
+    } catch (error: any) {
+      console.error("S3 Upload Error (login image):", {
+        name: error.name,
+        message: error.message,
+        statusCode: error.$metadata?.httpStatusCode,
+      });
+      throw new Error(`Falha no upload da imagem de login: ${error.message}`);
+    }
 
-    loginImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/login-${imageId}.${extension}`;
     const result = await db
       .insert(file)
       .values({
@@ -264,9 +283,19 @@ export async function saveCustomization(formData: FormData) {
       ContentType: fileType,
     });
 
-    await s3Client.send(uploadCommand);
+    try {
+      await s3Client.send(uploadCommand);
+      faviconUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/favicon-${imageId}.${extension}`;
+      console.log("Favicon uploaded successfully:", faviconUrl);
+    } catch (error: any) {
+      console.error("S3 Upload Error (favicon):", {
+        name: error.name,
+        message: error.message,
+        statusCode: error.$metadata?.httpStatusCode,
+      });
+      throw new Error(`Falha no upload do favicon: ${error.message}`);
+    }
 
-    faviconUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/favicon-${imageId}.${extension}`;
     const result = await db
       .insert(file)
       .values({
@@ -340,16 +369,23 @@ export async function updateCustomization(formData: FormData) {
 
     const uploadCommand = new PutObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `${imageId}.jpg`,
+      Key: `logo-${imageId}.${extension}`,
       Body: imageBuffer,
       ContentType: fileType,
     });
 
-    await s3Client.send(uploadCommand);
-
-    imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/${imageId}.jpg`;
-
-    console.log("extensão", extension);
+    try {
+      await s3Client.send(uploadCommand);
+      imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/logo-${imageId}.${extension}`;
+      console.log("Logo updated successfully:", imageUrl);
+    } catch (error: any) {
+      console.error("S3 Upload Error (logo update):", {
+        name: error.name,
+        message: error.message,
+        statusCode: error.$metadata?.httpStatusCode,
+      });
+      throw new Error(`Falha na atualização do logo: ${error.message}`);
+    }
 
     const result = await db
       .insert(file)
@@ -395,9 +431,19 @@ export async function updateCustomization(formData: FormData) {
       ContentType: fileType,
     });
 
-    await s3Client.send(uploadCommand);
+    try {
+      await s3Client.send(uploadCommand);
+      loginImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/login-${imageId}.${extension}`;
+      console.log("Login image updated successfully:", loginImageUrl);
+    } catch (error: any) {
+      console.error("S3 Upload Error (login image update):", {
+        name: error.name,
+        message: error.message,
+        statusCode: error.$metadata?.httpStatusCode,
+      });
+      throw new Error(`Falha na atualização da imagem de login: ${error.message}`);
+    }
 
-    loginImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/login-${imageId}.${extension}`;
     const result = await db
       .insert(file)
       .values({
@@ -441,9 +487,19 @@ export async function updateCustomization(formData: FormData) {
       ContentType: fileType,
     });
 
-    await s3Client.send(uploadCommand);
+    try {
+      await s3Client.send(uploadCommand);
+      faviconUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/favicon-${imageId}.${extension}`;
+      console.log("Favicon updated successfully:", faviconUrl);
+    } catch (error: any) {
+      console.error("S3 Upload Error (favicon update):", {
+        name: error.name,
+        message: error.message,
+        statusCode: error.$metadata?.httpStatusCode,
+      });
+      throw new Error(`Falha na atualização do favicon: ${error.message}`);
+    }
 
-    faviconUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.amazonaws.com/favicon-${imageId}.${extension}`;
     const result = await db
       .insert(file)
       .values({
