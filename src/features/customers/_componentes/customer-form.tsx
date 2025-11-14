@@ -28,6 +28,10 @@ interface CustomerFormProps {
   hideWrapper?: boolean;
   subdomain?: string;
   onSubdomainChange?: (subdomain: string) => void;
+  nameValue?: string;
+  onNameChange?: (name: string) => void;
+  subdomainValue?: string;
+  showSubmitButton?: boolean;
 }
 
 export default function CustomerFormm({
@@ -36,6 +40,10 @@ export default function CustomerFormm({
   hideWrapper = false,
   subdomain = "",
   onSubdomainChange,
+  nameValue,
+  onNameChange,
+  subdomainValue,
+  showSubmitButton = true,
 }: CustomerFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const isEditing = !!customer?.id;
@@ -60,7 +68,9 @@ export default function CustomerFormm({
         toast.success("Cliente atualizado com sucesso");
 
         if (onSuccess) onSuccess(updatedId);
-        router.push(`/customers/${updatedId}`);
+        if (!hideWrapper) {
+          router.push(`/customers/${updatedId}`);
+        }
       } else {
         const slug = generateSlug();
 
@@ -75,11 +85,12 @@ export default function CustomerFormm({
 
         const newId = await insertCustomerFormAction(customerDataFixed);
         toast.success("Cliente criado com sucesso");
-        form.reset();
 
         if (newId !== null && newId !== undefined) {
           if (onSuccess) onSuccess(newId);
-          router.push(`/customers/${newId}?step=step2`);
+          if (!hideWrapper) {
+            router.push(`/customers/${newId}?step=step2`);
+          }
         }
       }
     } catch (error) {
@@ -92,34 +103,76 @@ export default function CustomerFormm({
 
   const formFields = (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <FormField
-        control={form.control}
-        name="name"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>
-              Nome do ISO <span className="text-destructive">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input
-                placeholder="Nome do cliente"
-                maxLength={200}
-                {...field}
-                onChange={(e) => {
-                  const sanitized = e.target.value.replace(
-                    /[^a-zA-Z0-9À-ÿ\s]/g,
-                    ""
-                  );
-                  field.onChange(sanitized);
-                }}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {hideWrapper && nameValue !== undefined && onNameChange ? (
+        <div>
+          <FormLabel>
+            Nome do ISO <span className="text-destructive">*</span>
+          </FormLabel>
+          <Input
+            value={nameValue}
+            onChange={(e) => {
+              const sanitized = e.target.value.replace(
+                /[^a-zA-Z0-9À-ÿ\s]/g,
+                ""
+              );
+              onNameChange(sanitized);
+            }}
+            placeholder="Nome do cliente"
+            maxLength={200}
+            className="w-full"
+          />
+        </div>
+      ) : (
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                Nome do ISO <span className="text-destructive">*</span>
+              </FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Nome do cliente"
+                  maxLength={200}
+                  {...field}
+                  onChange={(e) => {
+                    const sanitized = e.target.value.replace(
+                      /[^a-zA-Z0-9À-ÿ\s]/g,
+                      ""
+                    );
+                    field.onChange(sanitized);
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
 
-      {hideWrapper && (
+      {hideWrapper && subdomainValue !== undefined && onSubdomainChange ? (
+        <div>
+          <FormLabel>
+            Domínio do ISO <span className="text-destructive">*</span>
+          </FormLabel>
+          <Input
+            value={subdomainValue}
+            onChange={(e) => {
+              const sanitized = e.target.value
+                .toLowerCase()
+                .replace(/[^a-z0-9-]/g, "");
+              onSubdomainChange(sanitized);
+            }}
+            placeholder="meudominio"
+            maxLength={63}
+            className="w-full"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            {subdomainValue || "meudominio"}.consolle.one
+          </p>
+        </div>
+      ) : hideWrapper && (
         <div>
           <FormLabel>
             Domínio do ISO <span className="text-destructive">*</span>
@@ -147,6 +200,10 @@ export default function CustomerFormm({
   );
 
   if (hideWrapper) {
+    if (!showSubmitButton) {
+      return <div className="space-y-4">{formFields}</div>;
+    }
+    
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
