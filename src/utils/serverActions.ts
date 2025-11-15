@@ -411,6 +411,26 @@ export async function saveCustomization(formData: FormData) {
     faviconUrl: savedCustomization?.faviconUrl,
   });
 
+  try {
+    const revalidateUrl = process.env.NEXT_PUBLIC_OUTBANK_ONE_URL || 'https://outbank-one.vercel.app';
+    const response = await fetch(`${revalidateUrl}/api/revalidate/theme`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.REVALIDATE_TOKEN}`,
+      },
+      body: JSON.stringify({ slug: normalizedSubdomain }),
+    });
+
+    if (!response.ok) {
+      console.error(`[saveCustomization] Failed to invalidate cache: ${response.status} ${response.statusText}`);
+    } else {
+      console.log(`[saveCustomization] Cache invalidated successfully for slug: ${normalizedSubdomain}`);
+    }
+  } catch (error) {
+    console.error('[saveCustomization] Error calling revalidate API:', error);
+  }
+
   revalidatePath("/");
   revalidatePath("/customers");
   revalidatePath(`/customers/${customerId}`);
@@ -659,6 +679,26 @@ export async function updateCustomization(formData: FormData) {
     loginImageUrl: updatedCustomization?.loginImageUrl,
     faviconUrl: updatedCustomization?.faviconUrl,
   });
+
+  try {
+    const revalidateUrl = process.env.NEXT_PUBLIC_OUTBANK_ONE_URL || 'https://outbank-one.vercel.app';
+    const response = await fetch(`${revalidateUrl}/api/revalidate/theme`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.REVALIDATE_TOKEN}`,
+      },
+      body: JSON.stringify({ slug: normalizedSubdomain }),
+    });
+
+    if (!response.ok) {
+      console.error(`[updateCustomization] Failed to invalidate cache: ${response.status} ${response.statusText}`);
+    } else {
+      console.log(`[updateCustomization] Cache invalidated successfully for slug: ${normalizedSubdomain}`);
+    }
+  } catch (error) {
+    console.error('[updateCustomization] Error calling revalidate API:', error);
+  }
 
   revalidatePath("/");
   revalidatePath("/customers");
