@@ -63,7 +63,8 @@ export default function CustomerActionButtons({ isActive }: { isActive: boolean 
         router.push("/customers");
       } catch (error) {
         console.error("Erro ao deletar ISO:", error);
-        toast.error("Erro ao deletar o ISO.");
+        const errorMessage = error instanceof Error ? error.message : "Erro ao deletar o ISO.";
+        toast.error(errorMessage);
       }
     });
   };

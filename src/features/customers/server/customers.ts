@@ -181,11 +181,37 @@ export async function updateCustomer(
 }
 
 export async function deleteCustomer(id: number): Promise<number> {
-  const customerDelete = await db
-    .delete(customers)
-    .where(eq(customers.id, id))
-    .returning({ id: customers.id });
-  return customerDelete[0].id;
+  if (!Number.isFinite(id) || id <= 0) {
+    throw new Error("ID inválido para deletar ISO");
+  }
+
+  try {
+    const customerDelete = await db
+      .delete(customers)
+      .where(eq(customers.id, id))
+      .returning({ id: customers.id });
+    
+    if (customerDelete.length === 0) {
+      throw new Error("ISO não encontrado");
+    }
+    
+    return customerDelete[0].id;
+  } catch (error: any) {
+    console.error("Erro ao deletar ISO:", error);
+    
+    if (error.code === "23503") {
+      throw new Error(
+        "Este ISO possui dados relacionados (usuários, customizações, etc.) e não pode ser deletado. " +
+        "Por favor, remova ou transfira os dados relacionados antes de deletar o ISO."
+      );
+    }
+    
+    if (error.message?.includes("ISO não encontrado") || error.message?.includes("ID inválido")) {
+      throw error;
+    }
+    
+    throw new Error("Erro ao deletar ISO. Por favor, tente novamente.");
+  }
 }
 
 export type CustomerFull = {
