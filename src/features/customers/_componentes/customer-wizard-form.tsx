@@ -171,7 +171,7 @@ export default function CustomerWizardForm({
         setImagePreview(result);
 
         if (file.type !== "image/svg+xml") {
-          const img = new Image();
+          const img = document.createElement('img');
           img.onload = () => {
             const aspectRatio = img.width / img.height;
             if (aspectRatio < 2) {
@@ -231,7 +231,7 @@ export default function CustomerWizardForm({
         const result = reader.result as string;
         setLoginImagePreview(result);
 
-        const img = new Image();
+        const img = document.createElement('img');
         img.onload = () => {
           if (img.width < 1280 || img.height < 720) {
             setLoginImageError(
