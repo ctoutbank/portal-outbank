@@ -138,6 +138,23 @@ export default function CustomerWizardForm({
   const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
   const [faviconError, setFaviconError] = useState<string | null>(null);
   const [faviconFileName, setFaviconFileName] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSavingCustomization, setIsSavingCustomization] = useState(false);
+
+  useEffect(() => {
+    if (customizationData?.imageUrl && !imageFileName) {
+      const filename = customizationData.imageUrl.split('/').pop() || 'logo atual';
+      setImageFileName(filename);
+    }
+    if (customizationData?.loginImageUrl && !loginImageFileName) {
+      const filename = customizationData.loginImageUrl.split('/').pop() || 'imagem de login atual';
+      setLoginImageFileName(filename);
+    }
+    if (customizationData?.faviconUrl && !faviconFileName) {
+      const filename = customizationData.faviconUrl.split('/').pop() || 'favicon atual';
+      setFaviconFileName(filename);
+    }
+  }, [customizationData, imageFileName, loginImageFileName, faviconFileName]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -692,10 +709,40 @@ export default function CustomerWizardForm({
               }
 
               try {
+                let result;
                 if (customizationData) {
-                  await updateCustomization(formData);
+                  result = await updateCustomization(formData);
                 } else {
-                  await saveCustomization(formData);
+                  result = await saveCustomization(formData);
+                }
+
+                if (result?.customization) {
+                  setCustomizationData({
+                    imageUrl: result.customization.imageUrl ?? undefined,
+                    id: result.customization.id ?? 0,
+                    subdomain: result.customization.slug ?? undefined,
+                    primaryColor: result.customization.primaryColor ?? undefined,
+                    secondaryColor: result.customization.secondaryColor ?? undefined,
+                    loginImageUrl: result.customization.loginImageUrl ?? undefined,
+                    faviconUrl: result.customization.faviconUrl ?? undefined,
+                  });
+                  
+                  setImagePreview(null);
+                  setLoginImagePreview(null);
+                  setFaviconPreview(null);
+                  
+                  if (result.customization.imageUrl) {
+                    const filename = result.customization.imageUrl.split('/').pop() || 'logo atual';
+                    setImageFileName(filename);
+                  }
+                  if (result.customization.loginImageUrl) {
+                    const filename = result.customization.loginImageUrl.split('/').pop() || 'imagem de login atual';
+                    setLoginImageFileName(filename);
+                  }
+                  if (result.customization.faviconUrl) {
+                    const filename = result.customization.faviconUrl.split('/').pop() || 'favicon atual';
+                    setFaviconFileName(filename);
+                  }
                 }
 
                 toast.success("Customização salva com sucesso!");
