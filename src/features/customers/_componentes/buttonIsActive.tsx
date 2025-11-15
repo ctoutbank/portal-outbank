@@ -1,13 +1,23 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { deactivateCustomer, activateCustomer, deleteCustomer } from "../server/customers";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { AlertTriangle } from "lucide-react";
 
 export default function CustomerActionButtons({ isActive }: { isActive: boolean }) {
   const [isPending, startTransition] = useTransition();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const params = useParams();
   const router = useRouter();
 
@@ -39,11 +49,13 @@ export default function CustomerActionButtons({ isActive }: { isActive: boolean 
     });
   };
 
-  const handleDelete = () => {
-    if (!confirm("Tem certeza que deseja deletar este ISO permanentemente? Esta ação não pode ser desfeita.")) {
-      return;
-    }
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
 
+  const handleDeleteConfirm = () => {
+    setShowDeleteDialog(false);
+    
     startTransition(async () => {
       try {
         await deleteCustomer(id);
@@ -57,35 +69,77 @@ export default function CustomerActionButtons({ isActive }: { isActive: boolean 
   };
 
   return (
-    <div className="flex items-center space-x-2">
-      {isActive ? (
+    <>
+      <div className="flex items-center space-x-2">
+        {isActive ? (
+          <Button 
+            variant="destructive" 
+            className="cursor-pointer" 
+            onClick={handleDeactivate} 
+            disabled={isPending}
+          >
+            {isPending ? "Desativando..." : "Desativar ISO"}
+          </Button>
+        ) : (
+          <Button 
+            variant="default" 
+            className="cursor-pointer bg-green-600 hover:bg-green-700" 
+            onClick={handleActivate} 
+            disabled={isPending}
+          >
+            {isPending ? "Ativando..." : "Ativar ISO"}
+          </Button>
+        )}
+        
         <Button 
-          variant="destructive" 
-          className="cursor-pointer" 
-          onClick={handleDeactivate} 
+          variant="outline" 
+          className="cursor-pointer border-red-600 text-red-600 hover:bg-red-50" 
+          onClick={handleDeleteClick} 
           disabled={isPending}
         >
-          {isPending ? "Desativando..." : "Desativar ISO"}
+          {isPending ? "Deletando..." : "Deletar ISO"}
         </Button>
-      ) : (
-        <Button 
-          variant="default" 
-          className="cursor-pointer bg-green-600 hover:bg-green-700" 
-          onClick={handleActivate} 
-          disabled={isPending}
-        >
-          {isPending ? "Ativando..." : "Ativar ISO"}
-        </Button>
-      )}
-      
-      <Button 
-        variant="outline" 
-        className="cursor-pointer border-red-600 text-red-600 hover:bg-red-50" 
-        onClick={handleDelete} 
-        disabled={isPending}
-      >
-        {isPending ? "Deletando..." : "Deletar ISO"}
-      </Button>
-    </div>
+      </div>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+              <DialogTitle className="text-xl">Confirmar Exclusão</DialogTitle>
+            </div>
+            <DialogDescription className="pt-3 text-base">
+              Tem certeza que deseja deletar este ISO permanentemente?
+              <br />
+              <br />
+              <span className="font-semibold text-red-600">
+                Esta ação não pode ser desfeita.
+              </span>
+              <br />
+              <br />
+              Todos os dados associados a este ISO, incluindo usuários, customizações e configurações serão removidos permanentemente.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isPending}
+            >
+              {isPending ? "Deletando..." : "Sim, Deletar ISO"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
