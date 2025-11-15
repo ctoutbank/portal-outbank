@@ -674,3 +674,225 @@ export async function updateCustomization(formData: FormData) {
     customization: updatedCustomization,
   };
 }
+
+const removeImageSchema = z.object({
+  customerId: z.coerce.number(),
+  type: z.enum(['logo', 'login', 'favicon']),
+});
+
+const removeAllImagesSchema = z.object({
+  customerId: z.coerce.number(),
+});
+
+export async function removeImage(data: { customerId: number; type: 'logo' | 'login' | 'favicon' }) {
+  console.log(`[removeImage] START - Removing ${data.type} for customerId=${data.customerId}`);
+  
+  const validated = removeImageSchema.safeParse(data);
+  if (!validated.success) {
+    console.error("[removeImage] Validation error:", validated.error.flatten());
+    throw new Error("Dados inválidos");
+  }
+
+  const { customerId, type } = validated.data;
+
+  const existingCustomization = await getCustomizationByCustomerId(customerId);
+  if (!existingCustomization) {
+    throw new Error("Customização não encontrada");
+  }
+
+  const fieldMap = {
+    logo: { urlField: 'imageUrl' as const, fileIdField: 'fileId' as const },
+    login: { urlField: 'loginImageUrl' as const, fileIdField: 'loginImageFileId' as const },
+    favicon: { urlField: 'faviconUrl' as const, fileIdField: 'faviconFileId' as const },
+  };
+
+  const { urlField, fileIdField } = fieldMap[type];
+  const currentUrl = existingCustomization[urlField];
+
+  if (currentUrl) {
+    try {
+      const bucketName = process.env.AWS_BUCKET_NAME;
+      const region = process.env.AWS_REGION;
+      
+      if (currentUrl.includes(`${bucketName}.s3.${region}.amazonaws.com`) || 
+          currentUrl.includes(`${bucketName}.s3.amazonaws.com`)) {
+        
+        const urlParts = currentUrl.split('/');
+        const key = urlParts[urlParts.length - 1];
+        
+        console.log(`[removeImage] Attempting to delete S3 object: ${key}`);
+        
+        const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: bucketName,
+          Key: key,
+        });
+        
+        await s3Client.send(deleteCommand);
+        console.log(`[removeImage] S3 object deleted successfully: ${key}`);
+      } else {
+        console.log(`[removeImage] URL does not belong to our bucket, skipping S3 deletion`);
+      }
+    } catch (error: any) {
+      console.error(`[removeImage] S3 deletion failed (continuing anyway):`, error.message);
+    }
+  }
+
+  const updateData: any = {
+    [urlField]: null,
+    [fileIdField]: null,
+  };
+
+  await db
+    .update(customerCustomization)
+    .set(updateData)
+    .where(eq(customerCustomization.customerId, customerId));
+
+  console.log(`[removeImage] Database updated - ${urlField} and ${fileIdField} set to null`);
+
+  const slug = existingCustomization.slug;
+  if (slug) {
+    console.log(`[removeImage] ⏰ Calling revalidate API for slug: ${slug}`);
+    try {
+      const revalidateUrl = process.env.NEXT_PUBLIC_OUTBANK_ONE_URL || 'https://outbank-one.vercel.app';
+      const startTime = Date.now();
+      const response = await fetch(`${revalidateUrl}/api/revalidate/theme`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.REVALIDATE_TOKEN}`,
+        },
+        body: JSON.stringify({ slug }),
+      });
+      const duration = Date.now() - startTime;
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log(`[removeImage] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
+      } else {
+        const errorText = await response.text();
+        console.error(`[removeImage] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
+      }
+    } catch (error) {
+      console.error(`[removeImage] ❌ Error calling revalidate API:`, error);
+    }
+  }
+
+  const updatedCustomization = await getCustomizationByCustomerId(customerId);
+
+  revalidatePath("/");
+  revalidatePath("/customers");
+  revalidatePath(`/customers/${customerId}`);
+
+  console.log(`[removeImage] ✅ Image removed successfully`);
+
+  return {
+    success: true,
+    customization: updatedCustomization,
+  };
+}
+
+export async function removeAllImages(data: { customerId: number }) {
+  console.log(`[removeAllImages] START - Removing all images for customerId=${data.customerId}`);
+  
+  const validated = removeAllImagesSchema.safeParse(data);
+  if (!validated.success) {
+    console.error("[removeAllImages] Validation error:", validated.error.flatten());
+    throw new Error("Dados inválidos");
+  }
+
+  const { customerId } = validated.data;
+
+  const existingCustomization = await getCustomizationByCustomerId(customerId);
+  if (!existingCustomization) {
+    throw new Error("Customização não encontrada");
+  }
+
+  const urlsToDelete = [
+    existingCustomization.imageUrl,
+    existingCustomization.loginImageUrl,
+    existingCustomization.faviconUrl,
+  ].filter(Boolean) as string[];
+
+  for (const url of urlsToDelete) {
+    try {
+      const bucketName = process.env.AWS_BUCKET_NAME;
+      const region = process.env.AWS_REGION;
+      
+      if (url.includes(`${bucketName}.s3.${region}.amazonaws.com`) || 
+          url.includes(`${bucketName}.s3.amazonaws.com`)) {
+        
+        const urlParts = url.split('/');
+        const key = urlParts[urlParts.length - 1];
+        
+        console.log(`[removeAllImages] Attempting to delete S3 object: ${key}`);
+        
+        const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: bucketName,
+          Key: key,
+        });
+        
+        await s3Client.send(deleteCommand);
+        console.log(`[removeAllImages] S3 object deleted successfully: ${key}`);
+      }
+    } catch (error: any) {
+      console.error(`[removeAllImages] S3 deletion failed for ${url} (continuing anyway):`, error.message);
+    }
+  }
+
+  await db
+    .update(customerCustomization)
+    .set({
+      imageUrl: null,
+      fileId: null,
+      loginImageUrl: null,
+      loginImageFileId: null,
+      faviconUrl: null,
+      faviconFileId: null,
+    })
+    .where(eq(customerCustomization.customerId, customerId));
+
+  console.log(`[removeAllImages] Database updated - all image fields set to null`);
+
+  const slug = existingCustomization.slug;
+  if (slug) {
+    console.log(`[removeAllImages] ⏰ Calling revalidate API for slug: ${slug}`);
+    try {
+      const revalidateUrl = process.env.NEXT_PUBLIC_OUTBANK_ONE_URL || 'https://outbank-one.vercel.app';
+      const startTime = Date.now();
+      const response = await fetch(`${revalidateUrl}/api/revalidate/theme`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.REVALIDATE_TOKEN}`,
+        },
+        body: JSON.stringify({ slug }),
+      });
+      const duration = Date.now() - startTime;
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log(`[removeAllImages] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
+      } else {
+        const errorText = await response.text();
+        console.error(`[removeAllImages] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
+      }
+    } catch (error) {
+      console.error(`[removeAllImages] ❌ Error calling revalidate API:`, error);
+    }
+  }
+
+  const updatedCustomization = await getCustomizationByCustomerId(customerId);
+
+  revalidatePath("/");
+  revalidatePath("/customers");
+  revalidatePath(`/customers/${customerId}`);
+
+  console.log(`[removeAllImages] ✅ All images removed successfully`);
+
+  return {
+    success: true,
+    customization: updatedCustomization,
+  };
+}

@@ -21,6 +21,8 @@ import {
 import {
   saveCustomization,
   updateCustomization,
+  removeImage,
+  removeAllImages,
   type CustomerCustomization,
 } from "@/utils/serverActions";
 import Image from "next/image";
@@ -140,6 +142,7 @@ export default function CustomerWizardForm({
   const [faviconFileName, setFaviconFileName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingCustomization, setIsSavingCustomization] = useState(false);
+  const [isRemovingImage, setIsRemovingImage] = useState(false);
 
   useEffect(() => {
     if (customizationData?.imageUrl && !imageFileName) {
@@ -277,6 +280,113 @@ export default function CustomerWizardForm({
     } catch (error) {
       console.error("Erro ao carregar usuários:", error);
       setUsers([]);
+    }
+  };
+
+  const handleRemoveImage = async (type: 'logo' | 'login' | 'favicon') => {
+    if (!newCustomerId) {
+      toast.error("ID do cliente não encontrado");
+      return;
+    }
+
+    const confirmMessage = type === 'logo' 
+      ? "Tem certeza que deseja remover o logo?" 
+      : type === 'login'
+      ? "Tem certeza que deseja remover a imagem de fundo do login?"
+      : "Tem certeza que deseja remover o favicon?";
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setIsRemovingImage(true);
+    try {
+      const result = await removeImage({ customerId: newCustomerId, type });
+      
+      if (result.success && result.customization) {
+        setCustomizationData({
+          imageUrl: result.customization.imageUrl ?? undefined,
+          id: result.customization.id ?? 0,
+          subdomain: result.customization.slug ?? undefined,
+          primaryColor: result.customization.primaryColor ?? undefined,
+          secondaryColor: result.customization.secondaryColor ?? undefined,
+          loginImageUrl: result.customization.loginImageUrl ?? undefined,
+          faviconUrl: result.customization.faviconUrl ?? undefined,
+        });
+
+        if (type === 'logo') {
+          setImagePreview(null);
+          setImageFileName("");
+          const fileInput = document.getElementById('image') as HTMLInputElement;
+          if (fileInput) fileInput.value = "";
+        } else if (type === 'login') {
+          setLoginImagePreview(null);
+          setLoginImageFileName("");
+          const fileInput = document.getElementById('loginImage') as HTMLInputElement;
+          if (fileInput) fileInput.value = "";
+        } else if (type === 'favicon') {
+          setFaviconPreview(null);
+          setFaviconFileName("");
+          const fileInput = document.getElementById('favicon') as HTMLInputElement;
+          if (fileInput) fileInput.value = "";
+        }
+
+        toast.success("Imagem removida com sucesso!");
+      }
+    } catch (error) {
+      console.error("Erro ao remover imagem:", error);
+      toast.error("Erro ao remover imagem");
+    } finally {
+      setIsRemovingImage(false);
+    }
+  };
+
+  const handleRemoveAllImages = async () => {
+    if (!newCustomerId) {
+      toast.error("ID do cliente não encontrado");
+      return;
+    }
+
+    if (!confirm("Tem certeza que deseja remover TODAS as imagens? Esta ação removerá o logo, imagem de login e favicon.")) {
+      return;
+    }
+
+    setIsRemovingImage(true);
+    try {
+      const result = await removeAllImages({ customerId: newCustomerId });
+      
+      if (result.success && result.customization) {
+        setCustomizationData({
+          imageUrl: result.customization.imageUrl ?? undefined,
+          id: result.customization.id ?? 0,
+          subdomain: result.customization.slug ?? undefined,
+          primaryColor: result.customization.primaryColor ?? undefined,
+          secondaryColor: result.customization.secondaryColor ?? undefined,
+          loginImageUrl: result.customization.loginImageUrl ?? undefined,
+          faviconUrl: result.customization.faviconUrl ?? undefined,
+        });
+
+        setImagePreview(null);
+        setImageFileName("");
+        setLoginImagePreview(null);
+        setLoginImageFileName("");
+        setFaviconPreview(null);
+        setFaviconFileName("");
+
+        const imageInput = document.getElementById('image') as HTMLInputElement;
+        const loginImageInput = document.getElementById('loginImage') as HTMLInputElement;
+        const faviconInput = document.getElementById('favicon') as HTMLInputElement;
+        if (imageInput) imageInput.value = "";
+        if (loginImageInput) loginImageInput.value = "";
+        if (faviconInput) faviconInput.value = "";
+
+        toast.success("Todas as imagens foram removidas com sucesso!");
+      }
+    } catch (error) {
+      console.error("Erro ao remover todas as imagens:", error);
+      toast.error("Erro ao remover todas as imagens");
+    } finally {
+      setIsRemovingImage(false);
     }
   };
 
@@ -738,6 +848,16 @@ export default function CustomerWizardForm({
                               height={100}
                               width={100}
                             ></Image>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleRemoveImage('logo')}
+                              disabled={isRemovingImage}
+                            >
+                              {isRemovingImage ? "Removendo..." : "Remover logo"}
+                            </Button>
                           </div>
                         )}
 
@@ -811,6 +931,16 @@ export default function CustomerWizardForm({
                                 className="w-full h-48 object-cover"
                               />
                             </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleRemoveImage('login')}
+                              disabled={isRemovingImage}
+                            >
+                              {isRemovingImage ? "Removendo..." : "Remover imagem de login"}
+                            </Button>
                           </div>
                         )}
 
@@ -910,12 +1040,36 @@ export default function CustomerWizardForm({
                                 <span className="text-xs text-muted-foreground">32×32</span>
                               </div>
                             </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleRemoveImage('favicon')}
+                              disabled={isRemovingImage}
+                            >
+                              {isRemovingImage ? "Removendo..." : "Remover favicon"}
+                            </Button>
                           </div>
                         )}
                       </div>
 
                       {/* Coluna Direita - Cores */}
                       <div className="space-y-4">
+                        {/* Botão Remover Todas as Imagens */}
+                        {(customizationData?.imageUrl || customizationData?.loginImageUrl || customizationData?.faviconUrl) && (
+                          <div className="pb-4 border-b">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
+                              onClick={handleRemoveAllImages}
+                              disabled={isRemovingImage}
+                            >
+                              {isRemovingImage ? "Removendo..." : "Remover todas as imagens"}
+                            </Button>
+                          </div>
+                        )}
                         {/* Cor Primária */}
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-1">
