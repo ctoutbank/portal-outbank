@@ -137,21 +137,29 @@ export default function CustomerWizardForm({
     setImageError(null);
 
     if (file) {
-      const allowedExtensions = ["jpg", "jpeg", "png"];
+      const allowedExtensions = ["jpg", "jpeg", "png", "svg"];
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
 
       if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-        setImageError("Apenas arquivos JPG, JPEG e PNG são aceitos");
+        setImageError("Apenas arquivos JPG, JPEG, PNG e SVG são aceitos");
         setImagePreview(null);
         e.target.value = "";
         return;
       }
 
-      const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
+      const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/svg+xml"];
       if (!allowedMimeTypes.includes(file.type)) {
         setImageError(
-          "Formato de arquivo inválido. Apenas JPG, JPEG e PNG são aceitos"
+          "Formato de arquivo inválido. Apenas JPG, JPEG, PNG e SVG são aceitos"
         );
+        setImagePreview(null);
+        e.target.value = "";
+        return;
+      }
+
+      const MAX_SIZE = 100 * 1024;
+      if (file.size > MAX_SIZE) {
+        setImageError("Arquivo muito grande. Tamanho máximo: 100KB");
         setImagePreview(null);
         e.target.value = "";
         return;
@@ -159,7 +167,25 @@ export default function CustomerWizardForm({
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        const result = reader.result as string;
+        setImagePreview(result);
+
+        if (file.type !== "image/svg+xml") {
+          const img = new Image();
+          img.onload = () => {
+            const aspectRatio = img.width / img.height;
+            if (aspectRatio < 2) {
+              setImageError(
+                `Proporção inadequada (${img.width}×${img.height}). Recomendado: logos horizontais com proporção 3:1 a 4:1 (ex: 448×160px)`
+              );
+            } else if (img.width < 224 || img.height < 80) {
+              setImageError(
+                `Dimensões muito pequenas (${img.width}×${img.height}). Recomendado: mínimo 448×160px para qualidade em telas Retina`
+              );
+            }
+          };
+          img.src = result;
+        }
       };
       reader.readAsDataURL(file);
     } else {
@@ -172,29 +198,29 @@ export default function CustomerWizardForm({
     setLoginImageError(null);
 
     if (file) {
-      const allowedExtensions = ["jpg", "jpeg", "png"];
+      const allowedExtensions = ["jpg", "jpeg", "png", "webp"];
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
 
       if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-        setLoginImageError("Apenas arquivos JPG, JPEG e PNG são aceitos");
+        setLoginImageError("Apenas arquivos JPG, JPEG, PNG e WebP são aceitos");
         setLoginImagePreview(null);
         e.target.value = "";
         return;
       }
 
-      const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png"];
+      const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
       if (!allowedMimeTypes.includes(file.type)) {
         setLoginImageError(
-          "Formato de arquivo inválido. Apenas JPG, JPEG e PNG são aceitos"
+          "Formato de arquivo inválido. Apenas JPG, JPEG, PNG e WebP são aceitos"
         );
         setLoginImagePreview(null);
         e.target.value = "";
         return;
       }
 
-      const MAX_SIZE = 5 * 1024 * 1024;
+      const MAX_SIZE = 1 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
-        setLoginImageError("Arquivo muito grande. Tamanho máximo: 5MB");
+        setLoginImageError("Arquivo muito grande. Tamanho máximo: 1MB (recomendado: 300-500KB)");
         setLoginImagePreview(null);
         e.target.value = "";
         return;
@@ -202,7 +228,22 @@ export default function CustomerWizardForm({
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setLoginImagePreview(reader.result as string);
+        const result = reader.result as string;
+        setLoginImagePreview(result);
+
+        const img = new Image();
+        img.onload = () => {
+          if (img.width < 1280 || img.height < 720) {
+            setLoginImageError(
+              `Dimensões muito pequenas (${img.width}×${img.height}). Recomendado: mínimo 1600×1200px (4:3) para melhor qualidade`
+            );
+          } else if (img.width > 2560 || img.height > 1920) {
+            setLoginImageError(
+              `Dimensões muito grandes (${img.width}×${img.height}). Recomendado: máximo 1920×1440px. Reduza o tamanho para melhor performance`
+            );
+          }
+        };
+        img.src = result;
       };
       reader.readAsDataURL(file);
     } else {
@@ -623,7 +664,7 @@ export default function CustomerWizardForm({
                           </label>
                           <input
                             type="file"
-                            accept="image/jpeg,image/jpg,image/png"
+                            accept="image/jpeg,image/jpg,image/png,image/svg+xml"
                             name="image"
                             id="image"
                             onChange={handleImageChange}
@@ -637,8 +678,7 @@ export default function CustomerWizardForm({
                               dark:file:bg-white"
                           />
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Apenas arquivos nos formatos JPG, JPEG e PNG são
-                            aceitos
+                            SVG (preferencial), PNG ou JPG • Proporção 3:1 a 4:1 • 448×160px (2×) ou 672×240px (3×) • Máx. 100KB
                           </p>
                           {imageError && (
                             <p className="mt-1 text-xs text-red-500 font-medium">
@@ -685,7 +725,7 @@ export default function CustomerWizardForm({
                           </label>
                           <input
                             type="file"
-                            accept="image/jpeg,image/jpg,image/png"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
                             name="loginImage"
                             id="loginImage"
                             onChange={handleLoginImageChange}
@@ -699,7 +739,7 @@ export default function CustomerWizardForm({
                               dark:file:bg-white"
                           />
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Imagem que será exibida como fundo na tela de login (JPG, JPEG, PNG - máx. 5MB)
+                            WebP (preferencial) ou JPG/PNG • 1600×1200px (4:3) ou 1920×1440px • Conteúdo centralizado • Máx. 1MB
                           </p>
                           {loginImageError && (
                             <p className="mt-1 text-xs text-red-500 font-medium">
