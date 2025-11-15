@@ -415,7 +415,6 @@ export async function saveCustomization(formData: FormData) {
   revalidatePath("/customers");
   revalidatePath(`/customers/${customerId}`);
 
-  const savedCustomization = await getCustomizationByCustomerId(customerId);
   return {
     success: true,
     customization: savedCustomization,

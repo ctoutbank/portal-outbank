@@ -423,9 +423,6 @@ export default function CustomerWizardForm({
   };
 
   console.log("CUSTOMERID", newCustomerId);
-
-  const [isSavingCustomization, setIsSavingCustomization] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   
   const [iso, setIso] = useState<{
     name: string;
