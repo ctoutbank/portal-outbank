@@ -74,6 +74,7 @@ export default function CustomerWizardForm({
     primaryColor?: string;
     secondaryColor?: string;
     loginImageUrl?: string;
+    faviconUrl?: string;
   } | null>(
     customizationInitial ? {
       imageUrl: customizationInitial.imageUrl ?? undefined,
@@ -82,6 +83,7 @@ export default function CustomerWizardForm({
       primaryColor: customizationInitial.primaryColor ?? undefined,
       secondaryColor: customizationInitial.secondaryColor ?? undefined,
       loginImageUrl: customizationInitial.loginImageUrl ?? undefined,
+      faviconUrl: customizationInitial.faviconUrl ?? undefined,
     } : null
   );
 
@@ -129,40 +131,44 @@ export default function CustomerWizardForm({
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [imageFileName, setImageFileName] = useState<string>("");
   const [loginImagePreview, setLoginImagePreview] = useState<string | null>(null);
   const [loginImageError, setLoginImageError] = useState<string | null>(null);
+  const [loginImageFileName, setLoginImageFileName] = useState<string>("");
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+  const [faviconError, setFaviconError] = useState<string | null>(null);
+  const [faviconFileName, setFaviconFileName] = useState<string>("");
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     setImageError(null);
 
     if (file) {
+      setImageFileName(file.name);
+      
       const allowedExtensions = ["jpg", "jpeg", "png", "svg"];
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
 
       if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-        setImageError("Apenas arquivos JPG, JPEG, PNG e SVG são aceitos");
+        setImageError("❌ Formato inválido. Apenas JPG, JPEG, PNG e SVG são aceitos");
         setImagePreview(null);
         e.target.value = "";
+        setImageFileName("");
         return;
       }
 
       const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/svg+xml"];
       if (!allowedMimeTypes.includes(file.type)) {
-        setImageError(
-          "Formato de arquivo inválido. Apenas JPG, JPEG, PNG e SVG são aceitos"
-        );
+        setImageError("❌ Formato inválido. Apenas JPG, JPEG, PNG e SVG são aceitos");
         setImagePreview(null);
         e.target.value = "";
+        setImageFileName("");
         return;
       }
 
       const MAX_SIZE = 100 * 1024;
       if (file.size > MAX_SIZE) {
-        setImageError("Arquivo muito grande. Tamanho máximo: 100KB");
-        setImagePreview(null);
-        e.target.value = "";
-        return;
+        setImageError(`⚠️ Arquivo grande (${(file.size / 1024).toFixed(0)}KB). Recomendado: máx. 100KB. Upload permitido mas pode afetar performance.`);
       }
 
       const reader = new FileReader();
@@ -176,11 +182,11 @@ export default function CustomerWizardForm({
             const aspectRatio = img.width / img.height;
             if (aspectRatio < 2) {
               setImageError(
-                `Proporção inadequada (${img.width}×${img.height}). Recomendado: logos horizontais com proporção 3:1 a 4:1 (ex: 448×160px)`
+                `⚠️ Proporção inadequada (${img.width}×${img.height}). Recomendado: logos horizontais 3:1 a 4:1 (ex: 448×160px). Upload permitido.`
               );
             } else if (img.width < 224 || img.height < 80) {
               setImageError(
-                `Dimensões muito pequenas (${img.width}×${img.height}). Recomendado: mínimo 448×160px para qualidade em telas Retina`
+                `⚠️ Dimensões pequenas (${img.width}×${img.height}). Recomendado: mínimo 448×160px para telas Retina. Upload permitido.`
               );
             }
           };
@@ -190,6 +196,7 @@ export default function CustomerWizardForm({
       reader.readAsDataURL(file);
     } else {
       setImagePreview(null);
+      setImageFileName("");
     }
   };
 
@@ -198,32 +205,31 @@ export default function CustomerWizardForm({
     setLoginImageError(null);
 
     if (file) {
+      setLoginImageFileName(file.name);
+      
       const allowedExtensions = ["jpg", "jpeg", "png", "webp"];
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
 
       if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-        setLoginImageError("Apenas arquivos JPG, JPEG, PNG e WebP são aceitos");
+        setLoginImageError("❌ Formato inválido. Apenas JPG, JPEG, PNG e WebP são aceitos");
         setLoginImagePreview(null);
         e.target.value = "";
+        setLoginImageFileName("");
         return;
       }
 
       const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
       if (!allowedMimeTypes.includes(file.type)) {
-        setLoginImageError(
-          "Formato de arquivo inválido. Apenas JPG, JPEG, PNG e WebP são aceitos"
-        );
+        setLoginImageError("❌ Formato inválido. Apenas JPG, JPEG, PNG e WebP são aceitos");
         setLoginImagePreview(null);
         e.target.value = "";
+        setLoginImageFileName("");
         return;
       }
 
       const MAX_SIZE = 1 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
-        setLoginImageError("Arquivo muito grande. Tamanho máximo: 1MB (recomendado: 300-500KB)");
-        setLoginImagePreview(null);
-        e.target.value = "";
-        return;
+        setLoginImageError(`⚠️ Arquivo grande (${(file.size / 1024).toFixed(0)}KB). Recomendado: 300-500KB. Upload permitido mas pode afetar performance.`);
       }
 
       const reader = new FileReader();
@@ -235,11 +241,11 @@ export default function CustomerWizardForm({
         img.onload = () => {
           if (img.width < 1280 || img.height < 720) {
             setLoginImageError(
-              `Dimensões muito pequenas (${img.width}×${img.height}). Recomendado: mínimo 1600×1200px (4:3) para melhor qualidade`
+              `⚠️ Dimensões pequenas (${img.width}×${img.height}). Recomendado: mínimo 1600×1200px (4:3). Upload permitido.`
             );
           } else if (img.width > 2560 || img.height > 1920) {
             setLoginImageError(
-              `Dimensões muito grandes (${img.width}×${img.height}). Recomendado: máximo 1920×1440px. Reduza o tamanho para melhor performance`
+              `⚠️ Dimensões grandes (${img.width}×${img.height}). Recomendado: máximo 1920×1440px para melhor performance. Upload permitido.`
             );
           }
         };
@@ -248,6 +254,67 @@ export default function CustomerWizardForm({
       reader.readAsDataURL(file);
     } else {
       setLoginImagePreview(null);
+      setLoginImageFileName("");
+    }
+  };
+
+  const handleFaviconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setFaviconError(null);
+
+    if (file) {
+      setFaviconFileName(file.name);
+      
+      const allowedExtensions = ["ico", "png"];
+      const fileExtension = file.name.split(".").pop()?.toLowerCase();
+
+      if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+        setFaviconError("❌ Formato inválido. Apenas ICO e PNG são aceitos");
+        setFaviconPreview(null);
+        e.target.value = "";
+        setFaviconFileName("");
+        return;
+      }
+
+      const allowedMimeTypes = ["image/x-icon", "image/vnd.microsoft.icon", "image/ico", "image/png"];
+      if (!allowedMimeTypes.includes(file.type)) {
+        setFaviconError("❌ Formato inválido. Apenas ICO e PNG são aceitos");
+        setFaviconPreview(null);
+        e.target.value = "";
+        setFaviconFileName("");
+        return;
+      }
+
+      const MAX_SIZE = 100 * 1024;
+      if (file.size > MAX_SIZE) {
+        setFaviconError(`⚠️ Arquivo grande (${(file.size / 1024).toFixed(0)}KB). Recomendado: máx. 100KB. Upload permitido.`);
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setFaviconPreview(result);
+
+        if (file.type === "image/png") {
+          const img = document.createElement('img');
+          img.onload = () => {
+            if (img.width !== img.height) {
+              setFaviconError(
+                `⚠️ Favicon deve ser quadrado (atual: ${img.width}×${img.height}). Recomendado: 32×32px ou 16×16px. Upload permitido.`
+              );
+            } else if (img.width > 64) {
+              setFaviconError(
+                `⚠️ Favicon grande (${img.width}×${img.height}). Recomendado: 32×32px ou 16×16px. Upload permitido.`
+              );
+            }
+          };
+          img.src = result;
+        }
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setFaviconPreview(null);
+      setFaviconFileName("");
     }
   };
 
@@ -677,11 +744,16 @@ export default function CustomerWizardForm({
                               file:cursor-pointer
                               dark:file:bg-white"
                           />
+                          {imageFileName && (
+                            <p className="mt-1 text-xs text-green-600 font-medium">
+                              ✓ Arquivo selecionado: {imageFileName}
+                            </p>
+                          )}
                           <p className="mt-1 text-xs text-muted-foreground">
                             SVG (preferencial), PNG ou JPG • Proporção 3:1 a 4:1 • 448×160px (2×) ou 672×240px (3×) • Máx. 100KB
                           </p>
                           {imageError && (
-                            <p className="mt-1 text-xs text-red-500 font-medium">
+                            <p className="mt-1 text-xs text-orange-600 font-medium">
                               {imageError}
                             </p>
                           )}
@@ -738,11 +810,16 @@ export default function CustomerWizardForm({
                               file:cursor-pointer
                               dark:file:bg-white"
                           />
+                          {loginImageFileName && (
+                            <p className="mt-1 text-xs text-green-600 font-medium">
+                              ✓ Arquivo selecionado: {loginImageFileName}
+                            </p>
+                          )}
                           <p className="mt-1 text-xs text-muted-foreground">
                             WebP (preferencial) ou JPG/PNG • 1600×1200px (4:3) ou 1920×1440px • Conteúdo centralizado • Máx. 1MB
                           </p>
                           {loginImageError && (
-                            <p className="mt-1 text-xs text-red-500 font-medium">
+                            <p className="mt-1 text-xs text-orange-600 font-medium">
                               {loginImageError}
                             </p>
                           )}
@@ -794,6 +871,7 @@ export default function CustomerWizardForm({
                             accept="image/x-icon,image/vnd.microsoft.icon,image/ico,image/png"
                             name="favicon"
                             id="favicon"
+                            onChange={handleFaviconChange}
                             className="block w-full text-sm text-foreground
                               file:mr-4 file:py-2 file:px-4
                               file:rounded file:border-0
@@ -803,10 +881,82 @@ export default function CustomerWizardForm({
                               file:cursor-pointer
                               dark:file:bg-white"
                           />
+                          {faviconFileName && (
+                            <p className="mt-1 text-xs text-green-600 font-medium">
+                              ✓ Arquivo selecionado: {faviconFileName}
+                            </p>
+                          )}
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Ícone que aparecerá na aba do navegador (ICO, PNG - 16x16 ou 32x32 pixels)
+                            ICO ou PNG • 32×32px ou 16×16px • Quadrado • Máx. 100KB
                           </p>
+                          {faviconError && (
+                            <p className="mt-1 text-xs text-orange-600 font-medium">
+                              {faviconError}
+                            </p>
+                          )}
                         </div>
+
+                        {/* Preview do Favicon */}
+                        {faviconPreview && (
+                          <div className="mt-4">
+                            <p className="text-sm text-foreground mb-2">
+                              Preview do Favicon:
+                            </p>
+                            <div className="flex gap-4 items-center border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
+                              <div className="flex flex-col items-center gap-1">
+                                <Image
+                                  src={faviconPreview}
+                                  alt="Favicon 16x16"
+                                  width={16}
+                                  height={16}
+                                  className="border border-gray-300"
+                                />
+                                <span className="text-xs text-muted-foreground">16×16</span>
+                              </div>
+                              <div className="flex flex-col items-center gap-1">
+                                <Image
+                                  src={faviconPreview}
+                                  alt="Favicon 32x32"
+                                  width={32}
+                                  height={32}
+                                  className="border border-gray-300"
+                                />
+                                <span className="text-xs text-muted-foreground">32×32</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Preview do Favicon Atual */}
+                        {customizationData?.faviconUrl && !faviconPreview && (
+                          <div className="mt-4">
+                            <p className="text-sm text-foreground mb-2">
+                              Favicon atual:
+                            </p>
+                            <div className="flex gap-4 items-center border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
+                              <div className="flex flex-col items-center gap-1">
+                                <Image
+                                  src={customizationData.faviconUrl}
+                                  alt="Current favicon 16x16"
+                                  width={16}
+                                  height={16}
+                                  className="border border-gray-300"
+                                />
+                                <span className="text-xs text-muted-foreground">16×16</span>
+                              </div>
+                              <div className="flex flex-col items-center gap-1">
+                                <Image
+                                  src={customizationData.faviconUrl}
+                                  alt="Current favicon 32x32"
+                                  width={32}
+                                  height={32}
+                                  className="border border-gray-300"
+                                />
+                                <span className="text-xs text-muted-foreground">32×32</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Coluna Direita - Cores */}
