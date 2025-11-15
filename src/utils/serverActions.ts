@@ -414,6 +414,11 @@ export async function saveCustomization(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/customers");
   revalidatePath(`/customers/${customerId}`);
+
+  return {
+    success: true,
+    customization: savedCustomization,
+  };
 }
 
 export async function updateCustomization(formData: FormData) {
@@ -663,4 +668,9 @@ export async function updateCustomization(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/customers");
   revalidatePath(`/customers/${validated.data.customerId}`);
+
+  return {
+    success: true,
+    customization: updatedCustomization,
+  };
 }
