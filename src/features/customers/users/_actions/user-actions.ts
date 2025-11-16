@@ -349,7 +349,21 @@ export async function InsertUser(data: InsertUserInput) {
 
 export async function getUsersWithClerk(customerId: number) {
   const dbUsers = await db
-    .select()
+    .select({
+      id: users.id,
+      slug: users.slug,
+      dtinsert: users.dtinsert,
+      dtupdate: users.dtupdate,
+      active: users.active,
+      idClerk: users.idClerk,
+      idCustomer: users.idCustomer,
+      idProfile: users.idProfile,
+      fullAccess: users.fullAccess,
+      idAddress: users.idAddress,
+      hashedPassword: users.hashedPassword,
+      email: users.email,
+      initialPassword: users.initialPassword,
+    })
     .from(users)
     .where(eq(users.idCustomer, customerId));
 
