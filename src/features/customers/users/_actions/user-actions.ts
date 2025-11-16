@@ -243,6 +243,7 @@ export async function InsertUser(data: InsertUserInput) {
         idAddress: null,
         fullAccess: false,
         hashedPassword,
+        initialPassword: finalPassword, // Store initial password for viewing
       })
       .returning({ id: users.id });
     const domain = await getCustomizationByCustomerId(idCustomer ?? 0);
@@ -380,7 +381,7 @@ export async function getUsersWithClerk(customerId: number) {
   return result;
 }
 
-export async function regenerateAndRevealPassword(userId: number): Promise<{
+export async function revealInitialPassword(userId: number): Promise<{
   success: boolean;
   password?: string;
   email?: string;
@@ -395,41 +396,32 @@ export async function regenerateAndRevealPassword(userId: number): Promise<{
 
     const user = existingUser[0];
 
-    if (!user.idClerk || !user.email) {
-      return { success: false, error: "Usuário não possui dados válidos no Clerk" };
+    if (!user.email) {
+      return { success: false, error: "Usuário não possui email válido" };
     }
 
-    const newPassword = await generateRandomPassword();
-    const hashedPassword = hashPassword(newPassword);
+    if (!user.initialPassword) {
+      return { 
+        success: false, 
+        error: "Senha inicial não disponível. Este usuário foi criado antes da implementação deste recurso." 
+      };
+    }
 
-    await db
-      .update(users)
-      .set({
-        hashedPassword,
-        dtupdate: new Date().toISOString(),
-      })
-      .where(eq(users.id, userId));
-
-    const clerk = await clerkClient();
-    await clerk.users.updateUser(user.idClerk, {
-      password: newPassword,
-    });
-
-    console.log("[regenerateAndRevealPassword] Password regenerated successfully", {
+    console.log("[revealInitialPassword] Password revealed successfully", {
       userId,
       email: user.email,
     });
 
     return {
       success: true,
-      password: newPassword,
+      password: user.initialPassword,
       email: user.email,
     };
   } catch (error) {
-    console.error("[regenerateAndRevealPassword] Error:", error);
+    console.error("[revealInitialPassword] Error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Erro ao regenerar senha",
+      error: error instanceof Error ? error.message : "Erro ao revelar senha",
     };
   }
 }

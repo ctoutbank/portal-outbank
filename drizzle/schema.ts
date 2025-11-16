@@ -810,6 +810,7 @@ export const users = pgTable("users", {
 	idAddress: bigint("id_address", { mode: "number" }),
 	hashedPassword: varchar("hashed_password", { length: 100 }),
 	email: varchar({ length: 50 }),
+	initialPassword: text("initial_password"),
 }, (table) => [
 	foreignKey({
 			columns: [table.idCustomer],
