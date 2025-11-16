@@ -87,6 +87,7 @@ export interface UserDetailForm extends UserDetail {
   fullAccess: boolean;
   temporaryPassword: string | null;
   firstLogin: boolean | null;
+  initialPassword?: string | null;
 }
 
 export async function getUsers(
