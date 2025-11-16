@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { useState } from "react";
 import { deleteUser } from "../_actions/use-Actions";
-import {getUserDetailWithClerk, UserDetailForm, regenerateAndRevealPassword} from "../_actions/user-actions";
+import {getUserDetailWithClerk, UserDetailForm, revealInitialPassword} from "../_actions/user-actions";
 import UserCustomerForm from "./user-form";
 import { toast } from "sonner";
 
@@ -105,14 +105,10 @@ export default function UserTable({
     }
   }
 
-  async function handleRegeneratePassword(userId: number) {
-    if (!confirm("Tem certeza que deseja regenerar a senha deste usuário? A senha atual será substituída.")) {
-      return;
-    }
-
+  async function handleRevealPassword(userId: number) {
     try {
       setIsLoading(true);
-      const result = await regenerateAndRevealPassword(userId);
+      const result = await revealInitialPassword(userId);
       
       if (result.success && result.password && result.email) {
         setRevealedPassword({
@@ -121,13 +117,13 @@ export default function UserTable({
           email: result.email,
         });
         setShowPasswordDialog(true);
-        toast.success("Senha regenerada com sucesso!");
+        toast.success("Senha revelada com sucesso!");
       } else {
-        toast.error(result.error || "Erro ao regenerar senha");
+        toast.error(result.error || "Erro ao revelar senha");
       }
     } catch (error) {
-      console.error("Erro ao regenerar senha:", error);
-      toast.error("Erro ao regenerar senha");
+      console.error("Erro ao revelar senha:", error);
+      toast.error("Erro ao revelar senha");
     } finally {
       setIsLoading(false);
     }
@@ -207,7 +203,7 @@ export default function UserTable({
                         </Button>
                         <Button
                           variant="outline"
-                          onClick={() => handleRegeneratePassword(user.id)}
+                          onClick={() => handleRevealPassword(user.id)}
                           disabled={isLoading}
                           className="cursor-pointer"
                         >
@@ -234,11 +230,11 @@ export default function UserTable({
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Senha Regenerada</DialogTitle>
+            <DialogTitle>Senha do Usuário</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              A senha foi regenerada com sucesso. Esta é a única vez que você poderá visualizar esta senha.
+              Esta é a senha que foi enviada para o email do usuário quando a conta foi criada.
             </p>
             
             <div className="space-y-2">
@@ -258,7 +254,7 @@ export default function UserTable({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Nova Senha:</label>
+              <label className="text-sm font-medium">Senha:</label>
               <div className="flex items-center space-x-2">
                 <code className="flex-1 p-2 bg-muted rounded text-sm font-bold">
                   {revealedPassword?.password}
@@ -271,12 +267,6 @@ export default function UserTable({
                   Copiar
                 </Button>
               </div>
-            </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-              <p className="text-sm text-yellow-800">
-                ⚠️ Certifique-se de copiar e compartilhar esta senha com o usuário agora. Ela não poderá ser recuperada depois.
-              </p>
             </div>
 
             <Button
@@ -293,4 +283,4 @@ export default function UserTable({
       </Dialog>
     </div>
   );
-}   
+}     

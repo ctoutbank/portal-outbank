@@ -1,4 +1,6 @@
-import { resend } from "./resend";
+import { getResend } from "./resend";
+
+const EMAIL_FROM = process.env.EMAIL_FROM || "noreply@consolle.one";
 
 export async function sendWelcomePasswordEmail(
   to: string,
@@ -7,8 +9,10 @@ export async function sendWelcomePasswordEmail(
   customerName: string,
   link?: string
 ) {
-  await resend.emails.send({
-    from: "noreply@outbank.cloud",
+  try {
+    console.log(`[sendWelcomePasswordEmail] Sending email to ${to} from ${EMAIL_FROM}`);
+    await getResend().emails.send({
+      from: EMAIL_FROM,
     to,
     subject: "Sua senha de acesso ao "+customerName,
     html: `
@@ -96,5 +100,10 @@ export async function sendWelcomePasswordEmail(
         </body>
         </html>
         `,
-  });
+    });
+    console.log(`[sendWelcomePasswordEmail] Email sent successfully to ${to}`);
+  } catch (error) {
+    console.error(`[sendWelcomePasswordEmail] Failed to send email to ${to}:`, error);
+    throw error;
+  }
 }

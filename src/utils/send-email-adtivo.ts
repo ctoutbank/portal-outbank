@@ -1,8 +1,10 @@
 "use server";
-import { resend } from "@/lib/resend";
+import { getResend } from "@/lib/resend";
 import { currentUser } from "@clerk/nextjs/server";
 import fs from "fs/promises";
 import path from "path";
+
+const EMAIL_FROM = process.env.EMAIL_FROM || "noreply@consolle.one";
 
 export async function getUserEmail() {
   const user = await currentUser();
@@ -14,13 +16,15 @@ export async function getUserEmail() {
 }
 
 export async function sendPricingSolicitationEmail(to: string) {
-  console.log("to", to);
-  const filePath = path.join(process.cwd(), "public", "AditivoAcquiring.pdf");
-  const fileBuffer = await fs.readFile(filePath);
-  const fileBase64 = fileBuffer.toString("base64");
+  try {
+    console.log("to", to);
+    console.log(`[sendPricingSolicitationEmail] Sending email to ${to} from ${EMAIL_FROM}`);
+    const filePath = path.join(process.cwd(), "public", "AditivoAcquiring.pdf");
+    const fileBuffer = await fs.readFile(filePath);
+    const fileBase64 = fileBuffer.toString("base64");
 
-  await resend.emails.send({
-    from: "noreply@outbank.cloud",
+    await getResend().emails.send({
+      from: EMAIL_FROM,
     to,
     subject: "Aditivo de Taxas",
     html: "<p>Baixe, assine e importe o documento de aditivo de taxas</p>",
@@ -31,5 +35,10 @@ export async function sendPricingSolicitationEmail(to: string) {
         contentType: "application/pdf",
       },
     ],
-  });
+    });
+    console.log(`[sendPricingSolicitationEmail] Email sent successfully to ${to}`);
+  } catch (error) {
+    console.error("[sendPricingSolicitationEmail] Error sending pricing solicitation email:", error);
+    throw error;
+  }
 }
