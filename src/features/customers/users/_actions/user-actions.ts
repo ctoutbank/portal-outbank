@@ -245,6 +245,8 @@ export async function InsertUser(data: InsertUserInput) {
         hashedPassword,
       })
       .returning({ id: users.id });
+    const domain = await getCustomizationByCustomerId(idCustomer ?? 0);
+
     const customerImage = await db
       .select({
         name: customers.name,
@@ -252,25 +254,37 @@ export async function InsertUser(data: InsertUserInput) {
       })
       .from(customerCustomization)
       .innerJoin(customers, eq(customerCustomization.customerId, customers.id))
-      .innerJoin(file, eq(customerCustomization.fileId, file.id))
+      .leftJoin(file, eq(customerCustomization.fileId, file.id))
       .where(eq(customerCustomization.customerId, idCustomer ?? 0));
-    const domain = await getCustomizationByCustomerId(idCustomer ?? 0);
 
     const logo =
-      customerImage[0].fileUrl ||
+      customerImage[0]?.fileUrl ||
+      domain?.imageUrl ||
       "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
-    const link = domain?.name
-      ? `https://${domain.name}.consolle.one`
-      : undefined;
-    await sendWelcomePasswordEmail(
-      email,
-      finalPassword,
-      logo,
-      customerImage[0].name ?? "",
-      link
-    );
 
-    console.log("logo", logo);
+    const customerName = customerImage[0]?.name || domain?.slug || "Seu ISO";
+
+    const linkSlug = domain?.slug || domain?.name;
+    const link = linkSlug ? `https://${linkSlug}.consolle.one` : undefined;
+
+    try {
+      await sendWelcomePasswordEmail(
+        email,
+        finalPassword,
+        logo,
+        customerName,
+        link
+      );
+      console.log("[InsertUser] Welcome email sent successfully", {
+        to: email,
+        logo,
+        customerName,
+        hasLink: !!link,
+      });
+    } catch (emailError) {
+      console.error("[InsertUser] Failed to send welcome email:", emailError);
+      console.error("[InsertUser] User created successfully but email failed. User can use 'Resend invite' action.");
+    }
 
     return created[0].id;
   } catch (error: unknown) {
