@@ -111,6 +111,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
             idAddress: null,
             fullAccess: false,
             hashedPassword,
+            initialPassword: finalPassword,
           })
           .returning({ id: users.id });
 
@@ -130,7 +131,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         firstName,
         lastName,
         emailAddress: [normalizedEmail],
-        skipPasswordRequirement: true,
+        password: finalPassword,
         publicMetadata: {
           isFirstLogin: true,
         },
@@ -152,6 +153,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         idAddress: null,
         fullAccess: false,
         hashedPassword,
+        initialPassword: finalPassword,
       })
       .returning({ id: users.id });
 
