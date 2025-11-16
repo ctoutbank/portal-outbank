@@ -115,6 +115,12 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
           })
           .returning({ id: users.id });
 
+        console.log("[Email][users-actions] User reused from Clerk - skipping welcome email", {
+          userId: created[0].id,
+          clerkUserId: clerkUser.id,
+          email: normalizedEmail,
+        });
+
         return {
           ok: true,
           userId: created[0].id,
@@ -178,14 +184,43 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         if (customerData.length > 0) {
           customerName = customerData[0].name || "Outbank";
           logo = customerData[0].imageUrl || "";
-          link = customerData[0].subdomain ? `https://${customerData[0].subdomain}.outbank.cloud` : "";
+          link = customerData[0].subdomain ? `https://${customerData[0].subdomain}.consolle.one` : "";
         }
       } catch (error) {
         console.error("Erro ao buscar dados do customer:", error);
       }
     }
 
-    await sendWelcomePasswordEmail(normalizedEmail, finalPassword, logo, customerName, link);
+    try {
+      console.log("[Email][users-actions] Attempting to send welcome email", {
+        to: normalizedEmail,
+        from: process.env.EMAIL_FROM || "noreply@consolle.one",
+        hasResendKey: !!process.env.RESEND_API_KEY,
+        userId: created[0].id,
+        clerkUserId: clerkUser.id,
+        logo,
+        customerName,
+        hasLink: !!link,
+        link: link || "(no link)",
+      });
+      
+      await sendWelcomePasswordEmail(normalizedEmail, finalPassword, logo, customerName, link);
+      
+      console.log("[Email][users-actions] Welcome email sent successfully", {
+        to: normalizedEmail,
+        userId: created[0].id,
+        clerkUserId: clerkUser.id,
+      });
+    } catch (emailError) {
+      console.error("[Email][users-actions] Failed to send welcome email:", emailError);
+      console.error("[Email][users-actions] Email error details:", {
+        error: emailError instanceof Error ? emailError.message : String(emailError),
+        stack: emailError instanceof Error ? emailError.stack : undefined,
+        userId: created[0].id,
+        clerkUserId: clerkUser.id,
+      });
+      console.error("[Email][users-actions] User created successfully but email failed. User can use 'Resend invite' action.");
+    }
 
     return {
       ok: true,
