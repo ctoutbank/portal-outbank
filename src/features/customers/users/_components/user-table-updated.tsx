@@ -41,6 +41,7 @@ export type UserWithClerk = {
   idAddress: number | null;
   hashedPassword: string | null;
   email: string | null;           // alterado
+  initialPassword: string | null;
 
   // Campos do Clerk
   firstName?: string;
@@ -60,6 +61,7 @@ export default function UserTable({
   const [isLoading, setIsLoading] = useState(false);
   const [revealedPassword, setRevealedPassword] = useState<{userId: number; password: string; email: string} | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState<Set<number>>(new Set());
 
   const closeDialog = () => {
     setOpen(false);
@@ -134,6 +136,22 @@ export default function UserTable({
     toast.success("Copiado para a área de transferência!");
   }
 
+  function togglePasswordVisibility(userId: number) {
+    setVisiblePasswords((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      return newSet;
+    });
+  }
+
+  function maskPassword(password: string): string {
+    return "•".repeat(password.length);
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -174,6 +192,7 @@ export default function UserTable({
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Senha</TableHead>
                   <TableHead>Data de Inserção</TableHead>
                   <TableHead>Data de Atualização</TableHead>
                   <TableHead>Ações</TableHead>
@@ -185,6 +204,35 @@ export default function UserTable({
                     <TableCell>{`${user.firstName} ${user.lastName}`.trim() || "-"}</TableCell>
                     <TableCell>
                       {user.active ? "Ativo" : "Inativo"}
+                    </TableCell>
+                    <TableCell>
+                      {user.initialPassword ? (
+                        <div className="flex items-center space-x-2">
+                          <code className="text-sm font-mono">
+                            {visiblePasswords.has(user.id) 
+                              ? user.initialPassword 
+                              : maskPassword(user.initialPassword)}
+                          </code>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => togglePasswordVisibility(user.id)}
+                            className="h-6 w-6 p-0"
+                          >
+                            {visiblePasswords.has(user.id) ? "👁️" : "👁️‍🗨️"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => copyToClipboard(user.initialPassword || "")}
+                            className="h-6 w-6 p-0"
+                          >
+                            📋
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Senha não gerada</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {user.dtinsert
@@ -200,14 +248,6 @@ export default function UserTable({
                       <div className="flex space-x-2">
                         <Button onClick={() => handleEditUser(user.id)} disabled={isLoading} className="cursor-pointer">
                           Editar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => handleRevealPassword(user.id)}
-                          disabled={isLoading}
-                          className="cursor-pointer"
-                        >
-                          Ver Senha
                         </Button>
                         <Button
                           variant="destructive"
@@ -283,4 +323,4 @@ export default function UserTable({
       </Dialog>
     </div>
   );
-}     
+}       

@@ -403,7 +403,7 @@ export async function revealInitialPassword(userId: number): Promise<{
     if (!user.initialPassword) {
       return { 
         success: false, 
-        error: "Senha inicial não disponível. Este usuário foi criado antes da implementação deste recurso." 
+        error: "Senha inicial ainda não foi gerada para este usuário." 
       };
     }
 
