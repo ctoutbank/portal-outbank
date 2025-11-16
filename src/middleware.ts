@@ -10,6 +10,7 @@ const isPublicRoute = createRouteMatcher([
   "/auth/sign-up(.*)",
   "/api/public(.*)",
   "/api/check-subdomain-auth(.*)",
+  "/api/admin/delete-all-isos-except-one(.*)",
   "/unauthorized(.*)",
 ]);
 
