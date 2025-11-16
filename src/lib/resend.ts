@@ -1,7 +1,14 @@
+import "server-only";
 import { Resend } from "resend";
 
-if (!process.env.RESEND_API_KEY) {
-    throw new Error("Missing RESEND_API_KEY environment variable");
-}
+let _resend: Resend | null = null;
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+export function getResend(): Resend {
+  if (_resend) return _resend;
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    throw new Error("RESEND_API_KEY is not set");
+  }
+  _resend = new Resend(key);
+  return _resend;
+}

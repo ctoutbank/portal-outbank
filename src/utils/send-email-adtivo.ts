@@ -1,5 +1,5 @@
 "use server";
-import { resend } from "@/lib/resend";
+import { getResend } from "@/lib/resend";
 import { currentUser } from "@clerk/nextjs/server";
 import fs from "fs/promises";
 import path from "path";
@@ -23,7 +23,7 @@ export async function sendPricingSolicitationEmail(to: string) {
     const fileBuffer = await fs.readFile(filePath);
     const fileBase64 = fileBuffer.toString("base64");
 
-    await resend.emails.send({
+    await getResend().emails.send({
       from: EMAIL_FROM,
     to,
     subject: "Aditivo de Taxas",

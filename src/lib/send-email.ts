@@ -1,4 +1,4 @@
-import { resend } from "./resend";
+import { getResend } from "./resend";
 
 const EMAIL_FROM = process.env.EMAIL_FROM || "noreply@consolle.one";
 
@@ -11,7 +11,7 @@ export async function sendWelcomePasswordEmail(
 ) {
   try {
     console.log(`[sendWelcomePasswordEmail] Sending email to ${to} from ${EMAIL_FROM}`);
-    await resend.emails.send({
+    await getResend().emails.send({
       from: EMAIL_FROM,
     to,
     subject: "Sua senha de acesso ao "+customerName,
