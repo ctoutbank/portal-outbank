@@ -234,22 +234,22 @@ export async function InsertUser(data: UserInsert) {
   }
 
   try {
+    const password = await generateRandomPassword();
+    const hashedPassword = hashPassword(password);
+
     const clerkUser = await (
       await clerkClient()
     ).users.createUser({
       firstName: data.firstName,
       lastName: data.lastName,
       emailAddress: [data.email],
-      skipPasswordRequirement: true,
+      password: password,
       publicMetadata: {
         isFirstLogin: true,
       },
     });
 
-    const password = await generateRandomPassword();
-
-    const hashedPassword = hashPassword(password);
-    console.log(password);
+    console.log(`[InsertUser] Created Clerk user ${clerkUser.id} for ${data.email}`);
 
     const newUser = await db
       .insert(users)
@@ -264,6 +264,7 @@ export async function InsertUser(data: UserInsert) {
         idAddress: data.idAddress,
         fullAccess: data.fullAccess,
         hashedPassword: hashedPassword,
+        initialPassword: password,
         email: data.email,
       })
 
