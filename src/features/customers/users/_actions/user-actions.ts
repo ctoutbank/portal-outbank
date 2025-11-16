@@ -56,7 +56,7 @@ export interface UserDetailForm extends UserDetail {
   fullAccess: boolean;
 }
 
-export async function generateRandomPassword(length = 6) {
+export async function generateRandomPassword(length = 12) {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let randomPassword = "";
@@ -222,7 +222,7 @@ export async function InsertUser(data: InsertUserInput) {
       firstName,
       lastName,
       emailAddress: [email],
-      skipPasswordRequirement: true,
+      password: finalPassword,
       publicMetadata: {
         isFirstLogin: true,
       },
@@ -269,6 +269,15 @@ export async function InsertUser(data: InsertUserInput) {
     const link = linkSlug ? `https://${linkSlug}.consolle.one` : undefined;
 
     try {
+      console.log("[InsertUser] Attempting to send welcome email", {
+        to: email,
+        from: process.env.EMAIL_FROM || "noreply@consolle.one",
+        hasResendKey: !!process.env.RESEND_API_KEY,
+        logo,
+        customerName,
+        hasLink: !!link,
+      });
+      
       await sendWelcomePasswordEmail(
         email,
         finalPassword,
@@ -276,14 +285,16 @@ export async function InsertUser(data: InsertUserInput) {
         customerName,
         link
       );
+      
       console.log("[InsertUser] Welcome email sent successfully", {
         to: email,
-        logo,
-        customerName,
-        hasLink: !!link,
       });
     } catch (emailError) {
       console.error("[InsertUser] Failed to send welcome email:", emailError);
+      console.error("[InsertUser] Email error details:", {
+        error: emailError instanceof Error ? emailError.message : String(emailError),
+        stack: emailError instanceof Error ? emailError.stack : undefined,
+      });
       console.error("[InsertUser] User created successfully but email failed. User can use 'Resend invite' action.");
     }
 
