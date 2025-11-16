@@ -380,9 +380,124 @@ export async function getUsersWithClerk(customerId: number) {
   return result;
 }
 
+export async function regenerateAndRevealPassword(userId: number): Promise<{
+  success: boolean;
+  password?: string;
+  email?: string;
+  error?: string;
+}> {
+  try {
+    const existingUser = await db.select().from(users).where(eq(users.id, userId));
+
+    if (!existingUser || existingUser.length === 0) {
+      return { success: false, error: "Usuário não encontrado" };
+    }
+
+    const user = existingUser[0];
+
+    if (!user.idClerk || !user.email) {
+      return { success: false, error: "Usuário não possui dados válidos no Clerk" };
+    }
+
+    const newPassword = await generateRandomPassword();
+    const hashedPassword = hashPassword(newPassword);
+
+    await db
+      .update(users)
+      .set({
+        hashedPassword,
+        dtupdate: new Date().toISOString(),
+      })
+      .where(eq(users.id, userId));
+
+    const clerk = await clerkClient();
+    await clerk.users.updateUser(user.idClerk, {
+      password: newPassword,
+    });
+
+    console.log("[regenerateAndRevealPassword] Password regenerated successfully", {
+      userId,
+      email: user.email,
+    });
+
+    return {
+      success: true,
+      password: newPassword,
+      email: user.email,
+    };
+  } catch (error) {
+    console.error("[regenerateAndRevealPassword] Error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao regenerar senha",
+    };
+  }
+}
+
+export async function resendWelcomeEmail(userId: number): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const existingUser = await db.select().from(users).where(eq(users.id, userId));
+
+    if (!existingUser || existingUser.length === 0) {
+      return { success: false, error: "Usuário não encontrado" };
+    }
+
+    const user = existingUser[0];
+
+    if (!user.email || !user.hashedPassword || !user.idCustomer) {
+      return { success: false, error: "Usuário não possui dados válidos" };
+    }
+
+    const domain = await getCustomizationByCustomerId(user.idCustomer);
+
+    const customerImage = await db
+      .select({
+        name: customers.name,
+        fileUrl: file.fileUrl,
+      })
+      .from(customerCustomization)
+      .innerJoin(customers, eq(customerCustomization.customerId, customers.id))
+      .leftJoin(file, eq(customerCustomization.fileId, file.id))
+      .where(eq(customerCustomization.customerId, user.idCustomer));
+
+    const logo =
+      customerImage[0]?.fileUrl ||
+      domain?.imageUrl ||
+      "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
+
+    const customerName = customerImage[0]?.name || domain?.slug || "Seu ISO";
+
+    const linkSlug = domain?.slug || domain?.name;
+    const link = linkSlug ? `https://${linkSlug}.consolle.one` : undefined;
+
+    await sendWelcomePasswordEmail(
+      user.email,
+      "******",
+      logo,
+      customerName,
+      link
+    );
+
+    console.log("[resendWelcomeEmail] Email resent successfully", {
+      userId,
+      email: user.email,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("[resendWelcomeEmail] Error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao reenviar email",
+    };
+  }
+}
+
 export async function deleteUser(id: number): Promise<boolean> {
   try {
-    // Primeiro, buscar o usuário para obter o idClerk
     const existingUser = await db.select().from(users).where(eq(users.id, id));
 
     if (!existingUser || existingUser.length === 0) {
@@ -391,18 +506,15 @@ export async function deleteUser(id: number): Promise<boolean> {
 
     const userToDelete = existingUser[0];
 
-    // Excluir do Clerk se o usuário tiver idClerk
     if (userToDelete.idClerk) {
       try {
         const clerk = await clerkClient();
         await clerk.users.deleteUser(userToDelete.idClerk);
       } catch (clerkError) {
         console.error("Erro ao excluir usuário do Clerk:", clerkError);
-        // Continuar com a exclusão do banco mesmo se falhar no Clerk
       }
     }
 
-    // Excluir do banco de dados
     await db.delete(users).where(eq(users.id, id));
 
     return true;

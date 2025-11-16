@@ -19,8 +19,9 @@ import {
 } from "@/components/ui/table";
 import { useState } from "react";
 import { deleteUser } from "../_actions/use-Actions";
-import {getUserDetailWithClerk, UserDetailForm} from "../_actions/user-actions";
+import {getUserDetailWithClerk, UserDetailForm, regenerateAndRevealPassword} from "../_actions/user-actions";
 import UserCustomerForm from "./user-form";
+import { toast } from "sonner";
 
 interface UserTableProps {
   users: UserWithClerk[];
@@ -57,6 +58,8 @@ export default function UserTable({
   const [selectedUser, setSelectedUser] = useState<UserDetailForm| null>(null);
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [revealedPassword, setRevealedPassword] = useState<{userId: number; password: string; email: string} | null>(null);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   const closeDialog = () => {
     setOpen(false);
@@ -100,6 +103,39 @@ export default function UserTable({
         console.error("Erro ao excluir usuário:", error);
       }
     }
+  }
+
+  async function handleRegeneratePassword(userId: number) {
+    if (!confirm("Tem certeza que deseja regenerar a senha deste usuário? A senha atual será substituída.")) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const result = await regenerateAndRevealPassword(userId);
+      
+      if (result.success && result.password && result.email) {
+        setRevealedPassword({
+          userId,
+          password: result.password,
+          email: result.email,
+        });
+        setShowPasswordDialog(true);
+        toast.success("Senha regenerada com sucesso!");
+      } else {
+        toast.error(result.error || "Erro ao regenerar senha");
+      }
+    } catch (error) {
+      console.error("Erro ao regenerar senha:", error);
+      toast.error("Erro ao regenerar senha");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text);
+    toast.success("Copiado para a área de transferência!");
   }
 
   return (
@@ -170,6 +206,14 @@ export default function UserTable({
                           Editar
                         </Button>
                         <Button
+                          variant="outline"
+                          onClick={() => handleRegeneratePassword(user.id)}
+                          disabled={isLoading}
+                          className="cursor-pointer"
+                        >
+                          Ver Senha
+                        </Button>
+                        <Button
                           variant="destructive"
                           onClick={() => handleDeleteUser(user.id)}
                           disabled={isLoading}
@@ -186,6 +230,67 @@ export default function UserTable({
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Senha Regenerada</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              A senha foi regenerada com sucesso. Esta é a única vez que você poderá visualizar esta senha.
+            </p>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email:</label>
+              <div className="flex items-center space-x-2">
+                <code className="flex-1 p-2 bg-muted rounded text-sm">
+                  {revealedPassword?.email}
+                </code>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyToClipboard(revealedPassword?.email || "")}
+                >
+                  Copiar
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nova Senha:</label>
+              <div className="flex items-center space-x-2">
+                <code className="flex-1 p-2 bg-muted rounded text-sm font-bold">
+                  {revealedPassword?.password}
+                </code>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyToClipboard(revealedPassword?.password || "")}
+                >
+                  Copiar
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+              <p className="text-sm text-yellow-800">
+                ⚠️ Certifique-se de copiar e compartilhar esta senha com o usuário agora. Ela não poderá ser recuperada depois.
+              </p>
+            </div>
+
+            <Button
+              className="w-full"
+              onClick={() => {
+                setShowPasswordDialog(false);
+                setRevealedPassword(null);
+              }}
+            >
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-} 
+}   
