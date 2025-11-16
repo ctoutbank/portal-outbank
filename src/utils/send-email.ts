@@ -1,8 +1,12 @@
 import { resend } from "@/lib/resend";
 
+const EMAIL_FROM = process.env.EMAIL_FROM || "noreply@consolle.one";
+
 export async function sendWelcomePasswordEmail(to: string, password: string) {
-    await resend.emails.send({
-        from: "noreply@outbank.cloud",
+    try {
+        console.log(`[sendWelcomePasswordEmail] Sending email to ${to} from ${EMAIL_FROM}`);
+        await resend.emails.send({
+            from: EMAIL_FROM,
         to,
         subject: "Sua senha de acesso ao Outbank",
         html: `
@@ -87,5 +91,10 @@ export async function sendWelcomePasswordEmail(to: string, password: string) {
         </body>
         </html>
         `,
-    });
+        });
+        console.log(`[sendWelcomePasswordEmail] Email sent successfully to ${to}`);
+    } catch (error) {
+        console.error(`[sendWelcomePasswordEmail] Failed to send email to ${to}:`, error);
+        throw error;
+    }
 }
