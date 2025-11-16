@@ -1,5 +1,7 @@
 import { resend } from "./resend";
 
+const EMAIL_FROM = process.env.EMAIL_FROM || "noreply@consolle.one";
+
 export async function sendWelcomePasswordEmail(
   to: string,
   password: string,
@@ -8,7 +10,7 @@ export async function sendWelcomePasswordEmail(
   link?: string
 ) {
   await resend.emails.send({
-    from: "noreply@outbank.cloud",
+    from: EMAIL_FROM,
     to,
     subject: "Sua senha de acesso ao "+customerName,
     html: `

@@ -4,6 +4,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import fs from "fs/promises";
 import path from "path";
 
+const EMAIL_FROM = process.env.EMAIL_FROM || "noreply@consolle.one";
+
 export async function getUserEmail() {
   const user = await currentUser();
   console.log("user", user);
@@ -20,7 +22,7 @@ export async function sendPricingSolicitationEmail(to: string) {
   const fileBase64 = fileBuffer.toString("base64");
 
   await resend.emails.send({
-    from: "noreply@outbank.cloud",
+    from: EMAIL_FROM,
     to,
     subject: "Aditivo de Taxas",
     html: "<p>Baixe, assine e importe o documento de aditivo de taxas</p>",

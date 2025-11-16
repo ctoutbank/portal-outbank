@@ -1,8 +1,10 @@
 import { resend } from "@/lib/resend";
 
+const EMAIL_FROM = process.env.EMAIL_FROM || "noreply@consolle.one";
+
 export async function sendWelcomePasswordEmail(to: string, password: string) {
     await resend.emails.send({
-        from: "noreply@outbank.cloud",
+        from: EMAIL_FROM,
         to,
         subject: "Sua senha de acesso ao Outbank",
         html: `
