@@ -2,12 +2,14 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { extractSubdomain, isTenantHost } from "@/lib/subdomain-auth/host";
+import { clerkClient } from "@clerk/nextjs/server";
 
 const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/auth/sign-in(.*)",
   "/auth/sign-up(.*)",
+  "/password-create(.*)",
   "/api/public(.*)",
   "/api/check-subdomain-auth(.*)",
   "/unauthorized(.*)",
@@ -26,6 +28,22 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
       return NextResponse.redirect(signInUrl);
     }
     
+    // Verificar se usuário precisa criar senha (primeiro login)
+    if (userId && pathname !== "/password-create" && !isPublicRoute(request)) {
+      try {
+        const clerk = await clerkClient();
+        const user = await clerk.users.getUser(userId);
+        const isFirstLogin = user.publicMetadata?.isFirstLogin === true;
+        
+        if (isFirstLogin) {
+          const passwordCreateUrl = new URL("/password-create", request.url);
+          return NextResponse.redirect(passwordCreateUrl);
+        }
+      } catch (error) {
+        console.error("Error checking user metadata:", error);
+      }
+    }
+    
     if (userId && pathname === "/") {
       const dashboardUrl = new URL("/dashboard", request.url);
       return NextResponse.redirect(dashboardUrl);
@@ -40,6 +58,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
       "/sign-in": "/tenant/auth/sign-in",
       "/auth/sign-in": "/tenant/auth/sign-in",
       "/auth/sign-up": "/tenant/auth/sign-up",
+      "/password-create": "/tenant/password-create",
       "/dashboard": "/tenant/dashboard",
       "/unauthorized": "/tenant/unauthorized",
     };
