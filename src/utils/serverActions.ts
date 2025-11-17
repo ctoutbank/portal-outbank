@@ -901,6 +901,7 @@ export async function removeAllImages(data: { customerId: number }) {
   ].filter(Boolean) as string[];
 
   for (const url of urlsToDelete) {
+    let key = '';
     try {
       const bucketName = process.env.AWS_BUCKET_NAME;
       const region = process.env.AWS_REGION;
@@ -909,7 +910,7 @@ export async function removeAllImages(data: { customerId: number }) {
           url.includes(`${bucketName}.s3.amazonaws.com`)) {
         
         const urlParts = url.split('/');
-        const key = urlParts[urlParts.length - 1];
+        key = urlParts[urlParts.length - 1];
         
         console.log(`[removeAllImages] Attempting to delete S3 object: ${key}`);
         
