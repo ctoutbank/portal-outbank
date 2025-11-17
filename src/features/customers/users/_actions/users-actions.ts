@@ -111,6 +111,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
             idAddress: null,
             fullAccess: false,
             hashedPassword,
+            initialPassword: finalPassword, // Store initial password for viewing
           })
           .returning({ id: users.id });
 
@@ -152,6 +153,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         idAddress: null,
         fullAccess: false,
         hashedPassword,
+        initialPassword: finalPassword, // Store initial password for viewing
       })
       .returning({ id: users.id });
 
