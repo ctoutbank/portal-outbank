@@ -24,9 +24,10 @@ export type CustomerCustomization = {
 async function deleteOldImageFromS3(oldUrl: string | null | undefined) {
   if (!oldUrl) return;
   
+  let key = '';
   try {
     const url = new URL(oldUrl);
-    const key = url.pathname.substring(1); // Remove leading '/'
+    key = url.pathname.substring(1); // Remove leading '/'
     
     const command = new DeleteObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME!,
@@ -35,8 +36,13 @@ async function deleteOldImageFromS3(oldUrl: string | null | undefined) {
     
     await s3Client.send(command);
     console.log(`✅ Imagem antiga deletada: ${key}`);
-  } catch (error) {
-    console.error('⚠️ Erro ao deletar imagem antiga (não crítico):', error);
+  } catch (error: any) {
+    // Tratamento específico para erro de permissão
+    if (error?.name === 'AccessDenied' || error?.Code === 'AccessDenied') {
+      console.warn(`⚠️ Permissão negada para deletar imagem do S3 (não crítico - continuando): ${key || oldUrl}`);
+    } else {
+      console.error('⚠️ Erro ao deletar imagem antiga do S3 (não crítico - continuando):', error?.message || error);
+    }
   }
 }
 
@@ -448,6 +454,9 @@ export async function saveCustomization(formData: FormData) {
       if (response.ok) {
         const responseData = await response.json();
         console.log(`[saveCustomization] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
+      } else if (response.status === 405) {
+        // 405 Method Not Allowed - endpoint pode não existir ou não aceitar POST
+        console.warn(`[saveCustomization] ⚠️ Revalidate API não disponível (405 Method Not Allowed) - cache local será invalidado`);
       } else {
         const errorText = await response.text();
         console.error(`[saveCustomization] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
@@ -713,6 +722,9 @@ export async function updateCustomization(formData: FormData) {
       if (response.ok) {
         const responseData = await response.json();
         console.log(`[updateCustomization] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
+      } else if (response.status === 405) {
+        // 405 Method Not Allowed - endpoint pode não existir ou não aceitar POST
+        console.warn(`[updateCustomization] ⚠️ Revalidate API não disponível (405 Method Not Allowed) - cache local será invalidado`);
       } else {
         const errorText = await response.text();
         console.error(`[updateCustomization] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
@@ -770,6 +782,7 @@ export async function removeImage(data: { customerId: number; type: 'logo' | 'lo
   const currentUrl = existingCustomization[urlField];
 
   if (currentUrl) {
+    let key = '';
     try {
       const bucketName = process.env.AWS_BUCKET_NAME;
       const region = process.env.AWS_REGION;
@@ -778,7 +791,7 @@ export async function removeImage(data: { customerId: number; type: 'logo' | 'lo
           currentUrl.includes(`${bucketName}.s3.amazonaws.com`)) {
         
         const urlParts = currentUrl.split('/');
-        const key = urlParts[urlParts.length - 1];
+        key = urlParts[urlParts.length - 1];
         
         console.log(`[removeImage] Attempting to delete S3 object: ${key}`);
         
@@ -794,7 +807,12 @@ export async function removeImage(data: { customerId: number; type: 'logo' | 'lo
         console.log(`[removeImage] URL does not belong to our bucket, skipping S3 deletion`);
       }
     } catch (error: any) {
-      console.error(`[removeImage] S3 deletion failed (continuing anyway):`, error.message);
+      // Tratamento específico para erro de permissão
+      if (error?.name === 'AccessDenied' || error?.Code === 'AccessDenied') {
+        console.warn(`[removeImage] ⚠️ Permissão negada para deletar imagem do S3 (não crítico - continuando): ${key || currentUrl}`);
+      } else {
+        console.error(`[removeImage] S3 deletion failed (continuing anyway):`, error?.message || error);
+      }
     }
   }
 
@@ -829,6 +847,9 @@ export async function removeImage(data: { customerId: number; type: 'logo' | 'lo
       if (response.ok) {
         const responseData = await response.json();
         console.log(`[removeImage] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
+      } else if (response.status === 405) {
+        // 405 Method Not Allowed - endpoint pode não existir ou não aceitar POST
+        console.warn(`[removeImage] ⚠️ Revalidate API não disponível (405 Method Not Allowed) - cache local será invalidado`);
       } else {
         const errorText = await response.text();
         console.error(`[removeImage] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
@@ -902,7 +923,12 @@ export async function removeAllImages(data: { customerId: number }) {
         console.log(`[removeAllImages] S3 object deleted successfully: ${key}`);
       }
     } catch (error: any) {
-      console.error(`[removeAllImages] S3 deletion failed for ${url} (continuing anyway):`, error.message);
+      // Tratamento específico para erro de permissão
+      if (error?.name === 'AccessDenied' || error?.Code === 'AccessDenied') {
+        console.warn(`[removeAllImages] ⚠️ Permissão negada para deletar imagem do S3 (não crítico - continuando): ${key || url}`);
+      } else {
+        console.error(`[removeAllImages] S3 deletion failed for ${url} (continuing anyway):`, error?.message || error);
+      }
     }
   }
 
@@ -939,6 +965,9 @@ export async function removeAllImages(data: { customerId: number }) {
       if (response.ok) {
         const responseData = await response.json();
         console.log(`[removeAllImages] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
+      } else if (response.status === 405) {
+        // 405 Method Not Allowed - endpoint pode não existir ou não aceitar POST
+        console.warn(`[removeAllImages] ⚠️ Revalidate API não disponível (405 Method Not Allowed) - cache local será invalidado`);
       } else {
         const errorText = await response.text();
         console.error(`[removeAllImages] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
