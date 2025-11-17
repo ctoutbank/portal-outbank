@@ -150,7 +150,8 @@ export default function CustomerWizardForm({
   const addCacheBusting = (url: string | null | undefined): string => {
     if (!url) return '';
     const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}v=${imageVersion}&t=${Date.now()}`;
+    // Usa apenas imageVersion para garantir que mude quando necessário
+    return `${url}${separator}v=${imageVersion}`;
   };
 
   // Função helper para converter HEX para HSL (reutilizável)
@@ -789,18 +790,20 @@ export default function CustomerWizardForm({
                 result = await Promise.race([savePromise, timeoutPromise]) as any;
 
                 if (result?.customization) {
-                  // Incrementa versão para forçar atualização das imagens
+                  // Incrementa versão para forçar atualização das imagens ANTES de atualizar o estado
                   setImageVersion(prev => prev + 1);
                   
-                  setCustomizationData({
-                    imageUrl: result.customization.imageUrl ?? undefined,
-                    id: result.customization.id ?? 0,
-                    subdomain: result.customization.slug ?? undefined,
-                    primaryColor: result.customization.primaryColor ?? undefined,
-                    secondaryColor: result.customization.secondaryColor ?? undefined,
-                    loginImageUrl: result.customization.loginImageUrl ?? undefined,
-                    faviconUrl: result.customization.faviconUrl ?? undefined,
-                  });
+                  // Atualiza estado com os dados do servidor, preservando cores se já foram atualizadas otimisticamente
+                  setCustomizationData(prev => ({
+                    imageUrl: result.customization.imageUrl ?? prev?.imageUrl,
+                    id: result.customization.id ?? prev?.id ?? 0,
+                    subdomain: result.customization.slug ?? prev?.subdomain,
+                    // Preserva cores se já foram atualizadas otimisticamente, senão usa do servidor
+                    primaryColor: prev?.primaryColor ?? result.customization.primaryColor ?? undefined,
+                    secondaryColor: prev?.secondaryColor ?? result.customization.secondaryColor ?? undefined,
+                    loginImageUrl: result.customization.loginImageUrl ?? prev?.loginImageUrl,
+                    faviconUrl: result.customization.faviconUrl ?? prev?.faviconUrl,
+                  }));
                   
                   setImagePreview(null);
                   setLoginImagePreview(null);
@@ -822,22 +825,15 @@ export default function CustomerWizardForm({
 
                 toast.success("Customização salva com sucesso!");
                 
-                // Refresh sem bloquear a UI
-                setTimeout(() => {
-                  router.refresh();
-                }, 100);
+                // NÃO faz router.refresh() para não sobrescrever atualizações otimistas
+                // O estado já foi atualizado acima
               } catch (error) {
                 console.error("Erro ao salvar a customização", error);
                 const errorMessage = error instanceof Error ? error.message : "Erro ao salvar a customização";
                 toast.error(errorMessage);
                 
-                // Reverte atualização otimista em caso de erro
-                if (primaryColorInput || secondaryColorInput) {
-                  // Recarrega dados do servidor em caso de erro
-                  setTimeout(() => {
-                    router.refresh();
-                  }, 500);
-                }
+                // Reverte atualização otimista em caso de erro apenas se necessário
+                // Não faz router.refresh() para não perder o estado atual
               } finally {
                 // Garante que o loading sempre seja resetado, mesmo em caso de erro
                 // Usa setTimeout para garantir que o estado seja atualizado
@@ -920,14 +916,14 @@ export default function CustomerWizardForm({
                             <p className="text-sm text-foreground mb-1">
                               Logo atual:
                             </p>
-                            <Image
+                            <img
                               src={addCacheBusting(customizationData.imageUrl)}
-                              alt={""}
+                              alt=""
                               height={100}
                               width={100}
-                              unoptimized
+                              style={{ maxWidth: '100px', maxHeight: '100px' }}
                               key={`${customizationData.imageUrl}-${imageVersion}`}
-                            ></Image>
+                            />
                             <Button
                               type="button"
                               variant="outline"
@@ -1003,13 +999,12 @@ export default function CustomerWizardForm({
                               Imagem de fundo atual:
                             </p>
                             <div className="border rounded-lg overflow-hidden">
-                              <Image
+                              <img
                                 src={addCacheBusting(customizationData.loginImageUrl)}
                                 alt="Current login background"
                                 width={400}
                                 height={225}
                                 className="w-full h-48 object-cover"
-                                unoptimized
                                 key={`${customizationData.loginImageUrl}-${imageVersion}`}
                               />
                             </div>
@@ -1102,25 +1097,23 @@ export default function CustomerWizardForm({
                             </p>
                             <div className="flex gap-4 items-center border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
                               <div className="flex flex-col items-center gap-1">
-                                <Image
+                                <img
                                   src={addCacheBusting(customizationData.faviconUrl)}
                                   alt="Current favicon 16x16"
                                   width={16}
                                   height={16}
                                   className="border border-gray-300"
-                                  unoptimized
                                   key={`${customizationData.faviconUrl}-16-${imageVersion}`}
                                 />
                                 <span className="text-xs text-muted-foreground">16×16</span>
                               </div>
                               <div className="flex flex-col items-center gap-1">
-                                <Image
+                                <img
                                   src={addCacheBusting(customizationData.faviconUrl)}
                                   alt="Current favicon 32x32"
                                   width={32}
                                   height={32}
                                   className="border border-gray-300"
-                                  unoptimized
                                   key={`${customizationData.faviconUrl}-32-${imageVersion}`}
                                 />
                                 <span className="text-xs text-muted-foreground">32×32</span>
@@ -1183,7 +1176,7 @@ export default function CustomerWizardForm({
                           <input
                             type="color"
                             name="primaryColor"
-                            defaultValue={
+                            value={
                               customizationData?.primaryColor
                                 ? hslToHex(customizationData.primaryColor)
                                 : "#ffffff"
@@ -1214,7 +1207,7 @@ export default function CustomerWizardForm({
                           <input
                             type="color"
                             name="secondaryColor"
-                            defaultValue={
+                            value={
                               customizationData?.secondaryColor
                                 ? hslToHex(customizationData.secondaryColor)
                                 : "#ffffff"
