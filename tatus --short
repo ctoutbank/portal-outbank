@@ -1,0 +1,162 @@
+[1mdiff --git a/src/utils/serverActions.ts b/src/utils/serverActions.ts[m
+[1mindex b0e3d3b..ad51bb3 100644[m
+[1m--- a/src/utils/serverActions.ts[m
+[1m+++ b/src/utils/serverActions.ts[m
+[36m@@ -2,7 +2,7 @@[m
+ [m
+ import { customerCustomization, db, file } from "@/lib/db";[m
+ import { s3Client } from "@/lib/s3-client/s3Client";[m
+[31m-import { PutObjectCommand } from "@aws-sdk/client-s3";[m
+[32m+[m[32mimport { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";[m
+ import { eq } from "drizzle-orm";[m
+ import { nanoid } from "nanoid";[m
+ import { revalidatePath, revalidateTag } from "next/cache";[m
+[36m@@ -20,6 +20,54 @@[m [mexport type CustomerCustomization = {[m
+   customerId: number | null;[m
+ };[m
+ [m
+[32m+[m[32m// ✅ Função helper: deletar imagem antiga do S3[m
+[32m+[m[32masync function deleteOldImageFromS3(oldUrl: string | null | undefined) {[m
+[32m+[m[32m  if (!oldUrl) return;[m
+[32m+[m[41m  [m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const url = new URL(oldUrl);[m
+[32m+[m[32m    const key = url.pathname.substring(1); // Remove leading '/'[m
+[32m+[m[41m    [m
+[32m+[m[32m    const command = new DeleteObjectCommand({[m
+[32m+[m[32m      Bucket: process.env.AWS_BUCKET_NAME!,[m
+[32m+[m[32m      Key: key,[m
+[32m+[m[32m    });[m
+[32m+[m[41m    [m
+[32m+[m[32m    await s3Client.send(command);[m
+[32m+[m[32m    console.log(`✅ Imagem antiga deletada: ${key}`);[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    console.error('⚠️ Erro ao deletar imagem antiga (não crítico):', error);[m
+[32m+[m[32m  }[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32m// ✅ Função helper: upload com URL única (timestamp + nanoid)[m
+[32m+[m[32masync function uploadImageToS3(file: File, prefix: string): Promise<string> {[m
+[32m+[m[32m  const arrayBuffer = await file.arrayBuffer();[m
+[32m+[m[32m  const buffer = Buffer.from(arrayBuffer);[m
+[32m+[m[41m  [m
+[32m+[m[32m  const extension = file.name.split('.').pop()?.toLowerCase() || 'png';[m
+[32m+[m[41m  [m
+[32m+[m[32m  // ✅ CRÍTICO: timestamp + nanoid = 100% único[m
+[32m+[m[32m  const timestamp = Date.now();[m
+[32m+[m[32m  const uniqueId = nanoid(10);[m
+[32m+[m[32m  const key = `${prefix}-${timestamp}-${uniqueId}.${extension}`;[m
+[32m+[m[41m  [m
+[32m+[m[32m  const command = new PutObjectCommand({[m
+[32m+[m[32m    Bucket: process.env.AWS_BUCKET_NAME!,[m
+[32m+[m[32m    Key: key,[m
+[32m+[m[32m    Body: buffer,[m
+[32m+[m[32m    ContentType: file.type,[m
+[32m+[m[32m    // ✅ Cache AGRESSIVO (performance máxima)[m
+[32m+[m[32m    // Funciona porque a URL é sempre única[m
+[32m+[m[32m    CacheControl: 'public, max-age=31536000, immutable',[m
+[32m+[m[32m  });[m
+[32m+[m[41m  [m
+[32m+[m[32m  await s3Client.send(command);[m
+[32m+[m[41m  [m
+[32m+[m[32m  const url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;[m
+[32m+[m[32m  return url;[m
+[32m+[m[32m}[m
+[32m+[m
+ // Função para converter HEX → HSL (robusta, retorna null se inválido)[m
+ function hexToHsl(hex: string): string | null {[m
+   try {[m
+[36m@@ -229,23 +277,9 @@[m [mexport async function saveCustomization(formData: FormData) {[m
+   const image = formData.get("image") as File | null;[m
+   console.log("[saveCustomization] Image file:", image ? `present (${image.size} bytes, ${image.type})` : 'not provided');[m
+   if (image) {[m
+[31m-    const arrayBuffer = await image.arrayBuffer();[m
+[31m-    const imageBuffer = Buffer.from(arrayBuffer);[m
+[31m-    const imageId = nanoid(8);[m
+[31m-    const extension = image.name.split(".").pop() || "jpg";[m
+[31m-    const fileType = image.type || "image/jpeg";[m
+[31m-[m
+[31m-    const uploadCommand = new PutObjectCommand({[m
+[31m-      Bucket: process.env.AWS_BUCKET_NAME,[m
+[31m-      Key: `logo-${imageId}.${extension}`,[m
+[31m-      Body: imageBuffer,[m
+[31m-      ContentType: fileType,[m
+[31m-      CacheControl: 'public, max-age=31536000, immutable',[m
+[31m-    });[m
+[31m-[m
+[32m+[m[32m    // ✅ Upload com URL única (timestamp + nanoid)[m
+     try {[m
+[31m-      await s3Client.send(uploadCommand);[m
+[31m-      imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/logo-${imageId}.${extension}`;[m
+[32m+[m[32m      imageUrl = await uploadImageToS3(image, 'logo');[m
+       console.log("Logo uploaded successfully:", imageUrl);[m
+     } catch (error: any) {[m
+       console.error("S3 Upload Error (logo):", {[m
+[36m@@ -256,6 +290,9 @@[m [mexport async function saveCustomization(formData: FormData) {[m
+       throw new Error(`Falha no upload do logo: ${error.message}`);[m
+     }[m
+ [m
+[32m+[m[32m    const extension = image.name.split(".").pop() || "jpg";[m
+[32m+[m[32m    const fileType = image.type || "image/jpeg";[m
+[32m+[m
+     const result = await db[m
+       .insert(file)[m
+       .values({[m
+[36m@@ -273,23 +310,9 @@[m [mexport async function saveCustomization(formData: FormData) {[m
+   const loginImage = formData.get("loginImage") as File | null;[m
+   console.log("[saveCustomization] Login image file:", loginImage ? `present (${loginImage.size} bytes, ${loginImage.type})` : 'not provided');[m
+   if (loginImage) {[m
+[31m-    const arrayBuffer = await loginImage.arrayBuffer();[m
+[31m-    const imageBuffer = Buffer.from(arrayBuffer);[m
+[31m-    const imageId = nanoid(8);[m
+[31m-    const extension = loginImage.name.split(".").pop() || "jpg";[m
+[31m-    const fileType = loginImage.type || "image/jpeg";[m
+[31m-[m
+[31m-    const uploadCommand = new PutObjectCommand({[m
+[31m-      Bucket: process.env.AWS_BUCKET_NAME,[m
+[31m-      Key: `login-${imageId}.${extension}`,[m
+[31m-      Body: imageBuffer,[m
+[31m-      ContentType: fileType,[m
+[31m-      CacheControl: 'public, max-age=31536000, immutable',[m
+[31m-    });[m
+[31m-[m
+[32m+[m[32m    // ✅ Upload com URL única (timestamp + nanoid)[m
+     try {[m
+[31m-      await s3Client.send(uploadCommand);[m
+[31m-      loginImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/login-${imageId}.${extension}`;[m
+[32m+[m[32m      loginImageUrl = await uploadImageToS3(loginImage, 'login');[m
+       console.log("Login image uploaded successfully:", loginImageUrl);[m
+     } catch (error: any) {[m
+       console.error("S3 Upload Error (login image):", {[m
+[36m@@ -300,6 +323,9 @@[m [mexport async function saveCustomization(formData: FormData) {[m
+       throw new Error(`Falha no upload da imagem de login: ${error.message}`);[m
+     }[m
+ [m
+[32m+[m[32m    const extension = loginImage.name.split(".").pop() || "jpg";[m
+[32m+[m[32m    const fileType = loginImage.type || "image/jpeg";[m
+[32m+[m
+     const result = await db[m
+       .insert(file)[m
+       .values({[m
+[36m@@ -317,23 +343,9 @@[m [mexport async function saveCustomization(formData: FormData) {[m
+   const favicon = formData.get("favicon") as File | null;[m
+   console.log("[saveCustomization] Favicon file:", favicon ? `present (${favicon.size} bytes, ${favicon.type})` : 'not provided');[m
+   if (favicon) {[m
+[31m-    const arrayBuffer = await favicon.arrayBuffer();[m
+[31m-    const imageBuffer = Buffer.from(arrayBuffer);[m
+[31m-    const imageId = nanoid(8);[m
+[31m-    const extension = favicon.name.split(".").pop() || "ico";[m
+[31m-    const fileType = favicon.type || "image/x-icon";[m
+[31m-[m
+[31m-    const uploadCommand = new PutObjectCommand({[m
+[31m-      Bucket: process.env.AWS_BUCKET_NAME,[m
+[31m-      Key: `favicon-${imageId}.${extension}`,[m
+[31m-      Body: imageBuffer,[m
+[31m-      ContentType: fileType,[m
+[31m-      CacheControl: 'public, max-age=31536000, immutable',[m
+[31m-    });[m
+[31m-[m
+[32m+[m[32m    // ✅ Upload com URL única (timestamp + nanoid)[m
+     try {[m
+[31m-      await s3Client.send(uploadCommand);[m
+[31m-      faviconUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGI
