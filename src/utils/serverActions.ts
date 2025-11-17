@@ -675,11 +675,22 @@ export async function updateCustomization(formData: FormData) {
   const secondaryHSL = secondaryColor ? hexToHsl(secondaryColor) : null;
 
   console.log(`[updateCustomization] Updating customization id=${id} for customerId=${validated.data.customerId}`);
+  console.log(`[updateCustomization] Color conversion:`, {
+    primaryColorHex: primaryColor,
+    primaryHSL: primaryHSL || '(conversion failed)',
+    secondaryColorHex: secondaryColor || '(not provided)',
+    secondaryHSL: secondaryHSL || '(not provided or conversion failed)',
+  });
   console.log(`[updateCustomization] New URLs:`, {
     imageUrl: imageUrl || '(unchanged)',
     loginImageUrl: loginImageUrl || '(unchanged)',
     faviconUrl: faviconUrl || '(unchanged)',
   });
+
+  // Validar que a conversão da cor primária foi bem-sucedida
+  if (!primaryHSL) {
+    throw new Error(`Falha na conversão da cor primária: ${primaryColor}`);
+  }
 
   await db
     .update(customerCustomization)
@@ -702,6 +713,10 @@ export async function updateCustomization(formData: FormData) {
     imageUrl: updatedCustomization?.imageUrl,
     loginImageUrl: updatedCustomization?.loginImageUrl,
     faviconUrl: updatedCustomization?.faviconUrl,
+  });
+  console.log(`[updateCustomization] Final colors after update:`, {
+    primaryColor: updatedCustomization?.primaryColor,
+    secondaryColor: updatedCustomization?.secondaryColor || '(not set)',
   });
 
   if (normalizedSubdomain) {

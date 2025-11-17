@@ -721,7 +721,9 @@ export default function CustomerWizardForm({
               e.preventDefault();
               setIsSavingCustomization(true);
 
-              const formData = new FormData(e.currentTarget);
+              // ✅ Capturar o formulário no início (antes do bloco assíncrono)
+              const form = e.currentTarget as HTMLFormElement;
+              const formData = new FormData(form);
 
               const subdomain = (iso.subdomain || customizationData?.subdomain || "").trim();
               const customerId = newCustomerId || customer?.id;
@@ -821,11 +823,13 @@ export default function CustomerWizardForm({
                   setFaviconPreview(null);
                   
                   // ✅ Limpar inputs de arquivo (para permitir re-upload da mesma imagem)
-                  const form = e.currentTarget;
-                  const fileInputs = form.querySelectorAll('input[type="file"]');
-                  fileInputs.forEach((input) => {
-                    (input as HTMLInputElement).value = '';
-                  });
+                  // Usa a referência do formulário capturada no início
+                  if (form) {
+                    const fileInputs = form.querySelectorAll('input[type="file"]');
+                    fileInputs.forEach((input) => {
+                      (input as HTMLInputElement).value = '';
+                    });
+                  }
                   
                   if (result.customization.imageUrl) {
                     const filename = result.customization.imageUrl.split('/').pop() || 'logo atual';
