@@ -847,6 +847,8 @@ export default function CustomerWizardForm({
                               alt={""}
                               height={100}
                               width={100}
+                              unoptimized
+                              key={customizationData.imageUrl}
                             ></Image>
                             <Button
                               type="button"
@@ -929,6 +931,8 @@ export default function CustomerWizardForm({
                                 width={400}
                                 height={225}
                                 className="w-full h-48 object-cover"
+                                unoptimized
+                                key={customizationData.loginImageUrl}
                               />
                             </div>
                             <Button
@@ -1026,6 +1030,8 @@ export default function CustomerWizardForm({
                                   width={16}
                                   height={16}
                                   className="border border-gray-300"
+                                  unoptimized
+                                  key={`${customizationData.faviconUrl}-16`}
                                 />
                                 <span className="text-xs text-muted-foreground">16×16</span>
                               </div>
@@ -1036,6 +1042,8 @@ export default function CustomerWizardForm({
                                   width={32}
                                   height={32}
                                   className="border border-gray-300"
+                                  unoptimized
+                                  key={`${customizationData.faviconUrl}-32`}
                                 />
                                 <span className="text-xs text-muted-foreground">32×32</span>
                               </div>

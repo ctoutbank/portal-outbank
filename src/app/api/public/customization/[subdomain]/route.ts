@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCustomizationBySubdomain } from "@/utils/serverActions";
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(
   request: NextRequest,
@@ -41,7 +42,9 @@ export async function GET(
     });
 
     response.headers.set('Vary', 'Host');
-    response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
+    // Cache reduzido para atualizações mais rápidas
+    response.headers.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
+    response.headers.set('X-Cache-Tag', `customization-${subdomain}`);
     
     return response;
   } catch (error) {

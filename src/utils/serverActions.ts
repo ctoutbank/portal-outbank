@@ -5,7 +5,7 @@ import { s3Client } from "@/lib/s3-client/s3Client";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 
 export type CustomerCustomization = {
@@ -240,6 +240,7 @@ export async function saveCustomization(formData: FormData) {
       Key: `logo-${imageId}.${extension}`,
       Body: imageBuffer,
       ContentType: fileType,
+      CacheControl: 'public, max-age=31536000, immutable',
     });
 
     try {
@@ -283,6 +284,7 @@ export async function saveCustomization(formData: FormData) {
       Key: `login-${imageId}.${extension}`,
       Body: imageBuffer,
       ContentType: fileType,
+      CacheControl: 'public, max-age=31536000, immutable',
     });
 
     try {
@@ -326,6 +328,7 @@ export async function saveCustomization(formData: FormData) {
       Key: `favicon-${imageId}.${extension}`,
       Body: imageBuffer,
       ContentType: fileType,
+      CacheControl: 'public, max-age=31536000, immutable',
     });
 
     try {
@@ -442,6 +445,9 @@ export async function saveCustomization(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/customers");
   revalidatePath(`/customers/${customerId}`);
+  // Invalida cache da API de customização
+  revalidatePath(`/api/public/customization/${normalizedSubdomain}`);
+  revalidateTag(`customization-${normalizedSubdomain}`);
 
   return {
     success: true,
@@ -504,6 +510,7 @@ export async function updateCustomization(formData: FormData) {
       Key: `logo-${imageId}.${extension}`,
       Body: imageBuffer,
       ContentType: fileType,
+      CacheControl: 'public, max-age=31536000, immutable',
     });
 
     try {
@@ -561,6 +568,7 @@ export async function updateCustomization(formData: FormData) {
       Key: `login-${imageId}.${extension}`,
       Body: imageBuffer,
       ContentType: fileType,
+      CacheControl: 'public, max-age=31536000, immutable',
     });
 
     try {
@@ -617,6 +625,7 @@ export async function updateCustomization(formData: FormData) {
       Key: `favicon-${imageId}.${extension}`,
       Body: imageBuffer,
       ContentType: fileType,
+      CacheControl: 'public, max-age=31536000, immutable',
     });
 
     try {
@@ -723,6 +732,9 @@ export async function updateCustomization(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/customers");
   revalidatePath(`/customers/${validated.data.customerId}`);
+  // Invalida cache da API de customização
+  revalidatePath(`/api/public/customization/${normalizedSubdomain}`);
+  revalidateTag(`customization-${normalizedSubdomain}`);
 
   return {
     success: true,
@@ -838,6 +850,11 @@ export async function removeImage(data: { customerId: number; type: 'logo' | 'lo
   revalidatePath("/");
   revalidatePath("/customers");
   revalidatePath(`/customers/${customerId}`);
+  // Invalida cache da API de customização
+  if (slug) {
+    revalidatePath(`/api/public/customization/${slug}`);
+    revalidateTag(`customization-${slug}`);
+  }
 
   console.log(`[removeImage] ✅ Image removed successfully`);
 
@@ -943,6 +960,11 @@ export async function removeAllImages(data: { customerId: number }) {
   revalidatePath("/");
   revalidatePath("/customers");
   revalidatePath(`/customers/${customerId}`);
+  // Invalida cache da API de customização
+  if (slug) {
+    revalidatePath(`/api/public/customization/${slug}`);
+    revalidateTag(`customization-${slug}`);
+  }
 
   console.log(`[removeAllImages] ✅ All images removed successfully`);
 
