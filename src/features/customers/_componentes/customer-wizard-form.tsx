@@ -143,6 +143,36 @@ export default function CustomerWizardForm({
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingCustomization, setIsSavingCustomization] = useState(false);
   const [isRemovingImage, setIsRemovingImage] = useState(false);
+  // Cache busting para forçar atualização imediata das imagens
+  const [imageVersion, setImageVersion] = useState(0);
+
+  // Função para adicionar cache busting nas URLs das imagens
+  const addCacheBusting = (url: string | null | undefined): string => {
+    if (!url) return '';
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}v=${imageVersion}&t=${Date.now()}`;
+  };
+
+  // Função helper para converter HEX para HSL (reutilizável)
+  const hexToHslForUpdate = (hex: string): string => {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+        case g: h = ((b - r) / d + 2) / 6; break;
+        case b: h = ((r - g) / d + 4) / 6; break;
+      }
+    }
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  };
 
   useEffect(() => {
     if (customizationData?.imageUrl && !imageFileName) {
@@ -304,6 +334,9 @@ export default function CustomerWizardForm({
       const result = await removeImage({ customerId: newCustomerId, type });
       
       if (result.success && result.customization) {
+        // Incrementa versão para forçar atualização das imagens
+        setImageVersion(prev => prev + 1);
+        
         setCustomizationData({
           imageUrl: result.customization.imageUrl ?? undefined,
           id: result.customization.id ?? 0,
@@ -356,6 +389,9 @@ export default function CustomerWizardForm({
       const result = await removeAllImages({ customerId: newCustomerId });
       
       if (result.success && result.customization) {
+        // Incrementa versão para forçar atualização das imagens
+        setImageVersion(prev => prev + 1);
+        
         setCustomizationData({
           imageUrl: result.customization.imageUrl ?? undefined,
           id: result.customization.id ?? 0,
@@ -720,15 +756,42 @@ export default function CustomerWizardForm({
                 return;
               }
 
+              // Atualização otimista: atualiza cores imediatamente antes de salvar
+              const primaryColorInput = formData.get("primaryColor") as string;
+              const secondaryColorInput = formData.get("secondaryColor") as string;
+              
+              if (primaryColorInput || secondaryColorInput) {
+                // Atualiza estado local imediatamente para feedback visual instantâneo
+                setCustomizationData(prev => ({
+                  ...prev,
+                  primaryColor: primaryColorInput ? hexToHslForUpdate(primaryColorInput) : prev?.primaryColor,
+                  secondaryColor: secondaryColorInput ? hexToHslForUpdate(secondaryColorInput) : prev?.secondaryColor,
+                  id: prev?.id ?? 0,
+                  subdomain: prev?.subdomain,
+                  imageUrl: prev?.imageUrl,
+                  loginImageUrl: prev?.loginImageUrl,
+                  faviconUrl: prev?.faviconUrl,
+                }));
+              }
+
               try {
+                // Timeout para evitar travamentos (30 segundos)
+                const timeoutPromise = new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error("Timeout: Operação demorou muito tempo. Tente novamente.")), 30000)
+                );
+
                 let result;
-                if (customizationData) {
-                  result = await updateCustomization(formData);
-                } else {
-                  result = await saveCustomization(formData);
-                }
+                const savePromise = customizationData 
+                  ? updateCustomization(formData)
+                  : saveCustomization(formData);
+
+                // Race entre a operação de salvamento e o timeout
+                result = await Promise.race([savePromise, timeoutPromise]) as any;
 
                 if (result?.customization) {
+                  // Incrementa versão para forçar atualização das imagens
+                  setImageVersion(prev => prev + 1);
+                  
                   setCustomizationData({
                     imageUrl: result.customization.imageUrl ?? undefined,
                     id: result.customization.id ?? 0,
@@ -759,13 +822,28 @@ export default function CustomerWizardForm({
 
                 toast.success("Customização salva com sucesso!");
                 
-                router.refresh();
+                // Refresh sem bloquear a UI
+                setTimeout(() => {
+                  router.refresh();
+                }, 100);
               } catch (error) {
                 console.error("Erro ao salvar a customização", error);
                 const errorMessage = error instanceof Error ? error.message : "Erro ao salvar a customização";
                 toast.error(errorMessage);
+                
+                // Reverte atualização otimista em caso de erro
+                if (primaryColorInput || secondaryColorInput) {
+                  // Recarrega dados do servidor em caso de erro
+                  setTimeout(() => {
+                    router.refresh();
+                  }, 500);
+                }
               } finally {
-                setIsSavingCustomization(false);
+                // Garante que o loading sempre seja resetado, mesmo em caso de erro
+                // Usa setTimeout para garantir que o estado seja atualizado
+                setTimeout(() => {
+                  setIsSavingCustomization(false);
+                }, 100);
               }
             }}
             className="space-y-6"
@@ -843,12 +921,12 @@ export default function CustomerWizardForm({
                               Logo atual:
                             </p>
                             <Image
-                              src={customizationData.imageUrl}
+                              src={addCacheBusting(customizationData.imageUrl)}
                               alt={""}
                               height={100}
                               width={100}
                               unoptimized
-                              key={customizationData.imageUrl}
+                              key={`${customizationData.imageUrl}-${imageVersion}`}
                             ></Image>
                             <Button
                               type="button"
@@ -926,13 +1004,13 @@ export default function CustomerWizardForm({
                             </p>
                             <div className="border rounded-lg overflow-hidden">
                               <Image
-                                src={customizationData.loginImageUrl}
+                                src={addCacheBusting(customizationData.loginImageUrl)}
                                 alt="Current login background"
                                 width={400}
                                 height={225}
                                 className="w-full h-48 object-cover"
                                 unoptimized
-                                key={customizationData.loginImageUrl}
+                                key={`${customizationData.loginImageUrl}-${imageVersion}`}
                               />
                             </div>
                             <Button
@@ -1025,25 +1103,25 @@ export default function CustomerWizardForm({
                             <div className="flex gap-4 items-center border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
                               <div className="flex flex-col items-center gap-1">
                                 <Image
-                                  src={customizationData.faviconUrl}
+                                  src={addCacheBusting(customizationData.faviconUrl)}
                                   alt="Current favicon 16x16"
                                   width={16}
                                   height={16}
                                   className="border border-gray-300"
                                   unoptimized
-                                  key={`${customizationData.faviconUrl}-16`}
+                                  key={`${customizationData.faviconUrl}-16-${imageVersion}`}
                                 />
                                 <span className="text-xs text-muted-foreground">16×16</span>
                               </div>
                               <div className="flex flex-col items-center gap-1">
                                 <Image
-                                  src={customizationData.faviconUrl}
+                                  src={addCacheBusting(customizationData.faviconUrl)}
                                   alt="Current favicon 32x32"
                                   width={32}
                                   height={32}
                                   className="border border-gray-300"
                                   unoptimized
-                                  key={`${customizationData.faviconUrl}-32`}
+                                  key={`${customizationData.faviconUrl}-32-${imageVersion}`}
                                 />
                                 <span className="text-xs text-muted-foreground">32×32</span>
                               </div>
@@ -1110,6 +1188,20 @@ export default function CustomerWizardForm({
                                 ? hslToHex(customizationData.primaryColor)
                                 : "#ffffff"
                             }
+                            onChange={(e) => {
+                              // Atualização imediata da cor no estado local
+                              const hexColor = e.target.value;
+                              setCustomizationData(prev => ({
+                                ...prev,
+                                primaryColor: hexToHslForUpdate(hexColor),
+                                id: prev?.id ?? 0,
+                                subdomain: prev?.subdomain,
+                                secondaryColor: prev?.secondaryColor,
+                                imageUrl: prev?.imageUrl,
+                                loginImageUrl: prev?.loginImageUrl,
+                                faviconUrl: prev?.faviconUrl,
+                              }));
+                            }}
                             className="h-10 w-full p-0 border rounded cursor-pointer"
                           />
                         </div>
@@ -1127,6 +1219,20 @@ export default function CustomerWizardForm({
                                 ? hslToHex(customizationData.secondaryColor)
                                 : "#ffffff"
                             }
+                            onChange={(e) => {
+                              // Atualização imediata da cor no estado local
+                              const hexColor = e.target.value;
+                              setCustomizationData(prev => ({
+                                ...prev,
+                                secondaryColor: hexToHslForUpdate(hexColor),
+                                id: prev?.id ?? 0,
+                                subdomain: prev?.subdomain,
+                                primaryColor: prev?.primaryColor,
+                                imageUrl: prev?.imageUrl,
+                                loginImageUrl: prev?.loginImageUrl,
+                                faviconUrl: prev?.faviconUrl,
+                              }));
+                            }}
                             className="h-10 w-full p-0 border rounded cursor-pointer"
                           />
                         </div>
