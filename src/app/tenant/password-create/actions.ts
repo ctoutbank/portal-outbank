@@ -2,7 +2,7 @@
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/db/drizzle";
-import { users } from "../../../../../drizzle/schema";
+import { users } from "../../../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { hashPassword } from "@/app/utils/password";
 
