@@ -131,7 +131,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         firstName,
         lastName,
         emailAddress: [normalizedEmail],
-        skipPasswordRequirement: true,
+        password: finalPassword, // Define a senha no Clerk para permitir login
         publicMetadata: {
           isFirstLogin: true,
         },

@@ -656,8 +656,9 @@ export default function CustomerWizardForm({
                           const formData = new FormData();
                           formData.append("customerId", updatedId.toString());
                           formData.append("subdomain", iso.subdomain);
-                          formData.append("primaryColor", customizationData?.primaryColor || "#000000");
-                          formData.append("secondaryColor", customizationData?.secondaryColor || "#ffffff");
+                          // ✅ Garantir que sempre envie HEX, não HSL
+                          formData.append("primaryColor", primaryColorHex || "#000000");
+                          formData.append("secondaryColor", secondaryColorHex || "#ffffff");
                           
                           if (customizationData?.id) {
                             formData.append("id", customizationData.id.toString());
@@ -742,14 +743,17 @@ export default function CustomerWizardForm({
 
               formData.set("subdomain", subdomain);
               formData.set("customerId", String(customerId));
+              // ✅ Garantir que sempre envie HEX, não HSL
+              formData.set("primaryColor", primaryColorHex);
+              formData.set("secondaryColor", secondaryColorHex);
               if (customizationData?.id) {
                 formData.set("id", String(customizationData.id));
               }
 
               const validationData = {
                 subdomain: subdomain,
-                primaryColor: formData.get("primaryColor") as string,
-                secondaryColor: formData.get("secondaryColor") as string,
+                primaryColor: primaryColorHex, // Usar valor HEX do estado
+                secondaryColor: secondaryColorHex, // Usar valor HEX do estado
                 image: formData.get("image"),
                 customerId: String(customerId),
                 id: customizationData?.id,
