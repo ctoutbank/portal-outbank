@@ -1,4 +1,4 @@
-export async function generateRandomPassword(length = 6) {
+export async function generateRandomPassword(length = 8) {
     const chars =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let randomPassword = "";

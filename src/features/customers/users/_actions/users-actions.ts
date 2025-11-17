@@ -48,6 +48,15 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
       ? password
       : await generateRandomPassword();
 
+  // ✅ Validar que a senha tenha pelo menos 8 caracteres (requisito do Clerk)
+  if (finalPassword.length < 8) {
+    return {
+      ok: false,
+      code: 'invalid_password',
+      message: 'A senha deve ter pelo menos 8 caracteres.'
+    };
+  }
+
   const hashedPassword = hashPassword(finalPassword);
 
   // Buscar o profile ADMIN dinamicamente
@@ -119,16 +128,24 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
       if (clerkUsers.data.length > 0) {
         clerkUser = clerkUsers.data[0];
         
-        // ✅ Se uma nova senha foi gerada (não foi fornecida), atualizar no Clerk também
-        // Isso garante que a senha gerada funcione para login
-        if (!password || password.trim() === "") {
-          try {
-            await clerk.users.updateUser(clerkUser.id, {
-              password: finalPassword,
-            });
-          } catch (updateError) {
-            console.warn("Erro ao atualizar senha no Clerk (continuando):", updateError);
-          }
+        // ✅ SEMPRE atualizar a senha no Clerk quando reutilizamos um usuário existente
+        // Isso garante que a senha exibida no painel admin funcione para login
+        console.log(`[InsertUser] Reutilizando usuário Clerk existente: ${clerkUser.id} para email: ${normalizedEmail}`);
+        console.log(`[InsertUser] Atualizando senha no Clerk para usuário reutilizado`);
+        
+        try {
+          await clerk.users.updateUser(clerkUser.id, {
+            password: finalPassword,
+          });
+          console.log(`[InsertUser] ✅ Senha atualizada com sucesso no Clerk para usuário: ${clerkUser.id}`);
+        } catch (updateError: any) {
+          console.error(`[InsertUser] ❌ Erro ao atualizar senha no Clerk:`, updateError?.message || updateError);
+          // Não continuar se falhar ao atualizar senha - é crítico para login
+          return {
+            ok: false,
+            code: 'clerk_update_error',
+            message: `Erro ao atualizar senha no Clerk: ${updateError?.message || 'Erro desconhecido'}`
+          };
         }
         
         // Usuário existe no Clerk mas não no banco - criar registro no banco
@@ -162,15 +179,36 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
 
     // Criação no Clerk (usuário não existe em nenhum lugar)
     if (!clerkUser) {
-      clerkUser = await clerk.users.createUser({
-        firstName,
-        lastName,
-        emailAddress: [normalizedEmail],
-        password: finalPassword, // Define a senha no Clerk para permitir login
-        publicMetadata: {
-          isFirstLogin: true,
-        },
-      });
+      console.log(`[InsertUser] Criando novo usuário no Clerk para email: ${normalizedEmail}`);
+      console.log(`[InsertUser] Senha gerada/fornecida: ${finalPassword.length} caracteres`);
+      
+      try {
+        clerkUser = await clerk.users.createUser({
+          firstName,
+          lastName,
+          emailAddress: [normalizedEmail],
+          password: finalPassword, // Define a senha no Clerk para permitir login
+          publicMetadata: {
+            isFirstLogin: true,
+          },
+        });
+        console.log(`[InsertUser] ✅ Usuário criado com sucesso no Clerk: ${clerkUser.id}`);
+      } catch (createError: any) {
+        console.error(`[InsertUser] ❌ Erro ao criar usuário no Clerk:`, createError?.message || createError);
+        // Verificar se é erro de senha comprometida
+        if (createError?.errors?.some((e: any) => e.code === "form_password_pwned")) {
+          return {
+            ok: false,
+            code: 'password_pwned',
+            message: 'Senha comprometida: Essa senha foi encontrada em vazamentos de dados. Por favor, escolha uma senha mais segura.'
+          };
+        }
+        return {
+          ok: false,
+          code: 'clerk_create_error',
+          message: `Erro ao criar usuário no Clerk: ${createError?.message || 'Erro desconhecido'}`
+        };
+      }
     }
 
     // Criação no banco

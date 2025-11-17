@@ -56,7 +56,7 @@ export interface UserDetailForm extends UserDetail {
   fullAccess: boolean;
 }
 
-export async function generateRandomPassword(length = 6) {
+export async function generateRandomPassword(length = 8) {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let randomPassword = "";
@@ -200,6 +200,11 @@ export async function InsertUser(data: InsertUserInput) {
         ? password
         : await generateRandomPassword();
 
+    // ✅ Validar que a senha tenha pelo menos 8 caracteres (requisito do Clerk)
+    if (finalPassword.length < 8) {
+      throw new Error("A senha deve ter pelo menos 8 caracteres.");
+    }
+
     const hashedPassword = hashPassword(finalPassword);
 
     // Buscar o profile ADMIN dinamicamente
@@ -218,15 +223,29 @@ export async function InsertUser(data: InsertUserInput) {
 
     // Criação no Clerk
     const clerk = await clerkClient(); // chamar a função e obter o cliente
-    const clerkUser = await clerk.users.createUser({
-      firstName,
-      lastName,
-      emailAddress: [email],
-      password: finalPassword, // ✅ Define a senha no Clerk para permitir login
-      publicMetadata: {
-        isFirstLogin: true,
-      },
-    });
+    console.log(`[InsertUser] Criando novo usuário no Clerk para email: ${email}`);
+    console.log(`[InsertUser] Senha gerada/fornecida: ${finalPassword.length} caracteres`);
+    
+    let clerkUser;
+    try {
+      clerkUser = await clerk.users.createUser({
+        firstName,
+        lastName,
+        emailAddress: [email],
+        password: finalPassword, // ✅ Define a senha no Clerk para permitir login
+        publicMetadata: {
+          isFirstLogin: true,
+        },
+      });
+      console.log(`[InsertUser] ✅ Usuário criado com sucesso no Clerk: ${clerkUser.id}`);
+    } catch (createError: any) {
+      console.error(`[InsertUser] ❌ Erro ao criar usuário no Clerk:`, createError?.message || createError);
+      // Verificar se é erro de senha comprometida
+      if (createError?.errors?.some((e: any) => e.code === "form_password_pwned")) {
+        throw new Error("Senha comprometida: Essa senha foi encontrada em vazamentos de dados. Por favor, escolha uma senha mais segura.");
+      }
+      throw new Error(`Erro ao criar usuário no Clerk: ${createError?.message || 'Erro desconhecido'}`);
+    }
 
     // Criação no banco
     const created = await db
