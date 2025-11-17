@@ -20,7 +20,7 @@ interface InsertUserInput {
 
 type InsertUserResult = 
   | { ok: true; userId: number; reused: boolean }
-  | { ok: false; code: 'invalid_email' | 'email_in_use' | 'unknown'; message: string };
+  | { ok: false; code: 'invalid_email' | 'email_in_use' | 'invalid_password' | 'clerk_update_error' | 'clerk_create_error' | 'password_pwned' | 'unknown'; message: string };
 
 export async function InsertUser(data: InsertUserInput): Promise<InsertUserResult> {
   const {
