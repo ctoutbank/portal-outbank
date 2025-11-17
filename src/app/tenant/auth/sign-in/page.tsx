@@ -12,6 +12,8 @@ export default function TenantSignInPage() {
         }}
         afterSignInUrl="/dashboard"
         signUpUrl="/auth/sign-up"
+        routing="path"
+        path="/auth/sign-in"
       />
     </div>
   );
