@@ -105,15 +105,33 @@ export async function createUser(data: Userinsert) {
   }
 
   try {
-    // Verificar se o usuário já existe no banco de dados
-    const existingUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, data.email))
-      .limit(1);
+    // ✅ Verificar se o usuário já existe no banco de dados PARA ESTE ISO (permite mesmo email em ISOs diferentes)
+    if (data.idCustomer) {
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            eq(users.email, data.email),
+            eq(users.idCustomer, data.idCustomer)
+          )
+        )
+        .limit(1);
 
-    if (existingUser.length > 0) {
-      throw new Error("Usuário já existe com este email");
+      if (existingUser.length > 0) {
+        throw new Error("Usuário já existe com este email para este ISO");
+      }
+    } else {
+      // Se não há idCustomer, verificar globalmente (comportamento antigo)
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, data.email))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        throw new Error("Usuário já existe com este email");
+      }
     }
 
     const clerkUser = await (

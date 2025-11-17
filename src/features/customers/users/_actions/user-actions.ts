@@ -222,7 +222,7 @@ export async function InsertUser(data: InsertUserInput) {
       firstName,
       lastName,
       emailAddress: [email],
-      skipPasswordRequirement: true,
+      password: finalPassword, // ✅ Define a senha no Clerk para permitir login
       publicMetadata: {
         isFirstLogin: true,
       },

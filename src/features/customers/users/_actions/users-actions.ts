@@ -7,7 +7,7 @@ import { hashPassword } from "@/app/utils/password";
 import { generateRandomPassword } from "@/features/customers/users/server/users";
 import { sendWelcomePasswordEmail } from "@/lib/send-email";
 import { users, profiles, customers, customerCustomization, file } from "../../../../../drizzle/schema";
-import { eq, ilike } from "drizzle-orm";
+import { eq, ilike, and } from "drizzle-orm";
 
 interface InsertUserInput {
   firstName: string;
@@ -69,19 +69,42 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
   const idProfile = adminProfile[0].id;
 
   try {
-    // Verificar se o usuário já existe no banco de dados
-    const existingUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, normalizedEmail))
-      .limit(1);
+    // ✅ Verificar se o usuário já existe no banco de dados PARA ESTE ISO (permite mesmo email em ISOs diferentes)
+    if (idCustomer) {
+      // Se idCustomer foi fornecido, verificar apenas para este ISO específico
+      const existingUserForCustomer = await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            eq(users.email, normalizedEmail),
+            eq(users.idCustomer, idCustomer)
+          )
+        )
+        .limit(1);
 
-    if (existingUser.length > 0) {
-      return {
-        ok: false,
-        code: 'email_in_use',
-        message: 'Este e-mail já está cadastrado no sistema. Por favor, utilize outro e-mail.'
-      };
+      if (existingUserForCustomer.length > 0) {
+        return {
+          ok: false,
+          code: 'email_in_use',
+          message: 'Este e-mail já está cadastrado para este ISO. Por favor, utilize outro e-mail.'
+        };
+      }
+    } else {
+      // Se não há idCustomer, verificar globalmente (comportamento antigo para compatibilidade)
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, normalizedEmail))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        return {
+          ok: false,
+          code: 'email_in_use',
+          message: 'Este e-mail já está cadastrado no sistema. Por favor, utilize outro e-mail.'
+        };
+      }
     }
 
     // Verificar se o usuário existe no Clerk mas não no banco
@@ -95,6 +118,18 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
       
       if (clerkUsers.data.length > 0) {
         clerkUser = clerkUsers.data[0];
+        
+        // ✅ Se uma nova senha foi gerada (não foi fornecida), atualizar no Clerk também
+        // Isso garante que a senha gerada funcione para login
+        if (!password || password.trim() === "") {
+          try {
+            await clerk.users.updateUser(clerkUser.id, {
+              password: finalPassword,
+            });
+          } catch (updateError) {
+            console.warn("Erro ao atualizar senha no Clerk (continuando):", updateError);
+          }
+        }
         
         // Usuário existe no Clerk mas não no banco - criar registro no banco
         const created = await db
