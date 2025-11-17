@@ -42,9 +42,10 @@ export async function GET(
     });
 
     response.headers.set('Vary', 'Host');
-    // Cache reduzido para atualizações mais rápidas
-    response.headers.set('Cache-Control', 'public, max-age=5, stale-while-revalidate=10');
-    response.headers.set('X-Cache-Tag', `customization-${subdomain}`);
+    // ✅ SEM CACHE (dados devem ser sempre frescos)
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
     
     return response;
   } catch (error) {

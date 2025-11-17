@@ -1,0 +1,92 @@
+═══════════════════════════════════════════════════════════════
+  COMO VER AS ALTERAÇÕES LOCALMENTE
+═══════════════════════════════════════════════════════════════
+
+✅ As alterações de cache já estão aplicadas no código!
+Agora você pode testar localmente para ver se está funcionando.
+
+═══════════════════════════════════════════════════════════════
+  PASSO 1: INSTALAR DEPENDÊNCIAS (se ainda não instalou)
+═══════════════════════════════════════════════════════════════
+
+Abra o PowerShell nesta pasta e execute:
+
+    npm install
+
+ou se você usa yarn:
+
+    yarn install
+
+═══════════════════════════════════════════════════════════════
+  PASSO 2: RODAR O PROJETO
+═══════════════════════════════════════════════════════════════
+
+OPÇÃO A - Usar o script automático (MAIS FÁCIL):
+    Dê um duplo clique no arquivo: rodar-projeto.ps1
+
+OPÇÃO B - Comando manual:
+    No PowerShell, execute:
+    
+    npm run dev
+
+    ou
+
+    yarn dev
+
+═══════════════════════════════════════════════════════════════
+  PASSO 3: ABRIR NO NAVEGADOR
+═══════════════════════════════════════════════════════════════
+
+Após rodar o comando, você verá uma mensagem como:
+
+    ✓ Ready in 2.5s
+    ○ Local:        http://localhost:3000
+
+1. Abra seu navegador (Chrome, Edge, Firefox, etc.)
+2. Acesse: http://localhost:3000
+3. Faça login (se necessário)
+4. Vá até a página de personalização de ISOs
+
+═══════════════════════════════════════════════════════════════
+  PASSO 4: TESTAR AS ALTERAÇÕES
+═══════════════════════════════════════════════════════════════
+
+Para testar se o cache está funcionando melhor:
+
+1. Acesse a página de edição de um ISO
+2. Vá na aba "Personalização"
+3. Altere uma cor ou faça upload de uma imagem
+4. Clique em "Salvar personalização"
+5. ✅ A alteração deve aparecer IMEDIATAMENTE (antes demorava até 5 minutos)
+
+═══════════════════════════════════════════════════════════════
+  O QUE FOI ALTERADO?
+═══════════════════════════════════════════════════════════════
+
+✅ Cache da API reduzido de 5 minutos para 30 segundos
+✅ Invalidação automática de cache após salvar/atualizar
+✅ Headers de cache otimizados nos uploads do S3
+✅ Componentes Image otimizados para atualização imediata
+
+═══════════════════════════════════════════════════════════════
+  PROBLEMAS COMUNS
+═══════════════════════════════════════════════════════════════
+
+❌ Erro: "Cannot find module"
+   → Execute: npm install (ou yarn install)
+
+❌ Erro: "Port 3000 is already in use"
+   → Feche outros programas que estão usando a porta 3000
+   → Ou use: npm run dev -- -p 3001
+
+❌ Erro de conexão com banco de dados
+   → Verifique se o arquivo .env está configurado corretamente
+
+❌ Página não carrega
+   → Verifique se o servidor está rodando (deve mostrar "Ready")
+   → Verifique se está acessando http://localhost:3000
+
+═══════════════════════════════════════════════════════════════
+
+Para parar o servidor, pressione: Ctrl + C no terminal
+

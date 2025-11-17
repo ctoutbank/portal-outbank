@@ -1,0 +1,90 @@
+═══════════════════════════════════════════════════════════════
+  COMO VER PULL REQUESTS (PRs) NO GITHUB
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+  MÉTODO 1: DIRETO PELA URL (MAIS RÁPIDO)
+═══════════════════════════════════════════════════════════════
+
+1. Acesse esta URL no seu navegador:
+   https://github.com/ctoutbank/portal-outbank/pulls
+
+2. Você verá TODOS os Pull Requests do repositório
+
+3. Para ver apenas os seus, clique em "Author" e selecione seu nome
+
+═══════════════════════════════════════════════════════════════
+  MÉTODO 2: NAVEGANDO PELO GITHUB
+═══════════════════════════════════════════════════════════════
+
+1. Acesse o repositório:
+   https://github.com/ctoutbank/portal-outbank
+
+2. No topo da página, você verá várias abas:
+   [Code] [Issues] [Pull requests] [Actions] [Projects] ...
+
+3. Clique na aba "Pull requests"
+
+4. Você verá:
+   - Pull requests abertos (Open)
+   - Pull requests fechados (Closed)
+   - Pull requests mesclados (Merged)
+
+═══════════════════════════════════════════════════════════════
+  MÉTODO 3: VER APENAS OS SEUS PRs
+═══════════════════════════════════════════════════════════════
+
+1. Acesse: https://github.com/ctoutbank/portal-outbank/pulls
+
+2. No campo de busca/filtro, digite:
+   author:seu-usuario
+   
+   (Substitua "seu-usuario" pelo seu nome de usuário do GitHub)
+
+3. Ou clique em "Author" e selecione seu nome na lista
+
+═══════════════════════════════════════════════════════════════
+  O QUE VOCÊ VAI VER
+═══════════════════════════════════════════════════════════════
+
+Cada Pull Request mostra:
+
+✅ Título e descrição
+✅ Status: Open (aberto), Closed (fechado), Merged (mesclado)
+✅ Autor (quem criou)
+✅ Revisores (quem está revisando)
+✅ Arquivos alterados
+✅ Comentários e discussões
+✅ Histórico de commits
+
+═══════════════════════════════════════════════════════════════
+  STATUS DOS PRs
+═══════════════════════════════════════════════════════════════
+
+🟢 Open (Aberto):
+   → PR ainda não foi revisado ou mesclado
+   → Aguardando aprovação
+
+🔵 Merged (Mesclado):
+   → PR foi aprovado e mesclado no código principal
+   → Alterações já estão no repositório
+
+🔴 Closed (Fechado):
+   → PR foi fechado sem ser mesclado
+   → Pode ter sido rejeitado ou cancelado
+
+═══════════════════════════════════════════════════════════════
+  DICA RÁPIDA
+═══════════════════════════════════════════════════════════════
+
+URL direta para ver todos os PRs:
+https://github.com/ctoutbank/portal-outbank/pulls
+
+URL para ver apenas PRs abertos:
+https://github.com/ctoutbank/portal-outbank/pulls?q=is%3Apr+is%3Aopen
+
+URL para ver apenas PRs mesclados:
+https://github.com/ctoutbank/portal-outbank/pulls?q=is%3Apr+is%3Amerged
+
+═══════════════════════════════════════════════════════════════
+

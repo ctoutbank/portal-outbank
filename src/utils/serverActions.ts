@@ -2,7 +2,7 @@
 
 import { customerCustomization, db, file } from "@/lib/db";
 import { s3Client } from "@/lib/s3-client/s3Client";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { revalidatePath, revalidateTag } from "next/cache";
@@ -19,6 +19,54 @@ export type CustomerCustomization = {
   faviconUrl: string | null;
   customerId: number | null;
 };
+
+// ✅ Função helper: deletar imagem antiga do S3
+async function deleteOldImageFromS3(oldUrl: string | null | undefined) {
+  if (!oldUrl) return;
+  
+  try {
+    const url = new URL(oldUrl);
+    const key = url.pathname.substring(1); // Remove leading '/'
+    
+    const command = new DeleteObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME!,
+      Key: key,
+    });
+    
+    await s3Client.send(command);
+    console.log(`✅ Imagem antiga deletada: ${key}`);
+  } catch (error) {
+    console.error('⚠️ Erro ao deletar imagem antiga (não crítico):', error);
+  }
+}
+
+// ✅ Função helper: upload com URL única (timestamp + nanoid)
+async function uploadImageToS3(file: File, prefix: string): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  
+  const extension = file.name.split('.').pop()?.toLowerCase() || 'png';
+  
+  // ✅ CRÍTICO: timestamp + nanoid = 100% único
+  const timestamp = Date.now();
+  const uniqueId = nanoid(10);
+  const key = `${prefix}-${timestamp}-${uniqueId}.${extension}`;
+  
+  const command = new PutObjectCommand({
+    Bucket: process.env.AWS_BUCKET_NAME!,
+    Key: key,
+    Body: buffer,
+    ContentType: file.type,
+    // ✅ Cache AGRESSIVO (performance máxima)
+    // Funciona porque a URL é sempre única
+    CacheControl: 'public, max-age=31536000, immutable',
+  });
+  
+  await s3Client.send(command);
+  
+  const url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+  return url;
+}
 
 // Função para converter HEX → HSL (robusta, retorna null se inválido)
 function hexToHsl(hex: string): string | null {
@@ -229,23 +277,9 @@ export async function saveCustomization(formData: FormData) {
   const image = formData.get("image") as File | null;
   console.log("[saveCustomization] Image file:", image ? `present (${image.size} bytes, ${image.type})` : 'not provided');
   if (image) {
-    const arrayBuffer = await image.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
-    const imageId = nanoid(8);
-    const extension = image.name.split(".").pop() || "jpg";
-    const fileType = image.type || "image/jpeg";
-
-    const uploadCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `logo-${imageId}.${extension}`,
-      Body: imageBuffer,
-      ContentType: fileType,
-      CacheControl: 'public, max-age=31536000, immutable',
-    });
-
+    // ✅ Upload com URL única (timestamp + nanoid)
     try {
-      await s3Client.send(uploadCommand);
-      imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/logo-${imageId}.${extension}`;
+      imageUrl = await uploadImageToS3(image, 'logo');
       console.log("Logo uploaded successfully:", imageUrl);
     } catch (error: any) {
       console.error("S3 Upload Error (logo):", {
@@ -255,6 +289,9 @@ export async function saveCustomization(formData: FormData) {
       });
       throw new Error(`Falha no upload do logo: ${error.message}`);
     }
+
+    const extension = image.name.split(".").pop() || "jpg";
+    const fileType = image.type || "image/jpeg";
 
     const result = await db
       .insert(file)
@@ -273,23 +310,9 @@ export async function saveCustomization(formData: FormData) {
   const loginImage = formData.get("loginImage") as File | null;
   console.log("[saveCustomization] Login image file:", loginImage ? `present (${loginImage.size} bytes, ${loginImage.type})` : 'not provided');
   if (loginImage) {
-    const arrayBuffer = await loginImage.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
-    const imageId = nanoid(8);
-    const extension = loginImage.name.split(".").pop() || "jpg";
-    const fileType = loginImage.type || "image/jpeg";
-
-    const uploadCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `login-${imageId}.${extension}`,
-      Body: imageBuffer,
-      ContentType: fileType,
-      CacheControl: 'public, max-age=31536000, immutable',
-    });
-
+    // ✅ Upload com URL única (timestamp + nanoid)
     try {
-      await s3Client.send(uploadCommand);
-      loginImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/login-${imageId}.${extension}`;
+      loginImageUrl = await uploadImageToS3(loginImage, 'login');
       console.log("Login image uploaded successfully:", loginImageUrl);
     } catch (error: any) {
       console.error("S3 Upload Error (login image):", {
@@ -299,6 +322,9 @@ export async function saveCustomization(formData: FormData) {
       });
       throw new Error(`Falha no upload da imagem de login: ${error.message}`);
     }
+
+    const extension = loginImage.name.split(".").pop() || "jpg";
+    const fileType = loginImage.type || "image/jpeg";
 
     const result = await db
       .insert(file)
@@ -317,23 +343,9 @@ export async function saveCustomization(formData: FormData) {
   const favicon = formData.get("favicon") as File | null;
   console.log("[saveCustomization] Favicon file:", favicon ? `present (${favicon.size} bytes, ${favicon.type})` : 'not provided');
   if (favicon) {
-    const arrayBuffer = await favicon.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
-    const imageId = nanoid(8);
-    const extension = favicon.name.split(".").pop() || "ico";
-    const fileType = favicon.type || "image/x-icon";
-
-    const uploadCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `favicon-${imageId}.${extension}`,
-      Body: imageBuffer,
-      ContentType: fileType,
-      CacheControl: 'public, max-age=31536000, immutable',
-    });
-
+    // ✅ Upload com URL única (timestamp + nanoid)
     try {
-      await s3Client.send(uploadCommand);
-      faviconUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/favicon-${imageId}.${extension}`;
+      faviconUrl = await uploadImageToS3(favicon, 'favicon');
       console.log("Favicon uploaded successfully:", faviconUrl);
     } catch (error: any) {
       console.error("S3 Upload Error (favicon):", {
@@ -343,6 +355,9 @@ export async function saveCustomization(formData: FormData) {
       });
       throw new Error(`Falha no upload do favicon: ${error.message}`);
     }
+
+    const extension = favicon.name.split(".").pop() || "ico";
+    const fileType = favicon.type || "image/x-icon";
 
     const result = await db
       .insert(file)
@@ -497,25 +512,21 @@ export async function updateCustomization(formData: FormData) {
   let faviconUrl = "";
   let faviconFileId: number | null = null;
 
+  // Buscar customização existente para deletar imagens antigas
+  const existingCustomization = await getCustomizationByCustomerId(
+    validated.data.customerId
+  );
+
   const image = formData.get("image") as File | null;
   if (image && image.size > 0) {
-    const arrayBuffer = await image.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
-    const imageId = nanoid();
-    const extension = image.name.split(".").pop() || "jpg";
-    const fileType = image.type || "image/jpeg";
+    // ✅ Deletar imagem antiga antes de fazer upload da nova
+    if (existingCustomization?.imageUrl) {
+      await deleteOldImageFromS3(existingCustomization.imageUrl);
+    }
 
-    const uploadCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `logo-${imageId}.${extension}`,
-      Body: imageBuffer,
-      ContentType: fileType,
-      CacheControl: 'public, max-age=31536000, immutable',
-    });
-
+    // ✅ Upload nova (URL única com timestamp)
     try {
-      await s3Client.send(uploadCommand);
-      imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/logo-${imageId}.${extension}`;
+      imageUrl = await uploadImageToS3(image, 'logo');
       console.log("Logo updated successfully:", imageUrl);
     } catch (error: any) {
       console.error("S3 Upload Error (logo update):", {
@@ -525,6 +536,9 @@ export async function updateCustomization(formData: FormData) {
       });
       throw new Error(`Falha na atualização do logo: ${error.message}`);
     }
+
+    const extension = image.name.split(".").pop() || "jpg";
+    const fileType = image.type || "image/jpeg";
 
     const result = await db
       .insert(file)
@@ -540,9 +554,6 @@ export async function updateCustomization(formData: FormData) {
     fileId = result[0].id;
   } else {
     // Se não há nova imagem, manter a imagem existente
-    const existingCustomization = await getCustomizationByCustomerId(
-      validated.data.customerId
-    );
     if (existingCustomization?.imageUrl) {
       imageUrl = existingCustomization.imageUrl;
       // Buscar o fileId existente
@@ -557,23 +568,14 @@ export async function updateCustomization(formData: FormData) {
 
   const loginImage = formData.get("loginImage") as File | null;
   if (loginImage && loginImage.size > 0) {
-    const arrayBuffer = await loginImage.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
-    const imageId = nanoid();
-    const extension = loginImage.name.split(".").pop() || "jpg";
-    const fileType = loginImage.type || "image/jpeg";
+    // ✅ Deletar imagem antiga antes de fazer upload da nova
+    if (existingCustomization?.loginImageUrl) {
+      await deleteOldImageFromS3(existingCustomization.loginImageUrl);
+    }
 
-    const uploadCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `login-${imageId}.${extension}`,
-      Body: imageBuffer,
-      ContentType: fileType,
-      CacheControl: 'public, max-age=31536000, immutable',
-    });
-
+    // ✅ Upload nova (URL única com timestamp)
     try {
-      await s3Client.send(uploadCommand);
-      loginImageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/login-${imageId}.${extension}`;
+      loginImageUrl = await uploadImageToS3(loginImage, 'login');
       console.log("Login image updated successfully:", loginImageUrl);
     } catch (error: any) {
       console.error("S3 Upload Error (login image update):", {
@@ -583,6 +585,9 @@ export async function updateCustomization(formData: FormData) {
       });
       throw new Error(`Falha na atualização da imagem de login: ${error.message}`);
     }
+
+    const extension = loginImage.name.split(".").pop() || "jpg";
+    const fileType = loginImage.type || "image/jpeg";
 
     const result = await db
       .insert(file)
@@ -598,9 +603,6 @@ export async function updateCustomization(formData: FormData) {
     loginImageFileId = result[0].id;
   } else {
     // Manter login image existente
-    const existingCustomization = await getCustomizationByCustomerId(
-      validated.data.customerId
-    );
     if (existingCustomization?.loginImageUrl) {
       loginImageUrl = existingCustomization.loginImageUrl;
       const existingFile = await db
@@ -614,23 +616,14 @@ export async function updateCustomization(formData: FormData) {
 
   const favicon = formData.get("favicon") as File | null;
   if (favicon && favicon.size > 0) {
-    const arrayBuffer = await favicon.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
-    const imageId = nanoid();
-    const extension = favicon.name.split(".").pop() || "ico";
-    const fileType = favicon.type || "image/x-icon";
+    // ✅ Deletar imagem antiga antes de fazer upload da nova
+    if (existingCustomization?.faviconUrl) {
+      await deleteOldImageFromS3(existingCustomization.faviconUrl);
+    }
 
-    const uploadCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `favicon-${imageId}.${extension}`,
-      Body: imageBuffer,
-      ContentType: fileType,
-      CacheControl: 'public, max-age=31536000, immutable',
-    });
-
+    // ✅ Upload nova (URL única com timestamp)
     try {
-      await s3Client.send(uploadCommand);
-      faviconUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/favicon-${imageId}.${extension}`;
+      faviconUrl = await uploadImageToS3(favicon, 'favicon');
       console.log("Favicon updated successfully:", faviconUrl);
     } catch (error: any) {
       console.error("S3 Upload Error (favicon update):", {
@@ -640,6 +633,9 @@ export async function updateCustomization(formData: FormData) {
       });
       throw new Error(`Falha na atualização do favicon: ${error.message}`);
     }
+
+    const extension = favicon.name.split(".").pop() || "ico";
+    const fileType = favicon.type || "image/x-icon";
 
     const result = await db
       .insert(file)
@@ -655,9 +651,6 @@ export async function updateCustomization(formData: FormData) {
     faviconFileId = result[0].id;
   } else {
     // Manter favicon existente
-    const existingCustomization = await getCustomizationByCustomerId(
-      validated.data.customerId
-    );
     if (existingCustomization?.faviconUrl) {
       faviconUrl = existingCustomization.faviconUrl;
       const existingFile = await db

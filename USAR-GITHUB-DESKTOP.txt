@@ -1,0 +1,82 @@
+═══════════════════════════════════════════════════════════════
+  COMO USAR O GITHUB DESKTOP COM SEU REPOSITÓRIO LOCAL
+═══════════════════════════════════════════════════════════════
+
+✅ BOA NOTÍCIA: Suas alterações já estão commitadas!
+Você só precisa fazer o push usando o GitHub Desktop.
+
+═══════════════════════════════════════════════════════════════
+  PASSO 1: ABRIR O REPOSITÓRIO NO GITHUB DESKTOP
+═══════════════════════════════════════════════════════════════
+
+1. Abra o GitHub Desktop
+
+2. No menu superior, clique em:
+   File > Add Local Repository
+
+3. Clique no botão "Choose..." 
+
+4. Navegue até a pasta:
+   C:\Users\denis\Dropbox\MIGRACAO BASE44\portal-outbank
+
+5. Clique em "Add repository"
+
+═══════════════════════════════════════════════════════════════
+  PASSO 2: VERIFICAR AS ALTERAÇÕES
+═══════════════════════════════════════════════════════════════
+
+No GitHub Desktop você verá:
+
+✅ Na aba "Changes" (se houver):
+   - Os arquivos de ajuda que criamos (podem ser ignorados)
+
+✅ Na parte inferior, você verá:
+   - "1 commit ahead of origin/main"
+   - Este é o commit com as correções de cache!
+
+═══════════════════════════════════════════════════════════════
+  PASSO 3: FAZER O PUSH
+═══════════════════════════════════════════════════════════════
+
+1. No topo da janela, você verá um botão azul:
+   "Push origin" ou "Publish branch"
+
+2. Clique neste botão
+
+3. Se pedir autenticação, faça login com sua conta do GitHub
+
+4. Aguarde a mensagem de sucesso!
+
+═══════════════════════════════════════════════════════════════
+  O QUE SERÁ ENVIADO?
+═══════════════════════════════════════════════════════════════
+
+✅ Commit: "fix: otimizar cache na personalização de ISOs"
+   - src/utils/serverActions.ts (correções de cache)
+   - src/app/api/public/customization/[subdomain]/route.ts (cache reduzido)
+   - src/features/customers/_componentes/customer-wizard-form.tsx (Image otimizado)
+
+═══════════════════════════════════════════════════════════════
+  IMPORTANTE
+═══════════════════════════════════════════════════════════════
+
+⚠️  Se o GitHub Desktop baixou o repositório em outra pasta:
+   → NÃO precisa usar essa pasta nova!
+   → Use a pasta original onde já fizemos as alterações:
+     C:\Users\denis\Dropbox\MIGRACAO BASE44\portal-outbank
+
+⚠️  Se aparecer conflitos:
+   → Não se preocupe, as alterações já estão commitadas
+   → O GitHub Desktop vai mostrar o que fazer
+
+═══════════════════════════════════════════════════════════════
+  DEPOIS DO PUSH
+═══════════════════════════════════════════════════════════════
+
+✅ Você pode verificar no navegador:
+   https://github.com/ctoutbank/portal-outbank
+
+✅ As alterações estarão disponíveis online!
+
+═══════════════════════════════════════════════════════════════
+

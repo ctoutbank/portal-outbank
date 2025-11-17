@@ -1,0 +1,99 @@
+═══════════════════════════════════════════════════════════════
+  QUANDO USAR PUSH E QUANDO USAR FETCH?
+═══════════════════════════════════════════════════════════════
+
+São ações DIFERENTES e você pode usar ambas quando necessário!
+
+═══════════════════════════════════════════════════════════════
+  📤 PUSH ORIGIN (Enviar)
+═══════════════════════════════════════════════════════════════
+
+O QUE FAZ:
+   → ENVIA suas alterações locais para o GitHub
+   → Faz upload dos seus commits
+
+QUANDO USAR:
+   ✅ Quando você fez alterações no seu computador
+   ✅ Quando você criou commits localmente
+   ✅ Quando aparece "1↑" ou "X commits ahead"
+   ✅ Quando quer enviar suas mudanças para o GitHub
+
+EXEMPLO:
+   Você alterou um arquivo, fez commit, e agora quer enviar para o GitHub
+   → Use PUSH
+
+═══════════════════════════════════════════════════════════════
+  📥 FETCH ORIGIN (Baixar)
+═══════════════════════════════════════════════════════════════
+
+O QUE FAZ:
+   → BAIXA atualizações do GitHub para seu computador
+   → Verifica se há mudanças no repositório online
+   → NÃO envia suas alterações
+
+QUANDO USAR:
+   ✅ Quando quer ver se há atualizações no GitHub
+   ✅ Quando alguém fez alterações no repositório
+   ✅ Quando aparece "X commits behind" ou "1↓"
+   ✅ Quando quer sincronizar com o que está online
+
+EXEMPLO:
+   Alguém fez alterações no GitHub e você quer ver o que mudou
+   → Use FETCH (depois pode precisar fazer PULL para baixar)
+
+═══════════════════════════════════════════════════════════════
+  🔄 FLUXO NORMAL DE TRABALHO
+═══════════════════════════════════════════════════════════════
+
+1. FETCH (opcional):
+   → Verifica se há atualizações no GitHub
+   → Use quando quiser ver o que mudou online
+
+2. Trabalhar localmente:
+   → Faça suas alterações
+   → Faça commits
+
+3. PUSH:
+   → Envia suas alterações para o GitHub
+   → Use quando terminar suas mudanças
+
+═══════════════════════════════════════════════════════════════
+  📊 RESUMO VISUAL
+═══════════════════════════════════════════════════════════════
+
+PUSH ORIGIN:
+   Seu Computador ──────→ GitHub
+   (Envia suas alterações)
+
+FETCH ORIGIN:
+   Seu Computador ←────── GitHub
+   (Baixa atualizações)
+
+═══════════════════════════════════════════════════════════════
+  ⚠️  IMPORTANTE
+═══════════════════════════════════════════════════════════════
+
+✅ Você pode usar FETCH quantas vezes quiser
+   → Não vai enviar nada, só verifica atualizações
+
+✅ Use PUSH quando tiver commits locais para enviar
+   → Só aparece quando há algo para enviar
+
+✅ Se aparecer "1↑" ou "X commits ahead":
+   → Use PUSH para enviar
+
+✅ Se aparecer "1↓" ou "X commits behind":
+   → Use FETCH primeiro, depois pode precisar PULL
+
+═══════════════════════════════════════════════════════════════
+  🎯 PARA VOCÊ AGORA
+═══════════════════════════════════════════════════════════════
+
+Você acabou de fazer um commit localmente:
+   → Use PUSH para enviar para o GitHub
+
+Depois, se quiser verificar atualizações:
+   → Use FETCH (opcional, quando quiser)
+
+═══════════════════════════════════════════════════════════════
+

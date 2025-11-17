@@ -1,0 +1,138 @@
+═══════════════════════════════════════════════════════════════
+  COMO VERIFICAR SE AS ALTERAÇÕES ESTÃO EM PRODUÇÃO
+═══════════════════════════════════════════════════════════════
+
+Vou te mostrar como verificar se suas alterações já estão online!
+
+═══════════════════════════════════════════════════════════════
+  ✅ STATUS ATUAL DAS ALTERAÇÕES
+═══════════════════════════════════════════════════════════════
+
+Alterações de cache que fizemos:
+   ✅ Commit 1: "fix: otimizar cache na personalização de ISOs" (30s)
+   ✅ Commit 2: "fix: reduzir cache da API de customização de 30s para 5s"
+   
+Status no GitHub:
+   → Verifique se ambos os commits estão no GitHub
+   → Acesse: https://github.com/ctoutbank/portal-outbank/commits/main
+
+═══════════════════════════════════════════════════════════════
+  🚀 COMO SABER SE ESTÁ EM PRODUÇÃO?
+═══════════════════════════════════════════════════════════════
+
+O projeto parece usar Vercel (mencionado no README).
+Vercel geralmente faz deploy AUTOMÁTICO quando você faz push na main.
+
+═══════════════════════════════════════════════════════════════
+  MÉTODO 1: VERIFICAR NO VERCEL (Se tiver acesso)
+═══════════════════════════════════════════════════════════════
+
+1. Acesse: https://vercel.com
+2. Faça login
+3. Procure pelo projeto "portal-outbank"
+4. Veja os "Deployments" (implantações)
+5. Verifique se há um deploy recente após seus commits
+
+Se houver deploy recente:
+   ✅ Suas alterações estão em produção!
+
+═══════════════════════════════════════════════════════════════
+  MÉTODO 2: TESTAR DIRETAMENTE NO SITE
+═══════════════════════════════════════════════════════════════
+
+1. Acesse o site em produção:
+   → portal-outbank.vercel.app (ou o domínio que vocês usam)
+
+2. Faça login
+
+3. Vá até a página de personalização de ISOs
+
+4. Altere uma cor ou faça upload de uma imagem
+
+5. Salve a personalização
+
+6. Verifique:
+   ✅ Se a alteração aparece IMEDIATAMENTE (ou em até 5 segundos)
+   ✅ Se antes demorava muito e agora é rápido
+   
+Se funcionar rápido:
+   ✅ Suas alterações estão em produção!
+
+═══════════════════════════════════════════════════════════════
+  MÉTODO 3: VERIFICAR NO GITHUB
+═══════════════════════════════════════════════════════════════
+
+1. Acesse: https://github.com/ctoutbank/portal-outbank
+
+2. Clique em "Commits" (ou acesse: /commits/main)
+
+3. Verifique se seus commits estão lá:
+   ✅ "fix: otimizar cache na personalização de ISOs"
+   ✅ "fix: reduzir cache da API de customização de 30s para 5s"
+
+4. Veja a data/hora dos commits
+
+5. Se os commits estão no GitHub:
+   → E o deploy é automático (Vercel)
+   → Então provavelmente já está em produção!
+
+═══════════════════════════════════════════════════════════════
+  ⏱️  TEMPO PARA IR PARA PRODUÇÃO
+═══════════════════════════════════════════════════════════════
+
+DEPLOY AUTOMÁTICO (Vercel):
+   → Geralmente leva 2-5 minutos após o push
+   → Você recebe um email quando termina (se configurado)
+
+DEPLOY MANUAL:
+   → Depende de alguém fazer
+   → Pode levar horas ou dias
+   → Precisa verificar com a equipe
+
+═══════════════════════════════════════════════════════════════
+  🔍 COMO TESTAR SE ESTÁ FUNCIONANDO
+═══════════════════════════════════════════════════════════════
+
+Teste prático:
+
+1. Acesse o site em produção
+2. Vá em: Personalização de ISOs
+3. Altere uma cor (ex: de preto para azul)
+4. Salve
+5. Recarregue a página (F5)
+6. Verifique se a cor mudou IMEDIATAMENTE
+
+ANTES das alterações:
+   ❌ Demorava até 5 minutos para aparecer
+
+DEPOIS das alterações:
+   ✅ Deve aparecer em até 5 segundos (ou imediatamente)
+
+═══════════════════════════════════════════════════════════════
+  📋 CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+Para confirmar que está em produção:
+
+[ ] Commits estão no GitHub?
+   → Verifique: https://github.com/ctoutbank/portal-outbank/commits/main
+
+[ ] Deploy foi feito?
+   → Verifique no Vercel (se tiver acesso)
+   → OU teste diretamente no site
+
+[ ] Funciona rápido?
+   → Teste alterando uma cor/imagem
+   → Deve aparecer em até 5 segundos
+
+═══════════════════════════════════════════════════════════════
+  💡 DICA
+═══════════════════════════════════════════════════════════════
+
+Se você não tem certeza:
+   → Pergunte para alguém da equipe que tem acesso ao Vercel
+   → Ou teste diretamente no site em produção
+   → A melhor forma é testar na prática!
+
+═══════════════════════════════════════════════════════════════
+

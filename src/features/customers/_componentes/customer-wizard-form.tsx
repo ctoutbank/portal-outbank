@@ -143,16 +143,28 @@ export default function CustomerWizardForm({
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingCustomization, setIsSavingCustomization] = useState(false);
   const [isRemovingImage, setIsRemovingImage] = useState(false);
-  // Cache busting para forçar atualização imediata das imagens
-  const [imageVersion, setImageVersion] = useState(0);
+  
+  // ✅ Estado controlado para cores (atualização instantânea)
+  const [primaryColorHex, setPrimaryColorHex] = useState<string>(
+    customizationData?.primaryColor 
+      ? hslToHex(customizationData.primaryColor) 
+      : "#000000"
+  );
+  const [secondaryColorHex, setSecondaryColorHex] = useState<string>(
+    customizationData?.secondaryColor 
+      ? hslToHex(customizationData.secondaryColor) 
+      : "#ffffff"
+  );
 
-  // Função para adicionar cache busting nas URLs das imagens
-  const addCacheBusting = (url: string | null | undefined): string => {
-    if (!url) return '';
-    const separator = url.includes('?') ? '&' : '?';
-    // Usa apenas imageVersion para garantir que mude quando necessário
-    return `${url}${separator}v=${imageVersion}`;
-  };
+  // ✅ Sincronizar cores hex quando customizationData mudar
+  useEffect(() => {
+    if (customizationData?.primaryColor) {
+      setPrimaryColorHex(hslToHex(customizationData.primaryColor));
+    }
+    if (customizationData?.secondaryColor) {
+      setSecondaryColorHex(hslToHex(customizationData.secondaryColor));
+    }
+  }, [customizationData?.primaryColor, customizationData?.secondaryColor]);
 
   // Função helper para converter HEX para HSL (reutilizável)
   const hexToHslForUpdate = (hex: string): string => {
@@ -335,9 +347,6 @@ export default function CustomerWizardForm({
       const result = await removeImage({ customerId: newCustomerId, type });
       
       if (result.success && result.customization) {
-        // Incrementa versão para forçar atualização das imagens
-        setImageVersion(prev => prev + 1);
-        
         setCustomizationData({
           imageUrl: result.customization.imageUrl ?? undefined,
           id: result.customization.id ?? 0,
@@ -390,9 +399,6 @@ export default function CustomerWizardForm({
       const result = await removeAllImages({ customerId: newCustomerId });
       
       if (result.success && result.customization) {
-        // Incrementa versão para forçar atualização das imagens
-        setImageVersion(prev => prev + 1);
-        
         setCustomizationData({
           imageUrl: result.customization.imageUrl ?? undefined,
           id: result.customization.id ?? 0,
@@ -757,23 +763,23 @@ export default function CustomerWizardForm({
                 return;
               }
 
-              // Atualização otimista: atualiza cores imediatamente antes de salvar
+              // ✅ ATUALIZAÇÃO OTIMISTA: assume sucesso e atualiza UI imediatamente
               const primaryColorInput = formData.get("primaryColor") as string;
               const secondaryColorInput = formData.get("secondaryColor") as string;
               
-              if (primaryColorInput || secondaryColorInput) {
-                // Atualiza estado local imediatamente para feedback visual instantâneo
-                setCustomizationData(prev => ({
-                  ...prev,
-                  primaryColor: primaryColorInput ? hexToHslForUpdate(primaryColorInput) : prev?.primaryColor,
-                  secondaryColor: secondaryColorInput ? hexToHslForUpdate(secondaryColorInput) : prev?.secondaryColor,
-                  id: prev?.id ?? 0,
-                  subdomain: prev?.subdomain,
-                  imageUrl: prev?.imageUrl,
-                  loginImageUrl: prev?.loginImageUrl,
-                  faviconUrl: prev?.faviconUrl,
-                }));
-              }
+              // Atualizar previews otimisticamente
+              const optimisticUpdate = {
+                ...customizationData,
+                imageUrl: imagePreview || customizationData?.imageUrl,
+                loginImageUrl: loginImagePreview || customizationData?.loginImageUrl,
+                faviconUrl: faviconPreview || customizationData?.faviconUrl,
+                primaryColor: primaryColorInput ? hexToHslForUpdate(primaryColorInput) : customizationData?.primaryColor,
+                secondaryColor: secondaryColorInput ? hexToHslForUpdate(secondaryColorInput) : customizationData?.secondaryColor,
+                id: customizationData?.id ?? 0,
+                subdomain: customizationData?.subdomain,
+              };
+              
+              setCustomizationData(optimisticUpdate);
 
               try {
                 // Timeout para evitar travamentos (30 segundos)
@@ -790,24 +796,36 @@ export default function CustomerWizardForm({
                 result = await Promise.race([savePromise, timeoutPromise]) as any;
 
                 if (result?.customization) {
-                  // Incrementa versão para forçar atualização das imagens ANTES de atualizar o estado
-                  setImageVersion(prev => prev + 1);
+                  // ✅ Atualizar com dados reais do servidor
+                  setCustomizationData({
+                    imageUrl: result.customization.imageUrl ?? undefined,
+                    id: result.customization.id ?? 0,
+                    subdomain: result.customization.slug ?? undefined,
+                    primaryColor: result.customization.primaryColor ?? undefined,
+                    secondaryColor: result.customization.secondaryColor ?? undefined,
+                    loginImageUrl: result.customization.loginImageUrl ?? undefined,
+                    faviconUrl: result.customization.faviconUrl ?? undefined,
+                  });
                   
-                  // Atualiza estado com os dados do servidor, preservando cores se já foram atualizadas otimisticamente
-                  setCustomizationData(prev => ({
-                    imageUrl: result.customization.imageUrl ?? prev?.imageUrl,
-                    id: result.customization.id ?? prev?.id ?? 0,
-                    subdomain: result.customization.slug ?? prev?.subdomain,
-                    // Preserva cores se já foram atualizadas otimisticamente, senão usa do servidor
-                    primaryColor: prev?.primaryColor ?? result.customization.primaryColor ?? undefined,
-                    secondaryColor: prev?.secondaryColor ?? result.customization.secondaryColor ?? undefined,
-                    loginImageUrl: result.customization.loginImageUrl ?? prev?.loginImageUrl,
-                    faviconUrl: result.customization.faviconUrl ?? prev?.faviconUrl,
-                  }));
+                  // ✅ Atualizar estados de cores hex
+                  if (result.customization.primaryColor) {
+                    setPrimaryColorHex(hslToHex(result.customization.primaryColor));
+                  }
+                  if (result.customization.secondaryColor) {
+                    setSecondaryColorHex(hslToHex(result.customization.secondaryColor));
+                  }
                   
+                  // Limpar previews
                   setImagePreview(null);
                   setLoginImagePreview(null);
                   setFaviconPreview(null);
+                  
+                  // ✅ Limpar inputs de arquivo (para permitir re-upload da mesma imagem)
+                  const form = e.currentTarget;
+                  const fileInputs = form.querySelectorAll('input[type="file"]');
+                  fileInputs.forEach((input) => {
+                    (input as HTMLInputElement).value = '';
+                  });
                   
                   if (result.customization.imageUrl) {
                     const filename = result.customization.imageUrl.split('/').pop() || 'logo atual';
@@ -917,12 +935,12 @@ export default function CustomerWizardForm({
                               Logo atual:
                             </p>
                             <img
-                              src={addCacheBusting(customizationData.imageUrl)}
+                              src={customizationData.imageUrl}
                               alt=""
                               height={100}
                               width={100}
                               style={{ maxWidth: '100px', maxHeight: '100px' }}
-                              key={`${customizationData.imageUrl}-${imageVersion}`}
+                              key={customizationData.imageUrl}
                             />
                             <Button
                               type="button"
@@ -1000,12 +1018,12 @@ export default function CustomerWizardForm({
                             </p>
                             <div className="border rounded-lg overflow-hidden">
                               <img
-                                src={addCacheBusting(customizationData.loginImageUrl)}
+                                src={customizationData.loginImageUrl}
                                 alt="Current login background"
                                 width={400}
                                 height={225}
                                 className="w-full h-48 object-cover"
-                                key={`${customizationData.loginImageUrl}-${imageVersion}`}
+                                key={customizationData.loginImageUrl}
                               />
                             </div>
                             <Button
@@ -1098,23 +1116,23 @@ export default function CustomerWizardForm({
                             <div className="flex gap-4 items-center border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
                               <div className="flex flex-col items-center gap-1">
                                 <img
-                                  src={addCacheBusting(customizationData.faviconUrl)}
+                                  src={customizationData.faviconUrl}
                                   alt="Current favicon 16x16"
                                   width={16}
                                   height={16}
                                   className="border border-gray-300"
-                                  key={`${customizationData.faviconUrl}-16-${imageVersion}`}
+                                  key={`${customizationData.faviconUrl}-16`}
                                 />
                                 <span className="text-xs text-muted-foreground">16×16</span>
                               </div>
                               <div className="flex flex-col items-center gap-1">
                                 <img
-                                  src={addCacheBusting(customizationData.faviconUrl)}
+                                  src={customizationData.faviconUrl}
                                   alt="Current favicon 32x32"
                                   width={32}
                                   height={32}
                                   className="border border-gray-300"
-                                  key={`${customizationData.faviconUrl}-32-${imageVersion}`}
+                                  key={`${customizationData.faviconUrl}-32`}
                                 />
                                 <span className="text-xs text-muted-foreground">32×32</span>
                               </div>
@@ -1173,30 +1191,56 @@ export default function CustomerWizardForm({
                               </TooltipProvider>
                             </div>
                           </label>
-                          <input
-                            type="color"
-                            name="primaryColor"
-                            value={
-                              customizationData?.primaryColor
-                                ? hslToHex(customizationData.primaryColor)
-                                : "#ffffff"
-                            }
-                            onChange={(e) => {
-                              // Atualização imediata da cor no estado local
-                              const hexColor = e.target.value;
-                              setCustomizationData(prev => ({
-                                ...prev,
-                                primaryColor: hexToHslForUpdate(hexColor),
-                                id: prev?.id ?? 0,
-                                subdomain: prev?.subdomain,
-                                secondaryColor: prev?.secondaryColor,
-                                imageUrl: prev?.imageUrl,
-                                loginImageUrl: prev?.loginImageUrl,
-                                faviconUrl: prev?.faviconUrl,
-                              }));
-                            }}
-                            className="h-10 w-full p-0 border rounded cursor-pointer"
-                          />
+                          <div className="flex items-center gap-4">
+                            <input
+                              type="color"
+                              name="primaryColor"
+                              value={primaryColorHex}
+                              onChange={(e) => {
+                                // ✅ Atualização instantânea
+                                const hexColor = e.target.value;
+                                setPrimaryColorHex(hexColor);
+                                setCustomizationData(prev => ({
+                                  ...prev,
+                                  primaryColor: hexToHslForUpdate(hexColor),
+                                  id: prev?.id ?? 0,
+                                  subdomain: prev?.subdomain,
+                                  secondaryColor: prev?.secondaryColor,
+                                  imageUrl: prev?.imageUrl,
+                                  loginImageUrl: prev?.loginImageUrl,
+                                  faviconUrl: prev?.faviconUrl,
+                                }));
+                              }}
+                              className="h-10 w-20 rounded border cursor-pointer"
+                            />
+                            <input
+                              type="text"
+                              value={primaryColorHex}
+                              onChange={(e) => {
+                                const hexColor = e.target.value;
+                                setPrimaryColorHex(hexColor);
+                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    primaryColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                    subdomain: prev?.subdomain,
+                                    secondaryColor: prev?.secondaryColor,
+                                    imageUrl: prev?.imageUrl,
+                                    loginImageUrl: prev?.loginImageUrl,
+                                    faviconUrl: prev?.faviconUrl,
+                                  }));
+                                }
+                              }}
+                              className="flex-1 rounded border px-3 py-2 text-sm"
+                              placeholder="#000000"
+                            />
+                            {/* ✅ Preview instantâneo */}
+                            <div
+                              className="h-10 w-20 rounded border"
+                              style={{ backgroundColor: primaryColorHex }}
+                            />
+                          </div>
                         </div>
 
                         {/* Cor Secundária */}
@@ -1204,30 +1248,56 @@ export default function CustomerWizardForm({
                           <label className="block text-sm font-medium text-foreground mb-1">
                             Cor Secundária
                           </label>
-                          <input
-                            type="color"
-                            name="secondaryColor"
-                            value={
-                              customizationData?.secondaryColor
-                                ? hslToHex(customizationData.secondaryColor)
-                                : "#ffffff"
-                            }
-                            onChange={(e) => {
-                              // Atualização imediata da cor no estado local
-                              const hexColor = e.target.value;
-                              setCustomizationData(prev => ({
-                                ...prev,
-                                secondaryColor: hexToHslForUpdate(hexColor),
-                                id: prev?.id ?? 0,
-                                subdomain: prev?.subdomain,
-                                primaryColor: prev?.primaryColor,
-                                imageUrl: prev?.imageUrl,
-                                loginImageUrl: prev?.loginImageUrl,
-                                faviconUrl: prev?.faviconUrl,
-                              }));
-                            }}
-                            className="h-10 w-full p-0 border rounded cursor-pointer"
-                          />
+                          <div className="flex items-center gap-4">
+                            <input
+                              type="color"
+                              name="secondaryColor"
+                              value={secondaryColorHex}
+                              onChange={(e) => {
+                                // ✅ Atualização instantânea
+                                const hexColor = e.target.value;
+                                setSecondaryColorHex(hexColor);
+                                setCustomizationData(prev => ({
+                                  ...prev,
+                                  secondaryColor: hexToHslForUpdate(hexColor),
+                                  id: prev?.id ?? 0,
+                                  subdomain: prev?.subdomain,
+                                  primaryColor: prev?.primaryColor,
+                                  imageUrl: prev?.imageUrl,
+                                  loginImageUrl: prev?.loginImageUrl,
+                                  faviconUrl: prev?.faviconUrl,
+                                }));
+                              }}
+                              className="h-10 w-20 rounded border cursor-pointer"
+                            />
+                            <input
+                              type="text"
+                              value={secondaryColorHex}
+                              onChange={(e) => {
+                                const hexColor = e.target.value;
+                                setSecondaryColorHex(hexColor);
+                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    secondaryColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                    subdomain: prev?.subdomain,
+                                    primaryColor: prev?.primaryColor,
+                                    imageUrl: prev?.imageUrl,
+                                    loginImageUrl: prev?.loginImageUrl,
+                                    faviconUrl: prev?.faviconUrl,
+                                  }));
+                                }
+                              }}
+                              className="flex-1 rounded border px-3 py-2 text-sm"
+                              placeholder="#ffffff"
+                            />
+                            {/* ✅ Preview instantâneo */}
+                            <div
+                              className="h-10 w-20 rounded border"
+                              style={{ backgroundColor: secondaryColorHex }}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>

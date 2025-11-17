@@ -1,0 +1,108 @@
+═══════════════════════════════════════════════════════════════
+  COMO VER AS ALTERAÇÕES DE CACHE NO GITHUB DESKTOP
+═══════════════════════════════════════════════════════════════
+
+═══════════════════════════════════════════════════════════════
+  IMPORTANTE: NÃO FOI FEITO VIA PR (PULL REQUEST)
+═══════════════════════════════════════════════════════════════
+
+As alterações de cache foram feitas DIRETAMENTE na branch main,
+não através de um Pull Request.
+
+Commit: 28d5d25
+Autor: LOVAC-Dev
+Data: 17/11/2025
+Mensagem: "fix: otimizar cache na personalização de ISOs..."
+
+═══════════════════════════════════════════════════════════════
+  COMO VER NO GITHUB DESKTOP
+═══════════════════════════════════════════════════════════════
+
+MÉTODO 1: Ver o histórico de commits
+
+1. No GitHub Desktop, clique na aba "History" (Histórico)
+   (fica ao lado da aba "Changes")
+
+2. Você verá uma lista de commits
+
+3. Procure pelo commit:
+   "fix: otimizar cache na personalização de ISOs..."
+
+4. Clique nele para ver:
+   ✅ Quais arquivos foram alterados
+   ✅ O que mudou em cada arquivo
+   ✅ Data e autor do commit
+
+═══════════════════════════════════════════════════════════════
+  MÉTODO 2: Ver os arquivos alterados
+═══════════════════════════════════════════════════════════════
+
+1. No GitHub Desktop, vá na aba "History"
+
+2. Clique no commit "fix: otimizar cache..."
+
+3. No painel direito, você verá os 3 arquivos alterados:
+   ✅ src/utils/serverActions.ts
+   ✅ src/app/api/public/customization/[subdomain]/route.ts
+   ✅ src/features/customers/_componentes/customer-wizard-form.tsx
+
+4. Clique em cada arquivo para ver as alterações (linhas verdes = adicionadas)
+
+═══════════════════════════════════════════════════════════════
+  COMO VER NO GITHUB ONLINE
+═══════════════════════════════════════════════════════════════
+
+MÉTODO 1: Ver o commit diretamente
+
+1. Acesse:
+   https://github.com/ctoutbank/portal-outbank/commit/28d5d25
+
+2. Você verá:
+   ✅ Título e descrição do commit
+   ✅ Arquivos alterados
+   ✅ Diferenças (diff) de cada arquivo
+   ✅ Autor e data
+
+═══════════════════════════════════════════════════════════════
+  MÉTODO 2: Ver no histórico de commits
+═══════════════════════════════════════════════════════════════
+
+1. Acesse:
+   https://github.com/ctoutbank/portal-outbank/commits/main
+
+2. Procure pelo commit:
+   "fix: otimizar cache na personalização de ISOs..."
+
+3. Clique nele para ver os detalhes
+
+═══════════════════════════════════════════════════════════════
+  POR QUE NÃO APARECE COMO PR?
+═══════════════════════════════════════════════════════════════
+
+❌ Não foi criado um Pull Request
+✅ Foi feito commit direto na branch main
+
+Isso significa que:
+- As alterações foram commitadas diretamente
+- Não passou por processo de revisão via PR
+- Já está no código principal (main branch)
+
+═══════════════════════════════════════════════════════════════
+  RESUMO
+═══════════════════════════════════════════════════════════════
+
+✅ Alterações: Já estão no GitHub (branch main)
+✅ Commit: 28d5d25
+✅ Arquivos alterados: 3 arquivos
+❌ PR: Não foi criado (commit direto)
+
+═══════════════════════════════════════════════════════════════
+  ONDE VER NO GITHUB DESKTOP
+═══════════════════════════════════════════════════════════════
+
+1. Aba "History" (Histórico)
+2. Procure: "fix: otimizar cache na personalização de ISOs"
+3. Clique para ver detalhes
+
+═══════════════════════════════════════════════════════════════
+

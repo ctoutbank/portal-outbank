@@ -1,0 +1,80 @@
+═══════════════════════════════════════════════════════════════
+  COMO FAZER SUAS ALTERAÇÕES FICAREM ONLINE
+═══════════════════════════════════════════════════════════════
+
+Após fazer COMMIT, você precisa fazer PUSH para enviar para o GitHub!
+
+═══════════════════════════════════════════════════════════════
+  PROCESSO COMPLETO (2 PASSOS)
+═══════════════════════════════════════════════════════════════
+
+PASSO 1: COMMIT (Salvar localmente)
+   ✅ Você já fez isso!
+   → Suas alterações estão salvas no seu computador
+
+PASSO 2: PUSH (Enviar para o GitHub)
+   ⏳ Você precisa fazer isso agora!
+   → Envia suas alterações para ficarem online
+
+═══════════════════════════════════════════════════════════════
+  COMO FAZER PUSH NO GITHUB DESKTOP
+═══════════════════════════════════════════════════════════════
+
+OPÇÃO 1: Pelo Menu (Mais Fácil)
+   1. Clique no menu "Repository" (no topo)
+   2. Clique em "Push"
+   3. Aguarde alguns segundos
+   4. Pronto! ✅
+
+OPÇÃO 2: Atalho de Teclado (Mais Rápido)
+   1. Pressione: Ctrl + P
+   2. Aguarde alguns segundos
+   3. Pronto! ✅
+
+═══════════════════════════════════════════════════════════════
+  COMO SABER SE FUNCIONOU?
+═══════════════════════════════════════════════════════════════
+
+✅ No GitHub Desktop:
+   → O "1↑" ou "X commits ahead" vai desaparecer
+   → Aparecerá "Last pushed X minutes ago"
+
+✅ No GitHub Online:
+   1. Acesse: https://github.com/ctoutbank/portal-outbank
+   2. Clique em "Commits" (ou acesse: /commits/main)
+   3. Você verá seu commit no topo da lista!
+
+═══════════════════════════════════════════════════════════════
+  RESUMO VISUAL
+═══════════════════════════════════════════════════════════════
+
+COMMIT → Salva no seu computador
+   ↓
+PUSH → Envia para o GitHub (fica online)
+   ↓
+✅ Alterações disponíveis para todos!
+
+═══════════════════════════════════════════════════════════════
+  ANALOGIA SIMPLES
+═══════════════════════════════════════════════════════════════
+
+COMMIT = Salvar um documento no seu computador
+PUSH = Enviar esse documento por email para alguém
+
+Sem o PUSH, o documento fica só no seu computador.
+Com o PUSH, o documento fica disponível online!
+
+═══════════════════════════════════════════════════════════════
+  PARA VOCÊ AGORA
+═══════════════════════════════════════════════════════════════
+
+✅ Você já fez: COMMIT
+⏳ Você precisa fazer: PUSH
+
+Como fazer:
+   1. Menu "Repository" > "Push"
+   OU
+   2. Pressione Ctrl + P
+
+═══════════════════════════════════════════════════════════════
+

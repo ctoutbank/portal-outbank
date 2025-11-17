@@ -1,0 +1,43 @@
+═══════════════════════════════════════════════════════════════
+  COMO FAZER PUSH PELO MENU DO GITHUB DESKTOP
+═══════════════════════════════════════════════════════════════
+
+✅ Você encontrou a opção correta! O Push está no menu.
+
+═══════════════════════════════════════════════════════════════
+  PASSO A PASSO
+═══════════════════════════════════════════════════════════════
+
+1. No GitHub Desktop, clique no menu "Repository" (no topo)
+
+2. Clique em "Push" (ou pressione Ctrl+P)
+
+3. Aguarde alguns segundos...
+
+4. Você verá uma mensagem de sucesso!
+
+═══════════════════════════════════════════════════════════════
+  ATALHO DE TECLADO (MAIS RÁPIDO)
+═══════════════════════════════════════════════════════════════
+
+Pressione: Ctrl + P
+
+Isso faz o push automaticamente!
+
+═══════════════════════════════════════════════════════════════
+  O QUE SERÁ ENVIADO?
+═══════════════════════════════════════════════════════════════
+
+✅ Commit: "fix: reduzir cache da API de customização de 30s para 5s"
+✅ Arquivo: src/app/api/public/customization/[subdomain]/route.ts
+
+═══════════════════════════════════════════════════════════════
+  DEPOIS DO PUSH
+═══════════════════════════════════════════════════════════════
+
+✅ O "1↑" vai desaparecer (não haverá mais commits para enviar)
+✅ Você pode verificar no GitHub:
+   https://github.com/ctoutbank/portal-outbank
+
+═══════════════════════════════════════════════════════════════
+

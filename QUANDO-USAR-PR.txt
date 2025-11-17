@@ -1,0 +1,149 @@
+═══════════════════════════════════════════════════════════════
+  QUANDO USAR PULL REQUEST (PR)?
+═══════════════════════════════════════════════════════════════
+
+Boa pergunta! Vou explicar a diferença entre PR e commit direto.
+
+═══════════════════════════════════════════════════════════════
+  🔀 PULL REQUEST (PR) - COM REVISÃO
+═══════════════════════════════════════════════════════════════
+
+O QUE É:
+   → Você cria uma branch separada
+   → Faz suas alterações nessa branch
+   → Cria um PR para mesclar na branch principal
+   → Alguém revisa e aprova
+   → Depois é mesclado (merged)
+
+QUANDO USAR:
+   ✅ Quando precisa de revisão de código
+   ✅ Quando trabalha em equipe
+   ✅ Quando quer que alguém aprove antes
+   ✅ Para mudanças importantes/complexas
+   ✅ Quando a empresa exige processo de revisão
+
+FLUXO:
+   1. Criar branch nova
+   2. Fazer alterações
+   3. Fazer commit
+   4. Fazer push da branch
+   5. Criar PR no GitHub
+   6. Aguardar aprovação
+   7. PR é mesclado (merged)
+   8. ✅ Alterações vão para produção
+
+═══════════════════════════════════════════════════════════════
+  ⚡ COMMIT DIRETO - SEM REVISÃO
+═══════════════════════════════════════════════════════════════
+
+O QUE É:
+   → Você faz commit direto na branch principal (main)
+   → Não precisa de aprovação
+   → Alterações vão direto para o código
+
+QUANDO USAR:
+   ✅ Quando você tem permissão total
+   ✅ Para correções pequenas/urgentes
+   ✅ Quando trabalha sozinho
+   ✅ Para ajustes rápidos
+   ✅ Quando não precisa de revisão
+
+FLUXO:
+   1. Fazer alterações
+   2. Fazer commit direto na main
+   3. Fazer push
+   4. ✅ Alterações já estão no código principal
+
+═══════════════════════════════════════════════════════════════
+  📊 COMPARAÇÃO
+═══════════════════════════════════════════════════════════════
+
+PULL REQUEST (PR):
+   ✅ Tem revisão de código
+   ✅ Mais seguro (alguém verifica)
+   ✅ Histórico mais organizado
+   ⏳ Mais demorado (precisa aprovação)
+   📝 Bom para equipes
+
+COMMIT DIRETO:
+   ✅ Mais rápido
+   ✅ Sem burocracia
+   ⚠️  Sem revisão (mais risco)
+   ⚠️  Pode ter erros não detectados
+   📝 Bom para mudanças simples
+
+═══════════════════════════════════════════════════════════════
+  🎯 NO SEU CASO
+═══════════════════════════════════════════════════════════════
+
+Suas alterações de cache foram feitas:
+   → Commit direto na branch main
+   → Sem PR (Pull Request)
+   → Já estão no código principal
+
+Isso significa:
+   ✅ Alterações já estão disponíveis
+   ✅ Não precisa de aprovação
+   ✅ Já podem ir para produção (se o deploy for automático)
+
+═══════════════════════════════════════════════════════════════
+  🚀 PRODUÇÃO - COMO FUNCIONA?
+═══════════════════════════════════════════════════════════════
+
+As alterações vão para produção de 2 formas:
+
+FORMA 1: Deploy Automático
+   → Quando você faz push na main
+   → O sistema automaticamente faz deploy
+   → ✅ Suas alterações já estão em produção!
+
+FORMA 2: Deploy Manual
+   → Alguém precisa fazer deploy manualmente
+   → Pode ser via interface ou comando
+   → ⏳ Precisa aguardar alguém fazer
+
+═══════════════════════════════════════════════════════════════
+  ❓ PR É OBRIGATÓRIO?
+═══════════════════════════════════════════════════════════════
+
+DEPENDE da política da empresa/projeto:
+
+✅ COM PR (Mais comum em equipes):
+   → Todas as alterações passam por PR
+   → Alguém sempre revisa
+   → Mais seguro e organizado
+
+❌ SEM PR (Menos comum):
+   → Commits diretos na main são permitidos
+   → Mais rápido, mas menos seguro
+   → Comum em projetos pequenos ou pessoais
+
+═══════════════════════════════════════════════════════════════
+  📋 RESUMO PARA VOCÊ
+═══════════════════════════════════════════════════════════════
+
+✅ Você fez: Commit direto na main
+✅ Você fez: Push para o GitHub
+✅ Status: Alterações estão no código principal
+
+⏳ Próximo passo:
+   → Se o deploy for automático: Já está em produção!
+   → Se o deploy for manual: Precisa alguém fazer deploy
+
+═══════════════════════════════════════════════════════════════
+  💡 DICA
+═══════════════════════════════════════════════════════════════
+
+Se sua empresa exige PR para tudo:
+   → Da próxima vez, crie uma branch
+   → Faça suas alterações nela
+   → Crie um PR
+   → Aguarde aprovação
+
+Mas neste caso específico:
+   → Já foi feito direto na main
+   → Está tudo certo!
+   → Só precisa fazer push (se ainda não fez)
+
+═══════════════════════════════════════════════════════════════
+
