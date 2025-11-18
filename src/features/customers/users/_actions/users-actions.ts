@@ -305,7 +305,6 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
           emailAddress: [normalizedEmail],
           password: finalPassword, // Define a senha no Clerk para permitir login
           skipPasswordChecks: false, // Não pular verificações de senha (pwned, etc)
-          skipEmailVerification: true, // ✅ Pular verificação de email para permitir login imediato
           publicMetadata: {
             isFirstLogin: true,
           },
