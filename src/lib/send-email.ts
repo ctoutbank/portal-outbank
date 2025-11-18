@@ -148,8 +148,12 @@ Equipe ${customerName}
     
     console.log(`[sendWelcomePasswordEmail] 📤 Enviando email via Resend...`);
     const result = await getResend().emails.send(emailData);
+    // O resultado do Resend pode ter estrutura diferente dependendo da versão
+    // Usar type assertion para evitar erros de tipo
+    const resultAny = result as any;
+    const emailId = resultAny?.id || resultAny?.data?.id || null;
     console.log(`[sendWelcomePasswordEmail] ✅ Email sent successfully to ${to}`, {
-      emailId: result.id,
+      emailId: emailId || 'sent',
       from: EMAIL_FROM,
       to,
     });
