@@ -283,6 +283,8 @@ export async function saveCustomization(formData: FormData) {
   let loginImageFileId: number | null = null;
   let faviconUrl = "";
   let faviconFileId: number | null = null;
+  let emailImageUrl = "";
+  let emailImageFileId: number | null = null;
 
   const image = formData.get("image") as File | null;
   console.log("[saveCustomization] Image file:", image ? `present (${image.size} bytes, ${image.type})` : 'not provided');
