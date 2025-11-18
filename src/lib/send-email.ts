@@ -47,7 +47,7 @@ export async function sendWelcomePasswordEmail(
     
     // Versão texto do email (importante para deliverability)
     const textVersion = `
-Bem-vindo ao ${customerName}
+Bem-vindo!
 
 Sua conta foi criada com sucesso! Estamos felizes em tê-lo conosco.
 
@@ -97,7 +97,7 @@ Equipe ${customerName}
                             
                             <!-- Main Title - Left aligned -->
                             <h1 style="color: #333333; font-size: 32px; font-weight: 600; margin: 0 0 24px 0; line-height: 1.2; text-align: left;">
-                                Bem-vindo ao ${customerName}.
+                                Bem-vindo!
                             </h1>
                             
                             <!-- Welcome Message - Left aligned, black text -->
