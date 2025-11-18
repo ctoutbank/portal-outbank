@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import CustomerForm from "./customer-form";
@@ -26,7 +26,7 @@ import {
   type CustomerCustomization,
 } from "@/utils/serverActions";
 import Image from "next/image";
-import { Info, Palette } from "lucide-react";
+import { Info, Palette, Building2, Users, Save, ChevronDown } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -53,13 +53,6 @@ export default function CustomerWizardForm({
 }: CustomerWizardFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  // Lê o step da URL ou usa o default, clamping to valid values
-  const stepFromUrl = searchParams.get("step") || activeTabDefault;
-  const validSteps = ["step1", "step2"];
-  const clampedStep = validSteps.includes(stepFromUrl) ? stepFromUrl : "step1";
-
-  const [activeTab, setActiveTab] = useState(clampedStep);
   const [newCustomerId, setNewCustomerId] = useState<number | null>(
     customer.id || null
   );
@@ -91,12 +84,17 @@ export default function CustomerWizardForm({
     } : null
   );
 
+  // Estados para controlar quais seções estão abertas
+  const [section1Open, setSection1Open] = useState<boolean>(() => !customer.id);
+  const [section2Open, setSection2Open] = useState<boolean>(false);
+  const [section3Open, setSection3Open] = useState<boolean>(() => !!customer.id && isFirstStepComplete);
+
+  // Atualizar seção 3 quando isFirstStepComplete mudar
   useEffect(() => {
-    // Sincroniza o activeTab com a URL se ela mudar externamente
-    if (stepFromUrl !== activeTab) {
-      setActiveTab(stepFromUrl);
+    if (isFirstStepComplete && customer.id) {
+      setSection3Open(true);
     }
-  }, [stepFromUrl, activeTab]);
+  }, [isFirstStepComplete, customer.id]);
 
   function hslToHex(hsl: string): string {
     const [h, s, l] = hsl
@@ -117,19 +115,168 @@ export default function CustomerWizardForm({
     return `#${f(0)}${f(8)}${f(4)}`;
   }
 
-  // Ao mudar o step, atualiza o estado e a URL sem reload
-  const handleStepChange = (value: string) => {
-    if (value === "step2" && !isFirstStepComplete) {
-      toast.error(
-        "É necessário criar o cliente antes de configurar os usuários"
-      );
-      return;
-    }
-    setActiveTab(value);
-    if (newCustomerId) {
-      router.replace(`/customers/${newCustomerId}?step=${value}`, {
-        scroll: false,
-      });
+  // Função para salvar todas as seções em sequência
+  const handleSaveAll = async () => {
+    setIsLoading(true);
+    const errors: string[] = [];
+    const successes: string[] = [];
+
+    try {
+      // 1. Salvar Informações Básicas
+      if (iso.name && iso.subdomain) {
+        try {
+          const isEdit = Boolean(newCustomerId || customer?.id);
+          if (isEdit && (newCustomerId || customer?.id)) {
+            const updatedData = {
+              id: newCustomerId || customer?.id,
+              name: iso.name,
+              slug: customer?.slug || "",
+              customerId: customer?.customerId || "",
+              settlementManagementType: customer?.settlementManagementType || "",
+            };
+            await updateCustomer(updatedData);
+            successes.push("Informações básicas atualizadas");
+            
+            if (iso.subdomain && iso.subdomain.trim() !== "") {
+              const formData = new FormData();
+              formData.append("customerId", (newCustomerId || customer?.id).toString());
+              formData.append("subdomain", iso.subdomain);
+              formData.append("primaryColor", primaryColorHex || "#000000");
+              formData.append("secondaryColor", secondaryColorHex || "#ffffff");
+              
+              if (customizationData?.id) {
+                formData.append("id", customizationData.id.toString());
+                await updateCustomization(formData);
+              } else {
+                await saveCustomization(formData);
+              }
+            }
+          } else {
+            const slug = generateSlug();
+            const customerDataFixed = {
+              slug: slug || "",
+              name: iso.name,
+              customerId: customer?.customerId || undefined,
+              settlementManagementType: customer?.settlementManagementType || undefined,
+              idParent: customer?.idParent || undefined,
+              id: customer?.id || undefined,
+            };
+            const newId = await insertCustomerFormAction(customerDataFixed);
+            if (newId !== null && newId !== undefined) {
+              await handleFirstStepComplete(newId);
+              successes.push("ISO criado com sucesso");
+            }
+          }
+        } catch (error) {
+          errors.push("Erro ao salvar informações básicas");
+          console.error("Erro ao salvar informações básicas:", error);
+        }
+      }
+
+      // 2. Salvar Personalização (se houver dados)
+      if (isFirstStepComplete && (newCustomerId || customer?.id)) {
+        try {
+          const subdomain = (iso.subdomain || customizationData?.subdomain || "").trim();
+          const customerId = newCustomerId || customer?.id;
+
+          if (subdomain && customerId) {
+            const formData = new FormData();
+            formData.set("subdomain", subdomain);
+            formData.set("customerId", String(customerId));
+            formData.set("primaryColor", primaryColorHex);
+            formData.set("secondaryColor", secondaryColorHex);
+            if (customizationData?.id) {
+              formData.set("id", String(customizationData.id));
+            }
+
+            // Capturar arquivos do formulário se existirem
+            const imageInput = document.getElementById('image') as HTMLInputElement;
+            const loginImageInput = document.getElementById('loginImage') as HTMLInputElement;
+            const faviconInput = document.getElementById('favicon') as HTMLInputElement;
+            const emailImageInput = document.getElementById('emailImage') as HTMLInputElement;
+
+            if (imageInput?.files?.[0]) {
+              formData.append("image", imageInput.files[0]);
+            }
+            if (loginImageInput?.files?.[0]) {
+              formData.append("loginImage", loginImageInput.files[0]);
+            }
+            if (faviconInput?.files?.[0]) {
+              formData.append("favicon", faviconInput.files[0]);
+            }
+            if (emailImageInput?.files?.[0]) {
+              formData.append("emailImage", emailImageInput.files[0]);
+            }
+
+            const validationData = {
+              subdomain: subdomain,
+              primaryColor: primaryColorHex,
+              secondaryColor: secondaryColorHex,
+              image: formData.get("image"),
+              customerId: String(customerId),
+              id: customizationData?.id,
+            };
+
+            const validationResult = CustomizationSchema.safeParse(validationData);
+            if (validationResult.success) {
+              const result = customizationData 
+                ? await updateCustomization(formData)
+                : await saveCustomization(formData);
+
+              if (result?.customization) {
+                setCustomizationData({
+                  imageUrl: result.customization.imageUrl ?? undefined,
+                  id: result.customization.id ?? 0,
+                  subdomain: result.customization.slug ?? undefined,
+                  primaryColor: result.customization.primaryColor ?? undefined,
+                  secondaryColor: result.customization.secondaryColor ?? undefined,
+                  loginImageUrl: result.customization.loginImageUrl ?? undefined,
+                  faviconUrl: result.customization.faviconUrl ?? undefined,
+                  emailImageUrl: result.customization.emailImageUrl ?? undefined,
+                });
+
+                if (result.customization.primaryColor) {
+                  setPrimaryColorHex(hslToHex(result.customization.primaryColor));
+                }
+                if (result.customization.secondaryColor) {
+                  setSecondaryColorHex(hslToHex(result.customization.secondaryColor));
+                }
+
+                setImagePreview(null);
+                setLoginImagePreview(null);
+                setFaviconPreview(null);
+                setEmailImagePreview(null);
+
+                const fileInputs = [imageInput, loginImageInput, faviconInput, emailImageInput];
+                fileInputs.forEach((input) => {
+                  if (input) input.value = '';
+                });
+
+                successes.push("Personalização salva");
+              }
+            }
+          }
+        } catch (error) {
+          errors.push("Erro ao salvar personalização");
+          console.error("Erro ao salvar personalização:", error);
+        }
+      }
+
+      // Mostrar resultados consolidados
+      if (successes.length > 0 && errors.length === 0) {
+        toast.success(`Tudo salvo com sucesso! ${successes.join(", ")}`);
+      } else if (successes.length > 0 && errors.length > 0) {
+        toast.warning(`${successes.join(", ")}. ${errors.join(", ")}`);
+      } else if (errors.length > 0) {
+        toast.error(errors.join(", "));
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Erro ao salvar tudo:", error);
+      toast.error("Ocorreu um erro ao salvar");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -537,373 +684,293 @@ export default function CustomerWizardForm({
     });
   }, [customizationData?.subdomain, customer?.name]);
 
-  // Handler para impedir troca de aba ao clicar nas tabs
-  const handleTabClick = (value: string, e: React.MouseEvent) => {
-    if (value !== activeTab) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  };
-
   return (
-    <div className="w-full">
-      <Tabs
-        value={activeTab}
-        onValueChange={handleStepChange}
-        className="space-y-6"
-      >
-        {/* Progress Indicator - 2 Steps */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between max-w-md mx-auto">
-            <div className="flex items-center gap-2">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-medium ${isFirstStepComplete ? 'bg-green-600 text-white' : activeTab === 'step1' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                {isFirstStepComplete ? '✓' : '1'}
-              </div>
-              <span className={`text-sm font-medium ${activeTab === 'step1' ? 'text-foreground' : 'text-muted-foreground'}`}>
-                ISO + Usuários
-              </span>
-            </div>
-            <div className="flex-1 h-1 mx-4 bg-muted rounded-full overflow-hidden">
-              <div className={`h-full transition-all duration-300 ${isFirstStepComplete ? 'bg-green-600 w-full' : 'bg-muted w-0'}`} />
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-medium ${activeTab === 'step2' && isFirstStepComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                2
-              </div>
-              <span className={`text-sm font-medium ${activeTab === 'step2' ? 'text-foreground' : 'text-muted-foreground'}`}>
-                Personalização
-              </span>
-            </div>
-          </div>
-        </div>
+    <div className="w-full space-y-6">
+      {/* Botão Salvar Tudo no topo */}
+      <div className="flex justify-end mb-4">
+        <Button
+          onClick={handleSaveAll}
+          disabled={isLoading || isSavingCustomization}
+          className="cursor-pointer"
+          size="lg"
+        >
+          <Save className="h-4 w-4 mr-2" />
+          {isLoading ? "Salvando..." : "Salvar Tudo"}
+        </Button>
+      </div>
 
-        <TabsList className="grid w-full grid-cols-2 h-auto p-1 bg-muted">
-          <TabsTrigger
-            value="step1"
-            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-2 sm:px-4 data-[state=active]:bg-background data-[state=active]:text-foreground"
-            onMouseDown={(e) => handleTabClick("step1", e)}
-          >
-            1. ISO + Usuários
-          </TabsTrigger>
-          <TabsTrigger
-            value="step2"
-            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-2 sm:px-4 data-[state=active]:bg-background data-[state=active]:text-foreground"
-            onMouseDown={(e) => handleTabClick("step2", e)}
-          >
-            2. Personalização
-          </TabsTrigger>
-        </TabsList>
+      <div className="space-y-4">
 
-        <TabsContent value="step1" className="space-y-6">
-          <Card className="p-8">
-            <CardContent className="space-y-8 p-0">
-              {/* Block A: ISO Data (2-column grid) */}
-              <div className="space-y-4">
-                <CustomerForm
-                  customer={customer}
-                  onSuccess={handleFirstStepComplete}
-                  hideWrapper={true}
-                  nameValue={iso.name}
-                  onNameChange={(name) => setIso({ ...iso, name })}
-                  subdomainValue={iso.subdomain}
-                  onSubdomainChange={(subdomain) => setIso({ ...iso, subdomain })}
-                  showSubmitButton={false}
-                />
+        {/* Seção 1: Informações Básicas */}
+        <Collapsible open={section1Open} onOpenChange={setSection1Open} className="border rounded-lg">
+          <CollapsibleTrigger className="w-full px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+                1
               </div>
-
-              {/* Block B: User Creation Form (only after ISO created) */}
-              {isFirstStepComplete && selectedUser === null && (
-                <div className="space-y-4 pt-8 border-t">
-                  <UserCustomerForm
-                    customerId={newCustomerId || undefined}
-                    onSuccess={handleUserSuccess}
-                    profiles={profiles}
+              <Building2 className="h-5 w-5 text-muted-foreground" />
+              <span className="text-lg font-semibold">Informações Básicas</span>
+            </div>
+            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${section1Open ? 'rotate-180' : ''}`} />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="px-6 pb-6">
+            <Card className="border-0 shadow-none">
+              <CardContent className="space-y-6 p-0">
+                <div className="space-y-4">
+                  <CustomerForm
+                    customer={customer}
+                    onSuccess={handleFirstStepComplete}
                     hideWrapper={true}
+                    nameValue={iso.name}
+                    onNameChange={(name) => setIso({ ...iso, name })}
+                    subdomainValue={iso.subdomain}
+                    onSubdomainChange={(subdomain) => setIso({ ...iso, subdomain })}
+                    showSubmitButton={false}
                   />
                 </div>
-              )}
 
-              {/* Block C: User List Table (only after ISO created) */}
-              {isFirstStepComplete && selectedUser === null && (
-                <div className="space-y-4 pt-8 border-t">
-                  <h3 className="text-lg font-semibold">Usuários</h3>
-                  {isLoadingUsers ? (
-                    <div className="text-center p-8">
-                      <p>Carregando usuários...</p>
-                    </div>
-                  ) : (
-                    <UsersCustomerList
-                      users={users}
-                      customerId={newCustomerId || 0}
-                      onRefresh={() => loadUsers(newCustomerId || 0)}
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* Edit User Mode */}
-              {isFirstStepComplete && selectedUser !== null && (
-                <div className="space-y-4 pt-8 border-t">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium">Editar Usuário</h3>
-                    <Button
-                      variant="outline"
-                      onClick={() => setSelectedUser(null)}
-                      className="cursor-pointer"
-                    >
-                      Voltar
-                    </Button>
-                  </div>
-
-                  {isLoadingUser ? (
-                    <div className="text-center p-4">
-                      <p>Carregando dados do usuário...</p>
-                    </div>
-                  ) : (
-                    <UserCustomerForm
-                      user={userToEdit || undefined}
-                      customerId={newCustomerId || undefined}
-                      onSuccess={handleUserSuccess}
-                      profiles={profiles}
-                      hideWrapper={true}
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* Single primary button at bottom of card */}
-              <div className="flex justify-end pt-8 border-t">
-                <Button
-                  onClick={async () => {
-                    const isEdit = Boolean(newCustomerId || customer?.id);
-                    setIsLoading(true);
-                    try {
-                      if (isEdit && (newCustomerId || customer?.id)) {
-                        const updatedData = {
-                          id: newCustomerId || customer?.id,
-                          name: iso.name,
-                          slug: customer?.slug || "",
-                          customerId: customer?.customerId || "",
-                          settlementManagementType: customer?.settlementManagementType || "",
-                        };
-                        const updatedId = await updateCustomer(updatedData);
-                        toast.success("ISO atualizado com sucesso");
-                        
-                        if (iso.subdomain && iso.subdomain.trim() !== "") {
-                          const formData = new FormData();
-                          formData.append("customerId", updatedId.toString());
-                          formData.append("subdomain", iso.subdomain);
-                          // ✅ Garantir que sempre envie HEX, não HSL
-                          formData.append("primaryColor", primaryColorHex || "#000000");
-                          formData.append("secondaryColor", secondaryColorHex || "#ffffff");
+                <div className="flex justify-end pt-4 border-t">
+                  <Button
+                    onClick={async () => {
+                      const isEdit = Boolean(newCustomerId || customer?.id);
+                      setIsLoading(true);
+                      try {
+                        if (isEdit && (newCustomerId || customer?.id)) {
+                          const updatedData = {
+                            id: newCustomerId || customer?.id,
+                            name: iso.name,
+                            slug: customer?.slug || "",
+                            customerId: customer?.customerId || "",
+                            settlementManagementType: customer?.settlementManagementType || "",
+                          };
+                          const updatedId = await updateCustomer(updatedData);
+                          toast.success("ISO atualizado com sucesso");
                           
-                          if (customizationData?.id) {
-                            formData.append("id", customizationData.id.toString());
-                            await updateCustomization(formData);
-                          } else {
-                            await saveCustomization(formData);
+                          if (iso.subdomain && iso.subdomain.trim() !== "") {
+                            const formData = new FormData();
+                            formData.append("customerId", updatedId.toString());
+                            formData.append("subdomain", iso.subdomain);
+                            formData.append("primaryColor", primaryColorHex || "#000000");
+                            formData.append("secondaryColor", secondaryColorHex || "#ffffff");
+                            
+                            if (customizationData?.id) {
+                              formData.append("id", customizationData.id.toString());
+                              await updateCustomization(formData);
+                            } else {
+                              await saveCustomization(formData);
+                            }
+                            
+                            router.refresh();
                           }
+                        } else {
+                          const slug = generateSlug();
+                          const customerDataFixed = {
+                            slug: slug || "",
+                            name: iso.name,
+                            customerId: customer?.customerId || undefined,
+                            settlementManagementType: customer?.settlementManagementType || undefined,
+                            idParent: customer?.idParent || undefined,
+                            id: customer?.id || undefined,
+                          };
+                          const newId = await insertCustomerFormAction(customerDataFixed);
+                          toast.success("ISO criado com sucesso");
                           
-                          router.refresh();
+                          if (newId !== null && newId !== undefined) {
+                            await handleFirstStepComplete(newId);
+                            router.replace(`/customers/${newId}`, { scroll: false });
+                          }
                         }
-                      } else {
-                        const slug = generateSlug();
-                        const customerDataFixed = {
-                          slug: slug || "",
-                          name: iso.name,
-                          customerId: customer?.customerId || undefined,
-                          settlementManagementType: customer?.settlementManagementType || undefined,
-                          idParent: customer?.idParent || undefined,
-                          id: customer?.id || undefined,
-                        };
-                        const newId = await insertCustomerFormAction(customerDataFixed);
-                        toast.success("ISO criado com sucesso");
-                        
-                        if (newId !== null && newId !== undefined) {
-                          await handleFirstStepComplete(newId);
-                          router.replace(`/customers/${newId}?step=step1`, { scroll: false });
-                        }
+                      } catch (error) {
+                        console.error("Erro ao salvar ISO:", error);
+                        toast.error("Ocorreu um erro ao processar a solicitação");
+                      } finally {
+                        setIsLoading(false);
                       }
-                    } catch (error) {
-                      console.error("Erro ao salvar ISO:", error);
-                      toast.error("Ocorreu um erro ao processar a solicitação");
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }}
-                  disabled={isLoading || !iso.name || !iso.subdomain}
-                  className="cursor-pointer"
-                >
-                  {isLoading ? "Salvando..." : (newCustomerId || customer?.id) ? "Atualizar" : "Salvar"}
-                </Button>
+                    }}
+                    disabled={isLoading || !iso.name || !iso.subdomain}
+                    className="cursor-pointer"
+                  >
+                    {isLoading ? "Salvando..." : (newCustomerId || customer?.id) ? "Salvar Informações Básicas" : "Salvar Informações Básicas"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Seção 2: Personalização Visual */}
+        <Collapsible open={section2Open && isFirstStepComplete} onOpenChange={(open) => isFirstStepComplete && setSection2Open(open)} className="border rounded-lg">
+          <CollapsibleTrigger 
+            className="w-full px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!isFirstStepComplete}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${isFirstStepComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                2
               </div>
-            </CardContent>
-          </Card>
+              <Palette className="h-5 w-5 text-muted-foreground" />
+              <span className="text-lg font-semibold">Personalização Visual</span>
+            </div>
+            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${section2Open ? 'rotate-180' : ''}`} />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="px-6 pb-6">
+            {isFirstStepComplete && (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setIsSavingCustomization(true);
 
-          {/* Navigation */}
-          <div className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => handleStepChange("step2")}
-              disabled={!isFirstStepComplete}
-              className="cursor-pointer"
-            >
-              Próximo →
-            </Button>
-          </div>
-        </TabsContent>
+                  // ✅ Capturar o formulário no início (antes do bloco assíncrono)
+                  const form = e.currentTarget as HTMLFormElement;
+                  const formData = new FormData(form);
 
-        <TabsContent value="step2">
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setIsSavingCustomization(true);
+                  const subdomain = (iso.subdomain || customizationData?.subdomain || "").trim();
+                  const customerId = newCustomerId || customer?.id;
 
-              // ✅ Capturar o formulário no início (antes do bloco assíncrono)
-              const form = e.currentTarget as HTMLFormElement;
-              const formData = new FormData(form);
+                  if (!subdomain) {
+                    toast.error("Por favor, defina o Domínio do ISO no passo 1 antes de salvar a personalização");
+                    setIsSavingCustomization(false);
+                    return;
+                  }
 
-              const subdomain = (iso.subdomain || customizationData?.subdomain || "").trim();
-              const customerId = newCustomerId || customer?.id;
+                  if (!customerId) {
+                    toast.error("Por favor, crie o ISO no passo 1 antes de salvar a personalização");
+                    setIsSavingCustomization(false);
+                    return;
+                  }
 
-              if (!subdomain) {
-                toast.error("Por favor, defina o Domínio do ISO no passo 1 antes de salvar a personalização");
-                setIsSavingCustomization(false);
-                return;
-              }
+                  formData.set("subdomain", subdomain);
+                  formData.set("customerId", String(customerId));
+                  // ✅ Garantir que sempre envie HEX, não HSL
+                  formData.set("primaryColor", primaryColorHex);
+                  formData.set("secondaryColor", secondaryColorHex);
+                  if (customizationData?.id) {
+                    formData.set("id", String(customizationData.id));
+                  }
 
-              if (!customerId) {
-                toast.error("Por favor, crie o ISO no passo 1 antes de salvar a personalização");
-                setIsSavingCustomization(false);
-                return;
-              }
+                  const validationData = {
+                    subdomain: subdomain,
+                    primaryColor: primaryColorHex, // Usar valor HEX do estado
+                    secondaryColor: secondaryColorHex, // Usar valor HEX do estado
+                    image: formData.get("image"),
+                    customerId: String(customerId),
+                    id: customizationData?.id,
+                  };
 
-              formData.set("subdomain", subdomain);
-              formData.set("customerId", String(customerId));
-              // ✅ Garantir que sempre envie HEX, não HSL
-              formData.set("primaryColor", primaryColorHex);
-              formData.set("secondaryColor", secondaryColorHex);
-              if (customizationData?.id) {
-                formData.set("id", String(customizationData.id));
-              }
+                  const validationResult =
+                    CustomizationSchema.safeParse(validationData);
 
-              const validationData = {
-                subdomain: subdomain,
-                primaryColor: primaryColorHex, // Usar valor HEX do estado
-                secondaryColor: secondaryColorHex, // Usar valor HEX do estado
-                image: formData.get("image"),
-                customerId: String(customerId),
-                id: customizationData?.id,
-              };
+                  if (!validationResult.success) {
+                    console.error("Validation errors:", validationResult.error.flatten());
+                    toast.error("Por favor, corrija os erros antes de continuar");
+                    setIsSavingCustomization(false);
+                    return;
+                  }
 
-              const validationResult =
-                CustomizationSchema.safeParse(validationData);
-
-              if (!validationResult.success) {
-                console.error("Validation errors:", validationResult.error.flatten());
-                toast.error("Por favor, corrija os erros antes de continuar");
-                setIsSavingCustomization(false);
-                return;
-              }
-
-              // ✅ ATUALIZAÇÃO OTIMISTA: assume sucesso e atualiza UI imediatamente
-              const primaryColorInput = formData.get("primaryColor") as string;
-              const secondaryColorInput = formData.get("secondaryColor") as string;
-              
-              // Atualizar previews otimisticamente
-              const optimisticUpdate = {
-                ...customizationData,
-                imageUrl: imagePreview || customizationData?.imageUrl,
-                loginImageUrl: loginImagePreview || customizationData?.loginImageUrl,
-                faviconUrl: faviconPreview || customizationData?.faviconUrl,
-                primaryColor: primaryColorInput ? hexToHslForUpdate(primaryColorInput) : customizationData?.primaryColor,
-                secondaryColor: secondaryColorInput ? hexToHslForUpdate(secondaryColorInput) : customizationData?.secondaryColor,
-                id: customizationData?.id ?? 0,
-                subdomain: customizationData?.subdomain,
-              };
-              
-              setCustomizationData(optimisticUpdate);
-
-              try {
-                // Timeout para evitar travamentos (30 segundos)
-                const timeoutPromise = new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error("Timeout: Operação demorou muito tempo. Tente novamente.")), 30000)
-                );
-
-                let result;
-                const savePromise = customizationData 
-                  ? updateCustomization(formData)
-                  : saveCustomization(formData);
-
-                // Race entre a operação de salvamento e o timeout
-                result = await Promise.race([savePromise, timeoutPromise]) as any;
-
-                if (result?.customization) {
-                  // ✅ Atualizar com dados reais do servidor
-                  setCustomizationData({
-                    imageUrl: result.customization.imageUrl ?? undefined,
-                    id: result.customization.id ?? 0,
-                    subdomain: result.customization.slug ?? undefined,
-                    primaryColor: result.customization.primaryColor ?? undefined,
-                    secondaryColor: result.customization.secondaryColor ?? undefined,
-                    loginImageUrl: result.customization.loginImageUrl ?? undefined,
-                    faviconUrl: result.customization.faviconUrl ?? undefined,
-                  });
+                  // ✅ ATUALIZAÇÃO OTIMISTA: assume sucesso e atualiza UI imediatamente
+                  const primaryColorInput = formData.get("primaryColor") as string;
+                  const secondaryColorInput = formData.get("secondaryColor") as string;
                   
-                  // ✅ Atualizar estados de cores hex
-                  if (result.customization.primaryColor) {
-                    setPrimaryColorHex(hslToHex(result.customization.primaryColor));
-                  }
-                  if (result.customization.secondaryColor) {
-                    setSecondaryColorHex(hslToHex(result.customization.secondaryColor));
-                  }
+                  // Atualizar previews otimisticamente
+                  const optimisticUpdate = {
+                    ...customizationData,
+                    imageUrl: imagePreview || customizationData?.imageUrl,
+                    loginImageUrl: loginImagePreview || customizationData?.loginImageUrl,
+                    faviconUrl: faviconPreview || customizationData?.faviconUrl,
+                    primaryColor: primaryColorInput ? hexToHslForUpdate(primaryColorInput) : customizationData?.primaryColor,
+                    secondaryColor: secondaryColorInput ? hexToHslForUpdate(secondaryColorInput) : customizationData?.secondaryColor,
+                    id: customizationData?.id ?? 0,
+                    subdomain: customizationData?.subdomain,
+                  };
                   
-                  // Limpar previews
-                  setImagePreview(null);
-                  setLoginImagePreview(null);
-                  setFaviconPreview(null);
-                  
-                  // ✅ Limpar inputs de arquivo (para permitir re-upload da mesma imagem)
-                  // Usa a referência do formulário capturada no início
-                  if (form) {
-                    const fileInputs = form.querySelectorAll('input[type="file"]');
-                    fileInputs.forEach((input) => {
-                      (input as HTMLInputElement).value = '';
-                    });
-                  }
-                  
-                  if (result.customization.imageUrl) {
-                    const filename = result.customization.imageUrl.split('/').pop() || 'logo atual';
-                    setImageFileName(filename);
-                  }
-                  if (result.customization.loginImageUrl) {
-                    const filename = result.customization.loginImageUrl.split('/').pop() || 'imagem de login atual';
-                    setLoginImageFileName(filename);
-                  }
-                  if (result.customization.faviconUrl) {
-                    const filename = result.customization.faviconUrl.split('/').pop() || 'favicon atual';
-                    setFaviconFileName(filename);
-                  }
-                }
+                  setCustomizationData(optimisticUpdate);
 
-                toast.success("Customização salva com sucesso!");
-                
-                // NÃO faz router.refresh() para não sobrescrever atualizações otimistas
-                // O estado já foi atualizado acima
-              } catch (error) {
-                console.error("Erro ao salvar a customização", error);
-                const errorMessage = error instanceof Error ? error.message : "Erro ao salvar a customização";
-                toast.error(errorMessage);
-                
-                // Reverte atualização otimista em caso de erro apenas se necessário
-                // Não faz router.refresh() para não perder o estado atual
-              } finally {
-                // Garante que o loading sempre seja resetado, mesmo em caso de erro
-                // Usa setTimeout para garantir que o estado seja atualizado
-                setTimeout(() => {
-                  setIsSavingCustomization(false);
-                }, 100);
-              }
+                  try {
+                    // Timeout para evitar travamentos (30 segundos)
+                    const timeoutPromise = new Promise((_, reject) => 
+                      setTimeout(() => reject(new Error("Timeout: Operação demorou muito tempo. Tente novamente.")), 30000)
+                    );
+
+                    let result;
+                    const savePromise = customizationData 
+                      ? updateCustomization(formData)
+                      : saveCustomization(formData);
+
+                    // Race entre a operação de salvamento e o timeout
+                    result = await Promise.race([savePromise, timeoutPromise]) as any;
+
+                    if (result?.customization) {
+                      // ✅ Atualizar com dados reais do servidor
+                      setCustomizationData({
+                        imageUrl: result.customization.imageUrl ?? undefined,
+                        id: result.customization.id ?? 0,
+                        subdomain: result.customization.slug ?? undefined,
+                        primaryColor: result.customization.primaryColor ?? undefined,
+                        secondaryColor: result.customization.secondaryColor ?? undefined,
+                        loginImageUrl: result.customization.loginImageUrl ?? undefined,
+                        faviconUrl: result.customization.faviconUrl ?? undefined,
+                        emailImageUrl: result.customization.emailImageUrl ?? undefined,
+                      });
+                      
+                      // ✅ Atualizar estados de cores hex
+                      if (result.customization.primaryColor) {
+                        setPrimaryColorHex(hslToHex(result.customization.primaryColor));
+                      }
+                      if (result.customization.secondaryColor) {
+                        setSecondaryColorHex(hslToHex(result.customization.secondaryColor));
+                      }
+                      
+                      // Limpar previews
+                      setImagePreview(null);
+                      setLoginImagePreview(null);
+                      setFaviconPreview(null);
+                      setEmailImagePreview(null);
+                      
+                      // ✅ Limpar inputs de arquivo (para permitir re-upload da mesma imagem)
+                      // Usa a referência do formulário capturada no início
+                      if (form) {
+                        const fileInputs = form.querySelectorAll('input[type="file"]');
+                        fileInputs.forEach((input) => {
+                          (input as HTMLInputElement).value = '';
+                        });
+                      }
+                      
+                      if (result.customization.imageUrl) {
+                        const filename = result.customization.imageUrl.split('/').pop() || 'logo atual';
+                        setImageFileName(filename);
+                      }
+                      if (result.customization.loginImageUrl) {
+                        const filename = result.customization.loginImageUrl.split('/').pop() || 'imagem de login atual';
+                        setLoginImageFileName(filename);
+                      }
+                      if (result.customization.faviconUrl) {
+                        const filename = result.customization.faviconUrl.split('/').pop() || 'favicon atual';
+                        setFaviconFileName(filename);
+                      }
+                      if (result.customization.emailImageUrl) {
+                        const filename = result.customization.emailImageUrl.split('/').pop() || 'logo de email atual';
+                        setEmailImageFileName(filename);
+                      }
+                    }
+
+                    toast.success("Customização salva com sucesso!");
+                    
+                    // NÃO faz router.refresh() para não sobrescrever atualizações otimistas
+                    // O estado já foi atualizado acima
+                  } catch (error) {
+                    console.error("Erro ao salvar a customização", error);
+                    const errorMessage = error instanceof Error ? error.message : "Erro ao salvar a customização";
+                    toast.error(errorMessage);
+                    
+                    // Reverte atualização otimista em caso de erro apenas se necessário
+                    // Não faz router.refresh() para não perder o estado atual
+                  } finally {
+                    // Garante que o loading sempre seja resetado, mesmo em caso de erro
+                    // Usa setTimeout para garantir que o estado seja atualizado
+                    setTimeout(() => {
+                      setIsSavingCustomization(false);
+                    }, 100);
+                  }
             }}
             className="space-y-6"
           >
@@ -1447,30 +1514,115 @@ export default function CustomerWizardForm({
                   </CardContent>
                 </>
               )}
-              <div className="flex justify-end space-x-2 mt-4 pr-3">
-                <Button
-                  type="submit"
-                  className="mt-6 p-2 cursor-pointer"
-                  disabled={isSavingCustomization}
-                >
-                  {isSavingCustomization
-                    ? "Salvando..."
-                    : "Salvar personalização"}
-                </Button>
+                <div className="flex justify-end space-x-2 mt-4 pr-3">
+                  <Button
+                    type="submit"
+                    className="mt-6 p-2 cursor-pointer"
+                    disabled={isSavingCustomization}
+                  >
+                    {isSavingCustomization
+                      ? "Salvando..."
+                      : "Salvar Personalização"}
+                  </Button>
+                </div>
+              </Card>
+            </form>
+            )}
+            {!isFirstStepComplete && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Por favor, crie o ISO na seção "Informações Básicas" antes de personalizar.</p>
               </div>
-            </Card>
-          </form>
-          <div className="flex justify-start gap-2 mt-4 p-1">
-            <Button
-              variant="outline"
-              className="cursor-pointer"
-              onClick={() => handleStepChange("step1")}
-            >
-              ← Voltar
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Seção 3: Gestão de Usuários */}
+        <Collapsible open={section3Open && isFirstStepComplete} onOpenChange={(open) => isFirstStepComplete && setSection3Open(open)} className="border rounded-lg">
+          <CollapsibleTrigger 
+            className="w-full px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!isFirstStepComplete}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${isFirstStepComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                3
+              </div>
+              <Users className="h-5 w-5 text-muted-foreground" />
+              <span className="text-lg font-semibold">Gestão de Usuários</span>
+            </div>
+            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${section3Open ? 'rotate-180' : ''}`} />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="px-6 pb-6">
+            {isFirstStepComplete ? (
+              <div className="space-y-6">
+                {/* Formulário de Criação de Usuário */}
+                {selectedUser === null && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Criar Novo Usuário</h3>
+                    <UserCustomerForm
+                      customerId={newCustomerId || undefined}
+                      onSuccess={handleUserSuccess}
+                      profiles={profiles}
+                      hideWrapper={true}
+                    />
+                  </div>
+                )}
+
+                {/* Tabela de Usuários */}
+                {selectedUser === null && (
+                  <div className="space-y-4 pt-6 border-t">
+                    <h3 className="text-lg font-semibold">Usuários Cadastrados</h3>
+                    {isLoadingUsers ? (
+                      <div className="text-center p-8">
+                        <p>Carregando usuários...</p>
+                      </div>
+                    ) : (
+                      <UsersCustomerList
+                        users={users}
+                        customerId={newCustomerId || 0}
+                        onRefresh={() => loadUsers(newCustomerId || 0)}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {/* Modo de Edição de Usuário */}
+                {selectedUser !== null && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold">Editar Usuário</h3>
+                      <Button
+                        variant="outline"
+                        onClick={() => setSelectedUser(null)}
+                        className="cursor-pointer"
+                      >
+                        Voltar
+                      </Button>
+                    </div>
+
+                    {isLoadingUser ? (
+                      <div className="text-center p-4">
+                        <p>Carregando dados do usuário...</p>
+                      </div>
+                    ) : (
+                      <UserCustomerForm
+                        user={userToEdit || undefined}
+                        customerId={newCustomerId || undefined}
+                        onSuccess={handleUserSuccess}
+                        profiles={profiles}
+                        hideWrapper={true}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Por favor, crie o ISO na seção "Informações Básicas" antes de gerenciar usuários.</p>
+              </div>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
     </div>
   );
 }
