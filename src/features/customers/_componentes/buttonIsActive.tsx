@@ -70,22 +70,24 @@ export default function CustomerActionButtons({ isActive }: { isActive: boolean 
 
   return (
     <>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-3">
         {isActive ? (
           <Button 
             variant="destructive" 
-            className="cursor-pointer" 
+            className="cursor-pointer min-w-[140px]" 
             onClick={handleDeactivate} 
             disabled={isPending}
+            size="default"
           >
             {isPending ? "Desativando..." : "Desativar ISO"}
           </Button>
         ) : (
           <Button 
             variant="default" 
-            className="cursor-pointer bg-green-600 hover:bg-green-700" 
+            className="cursor-pointer bg-green-600 hover:bg-green-700 min-w-[140px]" 
             onClick={handleActivate} 
             disabled={isPending}
+            size="default"
           >
             {isPending ? "Ativando..." : "Ativar ISO"}
           </Button>
@@ -93,9 +95,10 @@ export default function CustomerActionButtons({ isActive }: { isActive: boolean 
         
         <Button 
           variant="outline" 
-          className="cursor-pointer border-red-600 text-red-600 hover:bg-red-50" 
+          className="cursor-pointer border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700 min-w-[140px]" 
           onClick={handleDeleteClick} 
           disabled={isPending}
+          size="default"
         >
           {isPending ? "Deletando..." : "Deletar ISO"}
         </Button>

@@ -924,13 +924,13 @@ export default function CustomerWizardForm({
 
   return (
     <div className="w-full space-y-6">
-      {/* Botão Salvar Tudo no topo */}
-      <div className="flex justify-end mb-4">
+      {/* Botão Salvar Tudo no topo - alinhado com os botões de ação */}
+      <div className="flex justify-end mb-6">
         <Button
           onClick={handleSaveAll}
           disabled={isLoading || isSavingCustomization}
-          className="cursor-pointer"
-          size="lg"
+          className="cursor-pointer min-w-[160px] bg-black hover:bg-gray-800 text-white"
+          size="default"
         >
           <Save className="h-4 w-4 mr-2" />
           {isLoading ? "Salvando..." : "Salvar Tudo"}
