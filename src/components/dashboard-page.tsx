@@ -82,7 +82,7 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
     <div className="space-y-4">
       {/* Cabeçalho com última atualização e botão de refresh */}
       <div className="flex justify-between items-center">
-        <div className="text-sm text-gray-500">
+        <div className="text-xs text-gray-500">
           Última atualização: {formatLastUpdate(data.lastUpdate)}
         </div>
         <RefreshButton />
@@ -91,11 +91,11 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bruto total</CardTitle>
+            <CardTitle className="text-xs font-medium">Bruto total</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-lg font-bold">
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.totalBruto)}
             </div>
             <div className="flex items-center space-x-2">
@@ -105,11 +105,11 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lucro total</CardTitle>
+            <CardTitle className="text-xs font-medium">Lucro total</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-lg font-bold">
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.totalLucro)}
             </div>
             <div className="flex items-center space-x-2">
@@ -119,11 +119,11 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Transações realizadas</CardTitle>
+            <CardTitle className="text-xs font-medium">Transações realizadas</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.totalTransacoes}</div>
+            <div className="text-lg font-bold">{data.totalTransacoes}</div>
             <div className="flex items-center space-x-2">
               <p className="text-xs text-muted-foreground">Total de transações realizadas</p>
             </div>
@@ -131,11 +131,11 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Estabelecimentos Cadastrados</CardTitle>
+            <CardTitle className="text-xs font-medium">Estabelecimentos Cadastrados</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.totalEstabelecimentos}</div>
+            <div className="text-lg font-bold">{data.totalEstabelecimentos}</div>
             <div className="flex items-center space-x-2">
               <p className="text-xs text-muted-foreground">Total de estabelecimentos cadastrados</p>
             </div>
@@ -181,7 +181,7 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
             <div className="flex items-center justify-center h-[350px] text-center">
               <div className="text-gray-500">
                 <p>Nenhum estabelecimento com dados suficientes encontrado.</p>
-                <p className="mt-2 text-sm">Os valores totais estão disponíveis nos cards acima.</p>
+                <p className="mt-2 text-xs">Os valores totais estão disponíveis nos cards acima.</p>
               </div>
             </div>
           )}
@@ -223,7 +223,7 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
                     <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-2 items-center">
                       {/* Nome */}
                       <div className="md:col-span-2">
-                        <h3 className="text-sm font-medium line-clamp-1">{merchant.name}</h3>
+                        <h3 className="text-xs font-medium line-clamp-1">{merchant.name}</h3>
                       </div>
                       
                       {/* Valores */}
@@ -312,7 +312,7 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
                   <div className="font-medium truncate">{merchant.name}</div>
                   <div className="mt-2 space-y-2">
                     <div>
-                      <p className="text-sm text-muted-foreground">Bruto</p>
+                      <p className="text-xs text-muted-foreground">Bruto</p>
                       <p className="font-medium">
                         {new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
@@ -321,7 +321,7 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Lucro</p>
+                      <p className="text-xs text-muted-foreground">Lucro</p>
                       <p className="font-medium">
                         {new Intl.NumberFormat('pt-BR', {
                           style: 'currency',
@@ -330,7 +330,7 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Crescimento</p>
+                      <p className="text-xs text-muted-foreground">Crescimento</p>
                       <div className={`flex items-center font-medium ${merchant.crescimento >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                         {merchant.crescimento >= 0 ? (
                           <TrendingUp className="h-3 w-3 mr-1" />
@@ -341,7 +341,7 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">% do Total</p>
+                      <p className="text-xs text-muted-foreground">% do Total</p>
                       <p className="font-medium">
                         {totalBruto > 0 ? ((merchant.bruto / totalBruto) * 100).toFixed(1) : '0.0'}%
                       </p>
@@ -359,7 +359,7 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
           ) : (
             <div className="py-8 text-center">
               <p className="text-gray-500">Nenhum estabelecimento com dados detalhados disponível.</p>
-              <p className="mt-2 text-sm text-gray-500">Os valores totais do ISO estão disponíveis nos cards acima.</p>
+              <p className="mt-2 text-xs text-gray-500">Os valores totais do ISO estão disponíveis nos cards acima.</p>
             </div>
           )}
         </CardContent>

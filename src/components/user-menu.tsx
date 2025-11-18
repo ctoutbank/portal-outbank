@@ -48,7 +48,7 @@ export function UserMenu() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xl font-medium text-white">
+                  <div className="flex h-full w-full items-center justify-center text-base font-medium text-white">
                     {user.firstName?.[0]}
                   </div>
                 )}
@@ -67,7 +67,7 @@ export function UserMenu() {
                   router.push("/");
                   setIsOpen(false);
                 }}
-                className="cursor-pointer flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 dark:bg-black dark:hover:bg-gray-700"
+                className="cursor-pointer flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs transition-colors hover:bg-gray-100 dark:bg-black dark:hover:bg-gray-700"
               >
                 <Settings className="h-4 w-4 text-gray-500" />
                 <span>Configuração de conta</span>
@@ -77,7 +77,7 @@ export function UserMenu() {
 
           <div className="border-t border-gray-100 p-1">
             <SignOutButton>
-              <button className="cursor-pointer flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950">
+              <button className="cursor-pointer flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950">
                 <LogOut className="h-4 w-4" />
                 <span>Sair</span>
               </button>
@@ -105,7 +105,7 @@ export function UserMenu() {
             </div>
           )}
         </div>
-        <span className="hidden text-sm font-medium md:block">
+        <span className="hidden text-xs font-medium md:block">
           {user.fullName}
         </span>
         <ChevronUp

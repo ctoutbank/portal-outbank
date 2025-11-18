@@ -16,7 +16,7 @@ export default function BaseBody({
       <div className="flex flex-col gap-4 justify-between">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+            <h1 className="text-xl font-bold tracking-tight">{title}</h1>
             <p className="text-muted-foreground">{subtitle}</p>
           </div>
           {actions && <>{actions}</>}
