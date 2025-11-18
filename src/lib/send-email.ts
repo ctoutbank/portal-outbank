@@ -69,7 +69,7 @@ Equipe ${customerName}
     const emailData = {
       from: EMAIL_FROM,
       to,
-      subject: "Credenciais de acesso —",
+      subject: "Credenciais de acesso: "+customerName,
       text: textVersion,
       headers: {
         'X-Entity-Ref-ID': `welcome-${Date.now()}`,
@@ -96,7 +96,7 @@ Equipe ${customerName}
                             </div>
                             
                             <!-- Main Title - Left aligned -->
-                            <h1 style="color: #333333; font-size: 32px; font-weight: 600; margin: 0 0 24px 0; line-height: 1.2; text-align: left;">
+                            <h1 style="color: #333333; font-size: 30px; font-weight: 600; margin: 0 0 24px 0; line-height: 1.2; text-align: left;">
                                 Bem-vindo!
                             </h1>
                             
