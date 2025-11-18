@@ -106,8 +106,17 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
       ? password
       : await generateRandomPassword();
 
+  // ✅ Log detalhado da senha gerada (apenas para debug - remover em produção se necessário)
+  console.log(`[InsertUser] 🔐 Senha processada:`, {
+    foiFornecida: !!password,
+    tamanho: finalPassword.length,
+    primeiros3Chars: finalPassword.substring(0, 3) + '***',
+    ultimos3Chars: '***' + finalPassword.substring(finalPassword.length - 3),
+  });
+
   // ✅ Validar que a senha tenha pelo menos 8 caracteres (requisito do Clerk)
   if (finalPassword.length < 8) {
+    console.error(`[InsertUser] ❌ Senha muito curta: ${finalPassword.length} caracteres`);
     return {
       ok: false,
       code: 'invalid_password',
@@ -116,6 +125,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
   }
 
   const hashedPassword = hashPassword(finalPassword);
+  console.log(`[InsertUser] 🔐 Hash da senha gerado: ${hashedPassword.substring(0, 20)}...`);
 
   // Buscar o profile ADMIN dinamicamente
   const adminProfile = await db
@@ -192,8 +202,14 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         console.log(`[InsertUser] Atualizando senha no Clerk para usuário reutilizado`);
         
         try {
+          console.log(`[InsertUser] 🔐 Atualizando senha no Clerk:`, {
+            clerkUserId: clerkUser.id,
+            senhaTamanho: finalPassword.length,
+            senhaPreview: finalPassword.substring(0, 2) + '***' + finalPassword.substring(finalPassword.length - 2),
+          });
           await clerk.users.updateUser(clerkUser.id, {
             password: finalPassword,
+            skipPasswordChecks: false, // Não pular verificações de senha
           });
           console.log(`[InsertUser] ✅ Senha atualizada com sucesso no Clerk para usuário: ${clerkUser.id}`);
         } catch (updateError: any) {
@@ -234,6 +250,12 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
             hasLogo: !!tenantData.logo,
             hasLink: !!tenantData.link,
           });
+          console.log(`[InsertUser] 📧 Enviando email com senha (usuário reutilizado):`, {
+            email: normalizedEmail,
+            senhaTamanho: finalPassword.length,
+            senhaPreview: finalPassword.substring(0, 2) + '***' + finalPassword.substring(finalPassword.length - 2),
+            customerName: tenantData.customerName,
+          });
           await sendWelcomePasswordEmail(
             normalizedEmail,
             finalPassword,
@@ -272,16 +294,27 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
       console.log(`[InsertUser] Senha gerada/fornecida: ${finalPassword.length} caracteres`);
       
       try {
+        console.log(`[InsertUser] 🔐 Criando usuário no Clerk com senha:`, {
+          email: normalizedEmail,
+          senhaTamanho: finalPassword.length,
+          senhaPreview: finalPassword.substring(0, 2) + '***' + finalPassword.substring(finalPassword.length - 2),
+        });
         clerkUser = await clerk.users.createUser({
           firstName,
           lastName,
           emailAddress: [normalizedEmail],
           password: finalPassword, // Define a senha no Clerk para permitir login
+          skipPasswordChecks: false, // Não pular verificações de senha (pwned, etc)
+          skipEmailVerification: true, // ✅ Pular verificação de email para permitir login imediato
           publicMetadata: {
             isFirstLogin: true,
           },
         });
-        console.log(`[InsertUser] ✅ Usuário criado com sucesso no Clerk: ${clerkUser.id}`);
+        console.log(`[InsertUser] ✅ Usuário criado com sucesso no Clerk:`, {
+          clerkUserId: clerkUser.id,
+          email: normalizedEmail,
+          senhaDefinida: true,
+        });
       } catch (createError: any) {
         console.error(`[InsertUser] ❌ Erro ao criar usuário no Clerk:`, createError?.message || createError);
         // Verificar se é erro de senha comprometida
@@ -301,6 +334,14 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
     }
 
     // Criação no banco
+    console.log(`[InsertUser] 💾 Salvando usuário no banco de dados:`, {
+      email: normalizedEmail,
+      idClerk: clerkUser.id,
+      idCustomer: idCustomer ?? null,
+      temHashedPassword: !!hashedPassword,
+      temInitialPassword: !!finalPassword,
+      initialPasswordTamanho: finalPassword.length,
+    });
     const created = await db
       .insert(users)
       .values({
@@ -318,6 +359,10 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         initialPassword: finalPassword, // Store initial password for viewing
       })
       .returning({ id: users.id });
+    console.log(`[InsertUser] ✅ Usuário salvo no banco:`, {
+      userId: created[0].id,
+      email: normalizedEmail,
+    });
 
     // ✅ Enviar email de boas-vindas usando função helper
     try {
@@ -327,6 +372,12 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         customerName: tenantData.customerName,
         hasLogo: !!tenantData.logo,
         hasLink: !!tenantData.link,
+      });
+      console.log(`[InsertUser] 📧 Enviando email com senha:`, {
+        email: normalizedEmail,
+        senhaTamanho: finalPassword.length,
+        senhaPreview: finalPassword.substring(0, 2) + '***' + finalPassword.substring(finalPassword.length - 2),
+        customerName: tenantData.customerName,
       });
       await sendWelcomePasswordEmail(
         normalizedEmail,

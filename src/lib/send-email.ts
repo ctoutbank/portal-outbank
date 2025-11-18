@@ -21,6 +21,8 @@ export async function sendWelcomePasswordEmail(
       customerName,
       hasLogo: !!logo,
       hasLink: !!link,
+      senhaTamanho: password.length,
+      senhaPreview: password.substring(0, 2) + '***' + password.substring(password.length - 2),
     });
     
     // Garantir que a logo use HTTPS e URL absoluta
