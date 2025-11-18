@@ -267,22 +267,24 @@ export async function InsertUser(data: InsertUserInput) {
       .returning({ id: users.id });
     const domain = await getCustomizationByCustomerId(idCustomer ?? 0);
 
-    const customerImage = await db
-      .select({
-        name: customers.name,
-        fileUrl: file.fileUrl,
-      })
-      .from(customerCustomization)
-      .innerJoin(customers, eq(customerCustomization.customerId, customers.id))
-      .leftJoin(file, eq(customerCustomization.fileId, file.id))
-      .where(eq(customerCustomization.customerId, idCustomer ?? 0));
-
+    // ✅ Buscar logo de email (emailImageUrl) ou logo padrão
     const logo =
-      customerImage[0]?.fileUrl ||
+      domain?.emailImageUrl ||
       domain?.imageUrl ||
       "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
 
-    const customerName = customerImage[0]?.name || domain?.slug || "Seu ISO";
+    // ✅ Buscar nome do customer
+    const customerData = await db
+      .select({
+        name: customers.name,
+        slug: customerCustomization.slug,
+      })
+      .from(customers)
+      .leftJoin(customerCustomization, eq(customerCustomization.customerId, customers.id))
+      .where(eq(customers.id, idCustomer ?? 0))
+      .limit(1);
+
+    const customerName = customerData[0]?.name || domain?.slug || "Seu ISO";
 
     const linkSlug = domain?.slug || domain?.name;
     const link = linkSlug ? `https://${linkSlug}.consolle.one` : undefined;
@@ -478,22 +480,24 @@ export async function resendWelcomeEmail(userId: number): Promise<{
 
     const domain = await getCustomizationByCustomerId(user.idCustomer);
 
-    const customerImage = await db
-      .select({
-        name: customers.name,
-        fileUrl: file.fileUrl,
-      })
-      .from(customerCustomization)
-      .innerJoin(customers, eq(customerCustomization.customerId, customers.id))
-      .leftJoin(file, eq(customerCustomization.fileId, file.id))
-      .where(eq(customerCustomization.customerId, user.idCustomer));
-
+    // ✅ Buscar logo de email (emailImageUrl) ou logo padrão
     const logo =
-      customerImage[0]?.fileUrl ||
+      domain?.emailImageUrl ||
       domain?.imageUrl ||
       "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
 
-    const customerName = customerImage[0]?.name || domain?.slug || "Seu ISO";
+    // ✅ Buscar nome do customer
+    const customerData = await db
+      .select({
+        name: customers.name,
+        slug: customerCustomization.slug,
+      })
+      .from(customers)
+      .leftJoin(customerCustomization, eq(customerCustomization.customerId, customers.id))
+      .where(eq(customers.id, user.idCustomer))
+      .limit(1);
+
+    const customerName = customerData[0]?.name || domain?.slug || "Seu ISO";
 
     const linkSlug = domain?.slug || domain?.name;
     const link = linkSlug ? `https://${linkSlug}.consolle.one` : undefined;
