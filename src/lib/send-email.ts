@@ -49,7 +49,7 @@ Equipe ${customerName}
 © Todos os direitos reservados.
     `.trim();
     
-    await getResend().emails.send({
+    const emailData = {
       from: EMAIL_FROM,
       to,
       subject: "Sua senha de acesso ao "+customerName,
@@ -144,8 +144,15 @@ Equipe ${customerName}
         </body>
         </html>
         `,
+    };
+    
+    console.log(`[sendWelcomePasswordEmail] 📤 Enviando email via Resend...`);
+    const result = await getResend().emails.send(emailData);
+    console.log(`[sendWelcomePasswordEmail] ✅ Email sent successfully to ${to}`, {
+      emailId: result.id,
+      from: EMAIL_FROM,
+      to,
     });
-    console.log(`[sendWelcomePasswordEmail] ✅ Email sent successfully to ${to}`);
   } catch (error: any) {
     console.error(`[sendWelcomePasswordEmail] ❌ Failed to send email to ${to}:`, {
       message: error?.message || error,
