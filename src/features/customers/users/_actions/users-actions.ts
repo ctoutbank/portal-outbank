@@ -228,6 +228,12 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         // ✅ Enviar email de boas-vindas quando reutiliza usuário
         try {
           const tenantData = await getTenantEmailData(idCustomer);
+          console.log("[InsertUser] 📧 Preparando envio de email para usuário reutilizado", {
+            email: normalizedEmail,
+            customerName: tenantData.customerName,
+            hasLogo: !!tenantData.logo,
+            hasLink: !!tenantData.link,
+          });
           await sendWelcomePasswordEmail(
             normalizedEmail,
             finalPassword,
@@ -235,14 +241,19 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
             tenantData.customerName,
             tenantData.link
           );
-          console.log("[InsertUser] ✅ Email de boas-vindas enviado para usuário reutilizado", {
+          console.log("[InsertUser] ✅ Email de boas-vindas enviado com sucesso para usuário reutilizado", {
             email: normalizedEmail,
             customerName: tenantData.customerName,
-            hasLink: !!tenantData.link,
           });
-        } catch (emailError) {
-          console.error("[InsertUser] ❌ Falha ao enviar email de boas-vindas (não crítico):", emailError);
-          // Não bloquear criação do usuário se email falhar
+        } catch (emailError: any) {
+          console.error("[InsertUser] ❌ ERRO CRÍTICO ao enviar email de boas-vindas:", {
+            email: normalizedEmail,
+            error: emailError?.message || emailError,
+            stack: emailError?.stack,
+            code: emailError?.code,
+            statusCode: emailError?.statusCode,
+          });
+          // Não bloquear criação do usuário se email falhar, mas logar detalhadamente
         }
 
         return {
@@ -311,6 +322,12 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
     // ✅ Enviar email de boas-vindas usando função helper
     try {
       const tenantData = await getTenantEmailData(idCustomer);
+      console.log("[InsertUser] 📧 Preparando envio de email para novo usuário", {
+        email: normalizedEmail,
+        customerName: tenantData.customerName,
+        hasLogo: !!tenantData.logo,
+        hasLink: !!tenantData.link,
+      });
       await sendWelcomePasswordEmail(
         normalizedEmail,
         finalPassword,
@@ -318,14 +335,20 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         tenantData.customerName,
         tenantData.link
       );
-      console.log("[InsertUser] ✅ Email de boas-vindas enviado para novo usuário", {
+      console.log("[InsertUser] ✅ Email de boas-vindas enviado com sucesso para novo usuário", {
         email: normalizedEmail,
         customerName: tenantData.customerName,
-        hasLink: !!tenantData.link,
       });
-    } catch (emailError) {
-      console.error("[InsertUser] ❌ Falha ao enviar email de boas-vindas (não crítico):", emailError);
-      // Não bloquear criação do usuário se email falhar
+    } catch (emailError: any) {
+      console.error("[InsertUser] ❌ ERRO CRÍTICO ao enviar email de boas-vindas:", {
+        email: normalizedEmail,
+        error: emailError?.message || emailError,
+        stack: emailError?.stack,
+        code: emailError?.code,
+        statusCode: emailError?.statusCode,
+        response: emailError?.response,
+      });
+      // Não bloquear criação do usuário se email falhar, mas logar detalhadamente
     }
 
     return {

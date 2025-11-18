@@ -10,7 +10,18 @@ export async function sendWelcomePasswordEmail(
   link?: string
 ) {
   try {
-    console.log(`[sendWelcomePasswordEmail] Sending email to ${to} from ${EMAIL_FROM}`);
+    // Validação básica de email
+    if (!to || !to.includes('@')) {
+      throw new Error(`Email inválido: ${to}`);
+    }
+    
+    console.log(`[sendWelcomePasswordEmail] 📧 Iniciando envio de email`, {
+      to,
+      from: EMAIL_FROM,
+      customerName,
+      hasLogo: !!logo,
+      hasLink: !!link,
+    });
     
     // Garantir que a logo use HTTPS e URL absoluta
     const logoUrl = logo.startsWith('http') ? logo : `https://${logo.replace(/^\/\//, '')}`;
@@ -132,9 +143,15 @@ Equipe ${customerName}
         </html>
         `,
     });
-    console.log(`[sendWelcomePasswordEmail] Email sent successfully to ${to}`);
-  } catch (error) {
-    console.error(`[sendWelcomePasswordEmail] Failed to send email to ${to}:`, error);
+    console.log(`[sendWelcomePasswordEmail] ✅ Email sent successfully to ${to}`);
+  } catch (error: any) {
+    console.error(`[sendWelcomePasswordEmail] ❌ Failed to send email to ${to}:`, {
+      message: error?.message || error,
+      code: error?.code,
+      statusCode: error?.statusCode,
+      response: error?.response,
+      stack: error?.stack,
+    });
     throw error;
   }
 }
