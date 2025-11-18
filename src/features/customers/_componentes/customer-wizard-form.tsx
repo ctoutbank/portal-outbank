@@ -97,22 +97,101 @@ export default function CustomerWizardForm({
   }, [isFirstStepComplete, customer.id]);
 
   function hslToHex(hsl: string): string {
-    const [h, s, l] = hsl
-      .split(" ")
-      .map((value, index) =>
-        index === 0 ? parseFloat(value) : parseFloat(value) / 100
-      );
+    if (!hsl) return "#000000";
+    // Se já é HEX, retornar como está
+    if (hsl.startsWith('#')) return hsl;
+    
+    try {
+      const parts = hsl.trim().split(/\s+/);
+      if (parts.length !== 3) return "#000000";
+      
+      const h = parseFloat(parts[0]) / 360; // Converter de graus (0-360) para escala 0-1
+      const s = parseFloat(parts[1]) / 100; // Converter de porcentagem para escala 0-1
+      const l = parseFloat(parts[2]) / 100; // Converter de porcentagem para escala 0-1
 
-    const a = s * Math.min(l, 1 - l);
-    const f = (n: number) => {
-      const k = (n + h / 30) % 12;
-      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-      return Math.round(255 * color)
-        .toString(16)
-        .padStart(2, "0");
-    };
+      const a = s * Math.min(l, 1 - l);
+      const f = (n: number) => {
+        const k = (n + h * 12) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color)
+          .toString(16)
+          .padStart(2, "0");
+      };
 
-    return `#${f(0)}${f(8)}${f(4)}`;
+      return `#${f(0)}${f(8)}${f(4)}`;
+    } catch {
+      return "#000000";
+    }
+  }
+
+  // ✅ Função para adicionar cache busting nas URLs
+  function addCacheBustingToUrl(url: string | null | undefined): string {
+    if (!url) return url || '';
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}v=${Date.now()}`;
+  }
+
+  // ✅ Função para atualizar favicon no DOM instantaneamente
+  function updateFaviconInDOM(url: string | null | undefined) {
+    if (typeof window === 'undefined') return;
+    if (!url) return;
+    
+    const newUrl = addCacheBustingToUrl(url);
+    const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+    
+    if (favicon) {
+      favicon.href = newUrl;
+    } else {
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.href = newUrl;
+      document.head.appendChild(link);
+    }
+    
+    // Forçar reload do favicon em alguns navegadores
+    const link2 = document.createElement('link');
+    link2.rel = 'icon';
+    link2.href = newUrl;
+    link2.setAttribute('data-favicon-update', Date.now().toString());
+    document.head.appendChild(link2);
+    setTimeout(() => {
+      const oldFavicon = document.querySelector('link[rel="icon"]:not([data-favicon-update])');
+      if (oldFavicon) {
+        oldFavicon.remove();
+      }
+    }, 100);
+  }
+
+  // ✅ Função para atualizar cores CSS variables no DOM instantaneamente
+  function updateColorsInDOM(primaryHsl: string | null | undefined, secondaryHsl: string | null | undefined) {
+    if (typeof window === 'undefined') return;
+    const root = document.documentElement;
+    
+    if (primaryHsl) {
+      const primaryHex = hslToHex(primaryHsl);
+      root.style.setProperty('--tenant-primary', primaryHex);
+    }
+    
+    if (secondaryHsl) {
+      const secondaryHex = hslToHex(secondaryHsl);
+      root.style.setProperty('--tenant-secondary', secondaryHex);
+    }
+  }
+
+  // ✅ Função para atualizar imagens de background no DOM (login image)
+  function updateBackgroundImageInDOM(url: string | null | undefined) {
+    if (typeof window === 'undefined') return;
+    if (!url) return;
+    
+    const newUrl = addCacheBustingToUrl(url);
+    const body = document.body;
+    if (body) {
+      body.style.backgroundImage = `url('${newUrl}')`;
+      body.style.backgroundSize = 'cover';
+      body.style.backgroundPosition = 'center';
+      body.style.backgroundRepeat = 'no-repeat';
+      body.style.backgroundAttachment = 'fixed';
+    }
   }
 
   // Função para salvar todas as seções em sequência
@@ -245,6 +324,23 @@ export default function CustomerWizardForm({
                   setSecondaryColorHex(hslToHex(result.customization.secondaryColor));
                 }
 
+                // ✅ ATUALIZAÇÃO INSTANTÂNEA: Atualizar DOM imediatamente
+                // 1. Atualizar favicon
+                if (result.customization.faviconUrl) {
+                  updateFaviconInDOM(result.customization.faviconUrl);
+                }
+                
+                // 2. Atualizar cores CSS variables
+                updateColorsInDOM(
+                  result.customization.primaryColor ?? undefined,
+                  result.customization.secondaryColor ?? undefined
+                );
+                
+                // 3. Atualizar background image (login)
+                if (result.customization.loginImageUrl) {
+                  updateBackgroundImageInDOM(result.customization.loginImageUrl);
+                }
+
                 setImagePreview(null);
                 setLoginImagePreview(null);
                 setFaviconPreview(null);
@@ -356,6 +452,27 @@ export default function CustomerWizardForm({
       setFaviconFileName(filename);
     }
   }, [customizationData, imageFileName, loginImageFileName, faviconFileName]);
+
+  // ✅ useEffect para atualizar DOM automaticamente quando customizationData mudar
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Atualizar favicon
+    if (customizationData?.faviconUrl) {
+      updateFaviconInDOM(customizationData.faviconUrl);
+    }
+    
+    // Atualizar cores
+    updateColorsInDOM(
+      customizationData?.primaryColor ?? undefined,
+      customizationData?.secondaryColor ?? undefined
+    );
+    
+    // Atualizar background image
+    if (customizationData?.loginImageUrl) {
+      updateBackgroundImageInDOM(customizationData.loginImageUrl);
+    }
+  }, [customizationData?.faviconUrl, customizationData?.primaryColor, customizationData?.secondaryColor, customizationData?.loginImageUrl]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -887,6 +1004,22 @@ export default function CustomerWizardForm({
                   };
                   
                   setCustomizationData(optimisticUpdate);
+                  
+                  // ✅ ATUALIZAÇÃO INSTANTÂNEA OTIMISTA: Atualizar DOM imediatamente antes de salvar
+                  // Isso garante feedback visual instantâneo
+                  if (faviconPreview || customizationData?.faviconUrl) {
+                    updateFaviconInDOM(faviconPreview || customizationData?.faviconUrl);
+                  }
+                  
+                  if (primaryColorInput || customizationData?.primaryColor) {
+                    const primaryHsl = primaryColorInput ? hexToHslForUpdate(primaryColorInput) : customizationData?.primaryColor;
+                    const secondaryHsl = secondaryColorInput ? hexToHslForUpdate(secondaryColorInput) : customizationData?.secondaryColor;
+                    updateColorsInDOM(primaryHsl, secondaryHsl);
+                  }
+                  
+                  if (loginImagePreview || customizationData?.loginImageUrl) {
+                    updateBackgroundImageInDOM(loginImagePreview || customizationData?.loginImageUrl);
+                  }
 
                   try {
                     // Timeout para evitar travamentos (30 segundos)
@@ -921,6 +1054,23 @@ export default function CustomerWizardForm({
                       }
                       if (result.customization.secondaryColor) {
                         setSecondaryColorHex(hslToHex(result.customization.secondaryColor));
+                      }
+                      
+                      // ✅ ATUALIZAÇÃO INSTANTÂNEA: Atualizar DOM imediatamente
+                      // 1. Atualizar favicon
+                      if (result.customization.faviconUrl) {
+                        updateFaviconInDOM(result.customization.faviconUrl);
+                      }
+                      
+                      // 2. Atualizar cores CSS variables
+                      updateColorsInDOM(
+                        result.customization.primaryColor ?? undefined,
+                        result.customization.secondaryColor ?? undefined
+                      );
+                      
+                      // 3. Atualizar background image (login)
+                      if (result.customization.loginImageUrl) {
+                        updateBackgroundImageInDOM(result.customization.loginImageUrl);
                       }
                       
                       // Limpar previews
@@ -959,7 +1109,7 @@ export default function CustomerWizardForm({
                     toast.success("Customização salva com sucesso!");
                     
                     // NÃO faz router.refresh() para não sobrescrever atualizações otimistas
-                    // O estado já foi atualizado acima
+                    // O estado já foi atualizado acima e o DOM foi atualizado instantaneamente
                   } catch (error) {
                     console.error("Erro ao salvar a customização", error);
                     const errorMessage = error instanceof Error ? error.message : "Erro ao salvar a customização";
@@ -1050,7 +1200,7 @@ export default function CustomerWizardForm({
                               Logo atual:
                             </p>
                             <img
-                              src={customizationData.imageUrl}
+                              src={addCacheBustingToUrl(customizationData.imageUrl)}
                               alt=""
                               height={100}
                               width={100}
@@ -1125,21 +1275,21 @@ export default function CustomerWizardForm({
                           </div>
                         )}
 
-                        {/* Preview da Imagem de Login Atual */}
-                        {customizationData?.loginImageUrl && !loginImagePreview && (
-                          <div className="mt-4">
-                            <p className="text-sm text-foreground mb-2">
-                              Imagem de fundo atual:
-                            </p>
-                            <div className="border rounded-lg overflow-hidden">
-                              <img
-                                src={customizationData.loginImageUrl}
-                                alt="Current login background"
-                                width={400}
-                                height={225}
-                                className="w-full h-48 object-cover"
-                                key={customizationData.loginImageUrl}
-                              />
+                                {/* Preview da Imagem de Login Atual */}
+                                {customizationData?.loginImageUrl && !loginImagePreview && (
+                                  <div className="mt-4">
+                                    <p className="text-sm text-foreground mb-2">
+                                      Imagem de fundo atual:
+                                    </p>
+                                    <div className="border rounded-lg overflow-hidden">
+                                      <img
+                                        src={addCacheBustingToUrl(customizationData.loginImageUrl)}
+                                        alt="Current login background"
+                                        width={400}
+                                        height={225}
+                                        className="w-full h-48 object-cover"
+                                        key={customizationData.loginImageUrl}
+                                      />
                             </div>
                             <Button
                               type="button"
@@ -1222,33 +1372,33 @@ export default function CustomerWizardForm({
                           </div>
                         )}
 
-                        {/* Preview do Favicon Atual */}
-                        {customizationData?.faviconUrl && !faviconPreview && (
-                          <div className="mt-4">
-                            <p className="text-sm text-foreground mb-2">
-                              Favicon atual:
-                            </p>
-                            <div className="flex gap-4 items-center border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
-                              <div className="flex flex-col items-center gap-1">
-                                <img
-                                  src={customizationData.faviconUrl}
-                                  alt="Current favicon 16x16"
-                                  width={16}
-                                  height={16}
-                                  className="border border-gray-300"
-                                  key={`${customizationData.faviconUrl}-16`}
-                                />
-                                <span className="text-xs text-muted-foreground">16×16</span>
-                              </div>
-                              <div className="flex flex-col items-center gap-1">
-                                <img
-                                  src={customizationData.faviconUrl}
-                                  alt="Current favicon 32x32"
-                                  width={32}
-                                  height={32}
-                                  className="border border-gray-300"
-                                  key={`${customizationData.faviconUrl}-32`}
-                                />
+                                {/* Preview do Favicon Atual */}
+                                {customizationData?.faviconUrl && !faviconPreview && (
+                                  <div className="mt-4">
+                                    <p className="text-sm text-foreground mb-2">
+                                      Favicon atual:
+                                    </p>
+                                    <div className="flex gap-4 items-center border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
+                                      <div className="flex flex-col items-center gap-1">
+                                        <img
+                                          src={addCacheBustingToUrl(customizationData.faviconUrl)}
+                                          alt="Current favicon 16x16"
+                                          width={16}
+                                          height={16}
+                                          className="border border-gray-300"
+                                          key={`${customizationData.faviconUrl}-16`}
+                                        />
+                                        <span className="text-xs text-muted-foreground">16×16</span>
+                                      </div>
+                                      <div className="flex flex-col items-center gap-1">
+                                        <img
+                                          src={addCacheBustingToUrl(customizationData.faviconUrl)}
+                                          alt="Current favicon 32x32"
+                                          width={32}
+                                          height={32}
+                                          className="border border-gray-300"
+                                          key={`${customizationData.faviconUrl}-32`}
+                                        />
                                 <span className="text-xs text-muted-foreground">32×32</span>
                               </div>
                             </div>
@@ -1317,20 +1467,20 @@ export default function CustomerWizardForm({
                           </div>
                         )}
 
-                        {/* Preview da Logo de Email Atual */}
-                        {customizationData?.emailImageUrl && !emailImagePreview && (
-                          <div>
-                            <p className="text-sm text-foreground mb-1">
-                              Logo de email atual:
-                            </p>
-                            <img
-                              src={customizationData.emailImageUrl}
-                              alt=""
-                              height={100}
-                              width={100}
-                              style={{ maxWidth: '100px', maxHeight: '100px' }}
-                              key={customizationData.emailImageUrl}
-                            />
+                                {/* Preview da Logo de Email Atual */}
+                                {customizationData?.emailImageUrl && !emailImagePreview && (
+                                  <div>
+                                    <p className="text-sm text-foreground mb-1">
+                                      Logo de email atual:
+                                    </p>
+                                    <img
+                                      src={addCacheBustingToUrl(customizationData.emailImageUrl)}
+                                      alt=""
+                                      height={100}
+                                      width={100}
+                                      style={{ maxWidth: '100px', maxHeight: '100px' }}
+                                      key={customizationData.emailImageUrl}
+                                    />
                             <Button
                               type="button"
                               variant="outline"

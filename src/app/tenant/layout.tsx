@@ -40,8 +40,33 @@ export default async function TenantLayout({
     ? await getCurrentTenantCustomization()
     : null;
 
-  const primaryColor = customization?.primaryColor || "#000000";
-  const secondaryColor = customization?.secondaryColor || "#666666";
+  // ✅ Converter HSL para HEX se necessário (cores no banco estão em HSL: "360 100% 50%")
+  function hslToHexForLayout(hsl: string | null | undefined): string {
+    if (!hsl) return "#000000";
+    // Se já é HEX, retornar como está
+    if (hsl.startsWith('#')) return hsl;
+    // Converter HSL para HEX
+    try {
+      const parts = hsl.trim().split(/\s+/);
+      if (parts.length !== 3) return "#000000";
+      const h = parseFloat(parts[0]) / 360;
+      const s = parseFloat(parts[1]) / 100;
+      const l = parseFloat(parts[2]) / 100;
+      
+      const a = s * Math.min(l, 1 - l);
+      const f = (n: number) => {
+        const k = (n + h * 12) % 12;
+        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        return Math.round(255 * color).toString(16).padStart(2, "0");
+      };
+      return `#${f(0)}${f(8)}${f(4)}`;
+    } catch {
+      return "#000000";
+    }
+  }
+
+  const primaryColor = hslToHexForLayout(customization?.primaryColor) || "#000000";
+  const secondaryColor = hslToHexForLayout(customization?.secondaryColor) || "#666666";
   const loginImageUrl = customization?.loginImageUrl || null;
 
   return (
