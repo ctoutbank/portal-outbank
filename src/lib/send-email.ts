@@ -69,7 +69,7 @@ Equipe ${customerName}
     const emailData = {
       from: EMAIL_FROM,
       to,
-      subject: "Sua senha de acesso ao "+customerName,
+      subject: "Credenciais de acesso —",
       text: textVersion,
       headers: {
         'X-Entity-Ref-ID': `welcome-${Date.now()}`,
