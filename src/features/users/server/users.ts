@@ -1,7 +1,7 @@
 "use server";
 
 import { hashPassword } from "@/app/utils/password";
-import { sendWelcomePasswordEmail } from "@/utils/send-email";
+import { sendWelcomePasswordEmail } from "@/lib/send-email";
 import { generateSlug } from "@/lib/utils";
 import { db } from "@/db/drizzle";
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
@@ -15,6 +15,8 @@ import {
   salesAgents,
   userMerchants,
   users,
+  customerCustomization,
+  file,
 } from "../../../../drizzle/schema";
 import { AddressSchema } from "../schema/schema";
 
@@ -270,7 +272,56 @@ export async function InsertUser(data: UserInsert) {
 
       .returning({ id: users.id });
 
-    await sendWelcomePasswordEmail(data.email, password);
+    // ✅ Buscar dados do tenant para email de boas-vindas
+    let customerName = "Outbank";
+    let logo = "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
+    let link: string | undefined = undefined;
+
+    if (data.idCustomer) {
+      try {
+        const customization = await db
+          .select({
+            name: customers.name,
+            slug: customerCustomization.slug,
+            imageUrl: file.fileUrl,
+            imageUrlDirect: customerCustomization.imageUrl,
+          })
+          .from(customers)
+          .leftJoin(customerCustomization, eq(customerCustomization.customerId, customers.id))
+          .leftJoin(file, eq(file.id, customerCustomization.fileId))
+          .where(eq(customers.id, data.idCustomer))
+          .limit(1);
+
+        if (customization.length > 0) {
+          const customData = customization[0];
+          customerName = customData.name || "Outbank";
+          logo = customData.imageUrl || customData.imageUrlDirect || logo;
+          const slug = customData.slug;
+          link = slug ? `https://${slug}.consolle.one` : undefined;
+        }
+      } catch (error) {
+        console.error("[InsertUser] Erro ao buscar dados do tenant para email:", error);
+      }
+    }
+
+    // ✅ Enviar email de boas-vindas com dados do tenant
+    try {
+      await sendWelcomePasswordEmail(
+        data.email,
+        password,
+        logo,
+        customerName,
+        link
+      );
+      console.log("[InsertUser] ✅ Email de boas-vindas enviado", {
+        email: data.email,
+        customerName,
+        hasLink: !!link,
+      });
+    } catch (emailError) {
+      console.error("[InsertUser] ❌ Falha ao enviar email de boas-vindas (não crítico):", emailError);
+      // Não bloquear criação do usuário se email falhar
+    }
 
     // Insert user-merchant relationships if any merchants are selected
     if (data.selectedMerchants && data.selectedMerchants.length > 0) {

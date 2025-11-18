@@ -9,6 +9,62 @@ import { sendWelcomePasswordEmail } from "@/lib/send-email";
 import { users, profiles, customers, customerCustomization, file } from "../../../../../drizzle/schema";
 import { eq, ilike, and } from "drizzle-orm";
 
+interface TenantEmailData {
+  customerName: string;
+  logo: string;
+  link: string | undefined;
+}
+
+/**
+ * Helper function para buscar dados do tenant (logo, nome, link) para envio de email
+ */
+async function getTenantEmailData(idCustomer: number | null): Promise<TenantEmailData> {
+  const defaultData: TenantEmailData = {
+    customerName: "Outbank",
+    logo: "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg",
+    link: undefined,
+  };
+
+  if (!idCustomer) {
+    return defaultData;
+  }
+
+  try {
+    // Buscar customização do tenant
+    const customization = await db
+      .select({
+        name: customers.name,
+        slug: customerCustomization.slug,
+        imageUrl: file.fileUrl,
+        imageUrlDirect: customerCustomization.imageUrl,
+      })
+      .from(customers)
+      .leftJoin(customerCustomization, eq(customerCustomization.customerId, customers.id))
+      .leftJoin(file, eq(file.id, customerCustomization.fileId))
+      .where(eq(customers.id, idCustomer))
+      .limit(1);
+
+    if (customization.length > 0) {
+      const data = customization[0];
+      const customerName = data.name || "Outbank";
+      const logo = data.imageUrl || data.imageUrlDirect || defaultData.logo;
+      // ✅ Usar slug ao invés de name e domínio .consolle.one
+      const slug = data.slug;
+      const link = slug ? `https://${slug}.consolle.one` : undefined;
+
+      return {
+        customerName,
+        logo,
+        link,
+      };
+    }
+  } catch (error) {
+    console.error("[getTenantEmailData] Erro ao buscar dados do tenant:", error);
+  }
+
+  return defaultData;
+}
+
 interface InsertUserInput {
   firstName: string;
   lastName: string;
@@ -167,6 +223,26 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
           })
           .returning({ id: users.id });
 
+        // ✅ Enviar email de boas-vindas quando reutiliza usuário
+        try {
+          const tenantData = await getTenantEmailData(idCustomer);
+          await sendWelcomePasswordEmail(
+            normalizedEmail,
+            finalPassword,
+            tenantData.logo,
+            tenantData.customerName,
+            tenantData.link
+          );
+          console.log("[InsertUser] ✅ Email de boas-vindas enviado para usuário reutilizado", {
+            email: normalizedEmail,
+            customerName: tenantData.customerName,
+            hasLink: !!tenantData.link,
+          });
+        } catch (emailError) {
+          console.error("[InsertUser] ❌ Falha ao enviar email de boas-vindas (não crítico):", emailError);
+          // Não bloquear criação do usuário se email falhar
+        }
+
         return {
           ok: true,
           userId: created[0].id,
@@ -230,35 +306,25 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
       })
       .returning({ id: users.id });
 
-    let customerName = "Outbank";
-    let logo = "";
-    let link = "";
-
-    if (idCustomer) {
-      try {
-        const customerData = await db
-          .select({
-            name: customers.name,
-            imageUrl: file.fileUrl,
-            subdomain: customerCustomization.name,
-          })
-          .from(customers)
-          .leftJoin(customerCustomization, eq(customerCustomization.customerId, customers.id))
-          .leftJoin(file, eq(file.id, customerCustomization.fileId))
-          .where(eq(customers.id, idCustomer))
-          .limit(1);
-
-        if (customerData.length > 0) {
-          customerName = customerData[0].name || "Outbank";
-          logo = customerData[0].imageUrl || "";
-          link = customerData[0].subdomain ? `https://${customerData[0].subdomain}.outbank.cloud` : "";
-        }
-      } catch (error) {
-        console.error("Erro ao buscar dados do customer:", error);
-      }
+    // ✅ Enviar email de boas-vindas usando função helper
+    try {
+      const tenantData = await getTenantEmailData(idCustomer);
+      await sendWelcomePasswordEmail(
+        normalizedEmail,
+        finalPassword,
+        tenantData.logo,
+        tenantData.customerName,
+        tenantData.link
+      );
+      console.log("[InsertUser] ✅ Email de boas-vindas enviado para novo usuário", {
+        email: normalizedEmail,
+        customerName: tenantData.customerName,
+        hasLink: !!tenantData.link,
+      });
+    } catch (emailError) {
+      console.error("[InsertUser] ❌ Falha ao enviar email de boas-vindas (não crítico):", emailError);
+      // Não bloquear criação do usuário se email falhar
     }
-
-    await sendWelcomePasswordEmail(normalizedEmail, finalPassword, logo, customerName, link);
 
     return {
       ok: true,
