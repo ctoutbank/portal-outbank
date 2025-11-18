@@ -37,6 +37,7 @@ async function getTenantEmailData(idCustomer: number | null): Promise<TenantEmai
         slug: customerCustomization.slug,
         imageUrl: file.fileUrl,
         imageUrlDirect: customerCustomization.imageUrl,
+        emailImageUrl: customerCustomization.emailImageUrl,
       })
       .from(customers)
       .leftJoin(customerCustomization, eq(customerCustomization.customerId, customers.id))
@@ -47,7 +48,8 @@ async function getTenantEmailData(idCustomer: number | null): Promise<TenantEmai
     if (customization.length > 0) {
       const data = customization[0];
       const customerName = data.name || "Outbank";
-      const logo = data.imageUrl || data.imageUrlDirect || defaultData.logo;
+      // ✅ Priorizar emailImageUrl sobre imageUrl para emails
+      const logo = data.emailImageUrl || data.imageUrl || data.imageUrlDirect || defaultData.logo;
       // ✅ Usar slug ao invés de name e domínio .consolle.one
       const slug = data.slug;
       const link = slug ? `https://${slug}.consolle.one` : undefined;

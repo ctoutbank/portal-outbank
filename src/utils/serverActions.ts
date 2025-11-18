@@ -17,6 +17,7 @@ export type CustomerCustomization = {
   imageUrl: string | null;
   loginImageUrl: string | null;
   faviconUrl: string | null;
+  emailImageUrl: string | null;
   customerId: number | null;
 };
 
@@ -148,6 +149,7 @@ export async function getCustomizationByCustomerId(
         imageUrlDirect: customerCustomization.imageUrl,
         loginImageUrl: customerCustomization.loginImageUrl,
         faviconUrl: customerCustomization.faviconUrl,
+        emailImageUrl: customerCustomization.emailImageUrl,
         customerId: customerCustomization.customerId,
       })
       .from(customerCustomization)
@@ -183,6 +185,7 @@ export async function getCustomizationBySubdomain(
         imageUrlDirect: customerCustomization.imageUrl,
         loginImageUrl: customerCustomization.loginImageUrl,
         faviconUrl: customerCustomization.faviconUrl,
+        emailImageUrl: customerCustomization.emailImageUrl,
         customerId: customerCustomization.customerId,
       })
       .from(customerCustomization)
@@ -379,6 +382,39 @@ export async function saveCustomization(formData: FormData) {
     faviconFileId = result[0].id;
   }
 
+  const emailImage = formData.get("emailImage") as File | null;
+  console.log("[saveCustomization] Email image file:", emailImage ? `present (${emailImage.size} bytes, ${emailImage.type})` : 'not provided');
+  if (emailImage) {
+    // ✅ Upload com URL única (timestamp + nanoid)
+    try {
+      emailImageUrl = await uploadImageToS3(emailImage, 'email');
+      console.log("Email image uploaded successfully:", emailImageUrl);
+    } catch (error: any) {
+      console.error("S3 Upload Error (email image):", {
+        name: error.name,
+        message: error.message,
+        statusCode: error.$metadata?.httpStatusCode,
+      });
+      throw new Error(`Falha no upload da logo de email: ${error.message}`);
+    }
+
+    const extension = emailImage.name.split(".").pop() || "jpg";
+    const fileType = emailImage.type || "image/jpeg";
+
+    const result = await db
+      .insert(file)
+      .values({
+        fileUrl: emailImageUrl,
+        fileName: emailImage.name,
+        extension: extension,
+        fileType: fileType,
+        active: true,
+      })
+      .returning({ id: file.id });
+
+    emailImageFileId = result[0].id;
+  }
+
   const primaryHSL = hexToHsl(primaryColor);
   const secondaryHSL = secondaryColor ? hexToHsl(secondaryColor) : null;
 
@@ -410,6 +446,8 @@ export async function saveCustomization(formData: FormData) {
         ...(loginImageFileId && { loginImageFileId: loginImageFileId }),
         ...(faviconUrl && { faviconUrl: faviconUrl }),
         ...(faviconFileId && { faviconFileId: faviconFileId }),
+        ...(emailImageUrl && { emailImageUrl: emailImageUrl }),
+        ...(emailImageFileId && { emailImageFileId: emailImageFileId }),
       })
       .where(eq(customerCustomization.id, existingCustomization[0].id));
   } else {
@@ -426,6 +464,8 @@ export async function saveCustomization(formData: FormData) {
       loginImageFileId: loginImageFileId,
       faviconUrl: faviconUrl || null,
       faviconFileId: faviconFileId,
+      emailImageUrl: emailImageUrl || null,
+      emailImageFileId: emailImageFileId,
     });
   }
 
@@ -434,6 +474,7 @@ export async function saveCustomization(formData: FormData) {
     imageUrl: savedCustomization?.imageUrl,
     loginImageUrl: savedCustomization?.loginImageUrl,
     faviconUrl: savedCustomization?.faviconUrl,
+    emailImageUrl: savedCustomization?.emailImageUrl,
   });
 
   if (normalizedSubdomain) {
@@ -520,6 +561,8 @@ export async function updateCustomization(formData: FormData) {
   let loginImageFileId: number | null = null;
   let faviconUrl = "";
   let faviconFileId: number | null = null;
+  let emailImageUrl = "";
+  let emailImageFileId: number | null = null;
 
   // Buscar customização existente para deletar imagens antigas
   const existingCustomization = await getCustomizationByCustomerId(
@@ -671,6 +714,54 @@ export async function updateCustomization(formData: FormData) {
     }
   }
 
+  const emailImage = formData.get("emailImage") as File | null;
+  if (emailImage && emailImage.size > 0) {
+    // ✅ Deletar imagem antiga antes de fazer upload da nova
+    if (existingCustomization?.emailImageUrl) {
+      await deleteOldImageFromS3(existingCustomization.emailImageUrl);
+    }
+
+    // ✅ Upload nova (URL única com timestamp)
+    try {
+      emailImageUrl = await uploadImageToS3(emailImage, 'email');
+      console.log("Email image updated successfully:", emailImageUrl);
+    } catch (error: any) {
+      console.error("S3 Upload Error (email image update):", {
+        name: error.name,
+        message: error.message,
+        statusCode: error.$metadata?.httpStatusCode,
+      });
+      throw new Error(`Falha na atualização da logo de email: ${error.message}`);
+    }
+
+    const extension = emailImage.name.split(".").pop() || "jpg";
+    const fileType = emailImage.type || "image/jpeg";
+
+    const result = await db
+      .insert(file)
+      .values({
+        fileUrl: emailImageUrl,
+        fileName: emailImage.name,
+        extension: extension,
+        fileType: fileType,
+        active: true,
+      })
+      .returning({ id: file.id });
+
+    emailImageFileId = result[0].id;
+  } else {
+    // Manter email image existente
+    if (existingCustomization?.emailImageUrl) {
+      emailImageUrl = existingCustomization.emailImageUrl;
+      const existingFile = await db
+        .select({ id: file.id })
+        .from(file)
+        .where(eq(file.fileUrl, existingCustomization.emailImageUrl))
+        .limit(1);
+      emailImageFileId = existingFile[0]?.id || null;
+    }
+  }
+
   const primaryHSL = hexToHsl(primaryColor);
   const secondaryHSL = secondaryColor ? hexToHsl(secondaryColor) : null;
 
@@ -685,6 +776,7 @@ export async function updateCustomization(formData: FormData) {
     imageUrl: imageUrl || '(unchanged)',
     loginImageUrl: loginImageUrl || '(unchanged)',
     faviconUrl: faviconUrl || '(unchanged)',
+    emailImageUrl: emailImageUrl || '(unchanged)',
   });
 
   // Validar que a conversão da cor primária foi bem-sucedida
@@ -705,6 +797,8 @@ export async function updateCustomization(formData: FormData) {
       loginImageFileId: loginImageFileId,
       ...(faviconUrl && { faviconUrl: faviconUrl }),
       faviconFileId: faviconFileId,
+      ...(emailImageUrl && { emailImageUrl: emailImageUrl }),
+      emailImageFileId: emailImageFileId,
     })
     .where(eq(customerCustomization.id, id));
 
@@ -713,6 +807,7 @@ export async function updateCustomization(formData: FormData) {
     imageUrl: updatedCustomization?.imageUrl,
     loginImageUrl: updatedCustomization?.loginImageUrl,
     faviconUrl: updatedCustomization?.faviconUrl,
+    emailImageUrl: updatedCustomization?.emailImageUrl,
   });
   console.log(`[updateCustomization] Final colors after update:`, {
     primaryColor: updatedCustomization?.primaryColor,
@@ -764,14 +859,14 @@ export async function updateCustomization(formData: FormData) {
 
 const removeImageSchema = z.object({
   customerId: z.coerce.number(),
-  type: z.enum(['logo', 'login', 'favicon']),
+  type: z.enum(['logo', 'login', 'favicon', 'email']),
 });
 
 const removeAllImagesSchema = z.object({
   customerId: z.coerce.number(),
 });
 
-export async function removeImage(data: { customerId: number; type: 'logo' | 'login' | 'favicon' }) {
+export async function removeImage(data: { customerId: number; type: 'logo' | 'login' | 'favicon' | 'email' }) {
   console.log(`[removeImage] START - Removing ${data.type} for customerId=${data.customerId}`);
   
   const validated = removeImageSchema.safeParse(data);
@@ -791,6 +886,7 @@ export async function removeImage(data: { customerId: number; type: 'logo' | 'lo
     logo: { urlField: 'imageUrl' as const, fileIdField: 'fileId' as const },
     login: { urlField: 'loginImageUrl' as const, fileIdField: 'loginImageFileId' as const },
     favicon: { urlField: 'faviconUrl' as const, fileIdField: 'faviconFileId' as const },
+    email: { urlField: 'emailImageUrl' as const, fileIdField: 'emailImageFileId' as const },
   };
 
   const { urlField, fileIdField } = fieldMap[type];
@@ -913,6 +1009,7 @@ export async function removeAllImages(data: { customerId: number }) {
     existingCustomization.imageUrl,
     existingCustomization.loginImageUrl,
     existingCustomization.faviconUrl,
+    existingCustomization.emailImageUrl,
   ].filter(Boolean) as string[];
 
   for (const url of urlsToDelete) {
@@ -957,6 +1054,8 @@ export async function removeAllImages(data: { customerId: number }) {
       loginImageFileId: null,
       faviconUrl: null,
       faviconFileId: null,
+      emailImageUrl: null,
+      emailImageFileId: null,
     })
     .where(eq(customerCustomization.customerId, customerId));
 

@@ -1488,6 +1488,7 @@ export const customerCustomization = pgTable("customer_customization", {
 	imageUrl: varchar("image_url", { length: 100 }),
 	loginImageUrl: varchar("login_image_url", { length: 100 }),
 	faviconUrl: varchar("favicon_url", { length: 100 }),
+	emailImageUrl: varchar("email_image_url", { length: 100 }),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	customerId: bigint("customer_id", { mode: "number" }),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
@@ -1496,6 +1497,7 @@ export const customerCustomization = pgTable("customer_customization", {
 	fileId: bigint("file_id", { mode: "number" }),
 	loginImageFileId: bigint("login_image_file_id", { mode: "number" }),
 	faviconFileId: bigint("favicon_file_id", { mode: "number" }),
+	emailImageFileId: bigint("email_image_file_id", { mode: "number" }),
 }, (table) => [
 	unique("tenants_slug_key").on(table.slug),
 ]);

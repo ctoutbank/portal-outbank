@@ -91,7 +91,7 @@ export async function sendWelcomePasswordEmail(
                         <!-- Footer -->
                         <div style="text-align: center; padding: 20px 0; color: #888888;">
                             <p style="font-size: 12px; margin: 0;">
-                                © 2024 Outbank. Todos os direitos reservados.
+                                © Todos os direitos reservados.
                             </p>
                         </div>
                     </td>

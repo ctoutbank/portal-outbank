@@ -77,6 +77,7 @@ export default function CustomerWizardForm({
     secondaryColor?: string;
     loginImageUrl?: string;
     faviconUrl?: string;
+    emailImageUrl?: string;
   } | null>(
     customizationInitial ? {
       imageUrl: customizationInitial.imageUrl ?? undefined,
@@ -86,6 +87,7 @@ export default function CustomerWizardForm({
       secondaryColor: customizationInitial.secondaryColor ?? undefined,
       loginImageUrl: customizationInitial.loginImageUrl ?? undefined,
       faviconUrl: customizationInitial.faviconUrl ?? undefined,
+      emailImageUrl: customizationInitial.emailImageUrl ?? undefined,
     } : null
   );
 
@@ -140,6 +142,9 @@ export default function CustomerWizardForm({
   const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
   const [faviconError, setFaviconError] = useState<string | null>(null);
   const [faviconFileName, setFaviconFileName] = useState<string>("");
+  const [emailImagePreview, setEmailImagePreview] = useState<string | null>(null);
+  const [emailImageError, setEmailImageError] = useState<string | null>(null);
+  const [emailImageFileName, setEmailImageFileName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingCustomization, setIsSavingCustomization] = useState(false);
   const [isRemovingImage, setIsRemovingImage] = useState(false);
@@ -286,6 +291,34 @@ export default function CustomerWizardForm({
     }
   };
 
+  const handleEmailImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setEmailImageError(null);
+
+    if (file) {
+      setEmailImageFileName(file.name);
+      
+      const MAX_SIZE = 2 * 1024 * 1024;
+      if (file.size > MAX_SIZE) {
+        setEmailImageError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 2MB`);
+        setEmailImagePreview(null);
+        e.target.value = "";
+        setEmailImageFileName("");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setEmailImagePreview(result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setEmailImagePreview(null);
+      setEmailImageFileName("");
+    }
+  };
+
   const handleFirstStepComplete = async (id: number) => {
     if (iso.subdomain && iso.subdomain.trim() !== "") {
       try {
@@ -326,7 +359,7 @@ export default function CustomerWizardForm({
     }
   };
 
-  const handleRemoveImage = async (type: 'logo' | 'login' | 'favicon') => {
+  const handleRemoveImage = async (type: 'logo' | 'login' | 'favicon' | 'email') => {
     if (!newCustomerId) {
       toast.error("ID do cliente não encontrado");
       return;
@@ -336,7 +369,9 @@ export default function CustomerWizardForm({
       ? "Tem certeza que deseja remover o logo?" 
       : type === 'login'
       ? "Tem certeza que deseja remover a imagem de fundo do login?"
-      : "Tem certeza que deseja remover o favicon?";
+      : type === 'favicon'
+      ? "Tem certeza que deseja remover o favicon?"
+      : "Tem certeza que deseja remover a logo de email?";
 
     if (!confirm(confirmMessage)) {
       return;
@@ -355,6 +390,7 @@ export default function CustomerWizardForm({
           secondaryColor: result.customization.secondaryColor ?? undefined,
           loginImageUrl: result.customization.loginImageUrl ?? undefined,
           faviconUrl: result.customization.faviconUrl ?? undefined,
+          emailImageUrl: result.customization.emailImageUrl ?? undefined,
         });
 
         if (type === 'logo') {
@@ -407,6 +443,7 @@ export default function CustomerWizardForm({
           secondaryColor: result.customization.secondaryColor ?? undefined,
           loginImageUrl: result.customization.loginImageUrl ?? undefined,
           faviconUrl: result.customization.faviconUrl ?? undefined,
+          emailImageUrl: result.customization.emailImageUrl ?? undefined,
         });
 
         setImagePreview(null);
@@ -1157,12 +1194,91 @@ export default function CustomerWizardForm({
                             </Button>
                           </div>
                         )}
+
+                        {/* Upload de Logo para Email e Relatórios */}
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Logo para Email e Relatórios
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/svg+xml"
+                            name="emailImage"
+                            id="emailImage"
+                            onChange={handleEmailImageChange}
+                            className="block w-full text-sm text-foreground
+                              file:mr-4 file:py-2 file:px-4
+                              file:rounded file:border-0
+                              file:text-sm file:font-semibold
+                              file:bg-secondary file:text-gray-700
+                              hover:file:bg-gray-300
+                              file:cursor-pointer
+                              dark:file:bg-white
+                              [&::file-selector-button]:mr-4"
+                            style={{ color: 'transparent' }}
+                          />
+                          {emailImageFileName && (
+                            <p className="mt-1 text-xs text-green-600 font-medium">
+                              ✓ Arquivo selecionado: {emailImageFileName}
+                            </p>
+                          )}
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            SVG (preferencial), PNG ou JPG • Recomendado: logo com fundo transparente ou versão adequada para fundo branco • Máx. 2MB
+                          </p>
+                          {emailImageError && (
+                            <p className="mt-1 text-xs text-orange-600 font-medium">
+                              {emailImageError}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Preview da Logo de Email Selecionada */}
+                        {emailImagePreview && (
+                          <div>
+                            <p className="text-sm text-foreground mb-1">
+                              Pré-visualização:
+                            </p>
+                            <Image
+                              src={emailImagePreview}
+                              alt="email image preview"
+                              height={100}
+                              width={100}
+                            ></Image>
+                          </div>
+                        )}
+
+                        {/* Preview da Logo de Email Atual */}
+                        {customizationData?.emailImageUrl && !emailImagePreview && (
+                          <div>
+                            <p className="text-sm text-foreground mb-1">
+                              Logo de email atual:
+                            </p>
+                            <img
+                              src={customizationData.emailImageUrl}
+                              alt=""
+                              height={100}
+                              width={100}
+                              style={{ maxWidth: '100px', maxHeight: '100px' }}
+                              key={customizationData.emailImageUrl}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleRemoveImage('email')}
+                              disabled={isRemovingImage}
+                            >
+                              {isRemovingImage ? "Removendo..." : "Remover logo de email"}
+                            </Button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Coluna Direita - Cores */}
                       <div className="space-y-4">
                         {/* Botão Remover Todas as Imagens */}
-                        {(customizationData?.imageUrl || customizationData?.loginImageUrl || customizationData?.faviconUrl) && (
+                        {(customizationData?.imageUrl || customizationData?.loginImageUrl || customizationData?.faviconUrl || customizationData?.emailImageUrl) && (
                           <div className="pb-4 border-b">
                             <Button
                               type="button"
