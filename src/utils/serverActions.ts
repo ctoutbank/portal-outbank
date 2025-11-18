@@ -206,6 +206,7 @@ export async function getCustomizationBySubdomain(
           imageUrlDirect: customerCustomization.imageUrl,
           loginImageUrl: customerCustomization.loginImageUrl,
           faviconUrl: customerCustomization.faviconUrl,
+          emailImageUrl: customerCustomization.emailImageUrl,
           customerId: customerCustomization.customerId,
         })
         .from(customerCustomization)
