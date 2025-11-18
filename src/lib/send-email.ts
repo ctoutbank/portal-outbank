@@ -26,7 +26,24 @@ export async function sendWelcomePasswordEmail(
     });
     
     // Garantir que a logo use HTTPS e URL absoluta
-    const logoUrl = logo.startsWith('http') ? logo : `https://${logo.replace(/^\/\//, '')}`;
+    let logoUrl = logo.startsWith('http') ? logo : `https://${logo.replace(/^\/\//, '')}`;
+    
+    // ✅ Validar URL da logo antes de usar (prevenir emails marcados como spam)
+    try {
+      const parsedUrl = new URL(logoUrl);
+      if (parsedUrl.protocol !== 'https:') {
+        console.warn(`[sendWelcomePasswordEmail] ⚠️ Logo URL não usa HTTPS, usando fallback: ${logoUrl}`);
+        logoUrl = "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
+      }
+      // Verificar se é um domínio S3 válido
+      if (!parsedUrl.hostname.includes('s3') && !parsedUrl.hostname.includes('amazonaws')) {
+        console.warn(`[sendWelcomePasswordEmail] ⚠️ Logo URL não é de S3, usando fallback: ${logoUrl}`);
+        logoUrl = "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
+      }
+    } catch (urlError) {
+      console.warn(`[sendWelcomePasswordEmail] ⚠️ Logo URL inválida, usando fallback: ${logoUrl}`, urlError);
+      logoUrl = "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
+    }
     
     // Versão texto do email (importante para deliverability)
     const textVersion = `
