@@ -924,19 +924,6 @@ export default function CustomerWizardForm({
 
   return (
     <div className="w-full space-y-6">
-      {/* Botão Salvar Tudo no topo - alinhado com os botões de ação */}
-      <div className="flex justify-end mb-6">
-        <Button
-          onClick={handleSaveAll}
-          disabled={isLoading || isSavingCustomization}
-          className="cursor-pointer min-w-[160px] bg-black hover:bg-gray-800 text-white"
-          size="default"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          {isLoading ? "Salvando..." : "Salvar Tudo"}
-        </Button>
-      </div>
-
       <div className="space-y-4">
 
         {/* Seção 1: Informações Básicas */}
@@ -1893,6 +1880,19 @@ export default function CustomerWizardForm({
             )}
           </CollapsibleContent>
         </Collapsible>
+      </div>
+
+      {/* Botão Salvar Tudo após todas as seções */}
+      <div className="flex justify-end mt-6 pt-6 border-t">
+        <Button
+          onClick={handleSaveAll}
+          disabled={isLoading || isSavingCustomization}
+          className="cursor-pointer min-w-[160px] bg-black hover:bg-gray-800 text-white"
+          size="default"
+        >
+          <Save className="h-4 w-4 mr-2" />
+          {isLoading ? "Salvando..." : "Salvar Tudo"}
+        </Button>
       </div>
     </div>
   );
