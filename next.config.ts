@@ -33,9 +33,6 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '10mb', // Aumentar para 10MB como margem de segurança
     },
   },
-  serverActions: {
-    bodySizeLimit: 10485760, // 10MB em bytes (backup caso experimental não funcione)
-  },
 };
 
 
