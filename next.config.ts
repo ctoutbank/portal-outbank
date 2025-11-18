@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   serverActions: {
-    bodySizeLimit: '5mb', // Permitir uploads de até 5MB (3MB + margem)
+    bodySizeLimit: 5242880, // 5MB em bytes (3MB + margem de segurança)
   },
 };
 
