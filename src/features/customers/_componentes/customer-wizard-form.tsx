@@ -139,10 +139,13 @@ export default function CustomerWizardForm({
             
             if (iso.subdomain && iso.subdomain.trim() !== "") {
               const formData = new FormData();
-              formData.append("customerId", (newCustomerId || customer?.id).toString());
-              formData.append("subdomain", iso.subdomain);
-              formData.append("primaryColor", primaryColorHex || "#000000");
-              formData.append("secondaryColor", secondaryColorHex || "#ffffff");
+              const customerId = newCustomerId || customer?.id;
+              if (customerId) {
+                formData.append("customerId", customerId.toString());
+                formData.append("subdomain", iso.subdomain);
+                formData.append("primaryColor", primaryColorHex || "#000000");
+                formData.append("secondaryColor", secondaryColorHex || "#ffffff");
+              }
               
               if (customizationData?.id) {
                 formData.append("id", customizationData.id.toString());
