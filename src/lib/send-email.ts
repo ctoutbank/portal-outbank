@@ -11,16 +11,47 @@ export async function sendWelcomePasswordEmail(
 ) {
   try {
     console.log(`[sendWelcomePasswordEmail] Sending email to ${to} from ${EMAIL_FROM}`);
+    
+    // Garantir que a logo use HTTPS e URL absoluta
+    const logoUrl = logo.startsWith('http') ? logo : `https://${logo.replace(/^\/\//, '')}`;
+    
+    // Versão texto do email (importante para deliverability)
+    const textVersion = `
+Bem-vindo ao ${customerName}
+
+Sua conta foi criada com sucesso! Estamos felizes em tê-lo conosco.
+
+Esperamos que tudo esteja conforme esperado, mas se precisar de ajuda, você pode entrar em contato conosco através do nosso atendimento ao cliente.
+
+${link ? `Acesse o sistema em: ${link}/auth/sign-in\n` : ''}
+Sua senha temporária de acesso: ${password}
+
+Você poderá alterá-la no primeiro login.
+
+Se não foi você quem fez esse cadastro, ignore este e-mail.
+
+Atenciosamente,
+Equipe ${customerName}
+
+© Todos os direitos reservados.
+    `.trim();
+    
     await getResend().emails.send({
       from: EMAIL_FROM,
-    to,
-    subject: "Sua senha de acesso ao "+customerName,
-    html: `
+      to,
+      subject: "Sua senha de acesso ao "+customerName,
+      text: textVersion,
+      headers: {
+        'X-Entity-Ref-ID': `welcome-${Date.now()}`,
+      },
+      html: `
         <!DOCTYPE html>
-        <html>
+        <html lang="pt-BR">
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+            <meta name="format-detection" content="telephone=no">
             <title>Bem-vindo ao ${customerName}</title>
         </head>
         <body style="margin: 0; padding: 0; background-color: #2c2c2c !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; min-height: 100vh;">
@@ -29,9 +60,9 @@ export async function sendWelcomePasswordEmail(
                     <td align="center" style="padding: 20px;">
                         <div style="background-color: #ffffff; border-radius: 0; padding: 48px 40px; max-width: 500px; width: 100%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);">
                             
-                            <!-- Logo Section - Rectangle with circle inside, aligned left -->
+                            <!-- Logo Section - Using img tag with alt text for better deliverability -->
                             <div style="margin-bottom: 32px;">
-                                <div style="width: 120px; height: 120px; background-image: url('${logo}'); background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
+                                <img src="${logoUrl}" alt="${customerName} Logo" width="120" height="120" style="display: block; max-width: 120px; height: auto; border: 0; outline: none; text-decoration: none;" />
                             </div>
                             
                             <!-- Main Title - Left aligned -->
@@ -51,7 +82,7 @@ export async function sendWelcomePasswordEmail(
                                 ${
                                   link
                                     ? `<p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 24px 0; text-align: left;">
-                                Clique <a href="${link + "/auth/sign-in"}" target="_blank">aqui</a> para acessar o sistema.
+                                Acesse o sistema clicando <a href="${link + "/auth/sign-in"}" style="color: #0066cc; text-decoration: underline;" target="_blank">aqui</a>.
                             </p>`
                                     : ""
                                 }
