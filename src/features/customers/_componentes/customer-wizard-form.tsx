@@ -481,9 +481,9 @@ export default function CustomerWizardForm({
     if (file) {
       setImageFileName(file.name);
       
-      const MAX_SIZE = 2 * 1024 * 1024;
+      const MAX_SIZE = 3 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
-        setImageError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 2MB`);
+        setImageError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 3MB`);
         setImagePreview(null);
         e.target.value = "";
         setImageFileName("");
@@ -509,9 +509,9 @@ export default function CustomerWizardForm({
     if (file) {
       setLoginImageFileName(file.name);
       
-      const MAX_SIZE = 2 * 1024 * 1024;
+      const MAX_SIZE = 3 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
-        setLoginImageError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 2MB`);
+        setLoginImageError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 3MB`);
         setLoginImagePreview(null);
         e.target.value = "";
         setLoginImageFileName("");
@@ -537,9 +537,9 @@ export default function CustomerWizardForm({
     if (file) {
       setFaviconFileName(file.name);
       
-      const MAX_SIZE = 2 * 1024 * 1024;
+      const MAX_SIZE = 3 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
-        setFaviconError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 2MB`);
+        setFaviconError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 3MB`);
         setFaviconPreview(null);
         e.target.value = "";
         setFaviconFileName("");
@@ -565,9 +565,9 @@ export default function CustomerWizardForm({
     if (file) {
       setEmailImageFileName(file.name);
       
-      const MAX_SIZE = 2 * 1024 * 1024;
+      const MAX_SIZE = 3 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
-        setEmailImageError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 2MB`);
+        setEmailImageError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 3MB`);
         setEmailImagePreview(null);
         e.target.value = "";
         setEmailImageFileName("");
@@ -1248,7 +1248,7 @@ export default function CustomerWizardForm({
                             </p>
                           )}
                           <p className="mt-1 text-xs text-muted-foreground">
-                            WebP (preferencial) ou JPG/PNG • 1600×1200px (4:3) ou 1920×1440px • Conteúdo centralizado • Máx. 1MB
+                            WebP (preferencial) ou JPG/PNG • 1600×1200px (4:3) ou 1920×1440px • Conteúdo centralizado • Máx. 3MB
                           </p>
                           {loginImageError && (
                             <p className="mt-1 text-xs text-orange-600 font-medium">
@@ -1443,7 +1443,7 @@ export default function CustomerWizardForm({
                             </p>
                           )}
                           <p className="mt-1 text-xs text-muted-foreground">
-                            SVG (preferencial), PNG ou JPG • Recomendado: logo com fundo transparente ou versão adequada para fundo branco • Máx. 2MB
+                            SVG (preferencial), PNG ou JPG • Recomendado: logo com fundo transparente ou versão adequada para fundo branco • Máx. 3MB
                           </p>
                           {emailImageError && (
                             <p className="mt-1 text-xs text-orange-600 font-medium">

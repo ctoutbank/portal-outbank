@@ -28,6 +28,9 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  serverActions: {
+    bodySizeLimit: '5mb', // Permitir uploads de até 5MB (3MB + margem)
+  },
 };
 
 

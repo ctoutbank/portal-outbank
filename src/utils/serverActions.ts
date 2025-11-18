@@ -498,9 +498,13 @@ export async function saveCustomization(formData: FormData) {
       if (response.ok) {
         const responseData = await response.json();
         console.log(`[saveCustomization] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
-      } else if (response.status === 405) {
-        // 405 Method Not Allowed - endpoint pode não existir ou não aceitar POST
-        console.warn(`[saveCustomization] ⚠️ Revalidate API não disponível (405 Method Not Allowed) - cache local será invalidado`);
+      } else if (response.status === 405 || response.status === 404) {
+        // 405 Method Not Allowed ou 404 - endpoint pode não existir ou não aceitar POST
+        // Não é crítico, cache local será invalidado via revalidatePath/revalidateTag
+        // Log apenas em modo debug para não poluir logs
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[saveCustomization] ℹ️ Revalidate API endpoint não disponível (${response.status}) - usando cache local`);
+        }
       } else {
         const errorText = await response.text();
         console.error(`[saveCustomization] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
@@ -835,9 +839,13 @@ export async function updateCustomization(formData: FormData) {
       if (response.ok) {
         const responseData = await response.json();
         console.log(`[updateCustomization] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
-      } else if (response.status === 405) {
-        // 405 Method Not Allowed - endpoint pode não existir ou não aceitar POST
-        console.warn(`[updateCustomization] ⚠️ Revalidate API não disponível (405 Method Not Allowed) - cache local será invalidado`);
+      } else if (response.status === 405 || response.status === 404) {
+        // 405 Method Not Allowed ou 404 - endpoint pode não existir ou não aceitar POST
+        // Não é crítico, cache local será invalidado via revalidatePath/revalidateTag
+        // Log apenas em modo debug para não poluir logs
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[updateCustomization] ℹ️ Revalidate API endpoint não disponível (${response.status}) - usando cache local`);
+        }
       } else {
         const errorText = await response.text();
         console.error(`[updateCustomization] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
@@ -961,9 +969,13 @@ export async function removeImage(data: { customerId: number; type: 'logo' | 'lo
       if (response.ok) {
         const responseData = await response.json();
         console.log(`[removeImage] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
-      } else if (response.status === 405) {
-        // 405 Method Not Allowed - endpoint pode não existir ou não aceitar POST
-        console.warn(`[removeImage] ⚠️ Revalidate API não disponível (405 Method Not Allowed) - cache local será invalidado`);
+      } else if (response.status === 405 || response.status === 404) {
+        // 405 Method Not Allowed ou 404 - endpoint pode não existir ou não aceitar POST
+        // Não é crítico, cache local será invalidado via revalidatePath/revalidateTag
+        // Log apenas em modo debug para não poluir logs
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[removeImage] ℹ️ Revalidate API endpoint não disponível (${response.status}) - usando cache local`);
+        }
       } else {
         const errorText = await response.text();
         console.error(`[removeImage] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
@@ -1083,9 +1095,13 @@ export async function removeAllImages(data: { customerId: number }) {
       if (response.ok) {
         const responseData = await response.json();
         console.log(`[removeAllImages] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
-      } else if (response.status === 405) {
-        // 405 Method Not Allowed - endpoint pode não existir ou não aceitar POST
-        console.warn(`[removeAllImages] ⚠️ Revalidate API não disponível (405 Method Not Allowed) - cache local será invalidado`);
+      } else if (response.status === 405 || response.status === 404) {
+        // 405 Method Not Allowed ou 404 - endpoint pode não existir ou não aceitar POST
+        // Não é crítico, cache local será invalidado via revalidatePath/revalidateTag
+        // Log apenas em modo debug para não poluir logs
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[removeAllImages] ℹ️ Revalidate API endpoint não disponível (${response.status}) - usando cache local`);
+        }
       } else {
         const errorText = await response.text();
         console.error(`[removeAllImages] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
