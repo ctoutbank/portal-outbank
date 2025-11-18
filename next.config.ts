@@ -28,8 +28,13 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb', // Aumentar para 10MB como margem de segurança
+    },
+  },
   serverActions: {
-    bodySizeLimit: 5242880, // 5MB em bytes (3MB + margem de segurança)
+    bodySizeLimit: 10485760, // 10MB em bytes (backup caso experimental não funcione)
   },
 };
 

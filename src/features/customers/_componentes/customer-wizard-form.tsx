@@ -36,6 +36,7 @@ import { TooltipTrigger } from "@/components/ui/tooltip";
 import { generateSlug } from "@/lib/utils";
 import { insertCustomerFormAction } from "../_actions/customers-formActions";
 import { updateCustomer } from "../server/customers";
+import imageCompression from "browser-image-compression";
 
 interface CustomerWizardFormProps {
   customer: CustomerSchema;
@@ -121,6 +122,35 @@ export default function CustomerWizardForm({
       return `#${f(0)}${f(8)}${f(4)}`;
     } catch {
       return "#000000";
+    }
+  }
+
+  // ✅ Função para comprimir imagem antes do upload
+  async function compressImage(file: File, maxSizeMB: number = 0.8): Promise<File> {
+    try {
+      // Se o arquivo já está abaixo do limite, não comprimir
+      if (file.size <= maxSizeMB * 1024 * 1024) {
+        return file;
+      }
+
+      const options = {
+        maxSizeMB: maxSizeMB,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        fileType: file.type,
+      };
+
+      const compressedFile = await imageCompression(file, options);
+      
+      // Converter Blob para File mantendo o nome original
+      return new File([compressedFile], file.name, {
+        type: compressedFile.type || file.type,
+        lastModified: Date.now(),
+      });
+    } catch (error) {
+      console.error('Erro ao comprimir imagem:', error);
+      // Se a compressão falhar, retornar o arquivo original
+      return file;
     }
   }
 
@@ -474,11 +504,18 @@ export default function CustomerWizardForm({
     }
   }, [customizationData?.faviconUrl, customizationData?.primaryColor, customizationData?.secondaryColor, customizationData?.loginImageUrl]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     setImageError(null);
 
     if (file) {
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        setImageError('❌ Por favor, selecione uma imagem válida');
+        e.target.value = "";
+        return;
+      }
+
       setImageFileName(file.name);
       
       const MAX_SIZE = 3 * 1024 * 1024;
@@ -490,23 +527,45 @@ export default function CustomerWizardForm({
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setImagePreview(result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // ✅ Comprimir imagem se necessário (máximo 0.8MB)
+        const compressedFile = await compressImage(file, 0.8);
+        
+        // Atualizar o input com o arquivo comprimido
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(compressedFile);
+        e.target.files = dataTransfer.files;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          setImagePreview(result);
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        console.error('Erro ao processar imagem:', error);
+        setImageError('❌ Erro ao processar imagem. Tente novamente.');
+        e.target.value = "";
+        setImageFileName("");
+      }
     } else {
       setImagePreview(null);
       setImageFileName("");
     }
   };
 
-  const handleLoginImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLoginImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     setLoginImageError(null);
 
     if (file) {
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        setLoginImageError('❌ Por favor, selecione uma imagem válida');
+        e.target.value = "";
+        return;
+      }
+
       setLoginImageFileName(file.name);
       
       const MAX_SIZE = 3 * 1024 * 1024;
@@ -518,23 +577,45 @@ export default function CustomerWizardForm({
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setLoginImagePreview(result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // ✅ Comprimir imagem se necessário (máximo 0.8MB)
+        const compressedFile = await compressImage(file, 0.8);
+        
+        // Atualizar o input com o arquivo comprimido
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(compressedFile);
+        e.target.files = dataTransfer.files;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          setLoginImagePreview(result);
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        console.error('Erro ao processar imagem de login:', error);
+        setLoginImageError('❌ Erro ao processar imagem. Tente novamente.');
+        e.target.value = "";
+        setLoginImageFileName("");
+      }
     } else {
       setLoginImagePreview(null);
       setLoginImageFileName("");
     }
   };
 
-  const handleFaviconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFaviconChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     setFaviconError(null);
 
     if (file) {
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        setFaviconError('❌ Por favor, selecione uma imagem válida');
+        e.target.value = "";
+        return;
+      }
+
       setFaviconFileName(file.name);
       
       const MAX_SIZE = 3 * 1024 * 1024;
@@ -546,23 +627,45 @@ export default function CustomerWizardForm({
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setFaviconPreview(result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // ✅ Comprimir imagem se necessário (máximo 0.5MB para favicon)
+        const compressedFile = await compressImage(file, 0.5);
+        
+        // Atualizar o input com o arquivo comprimido
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(compressedFile);
+        e.target.files = dataTransfer.files;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          setFaviconPreview(result);
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        console.error('Erro ao processar favicon:', error);
+        setFaviconError('❌ Erro ao processar imagem. Tente novamente.');
+        e.target.value = "";
+        setFaviconFileName("");
+      }
     } else {
       setFaviconPreview(null);
       setFaviconFileName("");
     }
   };
 
-  const handleEmailImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEmailImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     setEmailImageError(null);
 
     if (file) {
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        setEmailImageError('❌ Por favor, selecione uma imagem válida');
+        e.target.value = "";
+        return;
+      }
+
       setEmailImageFileName(file.name);
       
       const MAX_SIZE = 3 * 1024 * 1024;
@@ -574,12 +677,27 @@ export default function CustomerWizardForm({
         return;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setEmailImagePreview(result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // ✅ Comprimir imagem se necessário (máximo 0.8MB)
+        const compressedFile = await compressImage(file, 0.8);
+        
+        // Atualizar o input com o arquivo comprimido
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(compressedFile);
+        e.target.files = dataTransfer.files;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          setEmailImagePreview(result);
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        console.error('Erro ao processar logo de email:', error);
+        setEmailImageError('❌ Erro ao processar imagem. Tente novamente.');
+        e.target.value = "";
+        setEmailImageFileName("");
+      }
     } else {
       setEmailImagePreview(null);
       setEmailImageFileName("");
