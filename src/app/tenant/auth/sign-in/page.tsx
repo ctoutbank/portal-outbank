@@ -8,6 +8,10 @@ export default function TenantSignInPage() {
           elements: {
             rootBox: "mx-auto",
             card: "shadow-xl",
+            // Ocultar o elemento do link no canto superior esquerdo
+            headerBackLink: "hidden",
+            logoLink: "hidden",
+            headerTitle: "hidden",
           },
         }}
         afterSignInUrl="/dashboard"
