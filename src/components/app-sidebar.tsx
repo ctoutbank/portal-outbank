@@ -78,7 +78,7 @@ export function AppSidebar({ tenantCustomization, isAdmin = false, ...props }: A
         return isAdmin;
       }
       // Item "Configurações" só aparece para admins
-      if (item.url === "/config") {
+      if (item.url === "/config" || item.url?.startsWith("/config")) {
         return isAdmin;
       }
       return true;
@@ -88,7 +88,7 @@ export function AppSidebar({ tenantCustomization, isAdmin = false, ...props }: A
       if (item.children) {
         return {
           ...item,
-          children: item.children.filter((child) => {
+          items: item.children.filter((child) => {
             // Subitem "Usuários" só aparece para admins
             if (child.url === "/config/users") {
               return isAdmin;

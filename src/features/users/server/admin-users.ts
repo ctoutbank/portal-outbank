@@ -515,3 +515,69 @@ export async function updateUserPermissions(
   
   return true;
 }
+
+/**
+ * Atribui o perfil SUPER_ADMIN a um usuário por email
+ * @param email - Email do usuário a ser promovido a Super Admin
+ * @returns Objeto com informações da atualização
+ */
+export async function assignSuperAdminToUser(email: string) {
+  try {
+    // Normalizar email para lowercase
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Buscar perfil SUPER_ADMIN (nome contém "SUPER" case-insensitive)
+    const superAdminProfile = await db
+      .select()
+      .from(profiles)
+      .where(
+        and(
+          ilike(profiles.name, "%SUPER%"),
+          eq(profiles.active, true)
+        )
+      )
+      .orderBy(asc(profiles.name))
+      .limit(1);
+
+    if (!superAdminProfile || superAdminProfile.length === 0) {
+      throw new Error(
+        "Perfil SUPER_ADMIN não encontrado. Certifique-se de que existe um perfil com 'SUPER' no nome."
+      );
+    }
+
+    const superAdminProfileId = superAdminProfile[0].id;
+
+    // Buscar usuário por email (case-insensitive)
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(ilike(users.email, normalizedEmail))
+      .limit(1);
+
+    if (!userResult || userResult.length === 0) {
+      throw new Error(`Usuário com email ${email} não encontrado.`);
+    }
+
+    const user = userResult[0];
+
+    // Atualizar perfil do usuário
+    await db
+      .update(users)
+      .set({
+        idProfile: superAdminProfileId,
+        dtupdate: new Date().toISOString(),
+      })
+      .where(eq(users.id, user.id));
+
+    return {
+      success: true,
+      userId: user.id,
+      email: user.email,
+      profileId: superAdminProfileId,
+      profileName: superAdminProfile[0].name,
+    };
+  } catch (error) {
+    console.error("Error assigning Super Admin to user:", error);
+    throw error;
+  }
+}
