@@ -10,6 +10,7 @@ import ThemeInitializer from "@/components/themeInitializer";
 import { getCurrentTenantCustomization } from "@/lib/tenant-detection";
 import SessionTimeout from "@/components/session-timeout";
 import { ConditionalSidebar } from "@/components/conditional-sidebar";
+import { isAdminUser } from "@/lib/permissions/check-permissions";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,6 +25,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const tenantCustomization = await getCurrentTenantCustomization();
+  const isAdmin = await isAdminUser();
   
   const loginBackgroundImage = tenantCustomization?.loginImageUrl || tenantCustomization?.imageUrl || '/bg_login.jpg';
   
@@ -62,7 +64,7 @@ export default async function RootLayout({
             <SessionTimeout>
               <SidebarProvider>
                 <ConditionalSidebar>
-                  <AppSidebar variant="inset" tenantCustomization={tenantCustomization} />
+                  <AppSidebar variant="inset" tenantCustomization={tenantCustomization} isAdmin={isAdmin} />
                 </ConditionalSidebar>
                 <SidebarInset className="bg-card rounded-lg shadow">
                   {children}

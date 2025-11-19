@@ -11,6 +11,7 @@ import { getCustomers, getCustomerStatistics } from "@/features/customers/server
 import { ISOStatisticsCards } from "@/features/customers/_componentes/iso-statistics-cards";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import { requireAdmin } from "@/lib/permissions/require-admin";
 
 export const revalidate = 0;
 
@@ -28,6 +29,9 @@ export default async function Customerspage({
 }: {
   searchParams: Promise<CustomersPageProps>;
 }) {
+  // Verificar se usuário é admin antes de mostrar a página
+  await requireAdmin();
+  
   // Aguarda searchParams antes de acessar suas propriedades
   const params = await searchParams;
 

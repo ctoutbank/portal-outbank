@@ -3,6 +3,7 @@ import { db } from "@/db/drizzle";
 import { customers, customerCustomization } from "../../../../drizzle/schema";
 import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { CustomerSchema } from "../schema/schema";
+import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
 
 export type CustomersInsert = typeof customers.$inferInsert;
 export type CustomersDetail = typeof customers.$inferSelect;
@@ -45,6 +46,12 @@ export async function getCustomers(
     whereConditions.push(
       ilike(customers.settlementManagementType, `%${settlementManagementType}%`)
     );
+  }
+
+  // Se usuário não for admin, filtrar apenas pelo ISO do usuário
+  const userInfo = await getCurrentUserInfo();
+  if (userInfo && !userInfo.isAdmin && userInfo.idCustomer) {
+    whereConditions.push(eq(customers.id, userInfo.idCustomer));
   }
 
   // whereConditions.push(eq(customers.isActive, true));

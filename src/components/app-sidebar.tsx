@@ -36,9 +36,10 @@ const navMainItems = [
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   tenantCustomization?: CustomerCustomization | null;
+  isAdmin?: boolean;
 }
 
-export function AppSidebar({ tenantCustomization, ...props }: AppSidebarProps) {
+export function AppSidebar({ tenantCustomization, isAdmin = false, ...props }: AppSidebarProps) {
   const { state } = useSidebar();
   
   const teams = [
@@ -48,6 +49,15 @@ export function AppSidebar({ tenantCustomization, ...props }: AppSidebarProps) {
       plan: "Empresarial",
     },
   ];
+
+  // Filtrar itens do menu baseado em permissões
+  const filteredNavItems = navMainItems.filter((item) => {
+    // Item "ISOS" só aparece para admins
+    if (item.url === "/customers") {
+      return isAdmin;
+    }
+    return true;
+  });
   
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -56,7 +66,7 @@ export function AppSidebar({ tenantCustomization, ...props }: AppSidebarProps) {
         <Separator orientation="horizontal" className="bg-[#d2d2d2]" />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMainItems} />
+        <NavMain items={filteredNavItems} />
       </SidebarContent>
       <SidebarFooter>{state !== "collapsed" && <UserMenu />}</SidebarFooter>
     </Sidebar>

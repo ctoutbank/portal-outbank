@@ -6,6 +6,7 @@ import { getCustomerById } from "@/features/customers/server/customers";
 import { getDDProfiles } from "@/features/customers/users/_actions/user-actions";
 import CustomerActionButtons from "@/features/customers/_componentes/buttonIsActive";
 import { getCustomizationByCustomerId } from "@/utils/serverActions";
+import { requireAdmin } from "@/lib/permissions/require-admin";
 
 // Definir explicitamente os params
 interface PageProps {
@@ -13,6 +14,9 @@ interface PageProps {
 }
 
 export default async function CustomerDetail({ params }: PageProps) {
+    // Verificar se usuário é admin antes de mostrar a página
+    await requireAdmin();
+    
     const { id } = await params;
     
     const customerId = parseInt(id);
