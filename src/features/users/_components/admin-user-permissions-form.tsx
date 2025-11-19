@@ -49,8 +49,8 @@ type UserPermissionsFormValues = z.infer<typeof userPermissionsSchema>;
 
 interface AdminUserPermissionsFormProps {
   user?: UserDetailForm;
-  profiles: Array<{ id: number; name: string; description?: string | null }>;
-  customers: Array<{ id: number; name: string; slug?: string | null }>;
+  profiles: Array<{ id: number; name: string | null; description?: string | null }>;
+  customers: Array<{ id: number; name: string | null; slug?: string | null }>;
   adminCustomers?: number[]; // ISOs autorizados para o Admin
   isSuperAdmin?: boolean; // Se o usuário logado é Super Admin
 }
@@ -106,7 +106,7 @@ export function AdminUserPermissionsForm({
   useEffect(() => {
     // Verificar se o perfil selecionado é Admin
     const profile = profiles.find((p) => p.id === selectedProfile);
-    if (profile) {
+    if (profile && profile.name) {
       const profileName = profile.name.toUpperCase();
       const isAdmin = profileName.includes("ADMIN") && !profileName.includes("SUPER");
       setIsAdminProfile(isAdmin);
@@ -197,8 +197,9 @@ export function AdminUserPermissionsForm({
   };
 
   const profileOptions = isSuperAdmin
-    ? profiles
+    ? profiles.filter((p) => p.name !== null)
     : profiles.filter((p) => {
+        if (!p.name) return false;
         const profileName = p.name.toUpperCase();
         return !profileName.includes("ADMIN") && !profileName.includes("SUPER");
       });
@@ -333,7 +334,7 @@ export function AdminUserPermissionsForm({
                     <SelectContent>
                       {profileOptions.map((profile) => (
                         <SelectItem key={profile.id} value={profile.id.toString()}>
-                          {profile.name}
+                          {profile.name || "Sem nome"}
                           {profile.description && (
                             <span className="text-muted-foreground text-xs ml-2">
                               - {profile.description}
@@ -371,7 +372,7 @@ export function AdminUserPermissionsForm({
                         <SelectItem value="">Nenhum ISO</SelectItem>
                         {customerOptions.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id.toString()}>
-                            {customer.name}
+                            {customer.name || "Sem nome"}
                           </SelectItem>
                         ))}
                       </SelectContent>

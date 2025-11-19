@@ -22,7 +22,7 @@ type UserData = {
   fullAccess: boolean | null;
   customerName: string | null;
   profileName: string | null;
-  profileDescription: string | null;
+  profileDescription: string | null | undefined;
 };
 
 interface AdminUsersListProps {

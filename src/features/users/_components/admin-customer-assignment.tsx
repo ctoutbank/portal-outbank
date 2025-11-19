@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Check, X } from "lucide-react";
 
 interface AdminCustomerAssignmentProps {
-  customers: Array<{ id: number; name: string; slug?: string | null }>;
+  customers: Array<{ id: number; name: string | null; slug?: string | null }>;
   selectedCustomerIds: number[];
   onSelectionChange: (customerIds: number[]) => void;
 }
@@ -101,7 +101,7 @@ export function AdminCustomerAssignment({
                   htmlFor={`customer-${customer.id}`}
                   className="flex-1 cursor-pointer font-normal text-sm"
                 >
-                  {customer.name}
+                  {customer.name || "Sem nome"}
                   {customer.slug && (
                     <span className="text-muted-foreground text-xs ml-2 font-mono">
                       ({customer.slug})
