@@ -83,7 +83,7 @@ export default async function UserDetailPage({ params }: PageProps) {
           user={user}
           profiles={profiles}
           customers={customers}
-          adminCustomers={adminCustomers.map((ac) => ac.idCustomer)}
+          adminCustomers={adminCustomers.map((ac) => ac.idCustomer).filter((id): id is number => id !== null)}
           isSuperAdmin={isSuperAdmin}
         />
       </BaseBody>
