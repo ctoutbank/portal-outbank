@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, ChartPie, Table, Truck, Users } from "lucide-react";
+import { Briefcase, ChartPie, Settings, Table, Truck, Users } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
@@ -16,7 +16,18 @@ import {
 import { UserMenu } from "./user-menu";
 import type { CustomerCustomization } from "@/utils/serverActions";
 
-const navMainItems = [
+const navMainItems: Array<{
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  isActive?: boolean;
+  children?: Array<{
+    title: string;
+    url: string;
+    icon?: React.ComponentType<{ className?: string }>;
+    isActive?: boolean;
+  }>;
+}> = [
   { title: "Dashboard", url: "/", icon: ChartPie, isActive: false },
   {
     title: "ISOS",
@@ -32,6 +43,15 @@ const navMainItems = [
   },
   { title: "CNAE", url: "/categories", icon: Briefcase, isActive: false },
   {title: "Fornecedores", url: "/supplier", icon: Truck, isActive: false},
+  {
+    title: "Configurações",
+    url: "/config",
+    icon: Settings,
+    isActive: false,
+    children: [
+      { title: "Usuários", url: "/config/users", icon: Users, isActive: false },
+    ],
+  },
 ];
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -51,13 +71,34 @@ export function AppSidebar({ tenantCustomization, isAdmin = false, ...props }: A
   ];
 
   // Filtrar itens do menu baseado em permissões
-  const filteredNavItems = navMainItems.filter((item) => {
-    // Item "ISOS" só aparece para admins
-    if (item.url === "/customers") {
-      return isAdmin;
-    }
-    return true;
-  });
+  const filteredNavItems = navMainItems
+    .filter((item) => {
+      // Item "ISOS" só aparece para admins
+      if (item.url === "/customers") {
+        return isAdmin;
+      }
+      // Item "Configurações" só aparece para admins
+      if (item.url === "/config") {
+        return isAdmin;
+      }
+      return true;
+    })
+    .map((item) => {
+      // Filtrar subitens também
+      if (item.children) {
+        return {
+          ...item,
+          children: item.children.filter((child) => {
+            // Subitem "Usuários" só aparece para admins
+            if (child.url === "/config/users") {
+              return isAdmin;
+            }
+            return true;
+          }),
+        };
+      }
+      return item;
+    });
   
   return (
     <Sidebar collapsible="icon" {...props}>

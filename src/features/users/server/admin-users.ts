@@ -1,0 +1,517 @@
+"use server";
+
+import { db } from "@/lib/db";
+import { users, profiles, customers, adminCustomers } from "../../../../drizzle/schema";
+import { eq, and, ilike, or, inArray, sql, count, desc, asc } from "drizzle-orm";
+import { getCurrentUserInfo, isSuperAdmin } from "@/lib/permissions/check-permissions";
+import { nanoid } from "nanoid";
+import { clerkClient } from "@clerk/nextjs/server";
+import { hashPassword } from "@/app/utils/password";
+import { generateSlug } from "@/lib/utils";
+import { revalidatePath } from "next/cache";
+
+// Função helper para gerar senha aleatória
+async function generateRandomPassword(length = 8): Promise<string> {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let randomPassword = "";
+  for (let i = 0; i < length; i++) {
+    randomPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return randomPassword;
+}
+
+/**
+ * Lista todos os usuários do sistema com filtros
+ * Super Admin vê todos, Admin vê apenas usuários dos ISOs autorizados
+ */
+export async function getAllUsers(
+  page: number = 1,
+  pageSize: number = 10,
+  filters?: {
+    email?: string;
+    name?: string;
+    customerId?: number;
+    profileId?: number;
+    active?: boolean;
+  }
+) {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo) {
+    throw new Error("Usuário não autenticado");
+  }
+
+  const offset = (page - 1) * pageSize;
+  const whereConditions = [];
+
+  // Aplicar filtros
+  if (filters?.email) {
+    whereConditions.push(ilike(users.email, `%${filters.email}%`));
+  }
+
+  if (filters?.name) {
+    // Buscar no Clerk pelo nome (será necessário ajustar conforme implementação)
+    whereConditions.push(ilike(users.email, `%${filters.name}%`));
+  }
+
+  if (filters?.customerId) {
+    whereConditions.push(eq(users.idCustomer, filters.customerId));
+  }
+
+  if (filters?.profileId) {
+    whereConditions.push(eq(users.idProfile, filters.profileId));
+  }
+
+  if (filters?.active !== undefined) {
+    whereConditions.push(eq(users.active, filters.active));
+  }
+
+  // Se for Admin (não Super Admin), filtrar apenas ISOs autorizados
+  if (userInfo.isAdmin && !userInfo.isSuperAdmin && userInfo.allowedCustomers) {
+    if (userInfo.allowedCustomers.length === 0) {
+      // Admin sem ISOs autorizados retorna lista vazia
+      return {
+        users: [],
+        totalCount: 0,
+      };
+    }
+    whereConditions.push(inArray(users.idCustomer, userInfo.allowedCustomers));
+  }
+
+  // Contar total
+  const totalCountResult = await db
+    .select({ count: count() })
+    .from(users)
+    .leftJoin(customers, eq(users.idCustomer, customers.id))
+    .leftJoin(profiles, eq(users.idProfile, profiles.id))
+    .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
+
+  const totalCount = totalCountResult[0]?.count || 0;
+
+  // Buscar usuários
+  const result = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      idCustomer: users.idCustomer,
+      idProfile: users.idProfile,
+      active: users.active,
+      fullAccess: users.fullAccess,
+      customerName: customers.name,
+      profileName: profiles.name,
+      profileDescription: profiles.description,
+    })
+    .from(users)
+    .leftJoin(customers, eq(users.idCustomer, customers.id))
+    .leftJoin(profiles, eq(users.idProfile, profiles.id))
+    .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+    .orderBy(desc(users.id))
+    .limit(pageSize)
+    .offset(offset);
+
+  return {
+    users: result,
+    totalCount,
+  };
+}
+
+/**
+ * Obtém os ISOs autorizados para um Admin
+ */
+export async function getAdminCustomers(adminUserId: number) {
+  const result = await db
+    .select({
+      id: adminCustomers.id,
+      idCustomer: adminCustomers.idCustomer,
+      customerName: customers.name,
+      customerSlug: customers.slug,
+      active: adminCustomers.active,
+    })
+    .from(adminCustomers)
+    .leftJoin(customers, eq(adminCustomers.idCustomer, customers.id))
+    .where(and(eq(adminCustomers.idUser, adminUserId), eq(adminCustomers.active, true)));
+
+  return result;
+}
+
+/**
+ * Atribui um ISO a um Admin
+ */
+export async function assignCustomerToAdmin(adminUserId: number, customerId: number) {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo?.isSuperAdmin) {
+    throw new Error("Apenas Super Admin pode atribuir ISOs a Admins");
+  }
+
+  // Verificar se já existe
+  const existing = await db
+    .select()
+    .from(adminCustomers)
+    .where(and(eq(adminCustomers.idUser, adminUserId), eq(adminCustomers.idCustomer, customerId)))
+    .limit(1);
+
+  if (existing.length > 0) {
+    // Atualizar para ativo se estiver inativo
+    await db
+      .update(adminCustomers)
+      .set({
+        active: true,
+        dtupdate: new Date().toISOString(),
+      })
+      .where(eq(adminCustomers.id, existing[0].id));
+    return existing[0].id;
+  }
+
+  // Criar novo registro
+  const slug = `admin-${adminUserId}-customer-${customerId}-${nanoid(10)}`;
+  const result = await db
+    .insert(adminCustomers)
+    .values({
+      idUser: adminUserId,
+      idCustomer: customerId,
+      slug,
+      active: true,
+    })
+    .returning({ id: adminCustomers.id });
+
+  return result[0]?.id;
+}
+
+/**
+ * Remove um ISO de um Admin
+ */
+export async function removeCustomerFromAdmin(adminUserId: number, customerId: number) {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo?.isSuperAdmin) {
+    throw new Error("Apenas Super Admin pode remover ISOs de Admins");
+  }
+
+  await db
+    .update(adminCustomers)
+    .set({
+      active: false,
+      dtupdate: new Date().toISOString(),
+    })
+    .where(and(eq(adminCustomers.idUser, adminUserId), eq(adminCustomers.idCustomer, customerId)));
+
+  return true;
+}
+
+/**
+ * Atualiza os ISOs autorizados de um Admin (substitui lista completa)
+ */
+export async function updateAdminCustomers(adminUserId: number, customerIds: number[]) {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo?.isSuperAdmin) {
+    throw new Error("Apenas Super Admin pode atualizar ISOs de Admins");
+  }
+
+  // Desativar todos os existentes
+  await db
+    .update(adminCustomers)
+    .set({
+      active: false,
+      dtupdate: new Date().toISOString(),
+    })
+    .where(eq(adminCustomers.idUser, adminUserId));
+
+  // Criar novos ou reativar existentes
+  for (const customerId of customerIds) {
+    await assignCustomerToAdmin(adminUserId, customerId);
+  }
+
+  return true;
+}
+
+/**
+ * Lista todos os perfis disponíveis
+ */
+export async function getAllProfiles() {
+  const result = await db
+    .select({
+      id: profiles.id,
+      name: profiles.name,
+      description: profiles.description,
+      active: profiles.active,
+    })
+    .from(profiles)
+    .where(eq(profiles.active, true))
+    .orderBy(asc(profiles.name));
+
+  return result;
+}
+
+/**
+ * Lista todos os ISOs (para Super Admin) ou ISOs autorizados (para Admin)
+ */
+export async function getAvailableCustomers() {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo) {
+    throw new Error("Usuário não autenticado");
+  }
+
+  // Super Admin vê todos
+  if (userInfo.isSuperAdmin) {
+    const result = await db
+      .select({
+        id: customers.id,
+        name: customers.name,
+        slug: customers.slug,
+        isActive: customers.isActive,
+      })
+      .from(customers)
+      .where(eq(customers.isActive, true))
+      .orderBy(asc(customers.name));
+
+    return result;
+  }
+
+  // Admin vê apenas ISOs autorizados
+  if (userInfo.isAdmin && !userInfo.isSuperAdmin && userInfo.allowedCustomers) {
+    if (userInfo.allowedCustomers.length === 0) {
+      return [];
+    }
+
+    const result = await db
+      .select({
+        id: customers.id,
+        name: customers.name,
+        slug: customers.slug,
+        isActive: customers.isActive,
+      })
+      .from(customers)
+      .where(and(inArray(customers.id, userInfo.allowedCustomers), eq(customers.isActive, true)))
+      .orderBy(asc(customers.name));
+
+    return result;
+  }
+
+  // Usuário normal vê apenas seu ISO
+  if (userInfo.idCustomer) {
+    const result = await db
+      .select({
+        id: customers.id,
+        name: customers.name,
+        slug: customers.slug,
+        isActive: customers.isActive,
+      })
+      .from(customers)
+      .where(and(eq(customers.id, userInfo.idCustomer), eq(customers.isActive, true)))
+      .limit(1);
+
+    return result;
+  }
+
+  return [];
+}
+
+/**
+ * Cria um novo Admin (apenas Super Admin pode criar)
+ */
+export async function createAdminUser(data: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password?: string;
+  customerIds?: number[]; // ISOs autorizados para o Admin
+}) {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo?.isSuperAdmin) {
+    throw new Error("Apenas Super Admin pode criar Admins");
+  }
+
+  const { firstName, lastName, email, password, customerIds = [] } = data;
+
+  // Validar email
+  if (!email || !email.includes("@")) {
+    throw new Error("Email inválido");
+  }
+
+  // Gerar senha
+  const finalPassword = password && password.trim() !== "" 
+    ? password 
+    : await generateRandomPassword(12);
+
+  if (finalPassword.length < 8) {
+    throw new Error("A senha deve ter pelo menos 8 caracteres.");
+  }
+
+  const hashedPassword = hashPassword(finalPassword);
+
+  // Buscar perfil ADMIN (não SUPER_ADMIN)
+  const adminProfile = await db
+    .select()
+    .from(profiles)
+    .where(and(
+      ilike(profiles.name, "%ADMIN%"),
+      sql`UPPER(${profiles.name}) NOT LIKE '%SUPER%'`
+    ))
+    .limit(1);
+
+  if (!adminProfile || adminProfile.length === 0) {
+    throw new Error("Perfil ADMIN não encontrado no banco.");
+  }
+
+  const idProfile = adminProfile[0].id;
+
+  // Criar no Clerk
+  const clerk = await clerkClient();
+  let clerkUser;
+  try {
+    clerkUser = await clerk.users.createUser({
+      firstName,
+      lastName,
+      emailAddress: [email],
+      password: finalPassword,
+      publicMetadata: {
+        isFirstLogin: true,
+      },
+    });
+  } catch (error: any) {
+    console.error("Erro ao criar usuário no Clerk:", error);
+    if (error?.errors?.some((e: any) => e.code === "form_password_pwned")) {
+      throw new Error("Senha comprometida: Essa senha foi encontrada em vazamentos de dados.");
+    }
+    throw new Error(`Erro ao criar usuário no Clerk: ${error?.message || "Erro desconhecido"}`);
+  }
+
+  // Criar no banco
+  const created = await db
+    .insert(users)
+    .values({
+      slug: generateSlug(),
+      dtinsert: new Date().toISOString(),
+      dtupdate: new Date().toISOString(),
+      active: true,
+      email,
+      idCustomer: null, // Admin não tem ISO específico, usa admin_customers
+      idClerk: clerkUser.id,
+      idProfile,
+      idAddress: null,
+      fullAccess: false,
+      hashedPassword,
+      initialPassword: finalPassword,
+    })
+    .returning({ id: users.id });
+
+  const userId = created[0].id;
+
+  // Atribuir ISOs ao Admin
+  if (customerIds.length > 0) {
+    for (const customerId of customerIds) {
+      await assignCustomerToAdmin(userId, customerId);
+    }
+  }
+
+  revalidatePath("/config/users");
+  
+  return {
+    id: userId,
+    email,
+    clerkId: clerkUser.id,
+  };
+}
+
+/**
+ * Atualiza permissões de um usuário (perfil, ISO, fullAccess)
+ */
+export async function updateUserPermissions(
+  userId: number,
+  data: {
+    idProfile?: number;
+    idCustomer?: number | null;
+    fullAccess?: boolean;
+    customerIds?: number[]; // Para Admin, atualizar ISOs autorizados
+  }
+) {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo) {
+    throw new Error("Usuário não autenticado");
+  }
+
+  // Verificar se usuário existe
+  const existingUser = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!existingUser || existingUser.length === 0) {
+    throw new Error("Usuário não encontrado");
+  }
+
+  const user = existingUser[0];
+
+  // Super Admin pode atualizar qualquer usuário
+  // Admin só pode atualizar usuários dos ISOs autorizados
+  if (!userInfo.isSuperAdmin) {
+    if (userInfo.isAdmin && !userInfo.isSuperAdmin) {
+      // Admin só pode atualizar se o usuário estiver em um ISO autorizado
+      if (user.idCustomer && userInfo.allowedCustomers && !userInfo.allowedCustomers.includes(user.idCustomer)) {
+        throw new Error("Você não tem permissão para atualizar este usuário");
+      }
+
+      // Admin não pode criar outros Admins ou Super Admins
+      if (data.idProfile) {
+        const profile = await db
+          .select()
+          .from(profiles)
+          .where(eq(profiles.id, data.idProfile))
+          .limit(1);
+
+        if (profile && profile.length > 0) {
+          const profileName = profile[0].name?.toUpperCase() || "";
+          if (profileName.includes("ADMIN") || profileName.includes("SUPER")) {
+            throw new Error("Admin não pode atribuir perfil ADMIN ou SUPER_ADMIN");
+          }
+        }
+      }
+    } else {
+      throw new Error("Apenas Admin ou Super Admin pode atualizar permissões");
+    }
+  }
+
+  // Atualizar usuário
+  const updateData: any = {
+    dtupdate: new Date().toISOString(),
+  };
+
+  if (data.idProfile !== undefined) {
+    updateData.idProfile = data.idProfile;
+  }
+
+  if (data.idCustomer !== undefined) {
+    updateData.idCustomer = data.idCustomer;
+  }
+
+  if (data.fullAccess !== undefined) {
+    updateData.fullAccess = data.fullAccess;
+  }
+
+  await db
+    .update(users)
+    .set(updateData)
+    .where(eq(users.id, userId));
+
+  // Se for Admin e tiver customerIds, atualizar admin_customers
+  if (data.customerIds !== undefined && userInfo.isSuperAdmin) {
+    // Verificar se o perfil do usuário é Admin
+    const userProfile = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.id, data.idProfile || user.idProfile || 0))
+      .limit(1);
+
+    if (userProfile && userProfile.length > 0) {
+      const profileName = userProfile[0].name?.toUpperCase() || "";
+      const isAdminProfile = profileName.includes("ADMIN") && !profileName.includes("SUPER");
+
+      if (isAdminProfile) {
+        await updateAdminCustomers(userId, data.customerIds);
+      }
+    }
+  }
+
+  revalidatePath("/config/users");
+  
+  return true;
+}

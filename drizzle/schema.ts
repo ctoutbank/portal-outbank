@@ -829,6 +829,31 @@ export const users = pgTable("users", {
 		}),
 ]);
 
+export const adminCustomers = pgTable("admin_customers", {
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "admin_customers_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
+	slug: varchar({ length: 50 }),
+	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	dtupdate: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	active: boolean().default(true),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	idUser: bigint("id_user", { mode: "number" }),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	idCustomer: bigint("id_customer", { mode: "number" }),
+}, (table) => [
+	foreignKey({
+			columns: [table.idUser],
+			foreignColumns: [users.id],
+			name: "admin_customers_id_user_fkey"
+		}),
+	foreignKey({
+			columns: [table.idCustomer],
+			foreignColumns: [customers.id],
+			name: "admin_customers_id_customer_fkey"
+		}),
+	unique("admin_customers_id_user_id_customer_key").on(table.idUser, table.idCustomer),
+]);
+
 export const reportExecution = pgTable("report_execution", {
 	id: serial().primaryKey().notNull(),
 	idReport: integer("id_report"),

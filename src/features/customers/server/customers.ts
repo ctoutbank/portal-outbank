@@ -1,7 +1,7 @@
 "use server";
 import { db } from "@/db/drizzle";
-import { customers, customerCustomization } from "../../../../drizzle/schema";
-import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { customers, customerCustomization, adminCustomers } from "../../../../drizzle/schema";
+import { and, asc, count, desc, eq, ilike, or, sql, inArray } from "drizzle-orm";
 import { CustomerSchema } from "../schema/schema";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
 
@@ -48,10 +48,27 @@ export async function getCustomers(
     );
   }
 
-  // Se usuário não for admin, filtrar apenas pelo ISO do usuário
+  // Filtrar por permissões do usuário
   const userInfo = await getCurrentUserInfo();
-  if (userInfo && !userInfo.isAdmin && userInfo.idCustomer) {
-    whereConditions.push(eq(customers.id, userInfo.idCustomer));
+  
+  if (userInfo) {
+    // Super Admin vê tudo (não adiciona filtro)
+    if (userInfo.isSuperAdmin) {
+      // Não adiciona filtro - vê todos
+    }
+    // Admin vê apenas ISOs autorizados
+    else if (userInfo.isAdmin && !userInfo.isSuperAdmin && userInfo.allowedCustomers) {
+      if (userInfo.allowedCustomers.length === 0) {
+        // Admin sem ISOs autorizados retorna lista vazia
+        whereConditions.push(sql`1 = 0`); // Condição impossível
+      } else {
+        whereConditions.push(inArray(customers.id, userInfo.allowedCustomers));
+      }
+    }
+    // Usuário normal vê apenas seu ISO
+    else if (!userInfo.isAdmin && userInfo.idCustomer) {
+      whereConditions.push(eq(customers.id, userInfo.idCustomer));
+    }
   }
 
   // whereConditions.push(eq(customers.isActive, true));
