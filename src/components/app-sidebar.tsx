@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, ChartPie, Settings, Table, Truck, Users, type LucideIcon } from "lucide-react";
+import { Briefcase, ChartPie, Settings, Table, Truck, type LucideIcon } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
@@ -48,9 +48,6 @@ const navMainItems: Array<{
     url: "/config",
     icon: Settings,
     isActive: false,
-    children: [
-      { title: "Usuários", url: "/config/users", icon: Users, isActive: false },
-    ],
   },
 ];
 
@@ -78,13 +75,13 @@ export function AppSidebar({ tenantCustomization, isAdmin = false, ...props }: A
         return isAdmin;
       }
       // Item "Configurações" só aparece para admins
-      if (item.url === "/config" || item.url?.startsWith("/config")) {
+      if (item.url === "/config") {
         return isAdmin;
       }
       return true;
     })
     .map((item) => {
-      // Filtrar subitens também
+      // Se tiver children, converter para items (para manter compatibilidade)
       if (item.children) {
         return {
           ...item,
