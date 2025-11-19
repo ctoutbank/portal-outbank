@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, ChartPie, Settings, Table, Truck, type LucideIcon } from "lucide-react";
+import { Briefcase, ChartPie, Settings, Table, Truck, Users, type LucideIcon } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
