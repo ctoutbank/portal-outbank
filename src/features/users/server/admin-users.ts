@@ -99,6 +99,7 @@ export async function getAllUsers(
       customerName: customers.name,
       profileName: profiles.name,
       profileDescription: profiles.description,
+      idClerk: users.idClerk,
     })
     .from(users)
     .leftJoin(customers, eq(users.idCustomer, customers.id))
@@ -108,8 +109,28 @@ export async function getAllUsers(
     .limit(pageSize)
     .offset(offset);
 
+  // Buscar últimos acessos do Clerk
+  const clerk = await clerkClient();
+  const usersWithLastAccess = await Promise.all(
+    result.map(async (user) => {
+      let lastAccess: string | null = null;
+      if (user.idClerk) {
+        try {
+          const clerkUser = await clerk.users.getUser(user.idClerk);
+          lastAccess = clerkUser.lastSignInAt ? new Date(clerkUser.lastSignInAt).toISOString() : null;
+        } catch (error) {
+          console.error(`Erro ao buscar último acesso do usuário ${user.idClerk}:`, error);
+        }
+      }
+      return {
+        ...user,
+        lastAccess,
+      };
+    })
+  );
+
   return {
-    users: result,
+    users: usersWithLastAccess,
     totalCount,
   };
 }

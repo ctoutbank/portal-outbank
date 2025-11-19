@@ -23,6 +23,8 @@ type UserData = {
   customerName: string | null;
   profileName: string | null;
   profileDescription: string | null | undefined;
+  lastAccess?: string | null;
+  idClerk?: string | null;
 };
 
 interface AdminUsersListProps {
@@ -74,24 +76,42 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
                     </span>
                   </TableCell>
                   <TableCell className="py-3">
-                    <Badge variant={getProfileBadgeVariant(user.profileName)}>
-                      {user.profileName?.includes("SUPER") && (
-                        <ShieldCheck className="h-3 w-3 mr-1" />
-                      )}
-                      {user.profileName?.includes("ADMIN") && !user.profileName?.includes("SUPER") && (
-                        <Shield className="h-3 w-3 mr-1" />
-                      )}
-                      {user.profileName || "N/A"}
-                    </Badge>
+                    {user.profileName?.toUpperCase().includes("SUPER") ? (
+                      <Badge className="bg-black text-white text-[10px] tracking-wider font-medium">
+                        {user.profileName?.includes("SUPER") && (
+                          <ShieldCheck className="h-3 w-3 mr-1" />
+                        )}
+                        SUPER ADMIN
+                      </Badge>
+                    ) : (
+                      <Badge variant={getProfileBadgeVariant(user.profileName)}>
+                        {user.profileName?.includes("ADMIN") && !user.profileName?.includes("SUPER") && (
+                          <Shield className="h-3 w-3 mr-1" />
+                        )}
+                        {user.profileName || "N/A"}
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell className="py-3">
-                    <Badge variant={user.active ? "default" : "secondary"}>
-                      {user.active ? "Ativo" : "Inativo"}
-                    </Badge>
+                    {user.active ? (
+                      <Badge className="bg-green-600 hover:bg-green-700 text-white">
+                        Ativo
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">Inativo</Badge>
+                    )}
                   </TableCell>
                   <TableCell className="py-3">
-                    {user.fullAccess ? (
-                      <Badge variant="outline">Acesso Total</Badge>
+                    {user.lastAccess ? (
+                      <span className="text-sm text-muted-foreground">
+                        {new Intl.DateTimeFormat('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }).format(new Date(user.lastAccess))}
+                      </span>
                     ) : (
                       <span className="text-muted-foreground text-sm">--</span>
                     )}
