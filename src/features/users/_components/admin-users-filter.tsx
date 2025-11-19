@@ -21,8 +21,8 @@ type AdminUsersFilterProps = {
   customerIdIn?: number;
   profileIdIn?: number;
   activeIn?: boolean;
-  profiles: Array<{ id: number; name: string }>;
-  customers: Array<{ id: number; name: string }>;
+  profiles: Array<{ id: number; name: string | null; description?: string | null }>;
+  customers: Array<{ id: number; name: string | null; slug?: string | null }>;
 };
 
 export function AdminUsersFilter({
@@ -175,7 +175,7 @@ export function AdminUsersFilter({
                   <SelectItem value="">Todos os ISOs</SelectItem>
                   {customers.map((customer) => (
                     <SelectItem key={customer.id} value={customer.id.toString()}>
-                      {customer.name}
+                      {customer.name || "Sem nome"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -192,7 +192,7 @@ export function AdminUsersFilter({
                   <SelectItem value="">Todos os perfis</SelectItem>
                   {profiles.map((profile) => (
                     <SelectItem key={profile.id} value={profile.id.toString()}>
-                      {profile.name}
+                      {profile.name || "Sem nome"}
                     </SelectItem>
                   ))}
                 </SelectContent>
