@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, ChartPie, Settings, Table, Truck, Users } from "lucide-react";
+import { Briefcase, ChartPie, Settings, Table, Truck, Users, type LucideIcon } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
@@ -19,12 +19,12 @@ import type { CustomerCustomization } from "@/utils/serverActions";
 const navMainItems: Array<{
   title: string;
   url: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   isActive?: boolean;
   children?: Array<{
     title: string;
     url: string;
-    icon?: React.ComponentType<{ className?: string }>;
+    icon?: LucideIcon;
     isActive?: boolean;
   }>;
 }> = [
