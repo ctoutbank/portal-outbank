@@ -14,10 +14,17 @@ export default async function NewUserPage() {
   const currentUserInfo = await getCurrentUserInfo();
   const isSuperAdmin = currentUserInfo?.isSuperAdmin || false;
 
-  const [profiles, customers] = await Promise.all([
-    getAllProfiles(),
-    getAvailableCustomers(),
-  ]);
+  let profiles, customers;
+  try {
+    [profiles, customers] = await Promise.all([
+      getAllProfiles(),
+      getAvailableCustomers(),
+    ]);
+  } catch (error) {
+    console.error('Erro ao carregar dados para criação de usuário:', error);
+    profiles = [];
+    customers = [];
+  }
 
   return (
     <>
@@ -29,8 +36,8 @@ export default async function NewUserPage() {
       />
       <BaseBody title="Novo Usuário" subtitle="Criar novo usuário no sistema">
         <AdminUserPermissionsForm
-          profiles={profiles}
-          customers={customers}
+          profiles={profiles || []}
+          customers={customers || []}
           isSuperAdmin={isSuperAdmin}
         />
       </BaseBody>

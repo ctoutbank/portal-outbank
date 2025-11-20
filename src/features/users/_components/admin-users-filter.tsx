@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,7 +36,6 @@ export function AdminUsersFilter({
 }: AdminUsersFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const params = new URLSearchParams(searchParams?.toString() || "");
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
   
   const [email, setEmail] = useState(emailIn || "");
@@ -45,56 +44,85 @@ export function AdminUsersFilter({
   const [profileId, setProfileId] = useState(profileIdIn?.toString() || "");
   const [active, setActive] = useState(activeIn?.toString() || "");
 
+  // Sincronizar estados com searchParams quando a página carregar
+  useEffect(() => {
+    if (searchParams) {
+      const emailParam = searchParams.get("email") || "";
+      const nameParam = searchParams.get("name") || "";
+      const customerIdParam = searchParams.get("customerId") || "";
+      const profileIdParam = searchParams.get("profileId") || "";
+      const activeParam = searchParams.get("active") || "";
+
+      setEmail(emailParam);
+      setName(nameParam);
+      setCustomerId(customerIdParam);
+      setProfileId(profileIdParam);
+      setActive(activeParam);
+    }
+  }, [searchParams, emailIn, nameIn, customerIdIn, profileIdIn, activeIn]);
+
   const handleFilter = () => {
-    if (email) {
-      params.set("email", email);
-    } else {
-      params.delete("email");
-    }
+    try {
+      const params = new URLSearchParams(searchParams?.toString() || "");
 
-    if (name) {
-      params.set("name", name);
-    } else {
-      params.delete("name");
-    }
+      // Limpar valores vazios
+      if (email && email.trim()) {
+        params.set("email", email.trim());
+      } else {
+        params.delete("email");
+      }
 
-    if (customerId) {
-      params.set("customerId", customerId);
-    } else {
-      params.delete("customerId");
-    }
+      if (name && name.trim()) {
+        params.set("name", name.trim());
+      } else {
+        params.delete("name");
+      }
 
-    if (profileId) {
-      params.set("profileId", profileId);
-    } else {
-      params.delete("profileId");
-    }
+      if (customerId && customerId.trim()) {
+        params.set("customerId", customerId.trim());
+      } else {
+        params.delete("customerId");
+      }
 
-    if (active) {
-      params.set("active", active);
-    } else {
-      params.delete("active");
-    }
+      if (profileId && profileId.trim()) {
+        params.set("profileId", profileId.trim());
+      } else {
+        params.delete("profileId");
+      }
 
-    params.set("page", "1");
-    router.replace(`/config/users?${params.toString()}`);
-    setIsFiltersVisible(false);
+      if (active && active.trim()) {
+        params.set("active", active.trim());
+      } else {
+        params.delete("active");
+      }
+
+      // Sempre resetar para página 1 quando filtrar
+      params.set("page", "1");
+
+      router.replace(`/config/users?${params.toString()}`);
+      setIsFiltersVisible(false);
+    } catch (error) {
+      console.error("Erro ao aplicar filtros:", error);
+    }
   };
 
   const handleClearFilters = () => {
-    params.delete("email");
-    params.delete("name");
-    params.delete("customerId");
-    params.delete("profileId");
-    params.delete("active");
-    params.set("page", "1");
-    router.replace(`/config/users?${params.toString()}`);
-    setEmail("");
-    setName("");
-    setCustomerId("");
-    setProfileId("");
-    setActive("");
-    setIsFiltersVisible(false);
+    try {
+      const params = new URLSearchParams();
+      params.set("page", "1");
+      
+      router.replace(`/config/users?${params.toString()}`);
+      
+      // Limpar estados locais
+      setEmail("");
+      setName("");
+      setCustomerId("");
+      setProfileId("");
+      setActive("");
+      setIsFiltersVisible(false);
+    } catch (error) {
+      console.error("Erro ao limpar filtros:", error);
+    }
   };
 
   const activeFiltersCount =

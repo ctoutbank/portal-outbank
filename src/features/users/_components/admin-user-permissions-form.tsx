@@ -117,19 +117,57 @@ export function AdminUserPermissionsForm({
 
   const onSubmit = async (data: UserPermissionsFormValues) => {
     setIsLoading(true);
+    
     try {
+      // Validações básicas
+      if (!data.email || !data.email.trim()) {
+        toast.error("Email é obrigatório");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!data.firstName || !data.firstName.trim()) {
+        toast.error("Primeiro nome é obrigatório");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!data.lastName || !data.lastName.trim()) {
+        toast.error("Último nome é obrigatório");
+        setIsLoading(false);
+        return;
+      }
+
       if (isEditing && user?.id) {
         // Atualizar usuário existente
         try {
-          await updateUserPermissions(user.id, {
-            idProfile: data.idProfile || undefined,
-            idCustomer: data.idCustomer !== undefined ? data.idCustomer : undefined,
+          const updateData: {
+            idProfile?: number;
+            idCustomer?: number | null;
+            fullAccess?: boolean;
+            customerIds?: number[];
+          } = {
             fullAccess: data.fullAccess,
-            customerIds: isAdminProfile ? data.customerIds : undefined,
-          });
+          };
+
+          if (data.idProfile !== null && data.idProfile !== undefined) {
+            updateData.idProfile = data.idProfile;
+          }
+
+          if (data.idCustomer !== undefined) {
+            updateData.idCustomer = data.idCustomer;
+          }
+
+          if (isAdminProfile && data.customerIds) {
+            updateData.customerIds = data.customerIds;
+          }
+
+          await updateUserPermissions(user.id, updateData);
+          
           toast.success("Permissões atualizadas com sucesso");
           router.push("/config/users");
           router.refresh();
+          return;
         } catch (error: any) {
           console.error("Erro ao atualizar usuário:", error);
           const errorMessage = error?.message || "Erro ao atualizar permissões do usuário";
@@ -145,22 +183,37 @@ export function AdminUserPermissionsForm({
           return;
         }
 
+        if (!data.idProfile) {
+          toast.error("Perfil é obrigatório");
+          setIsLoading(false);
+          return;
+        }
+
         // Se for Admin, criar Admin e atribuir ISOs
         if (isAdminProfile) {
           try {
             await createAdminUser({
-              firstName: data.firstName,
-              lastName: data.lastName,
-              email: data.email,
-              password: data.password,
+              firstName: data.firstName.trim(),
+              lastName: data.lastName.trim(),
+              email: data.email.trim().toLowerCase(),
+              password: data.password?.trim() || undefined,
               customerIds: data.customerIds || [],
             });
+            
             toast.success("Admin criado com sucesso");
             router.push("/config/users");
             router.refresh();
+            return;
           } catch (error: any) {
             console.error("Erro ao criar Admin:", error);
-            const errorMessage = error?.message || "Erro ao criar Admin";
+            let errorMessage = "Erro ao criar Admin";
+            
+            if (error?.message) {
+              errorMessage = error.message;
+            } else if (error?.errors) {
+              errorMessage = error.errors.map((e: any) => e.message || e.msg || e).join(", ");
+            }
+            
             toast.error(errorMessage);
             setIsLoading(false);
             return;
@@ -169,27 +222,36 @@ export function AdminUserPermissionsForm({
           // Criar usuário normal usando função existente
           try {
             const { InsertUser } = await import("@/features/customers/users/_actions/user-actions");
+            
             const userId = await InsertUser({
-              firstName: data.firstName,
-              lastName: data.lastName,
-              email: data.email,
-              password: data.password,
-              idCustomer: data.idCustomer,
+              firstName: data.firstName.trim(),
+              lastName: data.lastName.trim(),
+              email: data.email.trim().toLowerCase(),
+              password: data.password?.trim() || undefined,
+              idCustomer: data.idCustomer || null,
               active: true,
-              idProfile: data.idProfile || undefined,  // Passar idProfile diretamente
-              fullAccess: data.fullAccess || false,    // Passar fullAccess diretamente
+              idProfile: data.idProfile,
+              fullAccess: data.fullAccess || false,
             });
 
-            if (userId) {
+            if (userId && typeof userId === 'number' && userId > 0) {
               toast.success("Usuário criado com sucesso");
               router.push("/config/users");
               router.refresh();
+              return;
             } else {
               throw new Error("Erro ao obter ID do usuário criado");
             }
           } catch (error: any) {
             console.error("Erro ao criar usuário:", error);
-            const errorMessage = error?.message || "Erro ao criar usuário";
+            let errorMessage = "Erro ao criar usuário";
+            
+            if (error?.message) {
+              errorMessage = error.message;
+            } else if (error?.errors) {
+              errorMessage = error.errors.map((e: any) => e.message || e.msg || e).join(", ");
+            }
+            
             toast.error(errorMessage);
             setIsLoading(false);
             return;
@@ -203,7 +265,6 @@ export function AdminUserPermissionsForm({
           ? error.message
           : "Ocorreu um erro ao processar a solicitação";
       toast.error(errorMessage);
-    } finally {
       setIsLoading(false);
     }
   };

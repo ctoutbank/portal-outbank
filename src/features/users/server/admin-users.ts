@@ -88,30 +88,59 @@ export async function getAllUsers(
   const totalCount = totalCountResult[0]?.count || 0;
 
   // Buscar usuários
-  const result = await db
-    .select({
-      id: users.id,
-      email: users.email,
-      idCustomer: users.idCustomer,
-      idProfile: users.idProfile,
-      active: users.active,
-      fullAccess: users.fullAccess,
-      customerName: customers.name,
-      profileName: profiles.name,
-      profileDescription: profiles.description,
-      idClerk: users.idClerk,
-    })
-    .from(users)
-    .leftJoin(customers, eq(users.idCustomer, customers.id))
-    .leftJoin(profiles, eq(users.idProfile, profiles.id))
-    .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-    .orderBy(desc(users.id))
-    .limit(pageSize)
-    .offset(offset);
+  let result: Array<{
+    id: number;
+    email: string | null;
+    idCustomer: number | null;
+    idProfile: number | null;
+    active: boolean | null;
+    fullAccess: boolean | null;
+    customerName: string | null;
+    profileName: string | null;
+    profileDescription: string | null;
+    idClerk: string | null;
+  }> = [];
+
+  try {
+    result = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        idCustomer: users.idCustomer,
+        idProfile: users.idProfile,
+        active: users.active,
+        fullAccess: users.fullAccess,
+        customerName: customers.name,
+        profileName: profiles.name,
+        profileDescription: profiles.description,
+        idClerk: users.idClerk,
+      })
+      .from(users)
+      .leftJoin(customers, eq(users.idCustomer, customers.id))
+      .leftJoin(profiles, eq(users.idProfile, profiles.id))
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .orderBy(desc(users.id))
+      .limit(pageSize)
+      .offset(offset);
+  } catch (error) {
+    console.error('Erro ao buscar usuários:', error);
+    return {
+      users: [],
+      totalCount: 0,
+    };
+  }
+
+  // Se não houver resultados, retornar vazio
+  if (!result || result.length === 0) {
+    return {
+      users: [],
+      totalCount,
+    };
+  }
 
   // Buscar todos os ISOs de admin_customers em batch (otimização)
-  const userIds = result.map(u => u.id);
-  let adminCustomersMap = new Map<number, Array<{ idCustomer: number; customerName: string | null }>>();
+  const userIds = result.map(u => u.id).filter((id): id is number => id !== null && id !== undefined);
+  const adminCustomersMap = new Map<number, Array<{ idCustomer: number; customerName: string | null }>>();
   
   if (userIds.length > 0) {
     try {
@@ -140,101 +169,85 @@ export async function getAllUsers(
         }
       });
     } catch (error: any) {
-      // Se a tabela não existe, continuar sem erros
-      if (error?.code !== '42P01' && !error?.message?.includes('does not exist') && !(error?.message?.includes('relation') && error?.message?.includes('admin_customers'))) {
+      // Se a tabela não existe ou há erro, continuar sem erros
+      const isTableError = error?.code === '42P01' || 
+                          error?.message?.includes('does not exist') || 
+                          (error?.message?.includes('relation') && error?.message?.includes('admin_customers'));
+      if (!isTableError) {
         console.error('Erro ao buscar ISOs de admin_customers:', error);
       }
     }
   }
 
-  // Agrupar por ID do usuário para evitar duplicatas (caso haja múltiplos registros)
-  const usersMap = new Map<number, typeof result[0] & { customers: Array<{ idCustomer: number; customerName: string | null }> }>();
-  
-  result.forEach((user) => {
-    if (!usersMap.has(user.id)) {
-      const customersSet = new Map<number, { idCustomer: number; customerName: string | null }>();
-      
-      // Adicionar ISO principal se existir
-      if (user.idCustomer) {
-        customersSet.set(user.idCustomer, {
-          idCustomer: user.idCustomer,
-          customerName: user.customerName,
-        });
-      }
-      
-      // Adicionar ISOs de admin_customers (se houver)
-      const adminCustomersList = adminCustomersMap.get(user.id) || [];
-      adminCustomersList.forEach(customer => {
-        if (customer.idCustomer) {
-          customersSet.set(customer.idCustomer, {
-            idCustomer: customer.idCustomer,
-            customerName: customer.customerName,
-          });
-        }
-      });
-      
-      // Converter Map para Array (já remove duplicatas automaticamente)
-      const customersList = Array.from(customersSet.values());
+  // Processar usuários e combinar ISOs
+  type UserWithCustomers = typeof result[0] & { 
+    customers: Array<{ idCustomer: number; customerName: string | null }>;
+    lastAccess?: string | null;
+  };
 
-      usersMap.set(user.id, {
-        ...user,
-        customers: customersList,
+  const processedUsers: UserWithCustomers[] = result.map((user) => {
+    const customersSet = new Map<number, { idCustomer: number; customerName: string | null }>();
+    
+    // Adicionar ISO principal se existir
+    if (user.idCustomer) {
+      customersSet.set(user.idCustomer, {
+        idCustomer: user.idCustomer,
+        customerName: user.customerName,
       });
-    } else {
-      // Se o usuário já existe, apenas adicionar ISOs que ainda não estão presentes
-      const existingUser = usersMap.get(user.id)!;
-      const customersSet = new Map<number, { idCustomer: number; customerName: string | null }>();
-      
-      // Adicionar ISOs existentes
-      existingUser.customers.forEach(c => {
-        customersSet.set(c.idCustomer, c);
-      });
-      
-      // Adicionar ISO principal se existir e ainda não estiver na lista
-      if (user.idCustomer && !customersSet.has(user.idCustomer)) {
-        customersSet.set(user.idCustomer, {
-          idCustomer: user.idCustomer,
-          customerName: user.customerName,
+    }
+    
+    // Adicionar ISOs de admin_customers (se houver)
+    const adminCustomersList = adminCustomersMap.get(user.id) || [];
+    adminCustomersList.forEach(customer => {
+      if (customer.idCustomer) {
+        customersSet.set(customer.idCustomer, {
+          idCustomer: customer.idCustomer,
+          customerName: customer.customerName,
         });
       }
-      
-      // Adicionar ISOs de admin_customers que ainda não estão na lista
-      const adminCustomersList = adminCustomersMap.get(user.id) || [];
-      adminCustomersList.forEach(customer => {
-        if (customer.idCustomer && !customersSet.has(customer.idCustomer)) {
-          customersSet.set(customer.idCustomer, {
-            idCustomer: customer.idCustomer,
-            customerName: customer.customerName,
-          });
-        }
-      });
-      
-      existingUser.customers = Array.from(customersSet.values());
-    }
+    });
+    
+    // Converter Map para Array (remove duplicatas automaticamente)
+    const customersList = Array.from(customersSet.values());
+
+    return {
+      ...user,
+      customers: customersList,
+    };
   });
-  
-  // Converter Map para Array
-  const usersWithISOs = Array.from(usersMap.values());
+
+  const usersWithISOs = processedUsers;
 
   // Buscar últimos acessos do Clerk
-  const clerk = await clerkClient();
-  const usersWithLastAccess = await Promise.all(
-    usersWithISOs.map(async (user) => {
-      let lastAccess: string | null = null;
-      if (user.idClerk) {
-        try {
-          const clerkUser = await clerk.users.getUser(user.idClerk);
-          lastAccess = clerkUser.lastSignInAt ? new Date(clerkUser.lastSignInAt).toISOString() : null;
-        } catch (error) {
-          console.error(`Erro ao buscar último acesso do usuário ${user.idClerk}:`, error);
+  let usersWithLastAccess: UserWithCustomers[] = [];
+  
+  try {
+    const clerk = await clerkClient();
+    usersWithLastAccess = await Promise.all(
+      usersWithISOs.map(async (user) => {
+        let lastAccess: string | null = null;
+        if (user.idClerk) {
+          try {
+            const clerkUser = await clerk.users.getUser(user.idClerk);
+            lastAccess = clerkUser.lastSignInAt ? new Date(clerkUser.lastSignInAt).toISOString() : null;
+          } catch (error) {
+            // Não logar erro se usuário não existir no Clerk (pode ser esperado)
+            if (error instanceof Error && !error.message.includes('not found')) {
+              console.error(`Erro ao buscar último acesso do usuário ${user.idClerk}:`, error);
+            }
+          }
         }
-      }
-      return {
-        ...user,
-        lastAccess,
-      };
-    })
-  );
+        return {
+          ...user,
+          lastAccess,
+        };
+      })
+    );
+  } catch (error) {
+    console.error('Erro ao buscar últimos acessos do Clerk:', error);
+    // Retornar usuários sem últimos acessos se houver erro
+    usersWithLastAccess = usersWithISOs.map(user => ({ ...user, lastAccess: null }));
+  }
 
   return {
     users: usersWithLastAccess,
@@ -392,82 +405,93 @@ export async function updateAdminCustomers(adminUserId: number, customerIds: num
  * Lista todos os perfis disponíveis
  */
 export async function getAllProfiles() {
-  const result = await db
-    .select({
-      id: profiles.id,
-      name: profiles.name,
-      description: profiles.description,
-      active: profiles.active,
-    })
-    .from(profiles)
-    .where(eq(profiles.active, true))
-    .orderBy(asc(profiles.name));
+  try {
+    const result = await db
+      .select({
+        id: profiles.id,
+        name: profiles.name,
+        description: profiles.description,
+        active: profiles.active,
+      })
+      .from(profiles)
+      .where(eq(profiles.active, true))
+      .orderBy(asc(profiles.name));
 
-  return result;
+    return result;
+  } catch (error) {
+    console.error('Erro ao buscar perfis:', error);
+    return [];
+  }
 }
 
 /**
  * Lista todos os ISOs (para Super Admin) ou ISOs autorizados (para Admin)
  */
 export async function getAvailableCustomers() {
-  const userInfo = await getCurrentUserInfo();
-  if (!userInfo) {
-    throw new Error("Usuário não autenticado");
-  }
-
-  // Super Admin vê todos
-  if (userInfo.isSuperAdmin) {
-    const result = await db
-      .select({
-        id: customers.id,
-        name: customers.name,
-        slug: customers.slug,
-        isActive: customers.isActive,
-      })
-      .from(customers)
-      .where(eq(customers.isActive, true))
-      .orderBy(asc(customers.name));
-
-    return result;
-  }
-
-  // Admin vê apenas ISOs autorizados
-  if (userInfo.isAdmin && !userInfo.isSuperAdmin && userInfo.allowedCustomers) {
-    if (userInfo.allowedCustomers.length === 0) {
+  try {
+    const userInfo = await getCurrentUserInfo();
+    if (!userInfo) {
+      console.error('Usuário não autenticado ao buscar ISOs disponíveis');
       return [];
     }
 
-    const result = await db
-      .select({
-        id: customers.id,
-        name: customers.name,
-        slug: customers.slug,
-        isActive: customers.isActive,
-      })
-      .from(customers)
-      .where(and(inArray(customers.id, userInfo.allowedCustomers), eq(customers.isActive, true)))
-      .orderBy(asc(customers.name));
+    // Super Admin vê todos
+    if (userInfo.isSuperAdmin) {
+      const result = await db
+        .select({
+          id: customers.id,
+          name: customers.name,
+          slug: customers.slug,
+          isActive: customers.isActive,
+        })
+        .from(customers)
+        .where(eq(customers.isActive, true))
+        .orderBy(asc(customers.name));
 
-    return result;
+      return result;
+    }
+
+    // Admin vê apenas ISOs autorizados
+    if (userInfo.isAdmin && !userInfo.isSuperAdmin && userInfo.allowedCustomers) {
+      if (userInfo.allowedCustomers.length === 0) {
+        return [];
+      }
+
+      const result = await db
+        .select({
+          id: customers.id,
+          name: customers.name,
+          slug: customers.slug,
+          isActive: customers.isActive,
+        })
+        .from(customers)
+        .where(and(inArray(customers.id, userInfo.allowedCustomers), eq(customers.isActive, true)))
+        .orderBy(asc(customers.name));
+
+      return result;
+    }
+
+    // Usuário normal vê apenas seu ISO
+    if (userInfo.idCustomer) {
+      const result = await db
+        .select({
+          id: customers.id,
+          name: customers.name,
+          slug: customers.slug,
+          isActive: customers.isActive,
+        })
+        .from(customers)
+        .where(and(eq(customers.id, userInfo.idCustomer), eq(customers.isActive, true)))
+        .limit(1);
+
+      return result;
+    }
+
+    return [];
+  } catch (error) {
+    console.error('Erro ao buscar ISOs disponíveis:', error);
+    return [];
   }
-
-  // Usuário normal vê apenas seu ISO
-  if (userInfo.idCustomer) {
-    const result = await db
-      .select({
-        id: customers.id,
-        name: customers.name,
-        slug: customers.slug,
-        isActive: customers.isActive,
-      })
-      .from(customers)
-      .where(and(eq(customers.id, userInfo.idCustomer), eq(customers.isActive, true)))
-      .limit(1);
-
-    return result;
-  }
-
-  return [];
 }
 
 /**

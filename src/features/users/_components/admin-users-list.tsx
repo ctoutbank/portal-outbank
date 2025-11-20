@@ -72,21 +72,27 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
                     <span className="text-sm font-medium">{user.email || "--"}</span>
                   </TableCell>
                   <TableCell className="py-3">
-                    {user.customers && user.customers.length > 0 ? (
+                    {user.customers && Array.isArray(user.customers) && user.customers.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
-                        {user.customers.slice(0, 3).map((customer, idx) => (
-                          <Badge 
-                            key={idx} 
-                            variant="outline" 
-                            className="text-xs font-normal"
-                          >
-                            {customer.customerName || `ISO ${customer.idCustomer}`}
-                          </Badge>
-                        ))}
+                        {user.customers
+                          .filter((c): c is { idCustomer: number; customerName: string | null } => 
+                            c !== null && c !== undefined && c.idCustomer !== null && c.idCustomer !== undefined
+                          )
+                          .slice(0, 3)
+                          .map((customer) => (
+                            <Badge 
+                              key={`${user.id}-customer-${customer.idCustomer}`}
+                              variant="outline" 
+                              className="text-xs font-normal"
+                            >
+                              {customer.customerName || `ISO ${customer.idCustomer}`}
+                            </Badge>
+                          ))}
                         {user.customers.length > 3 && (
                           <Badge 
                             variant="secondary" 
                             className="text-xs font-normal"
+                            title={`Mais ${user.customers.length - 3} ISO(s)`}
                           >
                             +{user.customers.length - 3}
                           </Badge>
@@ -123,17 +129,27 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
                     )}
                   </TableCell>
                   <TableCell className="py-3">
-                    {user.lastAccess ? (
-                      <span className="text-sm text-muted-foreground">
-                        {new Intl.DateTimeFormat('pt-BR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        }).format(new Date(user.lastAccess))}
-                      </span>
-                    ) : (
+                    {user.lastAccess ? (() => {
+                      try {
+                        const date = new Date(user.lastAccess);
+                        if (isNaN(date.getTime())) {
+                          return <span className="text-muted-foreground text-sm">--</span>;
+                        }
+                        return (
+                          <span className="text-sm text-muted-foreground">
+                            {new Intl.DateTimeFormat('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }).format(date)}
+                          </span>
+                        );
+                      } catch (error) {
+                        return <span className="text-muted-foreground text-sm">--</span>;
+                      }
+                    })() : (
                       <span className="text-muted-foreground text-sm">--</span>
                     )}
                   </TableCell>
