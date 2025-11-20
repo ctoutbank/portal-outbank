@@ -57,8 +57,8 @@ export default async function RootLayout({
           <ThemeInitializer />
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            defaultTheme="dark"
+            enableSystem={false}
             disableTransitionOnChange
           >
             <SessionTimeout>

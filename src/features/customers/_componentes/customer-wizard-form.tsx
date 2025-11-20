@@ -86,13 +86,16 @@ export default function CustomerWizardForm({
   );
 
   // Estados para controlar quais seções estão abertas
+  // Na edição (quando customer.id existe), todas as seções devem iniciar recolhidas (false)
+  // Na criação (sem ID), apenas a seção 1 deve iniciar aberta
   const [section1Open, setSection1Open] = useState<boolean>(() => !customer.id);
   const [section2Open, setSection2Open] = useState<boolean>(false);
-  const [section3Open, setSection3Open] = useState<boolean>(() => !!customer.id && isFirstStepComplete);
+  const [section3Open, setSection3Open] = useState<boolean>(false);
 
-  // Atualizar seção 3 quando isFirstStepComplete mudar
+  // Atualizar seção 3 quando isFirstStepComplete mudar (apenas para criação)
   useEffect(() => {
-    if (isFirstStepComplete && customer.id) {
+    // Apenas abre automaticamente na criação, não na edição
+    if (isFirstStepComplete && !customer.id) {
       setSection3Open(true);
     }
   }, [isFirstStepComplete, customer.id]);

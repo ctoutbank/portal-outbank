@@ -36,10 +36,23 @@ const BaseHeader = ({
                   {item.url ? (
                     <BreadcrumbLink href={item.url}>
                       {item.title}
-                      {item.subtitle}
+                      {item.subtitle && (
+                        <>
+                          {" "}
+                          {item.subtitle}
+                        </>
+                      )}
                     </BreadcrumbLink>
                   ) : (
-                    <BreadcrumbPage>{item.title}</BreadcrumbPage>
+                    <BreadcrumbPage>
+                      {item.title}
+                      {item.subtitle && (
+                        <>
+                          {" "}
+                          {item.subtitle}
+                        </>
+                      )}
+                    </BreadcrumbPage>
                   )}
                 </BreadcrumbItem>
                 {index < breadcrumbItems.length - 1 && <BreadcrumbSeparator />}
