@@ -440,7 +440,7 @@ export function AdminUserPermissionsForm({
                   <FormItem>
                     <FormLabel>ISO</FormLabel>
                     <Select
-                      value={field.value?.toString() || ""}
+                      value={field.value?.toString() || undefined}
                       onValueChange={(value) => {
                         field.onChange(value ? Number(value) : null);
                       }}
@@ -451,7 +451,6 @@ export function AdminUserPermissionsForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Nenhum ISO</SelectItem>
                         {customerOptions.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id.toString()}>
                             {customer.name || "Sem nome"}
