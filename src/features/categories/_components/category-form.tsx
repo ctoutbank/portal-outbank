@@ -118,7 +118,7 @@ export function CategoryForm({
           // Atualizar categoria existente
           const updateData: any = {
             name: name.trim(),
-            description: description.trim() || null,
+            description: description.trim() || undefined,
             restrictCustomerData,
             active,
           };
@@ -134,7 +134,7 @@ export function CategoryForm({
           // Criar nova categoria
           const result = await createCategory({
             name: name.trim(),
-            description: description.trim() || null,
+            description: description.trim() || undefined,
             restrictCustomerData,
             isSalesAgent: false,
           });
