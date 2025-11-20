@@ -31,6 +31,7 @@ export default async function RootLayout({
   
   return (
     <ClerkProvider
+      locale="pt-BR"
       appearance={{
         signIn: {
           elements: {

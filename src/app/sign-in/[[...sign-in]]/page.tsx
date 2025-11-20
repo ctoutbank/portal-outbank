@@ -12,7 +12,6 @@ export default function SignInPage() {
             headerSubtitle: "text-gray-600",
           },
         }}
-        locale="pt-BR"
       />
     </div>
   );

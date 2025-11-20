@@ -21,7 +21,6 @@ export default function TenantSignInPage() {
             colorPrimary: "#000000",
           },
         }}
-        locale="pt-BR"
         afterSignInUrl="/dashboard"
         signUpUrl="/auth/sign-up"
         routing="path"
