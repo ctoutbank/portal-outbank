@@ -147,26 +147,31 @@ export async function getAllUsers(
     }
   }
 
-  // Associar ISOs aos usuários
+  // Associar ISOs aos usuários - combinar ISO principal com ISOs de admin_customers
   const usersWithISOs = result.map((user) => {
-    let customersList: Array<{ idCustomer: number; customerName: string | null }> = [];
+    const customersSet = new Map<number, { idCustomer: number; customerName: string | null }>();
     
-    // Verificar se é Admin (não Super Admin)
-    const profileName = user.profileName?.toUpperCase() || "";
-    const isAdminProfile = profileName.includes("ADMIN") && !profileName.includes("SUPER");
-    
-    if (isAdminProfile) {
-      // Buscar ISOs de admin_customers
-      customersList = adminCustomersMap.get(user.id) || [];
-    }
-    
-    // Se não for Admin ou não tiver ISOs em admin_customers, usar ISO principal
-    if (customersList.length === 0 && user.idCustomer) {
-      customersList = [{
+    // Adicionar ISO principal se existir
+    if (user.idCustomer) {
+      customersSet.set(user.idCustomer, {
         idCustomer: user.idCustomer,
         customerName: user.customerName,
-      }];
+      });
     }
+    
+    // Adicionar ISOs de admin_customers (se houver)
+    const adminCustomersList = adminCustomersMap.get(user.id) || [];
+    adminCustomersList.forEach(customer => {
+      if (customer.idCustomer) {
+        customersSet.set(customer.idCustomer, {
+          idCustomer: customer.idCustomer,
+          customerName: customer.customerName,
+        });
+      }
+    });
+    
+    // Converter Map para Array (já remove duplicatas automaticamente)
+    const customersList = Array.from(customersSet.values());
 
     return {
       ...user,
