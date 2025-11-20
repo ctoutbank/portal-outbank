@@ -301,6 +301,30 @@ export const profileFunctions = pgTable("profile_functions", {
 		}),
 ]);
 
+export const profileCustomers = pgTable("profile_customers", {
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "profile_customers_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
+	slug: varchar({ length: 50 }),
+	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	dtupdate: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	active: boolean().default(true),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	idProfile: bigint("id_profile", { mode: "number" }),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	idCustomer: bigint("id_customer", { mode: "number" }),
+}, (table) => [
+	foreignKey({
+			columns: [table.idProfile],
+			foreignColumns: [profiles.id],
+			name: "profile_customers_id_profile_fkey"
+		}),
+	foreignKey({
+			columns: [table.idCustomer],
+			foreignColumns: [customers.id],
+			name: "profile_customers_id_customer_fkey"
+		}),
+]);
+
 export const profiles = pgTable("profiles", {
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "profiles_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),

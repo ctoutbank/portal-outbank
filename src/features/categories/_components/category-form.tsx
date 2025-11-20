@@ -16,6 +16,10 @@ import {
 import {
   updateCategoryPermissions,
 } from "@/features/categories/server/permissions";
+import {
+  updateCategoryCustomers,
+} from "@/features/categories/server/category-customers";
+import { AdminCustomerAssignment } from "@/features/users/_components/admin-customer-assignment";
 import { Separator } from "@/components/ui/separator";
 
 type CategoryData = {
@@ -44,12 +48,16 @@ interface CategoryFormProps {
   category?: CategoryData;
   functions: FunctionsData;
   assignedFunctionIds?: number[];
+  customers?: Array<{ id: number; name: string | null; slug?: string | null }>;
+  assignedCustomerIds?: number[];
 }
 
 export function CategoryForm({
   category,
   functions,
   assignedFunctionIds = [],
+  customers = [],
+  assignedCustomerIds = [],
 }: CategoryFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -61,6 +69,9 @@ export function CategoryForm({
   );
   const [selectedFunctionIds, setSelectedFunctionIds] = useState<number[]>(
     assignedFunctionIds || []
+  );
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>(
+    assignedCustomerIds || []
   );
 
   const isSuperAdmin = category?.name
@@ -143,6 +154,9 @@ export function CategoryForm({
 
         // Atualizar permissões
         await updateCategoryPermissions(categoryId, selectedFunctionIds);
+
+        // Atualizar ISOs da categoria
+        await updateCategoryCustomers(categoryId, selectedCustomerIds);
 
         toast.success(
           category?.id
@@ -240,10 +254,36 @@ export function CategoryForm({
 
       <Card>
         <CardHeader>
+          <CardTitle>ISOs da Categoria</CardTitle>
+          <CardDescription>
+            Selecione os ISOs que serão herdados automaticamente por todos os usuários desta categoria.
+            Isso é útil para criar redes de franquias ou grupos de ISOs pré-configurados.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {customers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhum ISO disponível. Os ISOs devem ser cadastrados antes de serem atribuídos a categorias.
+            </p>
+          ) : (
+            <AdminCustomerAssignment
+              customers={customers}
+              selectedCustomerIds={selectedCustomerIds}
+              onSelectionChange={(customerIds) => {
+                setSelectedCustomerIds(customerIds);
+              }}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Permissões</CardTitle>
           <CardDescription>
             Selecione as permissões que serão atribuídas aos usuários desta
-            categoria
+            categoria. As permissões serão aplicadas aos ISOs que o usuário tiver acesso
+            (herdados da categoria + atribuídos individualmente).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
