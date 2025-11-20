@@ -25,6 +25,7 @@ type UserData = {
   profileDescription: string | null | undefined;
   lastAccess?: string | null;
   idClerk?: string | null;
+  customers?: Array<{ idCustomer: number; customerName: string | null }>;
 };
 
 interface AdminUsersListProps {
@@ -71,9 +72,29 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
                     <span className="text-sm font-medium">{user.email || "--"}</span>
                   </TableCell>
                   <TableCell className="py-3">
-                    <span className="text-sm">
-                      {user.customerName || "--"}
-                    </span>
+                    {user.customers && user.customers.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {user.customers.slice(0, 3).map((customer, idx) => (
+                          <Badge 
+                            key={idx} 
+                            variant="outline" 
+                            className="text-xs font-normal"
+                          >
+                            {customer.customerName || `ISO ${customer.idCustomer}`}
+                          </Badge>
+                        ))}
+                        {user.customers.length > 3 && (
+                          <Badge 
+                            variant="secondary" 
+                            className="text-xs font-normal"
+                          >
+                            +{user.customers.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">--</span>
+                    )}
                   </TableCell>
                   <TableCell className="py-3">
                     {user.profileName?.toUpperCase().includes("SUPER") ? (

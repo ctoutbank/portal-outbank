@@ -109,10 +109,75 @@ export async function getAllUsers(
     .limit(pageSize)
     .offset(offset);
 
+  // Buscar todos os ISOs de admin_customers em batch (otimização)
+  const userIds = result.map(u => u.id);
+  let adminCustomersMap = new Map<number, Array<{ idCustomer: number; customerName: string | null }>>();
+  
+  if (userIds.length > 0) {
+    try {
+      const allAdminCustomers = await db
+        .select({
+          idUser: adminCustomers.idUser,
+          idCustomer: adminCustomers.idCustomer,
+          customerName: customers.name,
+        })
+        .from(adminCustomers)
+        .leftJoin(customers, eq(adminCustomers.idCustomer, customers.id))
+        .where(and(
+          inArray(adminCustomers.idUser, userIds),
+          eq(adminCustomers.active, true)
+        ));
+
+      // Agrupar por idUser
+      allAdminCustomers.forEach(ac => {
+        if (ac.idUser && ac.idCustomer) {
+          const list = adminCustomersMap.get(ac.idUser) || [];
+          list.push({
+            idCustomer: ac.idCustomer,
+            customerName: ac.customerName,
+          });
+          adminCustomersMap.set(ac.idUser, list);
+        }
+      });
+    } catch (error: any) {
+      // Se a tabela não existe, continuar sem erros
+      if (error?.code !== '42P01' && !error?.message?.includes('does not exist') && !(error?.message?.includes('relation') && error?.message?.includes('admin_customers'))) {
+        console.error('Erro ao buscar ISOs de admin_customers:', error);
+      }
+    }
+  }
+
+  // Associar ISOs aos usuários
+  const usersWithISOs = result.map((user) => {
+    let customersList: Array<{ idCustomer: number; customerName: string | null }> = [];
+    
+    // Verificar se é Admin (não Super Admin)
+    const profileName = user.profileName?.toUpperCase() || "";
+    const isAdminProfile = profileName.includes("ADMIN") && !profileName.includes("SUPER");
+    
+    if (isAdminProfile) {
+      // Buscar ISOs de admin_customers
+      customersList = adminCustomersMap.get(user.id) || [];
+    }
+    
+    // Se não for Admin ou não tiver ISOs em admin_customers, usar ISO principal
+    if (customersList.length === 0 && user.idCustomer) {
+      customersList = [{
+        idCustomer: user.idCustomer,
+        customerName: user.customerName,
+      }];
+    }
+
+    return {
+      ...user,
+      customers: customersList,
+    };
+  });
+
   // Buscar últimos acessos do Clerk
   const clerk = await clerkClient();
   const usersWithLastAccess = await Promise.all(
-    result.map(async (user) => {
+    usersWithISOs.map(async (user) => {
       let lastAccess: string | null = null;
       if (user.idClerk) {
         try {
