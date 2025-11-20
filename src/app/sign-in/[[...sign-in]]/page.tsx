@@ -12,23 +12,7 @@ export default function SignInPage() {
             headerSubtitle: "text-gray-600",
           },
         }}
-        localization={{
-          locale: "pt-BR",
-          labels: {
-            signIn: {
-              title: "Acesso para Consolle Admin",
-              subtitle: "Bem vindo de volta!",
-              emailAddress: {
-                label: "E-mail",
-                placeholder: "Digite seu e-mail",
-              },
-              password: {
-                label: "Senha",
-                placeholder: "Digite sua senha",
-              },
-            },
-          },
-        }}
+        locale="pt-BR"
       />
     </div>
   );

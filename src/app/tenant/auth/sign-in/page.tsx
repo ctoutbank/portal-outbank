@@ -21,23 +21,7 @@ export default function TenantSignInPage() {
             colorPrimary: "#000000",
           },
         }}
-        localization={{
-          locale: "pt-BR",
-          labels: {
-            signIn: {
-              title: "Acesso para Consolle Admin",
-              subtitle: "Bem vindo de volta!",
-              emailAddress: {
-                label: "E-mail",
-                placeholder: "Digite seu e-mail",
-              },
-              password: {
-                label: "Senha",
-                placeholder: "Digite sua senha",
-              },
-            },
-          },
-        }}
+        locale="pt-BR"
         afterSignInUrl="/dashboard"
         signUpUrl="/auth/sign-up"
         routing="path"
