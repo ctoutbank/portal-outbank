@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,7 +38,6 @@ export function AdminUsersFilter({
   const searchParams = useSearchParams();
   const params = new URLSearchParams(searchParams?.toString() || "");
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
-  const [isPending, startTransition] = useTransition();
   
   const [email, setEmail] = useState(emailIn || "");
   const [name, setName] = useState(nameIn || "");
@@ -78,10 +77,8 @@ export function AdminUsersFilter({
     }
 
     params.set("page", "1");
-    startTransition(() => {
-      router.replace(`/config/users?${params.toString()}`);
-      setIsFiltersVisible(false);
-    });
+    router.replace(`/config/users?${params.toString()}`);
+    setIsFiltersVisible(false);
   };
 
   const handleClearFilters = () => {
@@ -91,15 +88,13 @@ export function AdminUsersFilter({
     params.delete("profileId");
     params.delete("active");
     params.set("page", "1");
-    startTransition(() => {
-      router.replace(`/config/users?${params.toString()}`);
-      setEmail("");
-      setName("");
-      setCustomerId("");
-      setProfileId("");
-      setActive("");
-      setIsFiltersVisible(false);
-    });
+    router.replace(`/config/users?${params.toString()}`);
+    setEmail("");
+    setName("");
+    setCustomerId("");
+    setProfileId("");
+    setActive("");
+    setIsFiltersVisible(false);
   };
 
   const activeFiltersCount =

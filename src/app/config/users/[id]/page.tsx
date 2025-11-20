@@ -18,13 +18,13 @@ export default async function UserDetailPage({ params }: PageProps) {
   await requireAdmin();
 
   const { id } = await params;
-  const userId = parseInt(id);
 
   // Obter informações do usuário logado
   const currentUserInfo = await getCurrentUserInfo();
   const isSuperAdmin = currentUserInfo?.isSuperAdmin || false;
 
-  if (isNaN(userId)) {
+  // Tratar "new" e "0" como novo usuário
+  if (id === "new" || id === "0") {
     // Criar novo usuário
     const [profiles, customers] = await Promise.all([
       getAllProfiles(),
@@ -50,7 +50,24 @@ export default async function UserDetailPage({ params }: PageProps) {
     );
   }
 
-  // Editar usuário existente
+  // Editar usuário existente - parsear ID
+  const userId = parseInt(id);
+  if (isNaN(userId) || userId <= 0) {
+    // ID inválido
+    return (
+      <>
+        <BaseHeader
+          breadcrumbItems={[
+            { title: "Configurações", subtitle: "Usuários", url: "/config/users" },
+          ]}
+        />
+        <BaseBody title="Usuário não encontrado" subtitle="">
+          <p className="text-muted-foreground">ID de usuário inválido.</p>
+        </BaseBody>
+      </>
+    );
+  }
+
   let user, profiles, customers, adminCustomers: Awaited<ReturnType<typeof getAdminCustomers>> = [];
   try {
     [user, profiles, customers] = await Promise.all([
