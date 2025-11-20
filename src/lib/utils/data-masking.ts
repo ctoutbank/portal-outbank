@@ -5,7 +5,7 @@
  */
 
 /**
- * Mascara CPF no formato: ***.***.***-**
+ * Mascara CPF no formato: XXX.XXX.XXX-XX
  */
 export function maskCPF(cpf: string | null | undefined): string {
   if (!cpf) return "--";
@@ -15,7 +15,7 @@ export function maskCPF(cpf: string | null | undefined): string {
 }
 
 /**
- * Mascara CNPJ no formato: **.***.***/****-**
+ * Mascara CNPJ no formato: XX.XXX.XXX/XXXX-XX
  */
 export function maskCNPJ(cnpj: string | null | undefined): string {
   if (!cnpj) return "--";
