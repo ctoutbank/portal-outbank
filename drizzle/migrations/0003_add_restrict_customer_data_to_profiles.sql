@@ -11,3 +11,4 @@ WHERE UPPER("name") LIKE '%SUPER%';
 
 -- Comentário na coluna
 COMMENT ON COLUMN "profiles"."restrict_customer_data" IS 'Quando true, usuários desta categoria terão CPF, CNPJ, email e telefone mascarados. Nome fantasia, razão social, cidade e estado sempre visíveis.';
+
