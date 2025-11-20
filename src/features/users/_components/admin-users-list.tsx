@@ -33,6 +33,17 @@ interface AdminUsersListProps {
 }
 
 export function AdminUsersList({ users }: AdminUsersListProps) {
+  // Debug: verificar se users têm o campo customers
+  if (users.length > 0) {
+    console.log('[AdminUsersList] Total de usuários:', users.length);
+    console.log('[AdminUsersList] Primeiro usuário:', {
+      id: users[0]?.id,
+      email: users[0]?.email,
+      customers: users[0]?.customers,
+      customersLength: users[0]?.customers?.length
+    });
+  }
+
   const getProfileBadgeVariant = (profileName: string | null) => {
     if (!profileName) return "secondary";
     const upper = profileName.toUpperCase();

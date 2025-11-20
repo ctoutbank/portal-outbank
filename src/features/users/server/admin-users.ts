@@ -210,6 +210,11 @@ export async function getAllUsers(
     // Converter Map para Array (remove duplicatas automaticamente)
     const customersList = Array.from(customersSet.values());
 
+    // Debug: verificar se customers está sendo populado
+    if (customersList.length > 0) {
+      console.log(`[getAllUsers] Usuário ${user.id} tem ${customersList.length} ISO(s):`, customersList.map(c => c.customerName || `ISO ${c.idCustomer}`).join(', '));
+    }
+
     return {
       ...user,
       customers: customersList,
@@ -237,16 +242,22 @@ export async function getAllUsers(
             }
           }
         }
+        // Garantir que o campo customers seja preservado
         return {
           ...user,
+          customers: user.customers || [], // Garantir que customers sempre exista
           lastAccess,
         };
       })
     );
   } catch (error) {
     console.error('Erro ao buscar últimos acessos do Clerk:', error);
-    // Retornar usuários sem últimos acessos se houver erro
-    usersWithLastAccess = usersWithISOs.map(user => ({ ...user, lastAccess: null }));
+    // Retornar usuários sem últimos acessos se houver erro, preservando customers
+    usersWithLastAccess = usersWithISOs.map(user => ({ 
+      ...user, 
+      customers: user.customers || [], // Garantir que customers sempre exista
+      lastAccess: null 
+    }));
   }
 
   return {
