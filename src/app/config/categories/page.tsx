@@ -2,7 +2,7 @@ import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
 import { requireSuperAdmin } from "@/lib/permissions/require-super-admin";
 import { getAllCategories } from "@/features/categories/server/categories";
-import { CategoriesList } from "@/features/categories/_components/categories-list";
+import { UserCategoriesList } from "@/features/categories/_components/user-categories-list";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -40,7 +40,7 @@ export default async function CategoriesPage() {
             </Button>
           </div>
 
-          <CategoriesList categories={categories} />
+          <UserCategoriesList categories={categories} />
         </div>
       </BaseBody>
     </>

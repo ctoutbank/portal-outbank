@@ -4,9 +4,11 @@ import { requireSuperAdmin } from "@/lib/permissions/require-super-admin";
 import { CategoryForm } from "@/features/categories/_components/category-form";
 import {
   getCategoryById,
-  getCategoryPermissions,
 } from "@/features/categories/server/categories";
-import { getAllFunctions } from "@/features/categories/server/permissions";
+import {
+  getAllFunctions,
+  getCategoryPermissions,
+} from "@/features/categories/server/permissions";
 import { notFound } from "next/navigation";
 
 export const revalidate = 0;
