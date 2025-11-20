@@ -11,7 +11,31 @@ export default function TenantSignInPage() {
             // Ocultar o elemento do link no canto superior esquerdo
             headerBackLink: "hidden",
             logoLink: "hidden",
-            headerTitle: "hidden",
+            // Mostrar título customizado
+            headerTitle: "text-2xl font-bold text-gray-900",
+            headerSubtitle: "text-gray-600",
+          },
+          variables: {
+            colorText: "#1f2937",
+            colorInputText: "#374151",
+            colorPrimary: "#000000",
+          },
+        }}
+        localization={{
+          locale: "pt-BR",
+          labels: {
+            signIn: {
+              title: "Acesso para Consolle Admin",
+              subtitle: "Bem vindo de volta!",
+              emailAddress: {
+                label: "E-mail",
+                placeholder: "Digite seu e-mail",
+              },
+              password: {
+                label: "Senha",
+                placeholder: "Digite sua senha",
+              },
+            },
           },
         }}
         afterSignInUrl="/dashboard"
