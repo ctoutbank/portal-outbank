@@ -68,7 +68,11 @@ export default async function UserDetailPage({ params }: PageProps) {
     );
   }
 
-  let user, profiles, customers, adminCustomers: Awaited<ReturnType<typeof getAdminCustomers>> = [];
+  let user: Awaited<ReturnType<typeof getUserDetailWithClerk>> | null;
+  let profiles: Awaited<ReturnType<typeof getAllProfiles>>;
+  let customers: Awaited<ReturnType<typeof getAvailableCustomers>>;
+  let adminCustomers: Awaited<ReturnType<typeof getAdminCustomers>> = [];
+  
   try {
     [user, profiles, customers] = await Promise.all([
       getUserDetailWithClerk(userId),
@@ -86,6 +90,9 @@ export default async function UserDetailPage({ params }: PageProps) {
     }
   } catch (error) {
     console.error('Erro ao carregar dados do usuário:', error);
+    user = null;
+    profiles = [];
+    customers = [];
     return (
       <>
         <BaseHeader

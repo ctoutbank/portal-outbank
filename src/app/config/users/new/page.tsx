@@ -14,7 +14,8 @@ export default async function NewUserPage() {
   const currentUserInfo = await getCurrentUserInfo();
   const isSuperAdmin = currentUserInfo?.isSuperAdmin || false;
 
-  let profiles, customers;
+  let profiles: Awaited<ReturnType<typeof getAllProfiles>>;
+  let customers: Awaited<ReturnType<typeof getAvailableCustomers>>;
   try {
     [profiles, customers] = await Promise.all([
       getAllProfiles(),

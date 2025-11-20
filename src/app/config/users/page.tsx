@@ -47,7 +47,9 @@ export default async function UsersPage({
   };
 
   // Buscar dados com tratamento de erro
-  let usersData, profiles, availableCustomers;
+  let usersData: Awaited<ReturnType<typeof getAllUsers>>;
+  let profiles: Awaited<ReturnType<typeof getAllProfiles>>;
+  let availableCustomers: Awaited<ReturnType<typeof getAvailableCustomers>>;
   try {
     [usersData, profiles, availableCustomers] = await Promise.all([
       getAllUsers(page, perPage, filters),
