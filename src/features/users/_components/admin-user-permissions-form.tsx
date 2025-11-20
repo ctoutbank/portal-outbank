@@ -65,12 +65,12 @@ export function AdminUserPermissionsForm({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<number | null>(
-    user?.idProfile || null
+    (user && 'idProfile' in user) ? (user.idProfile as number | null) : null
   );
   const [isAdminProfile, setIsAdminProfile] = useState(false);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>(adminCustomers);
 
-  const isEditing = !!user?.id;
+  const isEditing = !!(user && 'id' in user && user.id);
   const isSuperAdmin = isSuperAdminProp;
 
   const form = useForm<UserPermissionsFormValues>({
@@ -79,8 +79,8 @@ export function AdminUserPermissionsForm({
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
       email: user?.email || "",
-      idProfile: user?.idProfile || null,
-      idCustomer: user?.idCustomer || null,
+      idProfile: ((user && 'idProfile' in user) ? user.idProfile : null) as number | null,
+      idCustomer: ((user && 'idCustomer' in user) ? user.idCustomer : null) as number | null,
       fullAccess: user?.fullAccess || false,
       customerIds: adminCustomers,
       password: undefined,
@@ -88,20 +88,25 @@ export function AdminUserPermissionsForm({
   });
 
   useEffect(() => {
-
-    if (user) {
+    if (user && 'id' in user && user.id) {
+      // Resetar o form apenas quando os dados do usuário mudarem
+      const idProfile = ('idProfile' in user) ? (user.idProfile as number | null) : null;
+      const idCustomer = ('idCustomer' in user) ? (user.idCustomer as number | null) : null;
+      
       form.reset({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
         email: user.email || "",
-        idProfile: user.idProfile || null,
-        idCustomer: user.idCustomer || null,
+        idProfile: idProfile,
+        idCustomer: idCustomer,
         fullAccess: user.fullAccess || false,
         customerIds: adminCustomers,
       });
-      setSelectedProfile(user.idProfile || null);
+      setSelectedProfile(idProfile);
+      setSelectedCustomerIds(adminCustomers);
     }
-  }, [user, adminCustomers, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user && 'id' in user ? user.id : null]); // Apenas reagir a mudanças no ID do usuário
 
   useEffect(() => {
     // Verificar se o perfil selecionado é Admin
@@ -138,7 +143,7 @@ export function AdminUserPermissionsForm({
         return;
       }
 
-      if (isEditing && user?.id) {
+      if (isEditing && user && 'id' in user && user.id) {
         // Atualizar usuário existente
         try {
           const updateData: {
@@ -162,7 +167,11 @@ export function AdminUserPermissionsForm({
             updateData.customerIds = data.customerIds;
           }
 
-          await updateUserPermissions(user.id, updateData);
+          const userId = ('id' in user && user.id) ? (user.id as number) : null;
+          if (!userId) {
+            throw new Error("ID do usuário não encontrado");
+          }
+          await updateUserPermissions(userId, updateData);
           
           toast.success("Permissões atualizadas com sucesso");
           router.push("/config/users");

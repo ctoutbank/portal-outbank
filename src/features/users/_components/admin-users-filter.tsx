@@ -53,13 +53,14 @@ export function AdminUsersFilter({
       const profileIdParam = searchParams.get("profileId") || "";
       const activeParam = searchParams.get("active") || "";
 
-      setEmail(emailParam);
-      setName(nameParam);
-      setCustomerId(customerIdParam);
-      setProfileId(profileIdParam);
-      setActive(activeParam);
+      // Apenas atualizar se os valores mudaram para evitar loops
+      if (emailParam !== email) setEmail(emailParam);
+      if (nameParam !== name) setName(nameParam);
+      if (customerIdParam !== customerId) setCustomerId(customerIdParam);
+      if (profileIdParam !== profileId) setProfileId(profileIdParam);
+      if (activeParam !== active) setActive(activeParam);
     }
-  }, [searchParams, emailIn, nameIn, customerIdIn, profileIdIn, activeIn]);
+  }, [searchParams]); // Removidas dependências que causavam loops
 
   const handleFilter = () => {
     try {
