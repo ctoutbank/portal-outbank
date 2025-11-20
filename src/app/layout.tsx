@@ -1,6 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ptBR } from "@clerk/localizations";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
@@ -31,7 +32,7 @@ export default async function RootLayout({
   
   return (
     <ClerkProvider
-      locale="pt-BR"
+      localization={ptBR}
       appearance={{
         signIn: {
           elements: {
