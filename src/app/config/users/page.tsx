@@ -11,6 +11,7 @@ import { AdminUsersList } from "@/features/users/_components/admin-users-list";
 import { AdminUsersFilter } from "@/features/users/_components/admin-users-filter";
 
 export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 type UsersPageProps = {
   page?: number;

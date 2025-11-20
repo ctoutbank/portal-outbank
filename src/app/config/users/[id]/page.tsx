@@ -6,6 +6,9 @@ import { AdminUserPermissionsForm } from "@/features/users/_components/admin-use
 import { getUserDetailWithClerk } from "@/features/customers/users/_actions/user-actions";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
 
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -48,18 +51,22 @@ export default async function UserDetailPage({ params }: PageProps) {
   }
 
   // Editar usuário existente
-  let user, profiles, customers, adminCustomers = [];
+  let user, profiles, customers, adminCustomers: Awaited<ReturnType<typeof getAdminCustomers>> = [];
   try {
-    [user, profiles, customers, adminCustomers] = await Promise.all([
+    [user, profiles, customers] = await Promise.all([
       getUserDetailWithClerk(userId),
       getAllProfiles(),
       getAvailableCustomers(),
-      getAdminCustomers(userId).catch((error) => {
-        // Se a tabela não existe, retornar array vazio
-        console.warn('Erro ao buscar ISOs autorizados (tabela pode não existir):', error);
-        return [];
-      }),
     ]);
+    
+    // Buscar ISOs autorizados separadamente com tratamento de erro robusto
+    try {
+      adminCustomers = await getAdminCustomers(userId);
+    } catch (error) {
+      console.warn('Erro ao buscar ISOs autorizados (tabela pode não existir):', error);
+      // Retorna array vazio, não quebra a página
+      adminCustomers = [];
+    }
   } catch (error) {
     console.error('Erro ao carregar dados do usuário:', error);
     return (

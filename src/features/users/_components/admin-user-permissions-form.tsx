@@ -176,26 +176,17 @@ export function AdminUserPermissionsForm({
               password: data.password,
               idCustomer: data.idCustomer,
               active: true,
+              idProfile: data.idProfile || undefined,  // Passar idProfile diretamente
+              fullAccess: data.fullAccess || false,    // Passar fullAccess diretamente
             });
 
-            // Atualizar perfil e permissões sempre (InsertUser cria com perfil ADMIN por padrão)
             if (userId) {
-              try {
-                await updateUserPermissions(userId, {
-                  idProfile: data.idProfile || undefined,
-                  idCustomer: data.idCustomer !== undefined ? data.idCustomer : undefined,
-                  fullAccess: data.fullAccess,
-                });
-              } catch (updateError: any) {
-                console.warn("Erro ao atualizar permissões após criação (usuário já foi criado):", updateError);
-                // Não impedir o sucesso se o usuário foi criado, mas mostrar warning
-                toast.warning("Usuário criado, mas houve problema ao atualizar permissões. Por favor, edite o usuário.");
-              }
+              toast.success("Usuário criado com sucesso");
+              router.push("/config/users");
+              router.refresh();
+            } else {
+              throw new Error("Erro ao obter ID do usuário criado");
             }
-
-            toast.success("Usuário criado com sucesso");
-            router.push("/config/users");
-            router.refresh();
           } catch (error: any) {
             console.error("Erro ao criar usuário:", error);
             const errorMessage = error?.message || "Erro ao criar usuário";

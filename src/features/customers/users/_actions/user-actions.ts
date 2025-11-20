@@ -182,6 +182,8 @@ interface InsertUserInput {
   password?: string;
   idCustomer: number | null;
   active?: boolean;
+  idProfile?: number;      // ← Novo: perfil opcional
+  fullAccess?: boolean;    // ← Novo: acesso total opcional
 }
 
 export async function InsertUser(data: InsertUserInput) {
@@ -193,6 +195,8 @@ export async function InsertUser(data: InsertUserInput) {
       password,
       idCustomer,
       active = true,
+      idProfile: providedIdProfile,    // ← Novo
+      fullAccess: providedFullAccess,  // ← Novo
     } = data;
 
     const finalPassword =
@@ -207,19 +211,25 @@ export async function InsertUser(data: InsertUserInput) {
 
     const hashedPassword = hashPassword(finalPassword);
 
-    // Buscar o profile ADMIN dinamicamente
-    const adminProfile = await db
-      .select()
-      .from(profiles)
-      .where(ilike(profiles.name, "%ADMIN%"))
-      .limit(1)
-      .execute();
+    // Buscar perfil: se fornecido, usar; senão, buscar ADMIN como padrão
+    let idProfile = providedIdProfile;
+    let fullAccess = providedFullAccess ?? false;
 
-    if (!adminProfile || adminProfile.length === 0) {
-      throw new Error("Profile ADMIN não encontrado no banco.");
+    if (!idProfile) {
+      // Se não forneceu perfil, busca ADMIN como padrão
+      const adminProfile = await db
+        .select()
+        .from(profiles)
+        .where(ilike(profiles.name, "%ADMIN%"))
+        .limit(1)
+        .execute();
+
+      if (!adminProfile || adminProfile.length === 0) {
+        throw new Error("Profile ADMIN não encontrado no banco.");
+      }
+
+      idProfile = adminProfile[0].id;
     }
-
-    const idProfile = adminProfile[0].id;
 
     // Criação no Clerk
     const clerk = await clerkClient(); // chamar a função e obter o cliente
@@ -258,9 +268,9 @@ export async function InsertUser(data: InsertUserInput) {
         email,
         idCustomer: idCustomer ?? null,
         idClerk: clerkUser.id,
-        idProfile, // aqui usa o idProfile dinâmico
+        idProfile, // usa o perfil fornecido ou ADMIN padrão
         idAddress: null,
-        fullAccess: false,
+        fullAccess, // usa o fullAccess fornecido ou false padrão
         hashedPassword,
         initialPassword: finalPassword, // Store initial password for viewing
       })
