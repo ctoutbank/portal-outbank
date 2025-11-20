@@ -14,13 +14,13 @@ export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
 type UsersPageProps = {
-  page?: number;
-  perPage?: number;
+  page?: number | string;
+  perPage?: number | string;
   email?: string;
   name?: string;
-  customerId?: number;
-  profileId?: number;
-  active?: boolean;
+  customerId?: number | string;
+  profileId?: number | string;
+  active?: boolean | string;
 };
 
 export default async function UsersPage({
@@ -39,11 +39,15 @@ export default async function UsersPage({
 
   // Parsear filtros
   const filters = {
-    email: params.email?.trim() || undefined,
-    name: params.name?.trim() || undefined,
+    email: typeof params.email === 'string' ? params.email.trim() || undefined : undefined,
+    name: typeof params.name === 'string' ? params.name.trim() || undefined : undefined,
     customerId: params.customerId ? Number(params.customerId) || undefined : undefined,
     profileId: params.profileId ? Number(params.profileId) || undefined : undefined,
-    active: params.active !== undefined ? (params.active === true || params.active === "true") : undefined,
+    active: params.active !== undefined 
+      ? (typeof params.active === 'boolean' 
+          ? params.active 
+          : typeof params.active === 'string' && params.active === "true")
+      : undefined,
   };
 
   // Buscar dados com tratamento de erro
