@@ -147,37 +147,74 @@ export async function getAllUsers(
     }
   }
 
-  // Associar ISOs aos usuários - combinar ISO principal com ISOs de admin_customers
-  const usersWithISOs = result.map((user) => {
-    const customersSet = new Map<number, { idCustomer: number; customerName: string | null }>();
-    
-    // Adicionar ISO principal se existir
-    if (user.idCustomer) {
-      customersSet.set(user.idCustomer, {
-        idCustomer: user.idCustomer,
-        customerName: user.customerName,
-      });
-    }
-    
-    // Adicionar ISOs de admin_customers (se houver)
-    const adminCustomersList = adminCustomersMap.get(user.id) || [];
-    adminCustomersList.forEach(customer => {
-      if (customer.idCustomer) {
-        customersSet.set(customer.idCustomer, {
-          idCustomer: customer.idCustomer,
-          customerName: customer.customerName,
+  // Agrupar por ID do usuário para evitar duplicatas (caso haja múltiplos registros)
+  const usersMap = new Map<number, typeof result[0] & { customers: Array<{ idCustomer: number; customerName: string | null }> }>();
+  
+  result.forEach((user) => {
+    if (!usersMap.has(user.id)) {
+      const customersSet = new Map<number, { idCustomer: number; customerName: string | null }>();
+      
+      // Adicionar ISO principal se existir
+      if (user.idCustomer) {
+        customersSet.set(user.idCustomer, {
+          idCustomer: user.idCustomer,
+          customerName: user.customerName,
         });
       }
-    });
-    
-    // Converter Map para Array (já remove duplicatas automaticamente)
-    const customersList = Array.from(customersSet.values());
+      
+      // Adicionar ISOs de admin_customers (se houver)
+      const adminCustomersList = adminCustomersMap.get(user.id) || [];
+      adminCustomersList.forEach(customer => {
+        if (customer.idCustomer) {
+          customersSet.set(customer.idCustomer, {
+            idCustomer: customer.idCustomer,
+            customerName: customer.customerName,
+          });
+        }
+      });
+      
+      // Converter Map para Array (já remove duplicatas automaticamente)
+      const customersList = Array.from(customersSet.values());
 
-    return {
-      ...user,
-      customers: customersList,
-    };
+      usersMap.set(user.id, {
+        ...user,
+        customers: customersList,
+      });
+    } else {
+      // Se o usuário já existe, apenas adicionar ISOs que ainda não estão presentes
+      const existingUser = usersMap.get(user.id)!;
+      const customersSet = new Map<number, { idCustomer: number; customerName: string | null }>();
+      
+      // Adicionar ISOs existentes
+      existingUser.customers.forEach(c => {
+        customersSet.set(c.idCustomer, c);
+      });
+      
+      // Adicionar ISO principal se existir e ainda não estiver na lista
+      if (user.idCustomer && !customersSet.has(user.idCustomer)) {
+        customersSet.set(user.idCustomer, {
+          idCustomer: user.idCustomer,
+          customerName: user.customerName,
+        });
+      }
+      
+      // Adicionar ISOs de admin_customers que ainda não estão na lista
+      const adminCustomersList = adminCustomersMap.get(user.id) || [];
+      adminCustomersList.forEach(customer => {
+        if (customer.idCustomer && !customersSet.has(customer.idCustomer)) {
+          customersSet.set(customer.idCustomer, {
+            idCustomer: customer.idCustomer,
+            customerName: customer.customerName,
+          });
+        }
+      });
+      
+      existingUser.customers = Array.from(customersSet.values());
+    }
   });
+  
+  // Converter Map para Array
+  const usersWithISOs = Array.from(usersMap.values());
 
   // Buscar últimos acessos do Clerk
   const clerk = await clerkClient();
