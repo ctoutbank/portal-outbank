@@ -311,6 +311,7 @@ export const profiles = pgTable("profiles", {
 	name: varchar({ length: 100 }),
 	description: varchar({ length: 500 }),
 	isSalesAgent: boolean("is_sales_agent"),
+	restrictCustomerData: boolean("restrict_customer_data").default(false),
 });
 
 export const shoppingItems = pgTable("shopping_items", {

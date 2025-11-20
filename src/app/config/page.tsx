@@ -3,7 +3,8 @@ import { requireAdmin } from "@/lib/permissions/require-admin";
 import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users } from "lucide-react";
+import { Users, UserCog } from "lucide-react";
+import { isSuperAdmin } from "@/lib/permissions/check-permissions";
 import Link from "next/link";
 
 export const revalidate = 0;
@@ -13,6 +14,9 @@ export default async function ConfigPage() {
   try {
     // Verificar se usuário é Admin ou Super Admin
     await requireAdmin();
+    
+    // Verificar se é Super Admin para mostrar card de Categorias
+    const isSuper = await isSuperAdmin();
     
     return (
       <>
@@ -43,6 +47,31 @@ export default async function ConfigPage() {
                   </CardContent>
                 </Card>
               </Link>
+
+              {isSuper && (
+                <Link href="/config/categories" className="block group">
+                  <Card className="h-full transition-all duration-200 hover:shadow-lg hover:border-primary/50 border-2 hover:scale-[1.02] cursor-pointer">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-4 mb-2">
+                        <div className="p-3 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                          <UserCog className="h-8 w-8 text-primary" />
+                        </div>
+                        <CardTitle className="text-xl font-semibold">
+                          Categorias
+                        </CardTitle>
+                      </div>
+                      <CardDescription className="text-sm mt-2">
+                        Gerenciar categorias de usuários e permissões
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        Crie e gerencie categorias de usuários com permissões personalizadas e controle de acesso a dados.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              )}
             </div>
           </div>
         </BaseBody>

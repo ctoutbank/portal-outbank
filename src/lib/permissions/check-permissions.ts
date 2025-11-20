@@ -189,3 +189,38 @@ export async function getCurrentUserInfo() {
     return null;
   }
 }
+
+/**
+ * Verifica se o usuário tem acesso restrito a dados sensíveis de clientes
+ * Se retornar true, CPF, CNPJ, email e telefone devem ser mascarados
+ * Super Admin sempre retorna false (sempre vê tudo)
+ * @returns true se deve mascarar dados, false se pode ver tudo
+ */
+export async function hasRestrictedDataAccess(): Promise<boolean> {
+  try {
+    const clerkUser = await currentUser();
+    if (!clerkUser) return false;
+
+    // Super Admin sempre vê tudo
+    const isSuper = await isSuperAdmin();
+    if (isSuper) return false;
+
+    // Buscar perfil do usuário
+    const user = await db
+      .select({
+        idProfile: users.idProfile,
+        restrictCustomerData: profiles.restrictCustomerData,
+      })
+      .from(users)
+      .leftJoin(profiles, eq(users.idProfile, profiles.id))
+      .where(eq(users.idClerk, clerkUser.id))
+      .limit(1);
+
+    if (!user || user.length === 0) return false;
+
+    return user[0].restrictCustomerData || false;
+  } catch (error) {
+    console.error("Error checking restricted data access:", error);
+    return false; // Em caso de erro, não restringir (mostrar tudo)
+  }
+}
