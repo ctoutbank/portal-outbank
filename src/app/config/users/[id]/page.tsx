@@ -48,12 +48,33 @@ export default async function UserDetailPage({ params }: PageProps) {
   }
 
   // Editar usuário existente
-  const [user, profiles, customers, adminCustomers] = await Promise.all([
-    getUserDetailWithClerk(userId),
-    getAllProfiles(),
-    getAvailableCustomers(),
-    getAdminCustomers(userId),
-  ]);
+  let user, profiles, customers, adminCustomers = [];
+  try {
+    [user, profiles, customers, adminCustomers] = await Promise.all([
+      getUserDetailWithClerk(userId),
+      getAllProfiles(),
+      getAvailableCustomers(),
+      getAdminCustomers(userId).catch((error) => {
+        // Se a tabela não existe, retornar array vazio
+        console.warn('Erro ao buscar ISOs autorizados (tabela pode não existir):', error);
+        return [];
+      }),
+    ]);
+  } catch (error) {
+    console.error('Erro ao carregar dados do usuário:', error);
+    return (
+      <>
+        <BaseHeader
+          breadcrumbItems={[
+            { title: "Configurações", subtitle: "Usuários", url: "/config/users" },
+          ]}
+        />
+        <BaseBody title="Erro ao carregar usuário" subtitle="">
+          <p className="text-muted-foreground">Ocorreu um erro ao carregar os dados do usuário. Por favor, tente novamente.</p>
+        </BaseBody>
+      </>
+    );
+  }
 
   if (!user) {
     return (
@@ -83,7 +104,7 @@ export default async function UserDetailPage({ params }: PageProps) {
           user={user}
           profiles={profiles}
           customers={customers}
-          adminCustomers={adminCustomers.map((ac) => ac.idCustomer).filter((id): id is number => id !== null)}
+          adminCustomers={Array.isArray(adminCustomers) ? adminCustomers.map((ac) => ac.idCustomer).filter((id): id is number => id !== null) : []}
           isSuperAdmin={isSuperAdmin}
         />
       </BaseBody>

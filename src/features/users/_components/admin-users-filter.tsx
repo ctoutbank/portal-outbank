@@ -77,7 +77,8 @@ export function AdminUsersFilter({
     }
 
     params.set("page", "1");
-    router.push(`?${params.toString()}`);
+    router.push(`/config/users?${params.toString()}`);
+    router.refresh();
     setIsFiltersVisible(false);
   };
 
@@ -88,7 +89,8 @@ export function AdminUsersFilter({
     params.delete("profileId");
     params.delete("active");
     params.set("page", "1");
-    router.push(`?${params.toString()}`);
+    router.push(`/config/users?${params.toString()}`);
+    router.refresh();
     setEmail("");
     setName("");
     setCustomerId("");

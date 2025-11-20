@@ -120,40 +120,53 @@ export function AdminUserPermissionsForm({
     try {
       if (isEditing && user?.id) {
         // Atualizar usuário existente
-        await updateUserPermissions(user.id, {
-          idProfile: data.idProfile || undefined,
-          idCustomer: data.idCustomer !== undefined ? data.idCustomer : undefined,
-          fullAccess: data.fullAccess,
-          customerIds: isAdminProfile ? data.customerIds : undefined,
-        });
-        toast.success("Permissões atualizadas com sucesso");
-        router.push("/config/users");
-        router.refresh();
+        try {
+          await updateUserPermissions(user.id, {
+            idProfile: data.idProfile || undefined,
+            idCustomer: data.idCustomer !== undefined ? data.idCustomer : undefined,
+            fullAccess: data.fullAccess,
+            customerIds: isAdminProfile ? data.customerIds : undefined,
+          });
+          toast.success("Permissões atualizadas com sucesso");
+          router.push("/config/users");
+          router.refresh();
+        } catch (error: any) {
+          console.error("Erro ao atualizar usuário:", error);
+          const errorMessage = error?.message || "Erro ao atualizar permissões do usuário";
+          toast.error(errorMessage);
+          setIsLoading(false);
+          return;
+        }
       } else {
         // Criar novo usuário
         if (!isSuperAdmin) {
           toast.error("Apenas Super Admin pode criar novos usuários");
+          setIsLoading(false);
           return;
         }
 
         // Se for Admin, criar Admin e atribuir ISOs
         if (isAdminProfile) {
-          await createAdminUser({
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            password: data.password,
-            customerIds: data.customerIds || [],
-          });
-          toast.success("Admin criado com sucesso");
-        } else {
-          // Criar usuário normal usando função existente
-          // A função InsertUser cria com perfil ADMIN, então vamos atualizar o perfil depois
-          if (!isSuperAdmin) {
-            toast.error("Apenas Super Admin pode criar novos usuários");
+          try {
+            await createAdminUser({
+              firstName: data.firstName,
+              lastName: data.lastName,
+              email: data.email,
+              password: data.password,
+              customerIds: data.customerIds || [],
+            });
+            toast.success("Admin criado com sucesso");
+            router.push("/config/users");
+            router.refresh();
+          } catch (error: any) {
+            console.error("Erro ao criar Admin:", error);
+            const errorMessage = error?.message || "Erro ao criar Admin";
+            toast.error(errorMessage);
+            setIsLoading(false);
             return;
           }
-
+        } else {
+          // Criar usuário normal usando função existente
           try {
             const { InsertUser } = await import("@/features/customers/users/_actions/user-actions");
             const userId = await InsertUser({
@@ -165,27 +178,35 @@ export function AdminUserPermissionsForm({
               active: true,
             });
 
-            // Atualizar perfil e permissões
-            if (data.idProfile && userId) {
-              await updateUserPermissions(userId, {
-                idProfile: data.idProfile,
-                fullAccess: data.fullAccess,
-              });
+            // Atualizar perfil e permissões sempre (InsertUser cria com perfil ADMIN por padrão)
+            if (userId) {
+              try {
+                await updateUserPermissions(userId, {
+                  idProfile: data.idProfile || undefined,
+                  idCustomer: data.idCustomer !== undefined ? data.idCustomer : undefined,
+                  fullAccess: data.fullAccess,
+                });
+              } catch (updateError: any) {
+                console.warn("Erro ao atualizar permissões após criação (usuário já foi criado):", updateError);
+                // Não impedir o sucesso se o usuário foi criado, mas mostrar warning
+                toast.warning("Usuário criado, mas houve problema ao atualizar permissões. Por favor, edite o usuário.");
+              }
             }
 
             toast.success("Usuário criado com sucesso");
+            router.push("/config/users");
+            router.refresh();
           } catch (error: any) {
+            console.error("Erro ao criar usuário:", error);
             const errorMessage = error?.message || "Erro ao criar usuário";
             toast.error(errorMessage);
+            setIsLoading(false);
             return;
           }
         }
-
-        router.push("/config/users");
-        router.refresh();
       }
     } catch (error) {
-      console.error("Erro ao salvar usuário:", error);
+      console.error("Erro inesperado ao salvar usuário:", error);
       const errorMessage =
         error instanceof Error
           ? error.message

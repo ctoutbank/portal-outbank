@@ -139,19 +139,30 @@ export async function getAllUsers(
  * Obtém os ISOs autorizados para um Admin
  */
 export async function getAdminCustomers(adminUserId: number) {
-  const result = await db
-    .select({
-      id: adminCustomers.id,
-      idCustomer: adminCustomers.idCustomer,
-      customerName: customers.name,
-      customerSlug: customers.slug,
-      active: adminCustomers.active,
-    })
-    .from(adminCustomers)
-    .leftJoin(customers, eq(adminCustomers.idCustomer, customers.id))
-    .where(and(eq(adminCustomers.idUser, adminUserId), eq(adminCustomers.active, true)));
+  try {
+    const result = await db
+      .select({
+        id: adminCustomers.id,
+        idCustomer: adminCustomers.idCustomer,
+        customerName: customers.name,
+        customerSlug: customers.slug,
+        active: adminCustomers.active,
+      })
+      .from(adminCustomers)
+      .leftJoin(customers, eq(adminCustomers.idCustomer, customers.id))
+      .where(and(eq(adminCustomers.idUser, adminUserId), eq(adminCustomers.active, true)));
 
-  return result;
+    return result;
+  } catch (error: any) {
+    // Se a tabela não existe, retornar array vazio em vez de quebrar
+    if (error?.code === '42P01' || error?.message?.includes('does not exist') || (error?.message?.includes('relation') && error?.message?.includes('admin_customers'))) {
+      console.warn('Tabela admin_customers não existe ainda. Retornando array vazio. Execute a migration 0002_add_admin_customers_table.sql');
+      return [];
+    }
+    // Para outros erros, relançar
+    console.error('Erro ao buscar ISOs autorizados para Admin:', error);
+    throw error;
+  }
 }
 
 /**
@@ -163,38 +174,47 @@ export async function assignCustomerToAdmin(adminUserId: number, customerId: num
     throw new Error("Apenas Super Admin pode atribuir ISOs a Admins");
   }
 
-  // Verificar se já existe
-  const existing = await db
-    .select()
-    .from(adminCustomers)
-    .where(and(eq(adminCustomers.idUser, adminUserId), eq(adminCustomers.idCustomer, customerId)))
-    .limit(1);
+  try {
+    // Verificar se já existe
+    const existing = await db
+      .select()
+      .from(adminCustomers)
+      .where(and(eq(adminCustomers.idUser, adminUserId), eq(adminCustomers.idCustomer, customerId)))
+      .limit(1);
 
-  if (existing.length > 0) {
-    // Atualizar para ativo se estiver inativo
-    await db
-      .update(adminCustomers)
-      .set({
+    if (existing.length > 0) {
+      // Atualizar para ativo se estiver inativo
+      await db
+        .update(adminCustomers)
+        .set({
+          active: true,
+          dtupdate: new Date().toISOString(),
+        })
+        .where(eq(adminCustomers.id, existing[0].id));
+      return existing[0].id;
+    }
+
+    // Criar novo registro
+    const slug = `admin-${adminUserId}-customer-${customerId}-${nanoid(10)}`;
+    const result = await db
+      .insert(adminCustomers)
+      .values({
+        idUser: adminUserId,
+        idCustomer: customerId,
+        slug,
         active: true,
-        dtupdate: new Date().toISOString(),
       })
-      .where(eq(adminCustomers.id, existing[0].id));
-    return existing[0].id;
+      .returning({ id: adminCustomers.id });
+
+    return result[0]?.id;
+  } catch (error: any) {
+    // Se a tabela não existe, retornar erro mais amigável
+    if (error?.code === '42P01' || error?.message?.includes('does not exist') || error?.message?.includes('relation') && error?.message?.includes('admin_customers')) {
+      console.error('Tabela admin_customers não existe. Execute a migration 0002_add_admin_customers_table.sql');
+      throw new Error('Tabela admin_customers não existe. Execute a migration 0002_add_admin_customers_table.sql no banco de dados de produção.');
+    }
+    throw error;
   }
-
-  // Criar novo registro
-  const slug = `admin-${adminUserId}-customer-${customerId}-${nanoid(10)}`;
-  const result = await db
-    .insert(adminCustomers)
-    .values({
-      idUser: adminUserId,
-      idCustomer: customerId,
-      slug,
-      active: true,
-    })
-    .returning({ id: adminCustomers.id });
-
-  return result[0]?.id;
 }
 
 /**
@@ -206,15 +226,24 @@ export async function removeCustomerFromAdmin(adminUserId: number, customerId: n
     throw new Error("Apenas Super Admin pode remover ISOs de Admins");
   }
 
-  await db
-    .update(adminCustomers)
-    .set({
-      active: false,
-      dtupdate: new Date().toISOString(),
-    })
-    .where(and(eq(adminCustomers.idUser, adminUserId), eq(adminCustomers.idCustomer, customerId)));
+  try {
+    await db
+      .update(adminCustomers)
+      .set({
+        active: false,
+        dtupdate: new Date().toISOString(),
+      })
+      .where(and(eq(adminCustomers.idUser, adminUserId), eq(adminCustomers.idCustomer, customerId)));
 
-  return true;
+    return true;
+  } catch (error: any) {
+    // Se a tabela não existe, retornar erro mais amigável
+    if (error?.code === '42P01' || error?.message?.includes('does not exist') || error?.message?.includes('relation') && error?.message?.includes('admin_customers')) {
+      console.error('Tabela admin_customers não existe. Execute a migration 0002_add_admin_customers_table.sql');
+      throw new Error('Tabela admin_customers não existe. Execute a migration 0002_add_admin_customers_table.sql no banco de dados de produção.');
+    }
+    throw error;
+  }
 }
 
 /**
@@ -226,21 +255,30 @@ export async function updateAdminCustomers(adminUserId: number, customerIds: num
     throw new Error("Apenas Super Admin pode atualizar ISOs de Admins");
   }
 
-  // Desativar todos os existentes
-  await db
-    .update(adminCustomers)
-    .set({
-      active: false,
-      dtupdate: new Date().toISOString(),
-    })
-    .where(eq(adminCustomers.idUser, adminUserId));
+  try {
+    // Desativar todos os existentes
+    await db
+      .update(adminCustomers)
+      .set({
+        active: false,
+        dtupdate: new Date().toISOString(),
+      })
+      .where(eq(adminCustomers.idUser, adminUserId));
 
-  // Criar novos ou reativar existentes
-  for (const customerId of customerIds) {
-    await assignCustomerToAdmin(adminUserId, customerId);
+    // Criar novos ou reativar existentes
+    for (const customerId of customerIds) {
+      await assignCustomerToAdmin(adminUserId, customerId);
+    }
+
+    return true;
+  } catch (error: any) {
+    // Se a tabela não existe, retornar erro mais amigável
+    if (error?.code === '42P01' || error?.message?.includes('does not exist') || error?.message?.includes('relation') && error?.message?.includes('admin_customers')) {
+      console.error('Tabela admin_customers não existe. Execute a migration 0002_add_admin_customers_table.sql');
+      throw new Error('Tabela admin_customers não existe. Execute a migration 0002_add_admin_customers_table.sql no banco de dados de produção.');
+    }
+    throw error;
   }
-
-  return true;
 }
 
 /**
@@ -514,7 +552,7 @@ export async function updateUserPermissions(
     .where(eq(users.id, userId));
 
   // Se for Admin e tiver customerIds, atualizar admin_customers
-  if (data.customerIds !== undefined && userInfo.isSuperAdmin) {
+  if (data.customerIds !== undefined && Array.isArray(data.customerIds) && userInfo.isSuperAdmin) {
     // Verificar se o perfil do usuário é Admin
     const userProfile = await db
       .select()
@@ -527,7 +565,18 @@ export async function updateUserPermissions(
       const isAdminProfile = profileName.includes("ADMIN") && !profileName.includes("SUPER");
 
       if (isAdminProfile) {
-        await updateAdminCustomers(userId, data.customerIds);
+        try {
+          await updateAdminCustomers(userId, data.customerIds);
+        } catch (error: any) {
+          // Se a tabela não existe, apenas logar warning e continuar
+          if (error?.code === '42P01' || error?.message?.includes('does not exist') || (error?.message?.includes('relation') && error?.message?.includes('admin_customers'))) {
+            console.warn('Tabela admin_customers não existe. ISOs autorizados não foram atualizados. Execute a migration 0002_add_admin_customers_table.sql');
+          } else {
+            // Para outros erros, relançar
+            console.error('Erro ao atualizar ISOs autorizados:', error);
+            throw error;
+          }
+        }
       }
     }
   }
