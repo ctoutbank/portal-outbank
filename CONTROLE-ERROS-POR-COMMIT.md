@@ -17,10 +17,10 @@
 
 ## 📊 Estatísticas
 
-**Total de erros identificados:** 2  
-**Erros com correção aplicada:** 2  
+**Total de erros identificados:** 3  
+**Erros com correção aplicada:** 3  
 **Deploys que passaram na Vercel:** 0  
-**Deploys que falharam:** 1  
+**Deploys que falharam:** 2  
 
 ---
 
@@ -32,7 +32,22 @@
 
 ## 🔧 ERROS IDENTIFICADOS E CORRIGIDOS (Aguardando teste na Vercel)
 
-### Erro #2
+### Erro #3
+- **ID:** ERRO-003
+- **Mensagem do erro:** Type error: Cannot find name 'allHistory'. Did you mean 'history'? A variável `allHistory` está sendo usada mas não foi definida. A variável correta é `history`.
+- **Arquivo:** `src/app/consent/modules/history/page.tsx` (linha 64)
+- **Commit identificado:** **006** - `7743a31` (feat(006): Fase 3 - Criar páginas e API routes para consentimento LGPD)
+- **Data identificação:** 21/11/2025 16:37
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Substituir `allHistory` por `history` na linha 64, pois a variável definida é `history` (linha 50), não `allHistory`.
+- **Commit de correção:** `8152eda` - fix(006): Corrigir variável allHistory no history/page.tsx
+- **Push realizado:** ✅ Sim - 21/11/2025 16:38
+- **Status Vercel:** ⏳ Aguardando teste
+- **Resultado:** *Aguardando teste na Vercel...*
+
+---
+
+### Erro #2 (ATUALIZADO - Não passou, mas novo erro apareceu)
 - **ID:** ERRO-002
 - **Mensagem do erro:** Type error: Module '"@/components/layout/base-header"' has no exported member 'BaseHeader'. BaseHeader é exportado como default, mas está sendo importado como named export.
 - **Arquivos:** 
@@ -45,8 +60,9 @@
 - **Solução aplicada:** Alterar imports de `import { BaseHeader } from ...` para `import BaseHeader from ...` (default import) nos 3 arquivos, pois o componente é exportado como default.
 - **Commit de correção:** `4277cce` - fix(006): Corrigir import de BaseHeader nas páginas de consentimento
 - **Push realizado:** ✅ Sim - 21/11/2025 16:32
-- **Status Vercel:** ⏳ Aguardando teste
-- **Resultado:** *Aguardando teste na Vercel...*
+- **Status Vercel:** ❌ Falhou - **Novo erro apareceu após correção (ERRO-003)**
+- **Data teste Vercel:** 21/11/2025 16:35
+- **Resultado:** Deploy falhou ❌ - Erro corrigido, mas novo erro (ERRO-003) apareceu
 
 ---
 
