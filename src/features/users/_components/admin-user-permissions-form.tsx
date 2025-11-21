@@ -232,16 +232,29 @@ export function AdminUserPermissionsForm({
           try {
             const { InsertUser } = await import("@/features/customers/users/_actions/user-actions");
             
+            // Se houver múltiplos ISOs selecionados via customerIds, usar o primeiro como idCustomer principal
+            // Caso contrário, usar o idCustomer do campo
+            const primaryCustomerId = (data.customerIds && data.customerIds.length > 0) 
+              ? data.customerIds[0] 
+              : (data.idCustomer || null);
+            
             const userId = await InsertUser({
               firstName: data.firstName.trim(),
               lastName: data.lastName.trim(),
               email: data.email.trim().toLowerCase(),
               password: data.password?.trim() || undefined,
-              idCustomer: data.idCustomer || null,
+              idCustomer: primaryCustomerId,
               active: true,
               idProfile: data.idProfile,
               fullAccess: data.fullAccess || false,
             });
+            
+            // Se houver múltiplos ISOs selecionados, atribuir os demais após criar o usuário
+            if (data.customerIds && data.customerIds.length > 1 && userId) {
+              // TODO: Implementar lógica para atribuir ISOs adicionais ao usuário criado
+              // Por enquanto, apenas o primeiro ISO será atribuído como idCustomer principal
+              console.log("ISOs adicionais selecionados:", data.customerIds.slice(1));
+            }
 
             if (userId && typeof userId === 'number' && userId > 0) {
               toast.success("Usuário criado com sucesso");
@@ -436,34 +449,36 @@ export function AdminUserPermissionsForm({
               <FormField
                 control={form.control}
                 name="idCustomer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ISO</FormLabel>
-                    <Select
-                      value={field.value?.toString() || undefined}
-                      onValueChange={(value) => {
-                        field.onChange(value ? Number(value) : null);
-                      }}
-                    >
+                render={({ field }) => {
+                  // Converter idCustomer (número ou null) para array de IDs para o componente de seleção múltipla
+                  const selectedIds = field.value ? [field.value] : [];
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel>ISOs</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o ISO (opcional)" />
-                        </SelectTrigger>
+                        <AdminCustomerAssignment
+                          customers={customerOptions}
+                          selectedCustomerIds={selectedIds}
+                          onSelectionChange={(customerIds) => {
+                            // Armazenar todos os ISOs selecionados em customerIds
+                            form.setValue("customerIds", customerIds);
+                            // Usar o primeiro ISO como idCustomer principal (para compatibilidade com schema)
+                            if (customerIds.length > 0) {
+                              field.onChange(customerIds[0]);
+                            } else {
+                              field.onChange(null);
+                            }
+                          }}
+                        />
                       </FormControl>
-                      <SelectContent>
-                        {customerOptions.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id.toString()}>
-                            {customer.name || "Sem nome"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      ISO ao qual o usuário pertence. Deixe em branco para usuários sem ISO específico.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                      <FormDescription>
+                        Selecione os ISOs aos quais o usuário pertence. Você pode selecionar múltiplos ISOs.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             )}
 

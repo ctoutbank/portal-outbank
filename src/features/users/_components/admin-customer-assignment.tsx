@@ -102,11 +102,6 @@ export function AdminCustomerAssignment({
                   className="flex-1 cursor-pointer font-normal text-sm"
                 >
                   {customer.name || "Sem nome"}
-                  {customer.slug && (
-                    <span className="text-muted-foreground text-xs ml-2 font-mono">
-                      ({customer.slug})
-                    </span>
-                  )}
                 </Label>
               </div>
             ))

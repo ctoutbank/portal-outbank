@@ -171,90 +171,96 @@ export function AdminUsersFilter({
           onKeyDown={handleKeyDown}
           tabIndex={0}
         >
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-xs font-medium mb-1.5 block">Email</Label>
-              <Input
-                placeholder="Email do usuário"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="h-9"
-              />
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs font-medium mb-1.5 block">Email</Label>
+                <Input
+                  placeholder="Email do usuário"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="h-9"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs font-medium mb-1.5 block">Nome</Label>
+                <Input
+                  placeholder="Nome do usuário"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="h-9"
+                />
+              </div>
             </div>
 
-            <div>
-              <Label className="text-xs font-medium mb-1.5 block">Nome</Label>
-              <Input
-                placeholder="Nome do usuário"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="h-9"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs font-medium mb-1.5 block">ISO</Label>
+                <Select 
+                  value={customerId || "all"} 
+                  onValueChange={(value) => {
+                    setCustomerId(value === "all" ? "" : value);
+                  }}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Todos os ISOs" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os ISOs</SelectItem>
+                    {customers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id.toString()}>
+                        {customer.name || "Sem nome"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-xs font-medium mb-1.5 block">Status</Label>
+                <Select 
+                  value={active || "all"} 
+                  onValueChange={(value) => {
+                    setActive(value === "all" ? "" : value);
+                  }}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="true">Ativo</SelectItem>
+                    <SelectItem value="false">Inativo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div>
-              <Label className="text-xs font-medium mb-1.5 block">ISO</Label>
-              <Select 
-                value={customerId || "all"} 
-                onValueChange={(value) => {
-                  setCustomerId(value === "all" ? "" : value);
-                }}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Todos os ISOs" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os ISOs</SelectItem>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id.toString()}>
-                      {customer.name || "Sem nome"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-xs font-medium mb-1.5 block">Perfil</Label>
-              <Select 
-                value={profileId || "all"} 
-                onValueChange={(value) => {
-                  setProfileId(value === "all" ? "" : value);
-                }}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Todos os perfis" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os perfis</SelectItem>
-                  {profiles.map((profile) => (
-                    <SelectItem key={profile.id} value={profile.id.toString()}>
-                      {profile.name || "Sem nome"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-xs font-medium mb-1.5 block">Status</Label>
-              <Select 
-                value={active || "all"} 
-                onValueChange={(value) => {
-                  setActive(value === "all" ? "" : value);
-                }}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="true">Ativo</SelectItem>
-                  <SelectItem value="false">Inativo</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs font-medium mb-1.5 block">Perfil</Label>
+                <Select 
+                  value={profileId || "all"} 
+                  onValueChange={(value) => {
+                    setProfileId(value === "all" ? "" : value);
+                  }}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Todos os perfis" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os perfis</SelectItem>
+                    {profiles.map((profile) => (
+                      <SelectItem key={profile.id} value={profile.id.toString()}>
+                        {profile.name || "Sem nome"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
