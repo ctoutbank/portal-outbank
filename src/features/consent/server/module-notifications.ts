@@ -44,8 +44,6 @@ export async function notifyUsersAboutNewModules(merchantId: number, moduleId: n
       .select({
         userId: userMerchants.idUser,
         userEmail: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
       })
       .from(userMerchants)
       .innerJoin(users, eq(userMerchants.idUser, users.id))
