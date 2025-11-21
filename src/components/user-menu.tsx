@@ -2,10 +2,13 @@
 "use client";
 
 import { SignOutButton, useUser } from "@clerk/nextjs";
-import { ChevronUp, LogOut, Settings } from "lucide-react";
+import { ChevronUp, LogOut, Settings, Shield, Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import Image from 'next/image'
+import Image from 'next/image';
+import { ConsentNotificationsBadge } from "@/features/consent/components/consent-notifications-badge";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -62,6 +65,17 @@ export function UserMenu() {
             </div>
 
             <div className="mt-4 space-y-1">
+              <Link
+                href="/consent/modules"
+                onClick={() => setIsOpen(false)}
+                className="cursor-pointer flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition-colors hover:bg-gray-100 dark:bg-black dark:hover:bg-gray-700"
+              >
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-gray-500" />
+                  <span>Consentimento LGPD</span>
+                </div>
+                <ConsentNotificationsBadge />
+              </Link>
               <button
                 onClick={() => {
                   router.push("/");
