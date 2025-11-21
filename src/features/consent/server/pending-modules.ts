@@ -26,10 +26,16 @@ export async function getPendingModules(userId: number) {
       return [];
     }
 
-    const merchantIds = userMerchantsData.map((um) => um.merchantId);
+    const merchantIds = userMerchantsData
+      .map((um) => um.merchantId)
+      .filter((id): id is number => id !== null && id !== undefined);
+
+    if (merchantIds.length === 0) {
+      return [];
+    }
 
     // Buscar módulos pendentes de consentimento para estes merchants
-    const pendingModules = await db
+    const pendingModulesRaw = await db
       .select({
         merchantModuleId: merchantModules.id,
         merchantId: merchantModules.idMerchant,
@@ -50,6 +56,30 @@ export async function getPendingModules(userId: number) {
           eq(modules.active, true)
         )
       );
+
+    // Filtrar e garantir que os valores necessários não sejam null
+    const pendingModules = pendingModulesRaw
+      .filter((pm): pm is typeof pm & { 
+        merchantId: number; 
+        moduleId: number;
+        merchantModuleId: number;
+      } => 
+        pm.merchantModuleId !== null &&
+        pm.merchantModuleId !== undefined &&
+        pm.merchantId !== null && 
+        pm.merchantId !== undefined && 
+        pm.moduleId !== null && 
+        pm.moduleId !== undefined
+      )
+      .map((pm) => ({
+        merchantModuleId: pm.merchantModuleId,
+        merchantId: pm.merchantId as number,
+        moduleId: pm.moduleId as number,
+        moduleName: pm.moduleName,
+        moduleSlug: pm.moduleSlug,
+        merchantName: pm.merchantName,
+        notified: pm.notified,
+      }));
 
     return pendingModules;
   } catch (error) {
