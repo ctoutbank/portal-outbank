@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { ModuleBadges } from "@/components/ui/module-badge";
 import { ChevronDown, ExternalLink } from "lucide-react";
 import { SSOButton } from "./sso-button";
 import { useEffect, useState } from "react";
@@ -69,6 +70,9 @@ export default function CustomersList({
               </TableHead>
 
               <TableHead className="font-semibold text-sm">
+                Módulos
+              </TableHead>
+              <TableHead className="font-semibold text-sm">
                 Status
               </TableHead>
             </TableRow>
@@ -113,6 +117,13 @@ export default function CustomersList({
                   <span className="text-sm font-medium tabular-nums">
                     {customer.userCount || 0}
                   </span>
+                </TableCell>
+                <TableCell className="py-3">
+                  <ModuleBadges
+                    moduleSlugs={customer.moduleSlugs || []}
+                    maxVisible={3}
+                    showIcon={true}
+                  />
                 </TableCell>
                 <TableCell className="py-3">
                   <StatusBadge

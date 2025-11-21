@@ -1,9 +1,10 @@
 "use server";
 import { db } from "@/db/drizzle";
-import { customers, customerCustomization, adminCustomers } from "../../../../drizzle/schema";
+import { customers, customerCustomization, adminCustomers, customerModules, modules } from "../../../../drizzle/schema";
 import { and, asc, count, desc, eq, ilike, or, sql, inArray } from "drizzle-orm";
 import { CustomerSchema } from "../schema/schema";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
+import { getCustomerModuleSlugs } from "@/lib/modules/customer-modules";
 
 export type CustomersInsert = typeof customers.$inferInsert;
 export type CustomersDetail = typeof customers.$inferSelect;
@@ -135,22 +136,31 @@ export async function getCustomers(
 
   const totalCount = totalCountResult[0]?.count || 0;
 
+  // Buscar módulos para cada customer
+  const customersWithModules = await Promise.all(
+    result.map(async (customer) => {
+      const moduleSlugs = await getCustomerModuleSlugs(customer.id);
+      return {
+        id: customer.id,
+        name: customer.name || "",
+        customerId: customer.customerId || "",
+        settlementManagementType: customer.settlementManagementType || "",
+        slug: customer.slug,
+        idParent: customer.idParent || 0,
+        isActive: customer.isActive ?? true,
+        userCount: customer.userCount || 0,
+        hasCustomization: customer.hasCustomization || false,
+        subdomain: customer.subdomain || "",
+        isoStatus: customer.isoStatus || "Incompleto",
+        createdAt: customer.createdAt || "",
+        updatedAt: customer.updatedAt || "",
+        moduleSlugs: moduleSlugs || [],
+      };
+    })
+  );
+
   return {
-    customers: result.map((customer) => ({
-      id: customer.id,
-      name: customer.name || "",
-      customerId: customer.customerId || "",
-      settlementManagementType: customer.settlementManagementType || "",
-      slug: customer.slug,
-      idParent: customer.idParent || 0,
-      isActive: customer.isActive ?? true,
-      userCount: customer.userCount || 0,
-      hasCustomization: customer.hasCustomization || false,
-      subdomain: customer.subdomain || "",
-      isoStatus: customer.isoStatus || "Incompleto",
-      createdAt: customer.createdAt || "",
-      updatedAt: customer.updatedAt || "",
-    })),
+    customers: customersWithModules,
     totalCount,
   };
 }
@@ -226,6 +236,7 @@ export type CustomerFull = {
   isoStatus?: string;
   createdAt?: string;
   updatedAt?: string;
+  moduleSlugs?: string[];
 };
 
 export interface Customerslist {

@@ -3,6 +3,7 @@
 import { MerchantData } from "@/app/dashboard/actions"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Building2, CreditCard, DollarSign, TrendingDown, TrendingUp } from "lucide-react"
+import { ModuleBadges } from "@/components/ui/module-badge"
 import { useEffect } from "react"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import RefreshButton from "@/app/dashboard/refresh-button"
@@ -221,9 +222,18 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
                     
                     {/* Detalhes */}
                     <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-2 items-center">
-                      {/* Nome */}
+                      {/* Nome e Módulos */}
                       <div className="md:col-span-2">
-                        <h3 className="text-xs font-medium line-clamp-1">{merchant.name}</h3>
+                        <h3 className="text-xs font-medium line-clamp-1 mb-1">{merchant.name}</h3>
+                        {merchant.moduleSlugs && merchant.moduleSlugs.length > 0 && (
+                          <ModuleBadges
+                            moduleSlugs={merchant.moduleSlugs}
+                            maxVisible={3}
+                            showIcon={true}
+                            variant="outline"
+                            className="mt-1"
+                          />
+                        )}
                       </div>
                       
                       {/* Valores */}

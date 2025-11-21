@@ -4,6 +4,7 @@ import { db } from "@/db/drizzle";
 import { and, count, eq, sql, inArray, or, not, isNull } from "drizzle-orm";
 import { merchants, payout, transactions, customers } from "../../../drizzle/schema";
 import { revalidatePath } from "next/cache";
+import { getMerchantModuleBadges } from "@/lib/modules/merchant-modules";
 
 // Interface para os dados do merchant
 export interface MerchantData {
@@ -12,6 +13,7 @@ export interface MerchantData {
   bruto: number;
   lucro: number;
   crescimento: number; // Percentual de crescimento em relação ao período anterior
+  moduleSlugs?: string[]; // Módulos autorizados do merchant
 }
 
 // Interface para os dados do cliente
@@ -401,9 +403,20 @@ export async function getTopIsoMerchants(): Promise<MerchantData[]> {
     
     console.log(`Dados reais obtidos para ${merchantsWithData.length} merchants`);
     
+    // Buscar módulos para cada merchant
+    const merchantsWithModules = await Promise.all(
+      merchantsWithData.map(async (merchant) => {
+        const moduleSlugs = await getMerchantModuleBadges(merchant.id);
+        return {
+          ...merchant,
+          moduleSlugs: moduleSlugs || [],
+        };
+      })
+    );
+    
     // Ordenar por bruto e pegar os 5 principais
-    merchantsWithData.sort((a, b) => b.bruto - a.bruto);
-    const topMerchants = merchantsWithData.slice(0, 5);
+    merchantsWithModules.sort((a, b) => b.bruto - a.bruto);
+    const topMerchants = merchantsWithModules.slice(0, 5);
     
     console.log(`Retornando ${topMerchants.length} merchants com dados reais para o dashboard`);
     topMerchants.forEach(m => {
