@@ -61,7 +61,7 @@ export default async function ConsentHistoryPage() {
         title="Histórico de Consentimentos LGPD"
         subtitle="Visualize todos os consentimentos e revogações de módulos"
       >
-        <ConsentHistoryList history={allHistory} userId={userId} />
+        <ConsentHistoryList history={history} userId={userId} />
       </BaseBody>
     </>
   );
