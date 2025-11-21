@@ -17,10 +17,10 @@
 
 ## 📊 Estatísticas
 
-**Total de erros identificados:** 4  
-**Erros com correção aplicada:** 4  
+**Total de erros identificados:** 5  
+**Erros com correção aplicada:** 5  
 **Deploys que passaram na Vercel:** 0  
-**Deploys que falharam:** 3  
+**Deploys que falharam:** 4  
 
 ---
 
@@ -31,6 +31,21 @@
 ---
 
 ## 🔧 ERROS IDENTIFICADOS E CORRIGIDOS (Aguardando teste na Vercel)
+
+### Erro #5
+- **ID:** ERRO-005
+- **Mensagem do erro:** Type error: Type 'number | null' is not assignable to type 'number | undefined'. `merchantIdToUse` é do tipo `number | undefined`, mas está recebendo `number | null` de `userMerchantsData[0].merchantId`.
+- **Arquivo:** `src/features/consent/server/module-consent-details.ts` (linha 47)
+- **Commit identificado:** **004** - `2e6687c` (feat(004): Fase 3 - Criar server actions para sistema de consentimento LGPD)
+- **Data identificação:** 21/11/2025 16:48
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Converter `null` para `undefined` antes de atribuir a `merchantIdToUse`, garantindo compatibilidade de tipos (`number | undefined`).
+- **Commit de correção:** `3717458` - fix(004): Corrigir tipo null no module-consent-details.ts
+- **Push realizado:** ✅ Sim - 21/11/2025 16:50
+- **Status Vercel:** ⏳ Aguardando teste
+- **Resultado:** *Aguardando teste na Vercel...*
+
+---
 
 ### Erro #4
 - **ID:** ERRO-004
