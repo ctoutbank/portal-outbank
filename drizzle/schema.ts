@@ -1602,6 +1602,182 @@ export const fornecedorDocuments = pgTable("fornecedor_documents", {
   }).onDelete("cascade"),
 ]);
 
+export const customerModules = pgTable("customer_modules", {
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
+		name: "customer_modules_id_seq", 
+		startWith: 1, 
+		increment: 1, 
+		minValue: 1, 
+		maxValue: 9223372036854775807, 
+		cache: 1 
+	}),
+	slug: varchar({ length: 50 }),
+	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	dtupdate: timestamp({ mode: 'string' }),
+	active: boolean().default(true),
+	idCustomer: bigint("id_customer", { mode: "number" }),
+	idModule: bigint("id_module", { mode: "number" }),
+}, (table) => [
+	unique("customer_modules_unique").on(table.idCustomer, table.idModule),
+	foreignKey({
+		columns: [table.idCustomer],
+		foreignColumns: [customers.id],
+		name: "customer_modules_id_customer_fkey"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.idModule],
+		foreignColumns: [modules.id],
+		name: "customer_modules_id_module_fkey"
+	}).onDelete("cascade"),
+]);
+
+export const merchantModules = pgTable("merchant_modules", {
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
+		name: "merchant_modules_id_seq", 
+		startWith: 1, 
+		increment: 1, 
+		minValue: 1, 
+		maxValue: 9223372036854775807, 
+		cache: 1 
+	}),
+	slug: varchar({ length: 50 }),
+	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	dtupdate: timestamp({ mode: 'string' }),
+	
+	idMerchant: bigint("id_merchant", { mode: "number" }),
+	idModule: bigint("id_module", { mode: "number" }),
+	idCustomer: bigint("id_customer", { mode: "number" }),
+	
+	consentGiven: boolean("consent_given").default(false),
+	consentDate: timestamp("consent_date", { mode: 'string' }),
+	consentIp: varchar("consent_ip", { length: 50 }),
+	consentUserAgent: text("consent_user_agent"),
+	
+	active: boolean().default(false),
+	notified: boolean().default(false),
+	
+}, (table) => [
+	unique("merchant_modules_unique").on(table.idMerchant, table.idModule),
+	foreignKey({
+		columns: [table.idMerchant],
+		foreignColumns: [merchants.id],
+		name: "merchant_modules_id_merchant_fkey"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.idModule],
+		foreignColumns: [modules.id],
+		name: "merchant_modules_id_module_fkey"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.idCustomer],
+		foreignColumns: [customers.id],
+		name: "merchant_modules_id_customer_fkey"
+	}).onDelete("cascade"),
+]);
+
+export const moduleConsents = pgTable("module_consents", {
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
+		name: "module_consents_id_seq", 
+		startWith: 1, 
+		increment: 1, 
+		minValue: 1, 
+		maxValue: 9223372036854775807, 
+		cache: 1 
+	}),
+	
+	idMerchantModule: bigint("id_merchant_module", { mode: "number" }),
+	idMerchant: bigint("id_merchant", { mode: "number" }),
+	idModule: bigint("id_module", { mode: "number" }),
+	idCustomer: bigint("id_customer", { mode: "number" }),
+	
+	action: varchar({ length: 50 }),
+	consentText: text("consent_text"),
+	ipAddress: varchar("ip_address", { length: 50 }),
+	userAgent: text("user_agent"),
+	deviceInfo: text("device_info"),
+	
+	userEmail: varchar("user_email", { length: 255 }),
+	userId: bigint("user_id", { mode: "number" }),
+	
+	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	
+}, (table) => [
+	foreignKey({
+		columns: [table.idMerchantModule],
+		foreignColumns: [merchantModules.id],
+		name: "module_consents_id_merchant_module_fkey"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.idMerchant],
+		foreignColumns: [merchants.id],
+		name: "module_consents_id_merchant_fkey"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.idModule],
+		foreignColumns: [modules.id],
+		name: "module_consents_id_module_fkey"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.idCustomer],
+		foreignColumns: [customers.id],
+		name: "module_consents_id_customer_fkey"
+	}).onDelete("cascade"),
+]);
+
+export const stakeholders = pgTable("stakeholders", {
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
+		name: "stakeholders_id_seq", 
+		startWith: 1, 
+		increment: 1, 
+		minValue: 1, 
+		maxValue: 9223372036854775807, 
+		cache: 1 
+	}),
+	slug: varchar({ length: 50 }),
+	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	dtupdate: timestamp({ mode: 'string' }),
+	active: boolean().default(true),
+	
+	name: varchar({ length: 255 }),
+	cnpj: varchar({ length: 18 }),
+	email: varchar({ length: 255 }),
+	phone: varchar({ length: 20 }),
+	commissionRate: numeric("commission_rate", { precision: 5, scale: 2 }),
+	
+}, (table) => [
+	unique("stakeholders_cnpj_unique").on(table.cnpj),
+]);
+
+export const stakeholderCustomers = pgTable("stakeholder_customers", {
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
+		name: "stakeholder_customers_id_seq", 
+		startWith: 1, 
+		increment: 1, 
+		minValue: 1, 
+		maxValue: 9223372036854775807, 
+		cache: 1 
+	}),
+	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	dtupdate: timestamp({ mode: 'string' }),
+	
+	idStakeholder: bigint("id_stakeholder", { mode: "number" }),
+	idCustomer: bigint("id_customer", { mode: "number" }),
+	commissionRate: numeric("commission_rate", { precision: 5, scale: 2 }),
+	
+}, (table) => [
+	unique("stakeholder_customers_unique").on(table.idStakeholder, table.idCustomer),
+	foreignKey({
+		columns: [table.idStakeholder],
+		foreignColumns: [stakeholders.id],
+		name: "stakeholder_customers_id_stakeholder_fkey"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.idCustomer],
+		foreignColumns: [customers.id],
+		name: "stakeholder_customers_id_customer_fkey"
+	}).onDelete("cascade"),
+]);
+
 export type InsertCnae = typeof cnaes.$inferInsert;
 export type SelectCnae = typeof cnaes.$inferSelect;
 

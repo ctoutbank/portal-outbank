@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { customers, paymentInstitution, users, salesAgents, settlements, reports, reportFilters, reportFiltersParam, merchantPixSettlementOrders, merchants, merchantSettlements, profiles, profileFunctions, functions, paymentLink, shoppingItems, merchantPriceGroup, merchantTransactionPrice, modules, moduleFunctions, merchantPrice, categories, legalNatures, configurations, addresses, merchantBankAccounts, solicitationFee, customerFunctions, merchantpixaccount, reportExecution, file, reportExecutionStatus, contacts, payout, merchantfile, userMerchants, payoutAntecipations, merchantSettlementOrders, solicitationFeeBrand, solicitationFeeDocument, solicitationBrandProductType, feeBrand, feeBrandProductType, fee, feeCredit, financialAdjustments, financialAdjustmentMerchants, userNotifications } from "./schema";
+import { customers, paymentInstitution, users, salesAgents, settlements, reports, reportFilters, reportFiltersParam, merchantPixSettlementOrders, merchants, merchantSettlements, profiles, profileFunctions, functions, paymentLink, shoppingItems, merchantPriceGroup, merchantTransactionPrice, modules, moduleFunctions, merchantPrice, categories, legalNatures, configurations, addresses, merchantBankAccounts, solicitationFee, customerFunctions, merchantpixaccount, reportExecution, file, reportExecutionStatus, contacts, payout, merchantfile, userMerchants, payoutAntecipations, merchantSettlementOrders, solicitationFeeBrand, solicitationFeeDocument, solicitationBrandProductType, feeBrand, feeBrandProductType, fee, feeCredit, financialAdjustments, financialAdjustmentMerchants, userNotifications, customerModules, merchantModules, moduleConsents, stakeholders, stakeholderCustomers } from "./schema";
 
 export const paymentInstitutionRelations = relations(paymentInstitution, ({one, many}) => ({
 	customer: one(customers, {
@@ -28,6 +28,10 @@ export const customersRelations = relations(customers, ({one, many}) => ({
 	payouts: many(payout),
 	payoutAntecipations: many(payoutAntecipations),
 	solicitationFees: many(solicitationFee),
+	customerModules: many(customerModules),
+	merchantModules: many(merchantModules),
+	moduleConsents: many(moduleConsents),
+	stakeholderCustomers: many(stakeholderCustomers),
 }));
 
 export const salesAgentsRelations = relations(salesAgents, ({one, many}) => ({
@@ -143,6 +147,8 @@ export const merchantsRelations = relations(merchants, ({one, many}) => ({
 	userMerchants: many(userMerchants),
 	payoutAntecipations: many(payoutAntecipations),
 	financialAdjustmentMerchants: many(financialAdjustmentMerchants),
+	merchantModules: many(merchantModules),
+	moduleConsents: many(moduleConsents),
 }));
 
 export const merchantSettlementsRelations = relations(merchantSettlements, ({one, many}) => ({
@@ -227,6 +233,9 @@ export const moduleFunctionsRelations = relations(moduleFunctions, ({one}) => ({
 
 export const modulesRelations = relations(modules, ({many}) => ({
 	moduleFunctions: many(moduleFunctions),
+	customerModules: many(customerModules),
+	merchantModules: many(merchantModules),
+	moduleConsents: many(moduleConsents),
 }));
 
 export const merchantPriceRelations = relations(merchantPrice, ({many}) => ({
@@ -466,5 +475,66 @@ export const userNotificationsRelations = relations(userNotifications, ({one}) =
 	user: one(users, {
 		fields: [userNotifications.idUser],
 		references: [users.id]
+	}),
+}));
+
+export const customerModulesRelations = relations(customerModules, ({one}) => ({
+	customer: one(customers, {
+		fields: [customerModules.idCustomer],
+		references: [customers.id]
+	}),
+	module: one(modules, {
+		fields: [customerModules.idModule],
+		references: [modules.id]
+	}),
+}));
+
+export const merchantModulesRelations = relations(merchantModules, ({one, many}) => ({
+	merchant: one(merchants, {
+		fields: [merchantModules.idMerchant],
+		references: [merchants.id]
+	}),
+	module: one(modules, {
+		fields: [merchantModules.idModule],
+		references: [modules.id]
+	}),
+	customer: one(customers, {
+		fields: [merchantModules.idCustomer],
+		references: [customers.id]
+	}),
+	moduleConsents: many(moduleConsents),
+}));
+
+export const moduleConsentsRelations = relations(moduleConsents, ({one}) => ({
+	merchantModule: one(merchantModules, {
+		fields: [moduleConsents.idMerchantModule],
+		references: [merchantModules.id]
+	}),
+	merchant: one(merchants, {
+		fields: [moduleConsents.idMerchant],
+		references: [merchants.id]
+	}),
+	module: one(modules, {
+		fields: [moduleConsents.idModule],
+		references: [modules.id]
+	}),
+	customer: one(customers, {
+		fields: [moduleConsents.idCustomer],
+		references: [customers.id]
+	}),
+}));
+
+export const stakeholdersRelations = relations(stakeholders, ({many}) => ({
+	stakeholderCustomers: many(stakeholderCustomers),
+}));
+
+export const stakeholderCustomersRelations = relations(stakeholderCustomers, ({one}) => ({
+	stakeholder: one(stakeholders, {
+		fields: [stakeholderCustomers.idStakeholder],
+		references: [stakeholders.id]
+	}),
+	customer: one(customers, {
+		fields: [stakeholderCustomers.idCustomer],
+		references: [customers.id]
 	}),
 }));
