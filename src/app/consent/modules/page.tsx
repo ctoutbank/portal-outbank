@@ -1,4 +1,4 @@
-import { BaseHeader } from "@/components/layout/base-header";
+import BaseHeader from "@/components/layout/base-header";
 import BaseBody from "@/components/layout/base-body";
 import { getPendingConsentNotifications } from "@/features/consent/server/module-notifications";
 import { getPendingModules } from "@/features/consent/server/pending-modules";
