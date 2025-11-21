@@ -44,7 +44,8 @@ export async function getModuleConsentDetails(
         .limit(1);
 
       if (userMerchantsData.length > 0) {
-        merchantIdToUse = userMerchantsData[0].merchantId;
+        const merchantId = userMerchantsData[0].merchantId;
+        merchantIdToUse = merchantId !== null && merchantId !== undefined ? merchantId : undefined;
       }
     }
 
