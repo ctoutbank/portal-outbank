@@ -40,8 +40,8 @@
 - **Data identificação:** 21/11/2025 16:52
 - **Correção aplicada:** ✅ Sim
 - **Solução aplicada:** Remover referências a `firstName` e `lastName` que não existem na tabela `users`. Apenas usar `userEmail` que é suficiente para criar notificações.
-- **Commit de correção:** `[hash será preenchido após push]`
-- **Push realizado:** ⏳ Em andamento
+- **Commit de correção:** `f0c01e5` - fix(004): Remover colunas firstName e lastName inexistentes no module-notifications.ts
+- **Push realizado:** ✅ Sim - 21/11/2025 16:53
 - **Status Vercel:** ⏳ Aguardando teste
 - **Resultado:** *Aguardando teste na Vercel...*
 
