@@ -108,27 +108,4 @@ export async function validateSSOToken(token: string): Promise<{
   };
 }
 
-/**
- * Constrói a URL de redirecionamento para acesso SSO a um ISO
- * @param customerSlug - Slug do subdomínio do ISO
- * @param token - Token SSO gerado
- * @returns URL completa para redirecionamento
- */
-export function redirectToISOWithSSO(
-  customerSlug: string | null,
-  token: string
-): string {
-  if (!customerSlug) {
-    throw new Error("Slug do ISO não encontrado");
-  }
-
-  // URL base do subdomínio
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://consolle.one";
-  // Substituir domínio base pelo subdomínio
-  const domain = baseUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
-  const subdomainUrl = `https://${customerSlug}.${domain}`;
-
-  // URL de callback SSO
-  return `${subdomainUrl}/auth/sso/callback?token=${token}`;
-}
 
