@@ -26,7 +26,13 @@ export async function getUserConsentHistory(userId: number) {
       return [];
     }
 
-    const merchantIds = userMerchantsData.map((um) => um.merchantId);
+    const merchantIds = userMerchantsData
+      .map((um) => um.merchantId)
+      .filter((id): id is number => id !== null && id !== undefined);
+
+    if (merchantIds.length === 0) {
+      return [];
+    }
 
     // Buscar histórico de consentimentos para estes merchants
     const history = await db
