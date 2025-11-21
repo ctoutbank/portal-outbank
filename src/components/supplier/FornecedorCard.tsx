@@ -4,6 +4,7 @@ import { Building2, Edit, Trash2, Copy, Eye, X, Calendar, Table } from "lucide-r
 import { useState } from "react";
 import { FornecedorForm } from "./FornecedorForm";
 import { useRouter } from 'next/navigation';
+import { ModuleBadge } from "@/components/ui/module-badge";
 
 interface FornecedorCardProps {
     fornecedor: Fornecedor;
@@ -91,7 +92,10 @@ export function FornecedorCard({ fornecedor, onEdit, onDelete, canEdit, canDelet
                         <Building2 className="w-6 h-6 text-blue-600 dark:text-blue-400"/>
                     </div>
                     <div>
-                        <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 mb-1 truncate">{fornecedor.nome}</h3>
+                        <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 truncate">{fornecedor.nome}</h3>
+                            <ModuleBadge moduleSlug="adq" showIcon={true} variant="outline" />
+                        </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">CNPJ: {fornecedor.cnpj}</p>
                     </div>
                 </div>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
+import { ModuleBadge } from "@/components/ui/module-badge";
 import {
   Table,
   TableBody,
@@ -58,6 +59,7 @@ export default function Categorylist({
               </TableHead>
               <TableHead>MCC</TableHead>
               <TableHead>Nome</TableHead>
+              <TableHead>Módulo</TableHead>
               <TableHead>Ativo</TableHead>
               <TableHead>Valor Cartão Presente antecipável(%) </TableHead>    
             </TableRow>
@@ -76,6 +78,9 @@ export default function Categorylist({
                 </TableCell>
                 <TableCell>{categories.mcc}</TableCell>
                 <TableCell>{categories.name}</TableCell>
+                <TableCell>
+                  <ModuleBadge moduleSlug="adq" showIcon={true} variant="outline" />
+                </TableCell>
                 <TableCell>
                   {" "}
                   <Badge
