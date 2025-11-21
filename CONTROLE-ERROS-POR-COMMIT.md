@@ -17,10 +17,10 @@
 
 ## 📊 Estatísticas
 
-**Total de erros identificados:** 3  
-**Erros com correção aplicada:** 3  
+**Total de erros identificados:** 4  
+**Erros com correção aplicada:** 4  
 **Deploys que passaram na Vercel:** 0  
-**Deploys que falharam:** 2  
+**Deploys que falharam:** 3  
 
 ---
 
@@ -31,6 +31,22 @@
 ---
 
 ## 🔧 ERROS IDENTIFICADOS E CORRIGIDOS (Aguardando teste na Vercel)
+
+### Erro #4
+- **ID:** ERRO-004
+- **Mensagem do erro:** Type error: Type '{ merchantModuleId: number; merchantId: number | null; moduleId: number | null; ... }[]' is not assignable to type 'PendingModule[]'. `merchantId` e `moduleId` podem ser `null`, mas o tipo `PendingModule` espera `number` (não-null).
+- **Arquivo:** `src/app/consent/modules/page.tsx` (linha 69) - chamada para `getPendingModules`
+- **Função com erro:** `src/features/consent/server/pending-modules.ts` - função `getPendingModules`
+- **Commit identificado:** **004** - `2e6687c` (feat(004): Fase 3 - Criar server actions para sistema de consentimento LGPD)
+- **Data identificação:** 21/11/2025 16:42
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Filtrar valores `null` e `undefined` antes de retornar, garantindo que `merchantId` e `moduleId` sejam `number` (não-null) usando type assertion após filtrar.
+- **Commit de correção:** `37dc7f8` - fix(004): Corrigir tipos null no getPendingModules
+- **Push realizado:** ✅ Sim - 21/11/2025 16:44
+- **Status Vercel:** ⏳ Aguardando teste
+- **Resultado:** *Aguardando teste na Vercel...*
+
+---
 
 ### Erro #3
 - **ID:** ERRO-003
