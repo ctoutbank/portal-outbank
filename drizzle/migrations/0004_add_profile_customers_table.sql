@@ -41,3 +41,5 @@ COMMENT ON TABLE "profile_customers" IS 'Vincula ISOs (customers) a categorias (
 COMMENT ON COLUMN "profile_customers"."id_profile" IS 'ID da categoria (profile)';
 COMMENT ON COLUMN "profile_customers"."id_customer" IS 'ID do ISO (customer)';
 COMMENT ON COLUMN "profile_customers"."active" IS 'Indica se o vínculo está ativo (soft delete)';
+
+
