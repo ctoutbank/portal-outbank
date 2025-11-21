@@ -43,8 +43,8 @@
 - **Data identificação:** 21/11/2025 16:31
 - **Correção aplicada:** ✅ Sim
 - **Solução aplicada:** Alterar imports de `import { BaseHeader } from ...` para `import BaseHeader from ...` (default import) nos 3 arquivos, pois o componente é exportado como default.
-- **Commit de correção:** [será preenchido após push]
-- **Push realizado:** ⏳ Em andamento
+- **Commit de correção:** `4277cce` - fix(006): Corrigir import de BaseHeader nas páginas de consentimento
+- **Push realizado:** ✅ Sim - 21/11/2025 16:32
 - **Status Vercel:** ⏳ Aguardando teste
 - **Resultado:** *Aguardando teste na Vercel...*
 
