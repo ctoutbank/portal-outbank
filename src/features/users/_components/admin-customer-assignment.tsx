@@ -81,7 +81,7 @@ export function AdminCustomerAssignment({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[400px] overflow-y-auto">
           {customers.length === 0 ? (
             <div className="col-span-full text-center text-muted-foreground py-4">
               Nenhum ISO disponível

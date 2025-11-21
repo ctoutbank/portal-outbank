@@ -12,12 +12,39 @@ import {
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ChevronDown, ExternalLink } from "lucide-react";
+import { SSOButton } from "./sso-button";
+import { useEffect, useState } from "react";
 
 export default function CustomersList({
   Customers,
 }: {
   Customers: Customerslist;
 }) {
+  const [userAllowedCustomers, setUserAllowedCustomers] = useState<number[]>([]);
+
+  useEffect(() => {
+    // Buscar ISOs permitidos para o usuário atual
+    fetch("/api/auth/user-info")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.allowedCustomers) {
+          setUserAllowedCustomers(data.allowedCustomers);
+        } else if (data.idCustomer) {
+          // Se for usuário normal, incluir seu ISO principal
+          setUserAllowedCustomers([data.idCustomer]);
+        }
+      })
+      .catch((error) => {
+        console.error("Erro ao buscar ISOs permitidos:", error);
+      });
+  }, []);
+
+  const hasAccessToCustomer = (customerId: number) => {
+    // Se não há ISOs permitidos ainda, mostrar todos (será atualizado após fetch)
+    if (userAllowedCustomers.length === 0) return true;
+    return userAllowedCustomers.includes(customerId);
+  };
+
   return (
     <div>
       <div className="border rounded-lg shadow-sm bg-card overflow-hidden">
@@ -31,6 +58,10 @@ export default function CustomersList({
 
               <TableHead className="font-semibold text-sm">
                 Subdomínio
+              </TableHead>
+
+              <TableHead className="font-semibold text-sm text-center">
+                SSO
               </TableHead>
 
               <TableHead className="font-semibold text-sm">
@@ -70,6 +101,13 @@ export default function CustomersList({
                   ) : (
                     <span className="text-muted-foreground text-sm">--</span>
                   )}
+                </TableCell>
+                <TableCell className="py-3 text-center">
+                  <SSOButton
+                    customerId={customer.id}
+                    customerSlug={customer.subdomain}
+                    hasAccess={hasAccessToCustomer(customer.id)}
+                  />
                 </TableCell>
                 <TableCell className="py-3">
                   <span className="text-sm font-medium tabular-nums">
