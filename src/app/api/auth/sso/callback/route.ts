@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateSSOToken } from "@/lib/auth/sso-handler";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { users } from "../../../../../drizzle/schema";
+import { users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 

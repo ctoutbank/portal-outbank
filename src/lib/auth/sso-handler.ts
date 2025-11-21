@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { customers, customerCustomization } from "../../drizzle/schema";
+import { customers, customerCustomization } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
 import { nanoid } from "nanoid";
