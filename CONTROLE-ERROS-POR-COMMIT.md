@@ -17,10 +17,10 @@
 
 ## 📊 Estatísticas
 
-**Total de erros identificados:** 5  
-**Erros com correção aplicada:** 5  
+**Total de erros identificados:** 6  
+**Erros com correção aplicada:** 6  
 **Deploys que passaram na Vercel:** 0  
-**Deploys que falharam:** 4  
+**Deploys que falharam:** 5  
 
 ---
 
@@ -31,6 +31,21 @@
 ---
 
 ## 🔧 ERROS IDENTIFICADOS E CORRIGIDOS (Aguardando teste na Vercel)
+
+### Erro #6
+- **ID:** ERRO-006
+- **Mensagem do erro:** Type error: Property 'firstName' does not exist on type 'users'. A tabela `users` não tem colunas `firstName` e `lastName`.
+- **Arquivo:** `src/features/consent/server/module-notifications.ts` (linhas 47-48)
+- **Commit identificado:** **004** - `2e6687c` (feat(004): Fase 3 - Criar server actions para sistema de consentimento LGPD)
+- **Data identificação:** 21/11/2025 16:52
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Remover referências a `firstName` e `lastName` que não existem na tabela `users`. Apenas usar `userEmail` que é suficiente para criar notificações.
+- **Commit de correção:** `[hash será preenchido após push]`
+- **Push realizado:** ⏳ Em andamento
+- **Status Vercel:** ⏳ Aguardando teste
+- **Resultado:** *Aguardando teste na Vercel...*
+
+---
 
 ### Erro #5
 - **ID:** ERRO-005
