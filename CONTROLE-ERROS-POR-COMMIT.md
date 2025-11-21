@@ -19,7 +19,7 @@
 
 **Total de erros identificados:** 6  
 **Erros com correção aplicada:** 6  
-**Deploys que passaram na Vercel:** 0  
+**Deploys que passaram na Vercel:** 1  
 **Deploys que falharam:** 5  
 
 ---
@@ -32,18 +32,7 @@
 
 ## 🔧 ERROS IDENTIFICADOS E CORRIGIDOS (Aguardando teste na Vercel)
 
-### Erro #6
-- **ID:** ERRO-006
-- **Mensagem do erro:** Type error: Property 'firstName' does not exist on type 'users'. A tabela `users` não tem colunas `firstName` e `lastName`.
-- **Arquivo:** `src/features/consent/server/module-notifications.ts` (linhas 47-48)
-- **Commit identificado:** **004** - `2e6687c` (feat(004): Fase 3 - Criar server actions para sistema de consentimento LGPD)
-- **Data identificação:** 21/11/2025 16:52
-- **Correção aplicada:** ✅ Sim
-- **Solução aplicada:** Remover referências a `firstName` e `lastName` que não existem na tabela `users`. Apenas usar `userEmail` que é suficiente para criar notificações.
-- **Commit de correção:** `f0c01e5` - fix(004): Remover colunas firstName e lastName inexistentes no module-notifications.ts
-- **Push realizado:** ✅ Sim - 21/11/2025 16:53
-- **Status Vercel:** ⏳ Aguardando teste
-- **Resultado:** *Aguardando teste na Vercel...*
+*Nenhum erro aguardando teste no momento.*
 
 ---
 
@@ -114,7 +103,19 @@
 
 ## ✅ ERROS RESOLVIDOS (Deploy passou na Vercel)
 
-*Nenhum erro passou no deploy ainda.*
+### Erro #6 ✅
+- **ID:** ERRO-006
+- **Mensagem do erro:** Type error: Property 'firstName' does not exist on type 'users'. A tabela `users` não tem colunas `firstName` e `lastName`.
+- **Arquivo:** `src/features/consent/server/module-notifications.ts` (linhas 47-48)
+- **Commit identificado:** **004** - `2e6687c` (feat(004): Fase 3 - Criar server actions para sistema de consentimento LGPD)
+- **Data identificação:** 21/11/2025 16:52
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Remover referências a `firstName` e `lastName` que não existem na tabela `users`. Apenas usar `userEmail` que é suficiente para criar notificações.
+- **Commit de correção:** `f0c01e5` - fix(004): Remover colunas firstName e lastName inexistentes no module-notifications.ts
+- **Push realizado:** ✅ Sim - 21/11/2025 16:53
+- **Status Vercel:** ✅ Passou
+- **Data teste Vercel:** 21/11/2025 16:54
+- **Resultado:** ✅ **Deploy passou na Vercel!**
 
 ---
 
