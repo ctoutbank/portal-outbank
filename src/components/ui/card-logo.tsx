@@ -2,16 +2,16 @@
 
 import React from "react"
 import {
-  MastercardLogo,
-  VisaLogo,
-  AmexLogo,
-  DiscoverLogo,
-  DinersLogo,
-  JcbLogo,
-  UnionpayLogo,
-  EloLogo,
-  HipercardLogo,
-} from "react-payment-logos"
+  Mastercard,
+  Visa,
+  Amex,
+  Discover,
+  Diners,
+  Jcb,
+  Unionpay,
+  Elo,
+  Hipercard,
+} from "react-payment-logos/dist/flat"
 
 interface CardLogoProps {
   cardName: string
@@ -22,25 +22,25 @@ interface CardLogoProps {
 
 // Mapeamento dos nomes de cartões para os componentes da biblioteca
 const cardLogoMap: Record<string, React.ComponentType<{ width?: number; height?: number; className?: string }>> = {
-  MASTERCARD: MastercardLogo,
-  VISA: VisaLogo,
-  AMERICAN_EXPRESS: AmexLogo,
-  AMEX: AmexLogo,
-  ELO: EloLogo,
-  HIPERCARD: HipercardLogo,
-  CABAL: HipercardLogo, // CABAL não existe na biblioteca, usando Hipercard como fallback
-  DISCOVER: DiscoverLogo,
-  DINERS: DinersLogo,
-  JCB: JcbLogo,
-  UNIONPAY: UnionpayLogo,
+  MASTERCARD: Mastercard,
+  VISA: Visa,
+  AMERICAN_EXPRESS: Amex,
+  AMEX: Amex,
+  ELO: Elo,
+  HIPERCARD: Hipercard,
+  CABAL: Hipercard, // CABAL não existe na biblioteca, usando Hipercard como fallback
+  DISCOVER: Discover,
+  DINERS: Diners,
+  JCB: Jcb,
+  UNIONPAY: Unionpay,
   // Também suporta variações com espaços ou minúsculas
-  Mastercard: MastercardLogo,
-  Visa: VisaLogo,
-  "American Express": AmexLogo,
-  Amex: AmexLogo,
-  Elo: EloLogo,
-  Hipercard: HipercardLogo,
-  Cabal: HipercardLogo,
+  Mastercard: Mastercard,
+  Visa: Visa,
+  "American Express": Amex,
+  Amex: Amex,
+  Elo: Elo,
+  Hipercard: Hipercard,
+  Cabal: Hipercard,
 }
 
 export function CardLogo({ cardName, width = 40, height = 24, className = "" }: CardLogoProps) {
