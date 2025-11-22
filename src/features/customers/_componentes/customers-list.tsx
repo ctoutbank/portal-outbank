@@ -110,7 +110,7 @@ export default function CustomersList({
                   <SSOButton
                     customerId={customer.id}
                     customerSlug={customer.subdomain}
-                    hasAccess={hasAccessToCustomer(customer.id)}
+                    hasAccess={customer.subdomain ? true : false}
                   />
                 </TableCell>
                 <TableCell className="py-3">
@@ -120,7 +120,7 @@ export default function CustomersList({
                 </TableCell>
                 <TableCell className="py-3">
                   <ModuleBadges
-                    moduleSlugs={customer.moduleSlugs || []}
+                    moduleSlugs={["adq", ...(customer.moduleSlugs || [])].filter((slug, index, self) => self.indexOf(slug) === index)}
                     maxVisible={3}
                     showIcon={true}
                   />

@@ -87,9 +87,10 @@ export function SSOButton({ customerId, customerSlug, hasAccess }: SSOButtonProp
 
       const { token } = await response.json();
 
-      // Redirecionar para o ISO com SSO
+      // Redirecionar para o ISO com SSO em nova aba
       const redirectUrl = redirectToISOWithSSO(customerSlug, token);
-      window.location.href = redirectUrl;
+      window.open(redirectUrl, '_blank', 'noopener,noreferrer');
+      setIsLoading(false);
     } catch (error: any) {
       console.error("Erro ao acessar ISO via SSO:", error);
       toast.error(error.message || "Erro ao acessar ISO via SSO");
