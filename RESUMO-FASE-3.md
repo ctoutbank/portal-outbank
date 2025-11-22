@@ -190,3 +190,4 @@ O sistema de consentimento LGPD está completo e funcional. Os usuários podem:
 - Visualizar histórico completo de consentimentos
 - Revogar consentimentos quando necessário
 
+

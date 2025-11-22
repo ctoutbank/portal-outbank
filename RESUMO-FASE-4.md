@@ -149,3 +149,4 @@ O sistema de badges dinâmicos está completo e funcional. Os usuários podem:
 - Identificar facilmente Fornecedores e CNAEs relacionados ao módulo ADQ
 - Visualizar badges com cores e ícones distintos para cada módulo
 
+

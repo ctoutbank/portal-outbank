@@ -601,3 +601,6 @@ export async function getAdminCustomers(userId: number) {
 4. Adicionar loading states durante operações assíncronas
 5. Otimizar queries do banco de dados com índices
 
+
+
+

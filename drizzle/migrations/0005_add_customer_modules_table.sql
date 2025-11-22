@@ -42,3 +42,4 @@ COMMENT ON COLUMN "customer_modules"."id_customer" IS 'ID do ISO (customer)';
 COMMENT ON COLUMN "customer_modules"."id_module" IS 'ID do módulo (ADQ, BNK, C&C, FIN)';
 COMMENT ON COLUMN "customer_modules"."active" IS 'Indica se o vínculo está ativo (soft delete)';
 
+

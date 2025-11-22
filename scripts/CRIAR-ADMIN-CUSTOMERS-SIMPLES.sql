@@ -46,3 +46,7 @@ SELECT
         ELSE '❌ ERRO: Tabela não foi criada'
     END AS resultado;
 
+
+
+
+

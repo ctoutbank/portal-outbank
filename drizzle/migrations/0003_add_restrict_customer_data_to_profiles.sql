@@ -14,3 +14,4 @@ COMMENT ON COLUMN "profiles"."restrict_customer_data" IS 'Quando true, usuários
 
 
 
+

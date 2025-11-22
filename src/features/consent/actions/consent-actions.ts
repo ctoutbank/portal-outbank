@@ -58,3 +58,4 @@ export async function revokeConsentAction(merchantId: number, moduleId: number) 
   }
 }
 
+

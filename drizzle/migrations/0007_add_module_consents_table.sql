@@ -70,3 +70,4 @@ COMMENT ON COLUMN "module_consents"."device_info" IS 'Informações do dispositi
 COMMENT ON COLUMN "module_consents"."user_email" IS 'Email do usuário que deu consentimento';
 COMMENT ON COLUMN "module_consents"."user_id" IS 'ID do usuário que deu consentimento (opcional)';
 
+

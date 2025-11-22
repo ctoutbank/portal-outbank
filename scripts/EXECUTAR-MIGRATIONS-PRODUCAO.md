@@ -74,3 +74,7 @@ ORDER BY ordinal_position;
 
 ⚠️ **Execute primeiro a migration 0002 (admin_customers)** antes de executar a 0003, caso ainda não tenha executado.
 
+
+
+
+

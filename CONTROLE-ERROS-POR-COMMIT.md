@@ -17,9 +17,9 @@
 
 ## 📊 Estatísticas
 
-**Total de erros identificados:** 6  
-**Erros com correção aplicada:** 6  
-**Deploys que passaram na Vercel:** 1  
+**Total de erros identificados:** 12  
+**Erros com correção aplicada:** 12  
+**Deploys que passaram na Vercel:** 7  
 **Deploys que falharam:** 5  
 
 ---
@@ -27,6 +27,12 @@
 ## ⚠️ ERROS PENDENTES (Aguardando identificação/correção)
 
 *Nenhum erro pendente no momento.*
+
+---
+
+## 🔧 ERROS IDENTIFICADOS E CORRIGIDOS (Aguardando teste na Vercel)
+
+*Nenhum erro aguardando teste no momento.*
 
 ---
 
@@ -103,6 +109,117 @@
 
 ## ✅ ERROS RESOLVIDOS (Deploy passou na Vercel)
 
+### Erro #12 ✅
+- **ID:** ERRO-012
+- **Mensagem do erro:** Type error: Module '"@/components/layout/base-header"' has no exported member 'BaseHeader'. `BaseHeader` é exportado como default, mas estava sendo importado como named export.
+- **Arquivo:** `src/app/consent/modules/[moduleId]/page.tsx` (linha 1)
+- **Commit identificado:** **010** - `41ef21e` (feat(010): Fase 4 - Adicionar badges de módulos no Dashboard)
+- **Data identificação:** 21/11/2025 22:12
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Alterar imports de `import { BaseHeader } from ...` para `import BaseHeader from ...` (default import). Foram necessários 2 commits de correção:
+  1. `0f596ea` - Primeira correção no [moduleId]/page.tsx
+  2. `bfc19eb` - Correção adicional (arquivo havia sido revertido)
+- **Commits de correção:** 
+  - `0f596ea` - fix(010): Corrigir imports de BaseHeader (primeira correção)
+  - `bfc19eb` - fix(010): Corrigir import de BaseHeader no [moduleId]/page.tsx (correção adicional)
+- **Push realizado:** ✅ Sim - 21/11/2025 22:59
+- **Status Vercel:** ✅ Passou
+- **Data teste Vercel:** 21/11/2025 23:00
+- **Resultado:** ✅ **Deploy passou na Vercel!**
+
+---
+
+### Erro #11 ✅
+- **ID:** ERRO-011
+- **Mensagem do erro:** Type error: Module '"@/components/layout/base-header"' has no exported member 'BaseHeader'. `BaseHeader` é exportado como default, mas estava sendo importado como named export.
+- **Arquivos:** 
+  - `src/app/consent/modules/[moduleId]/page.tsx` (linha 1)
+  - `src/app/consent/modules/page.tsx` (linha 1)
+  - `src/app/consent/modules/history/page.tsx` (linha 1)
+- **Commit identificado:** **008** - `80beac2` (feat(008): Fase 4 - Criar componente de badge dinâmico para módulos)
+- **Data identificação:** 21/11/2025 22:01
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Alterar imports de `import { BaseHeader } from ...` para `import BaseHeader from ...` (default import) nos 3 arquivos, pois o componente é exportado como default. Também corrigida variável `allHistory` para `history` no history/page.tsx.
+- **Commits de correção:** 
+  - `45a7745` - fix(008): Corrigir imports de BaseHeader e variável allHistory (history/page.tsx)
+  - `c560138` - fix(008): Adicionar correções de BaseHeader ([moduleId]/page.tsx e page.tsx)
+- **Push realizado:** ✅ Sim - 21/11/2025 22:07
+- **Status Vercel:** ✅ Passou
+- **Data teste Vercel:** 21/11/2025 22:07
+- **Resultado:** ✅ **Deploy passou na Vercel!**
+
+---
+
+### Erro #10 ✅
+- **ID:** ERRO-010
+- **Mensagem do erro:** Type error: Cannot find name 'allHistory'. Did you mean 'history'? A variável `allHistory` está sendo usada mas não foi definida. A variável correta é `history`.
+- **Arquivo:** `src/app/consent/modules/history/page.tsx` (linha 64)
+- **Commit identificado:** **007** - `7181a3e` (feat(007): Fase 3 - Integrar sistema de consentimento LGPD na UI)
+- **Data identificação:** 21/11/2025 17:48
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Substituir `allHistory` por `history` na linha 64, pois a variável definida é `history` (linha 50), não `allHistory`.
+- **Commit de correção:** `5654432` - fix(007): Corrigir variável allHistory no history/page.tsx
+- **Push realizado:** ✅ Sim - 21/11/2025 17:48
+- **Status Vercel:** ✅ Passou
+- **Data teste Vercel:** 21/11/2025 17:48
+- **Resultado:** ✅ **Deploy passou na Vercel!**
+
+---
+
+### Erro #9 ✅
+- **ID:** ERRO-009
+- **Mensagem do erro:** Type error: Module '"@/components/layout/base-header"' has no exported member 'BaseHeader'. `BaseHeader` é exportado como default, mas estava sendo importado como named export.
+- **Arquivos:** 
+  - `src/app/consent/modules/[moduleId]/page.tsx` (linha 1)
+  - `src/app/consent/modules/page.tsx` (linha 1)
+  - `src/app/consent/modules/history/page.tsx` (linha 1)
+- **Commit identificado:** **007** - `7181a3e` (feat(007): Fase 3 - Integrar sistema de consentimento LGPD na UI)
+- **Data identificação:** 21/11/2025 17:28
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Alterar imports de `import { BaseHeader } from ...` para `import BaseHeader from ...` (default import) nos 3 arquivos, pois o componente é exportado como default.
+- **Commit de correção:** `31368db` - fix(007): Corrigir import de BaseHeader nas páginas de consentimento
+- **Push realizado:** ✅ Sim - 21/11/2025 17:28
+- **Status Vercel:** ✅ Passou
+- **Data teste Vercel:** 21/11/2025 17:48
+- **Resultado:** ✅ **Deploy passou na Vercel!**
+
+---
+
+### Erro #8 ✅
+- **ID:** ERRO-008
+- **Mensagem do erro:** Type error: Cannot find name 'allHistory'. Did you mean 'history'? A variável `allHistory` está sendo usada mas não foi definida. A variável correta é `history`.
+- **Arquivo:** `src/app/consent/modules/history/page.tsx` (linha 64)
+- **Commit identificado:** **006** - `7743a31` (feat(006): Fase 3 - Criar páginas e API routes para consentimento LGPD)
+- **Data identificação:** 21/11/2025 17:25
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Substituir `allHistory` por `history` na linha 64, pois a variável definida é `history` (linha 50), não `allHistory`.
+- **Commit de correção:** `c22de4e` - fix(006): Corrigir variável allHistory no history/page.tsx
+- **Push realizado:** ✅ Sim - 21/11/2025 17:26
+- **Status Vercel:** ✅ Passou
+- **Data teste Vercel:** 21/11/2025 17:26
+- **Resultado:** ✅ **Deploy passou na Vercel!**
+
+---
+
+### Erro #7 ✅
+- **ID:** ERRO-007
+- **Mensagem do erro:** Type error: Module '"@/components/layout/base-header"' has no exported member 'BaseHeader'. `BaseHeader` é exportado como default, mas está sendo importado como named export.
+- **Arquivos:** 
+  - `src/app/consent/modules/[moduleId]/page.tsx` (linha 1)
+  - `src/app/consent/modules/page.tsx` (linha 1)
+  - `src/app/consent/modules/history/page.tsx` (linha 1)
+- **Commit identificado:** **006** - `7743a31` (feat(006): Fase 3 - Criar páginas e API routes para consentimento LGPD)
+- **Data identificação:** 21/11/2025 17:18
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Alterar imports de `import { BaseHeader } from ...` para `import BaseHeader from ...` (default import) nos 3 arquivos, pois o componente é exportado como default.
+- **Commit de correção:** `5c3ab6b` - fix(006): Corrigir import de BaseHeader nas páginas de consentimento
+- **Push realizado:** ✅ Sim - 21/11/2025 17:19
+- **Status Vercel:** ✅ Passou
+- **Data teste Vercel:** 21/11/2025 17:26
+- **Resultado:** ✅ **Deploy passou na Vercel!**
+
+---
+
 ### Erro #6 ✅
 - **ID:** ERRO-006
 - **Mensagem do erro:** Type error: Property 'firstName' does not exist on type 'users'. A tabela `users` não tem colunas `firstName` e `lastName`.
@@ -116,6 +233,17 @@
 - **Status Vercel:** ✅ Passou
 - **Data teste Vercel:** 21/11/2025 16:54
 - **Resultado:** ✅ **Deploy passou na Vercel!**
+
+---
+
+### Commit 005 ✅
+- **Hash:** `c7a3612`
+- **Descrição:** feat(005): Fase 3 - Criar componentes UI para sistema de consentimento LGPD
+- **Commit testado:** `6b633f4` (commit de documentação que inclui o 005)
+- **Status Vercel:** ✅ Passou
+- **Data teste Vercel:** 21/11/2025 17:02
+- **Resultado:** ✅ **Deploy passou na Vercel!**
+- **Observação:** Os avisos sobre rotas dinâmicas (`Dynamic server usage`) são esperados em Next.js para rotas autenticadas e não impedem o deploy.
 
 ---
 

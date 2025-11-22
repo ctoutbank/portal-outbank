@@ -246,3 +246,4 @@ src/
 - `RESUMO-FASE-4.md`
 - `GUIA-EXECUCAO-MIGRATIONS.md`
 
+

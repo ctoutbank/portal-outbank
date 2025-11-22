@@ -67,3 +67,4 @@ COMMENT ON COLUMN "merchant_modules"."consent_user_agent" IS 'User Agent do cons
 COMMENT ON COLUMN "merchant_modules"."active" IS 'Indica se o cliente final tem acesso ativo ao módulo';
 COMMENT ON COLUMN "merchant_modules"."notified" IS 'Indica se o cliente final já foi notificado sobre o novo módulo';
 
+

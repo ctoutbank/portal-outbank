@@ -131,3 +131,4 @@ Se encontrar algum problema, verifique:
 2. ✅ Variáveis de ambiente no `.env.local`
 3. ✅ Conexão com o banco de dados
 
+

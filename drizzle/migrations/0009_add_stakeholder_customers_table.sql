@@ -42,3 +42,4 @@ COMMENT ON COLUMN "stakeholder_customers"."id_stakeholder" IS 'ID do stakeholder
 COMMENT ON COLUMN "stakeholder_customers"."id_customer" IS 'ID do ISO (customer)';
 COMMENT ON COLUMN "stakeholder_customers"."commission_rate" IS 'Taxa de comissão específica para este ISO (sobrescreve taxa padrão do stakeholder)';
 
+

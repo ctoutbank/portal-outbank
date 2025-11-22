@@ -640,3 +640,4 @@ src/app/dashboard/
 - Onboarding de novos desenvolvedores
 - Documentação para stakeholders
 
+

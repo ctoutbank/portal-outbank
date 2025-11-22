@@ -68,3 +68,7 @@ FROM users u
 LEFT JOIN profiles p ON p.id = u.id_profile
 WHERE LOWER(u.email) = LOWER('cto@outbank.com.br');
 
+
+
+
+

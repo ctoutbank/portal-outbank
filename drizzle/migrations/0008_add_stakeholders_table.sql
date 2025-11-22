@@ -42,3 +42,4 @@ COMMENT ON COLUMN "stakeholders"."phone" IS 'Telefone de contato';
 COMMENT ON COLUMN "stakeholders"."commission_rate" IS 'Taxa de comissão padrão do stakeholder (%)';
 COMMENT ON COLUMN "stakeholders"."active" IS 'Indica se o stakeholder está ativo (soft delete)';
 
+

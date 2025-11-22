@@ -181,3 +181,7 @@ WHERE table_name = 'profiles';
 - ⚠️ **Teste**: Execute primeiro em ambiente de desenvolvimento/staging se possível
 - ⚠️ **Horário**: Execute migrations em horários de menor uso do sistema
 
+
+
+
+

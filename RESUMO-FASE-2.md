@@ -126,3 +126,4 @@ Após executar as migrations:
 
 **Dúvidas?** Consulte o arquivo `GUIA-EXECUCAO-MIGRATIONS.md` para mais detalhes.
 
+

@@ -43,3 +43,4 @@ COMMENT ON COLUMN "profile_customers"."id_customer" IS 'ID do ISO (customer)';
 COMMENT ON COLUMN "profile_customers"."active" IS 'Indica se o vínculo está ativo (soft delete)';
 
 
+
