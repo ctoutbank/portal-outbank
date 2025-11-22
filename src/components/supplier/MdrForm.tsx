@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Card, CardContent } from "../ui/card";
-import Image from "next/image";
+import { CardLogo } from "../ui/card-logo";
 
 // Tipos locais para corrigir erros de tipagem sem alterar lógica
 const BANDEIRAS = ["Visa", "Mastercard", "Elo", "Amex", "Hipercard"] as const;
@@ -189,16 +189,6 @@ export default function MdrForm({
   
 
 
-  const getCardImage = (brandName: string): string => {
-    const brandMap: Record<string, string> = {
-      Visa: "/visa.svg",
-      Mastercard: "/mastercard.svg",
-      Elo: "/elo.svg",
-      Amex: "/amex.svg",
-      Hipercard: "/hipercard.svg",
-    };
-    return brandMap[brandName] || "";
-  };
 
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4">
@@ -246,9 +236,7 @@ export default function MdrForm({
                       <tr key={bandeira} className="hover:bg-gray-50">
                         <td className="py-2 px-3">
                           <div className="flex items-center gap-2">
-                            {getCardImage(bandeira) && (
-                              <Image src={getCardImage(bandeira)} alt={bandeira} width={32} height={20} className="object-contain flex-shrink-0" />
-                            )}
+                            <CardLogo cardName={bandeira} width={32} height={20} className="object-contain flex-shrink-0" />
                             <span className="font-medium text-gray-800">{bandeira}</span>
                           </div>
                         </td>
@@ -351,9 +339,7 @@ export default function MdrForm({
                       <tr key={bandeira} className="hover:bg-gray-50">
                         <td className="py-2 px-3">
                           <div className="flex items-center gap-2">
-                            {getCardImage(bandeira) && (
-                              <Image src={getCardImage(bandeira)} alt={bandeira} width={32} height={20} className="object-contain flex-shrink-0" />
-                            )}
+                            <CardLogo cardName={bandeira} width={32} height={20} className="object-contain flex-shrink-0" />
                             <span className="font-medium text-gray-800">{bandeira}</span>
                           </div>
                         </td>

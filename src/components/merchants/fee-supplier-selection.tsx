@@ -33,9 +33,7 @@ interface BrandTransactions {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { FeeDetail, FeeProductType, FeeBrand } from "@/types/fee";
-import Image from "next/image";
-
-import { getCardImage } from "../supplier/card-image-utils";
+import { CardLogo } from "../ui/card-logo";
 import { ReactElement, JSXElementConstructor, ReactNode, ReactPortal, Key } from "react";
 
 export interface FeeSelectionProps {
@@ -205,14 +203,8 @@ export default function FeeSelectionView({
                     <tr key={index} className="border-t border-gray-200">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
-                          {typeof group.name === 'string' && getCardImage(group.name) && (
-                            <Image
-                              src={getCardImage(group.name as string)}
-                              alt={String(group.name)}
-                              width={40}
-                              height={24}
-                              className="object-contain"
-                            />
+                          {typeof group.name === 'string' && (
+                            <CardLogo cardName={group.name as string} width={40} height={24} />
                           )}
                           <span>{group.name}</span>
                         </div>
@@ -312,14 +304,8 @@ export default function FeeSelectionView({
                     <tr key={index} className="border-t border-gray-200">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
-                          {typeof group.name === 'string' && getCardImage(group.name) && (
-                            <Image
-                              src={getCardImage(group.name as string)}
-                              alt={String(group.name)}
-                              width={40}
-                              height={24}
-                              className="object-contain"
-                            />
+                          {typeof group.name === 'string' && (
+                            <CardLogo cardName={group.name as string} width={40} height={24} />
                           )}
                           <span>{group.name}</span>
                         </div>
@@ -422,14 +408,8 @@ export default function FeeSelectionView({
                     <tr key={index} className="border-t border-gray-200">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
-                          {typeof group.name === 'string' && getCardImage(group.name) && (
-                            <Image
-                              src={getCardImage(group.name as string)}
-                              alt={String(group.name)}
-                              width={40}
-                              height={24}
-                              className="object-contain"
-                            />
+                          {typeof group.name === 'string' && (
+                            <CardLogo cardName={group.name as string} width={40} height={24} />
                           )}
                           <span>{group.name}</span>
                         </div>
@@ -531,14 +511,8 @@ export default function FeeSelectionView({
                     <tr key={index} className="border-t border-gray-200">
                       <td className="py-2 px-4">
                         <div className="flex items-center gap-2">
-                          {typeof group.name === 'string' && getCardImage(group.name) && (
-                            <Image
-                              src={getCardImage(group.name)}
-                              alt={String(group.name)}
-                              width={40}
-                              height={24}
-                              className="object-contain"
-                            />
+                          {typeof group.name === 'string' && (
+                            <CardLogo cardName={group.name as string} width={40} height={24} />
                           )}
                           <span>{group.name}</span>
                         </div>

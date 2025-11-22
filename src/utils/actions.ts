@@ -1,12 +1,7 @@
+// DEPRECATED: Use CardLogo component from @/components/ui/card-logo instead
+// This function is kept for backward compatibility but will be removed in the future
 export const getCardImage = (cardName: string): string => {
-    const cardMap: { [key: string]: string } = {
-      MASTERCARD: "/mastercard.svg",
-      VISA: "/visa.svg",
-      ELO: "/elo.svg",
-      AMERICAN_EXPRESS: "/american-express.svg",
-      HIPERCARD: "/hipercard.svg",
-      AMEX: "/american-express.svg",
-      CABAL: "/cabal.svg",
-    };
-    return cardMap[cardName] || "";
+    // Return empty string as we're using CardLogo component now
+    // This is a deprecated function, kept only for backward compatibility
+    return "";
   };

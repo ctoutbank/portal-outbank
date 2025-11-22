@@ -2,10 +2,9 @@
 "use client";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CardLogo } from "@/components/ui/card-logo";
 import { brandList, SolicitationFeeProductTypeList } from "@/lib/lookuptables/lookuptables-tax";
-import { getCardImage } from "@/utils/actions";
 import React, { CSSProperties } from "react";
-import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -588,15 +587,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                 <TableRow key={`brand-${brand.value}-${brandIndex}`}>
                   <TableCell className="font-medium sticky left-0 z-10 bg-card border-r min-w-[120px]">
                     <div className="flex items-center gap-2 whitespace-nowrap">
-                      {getCardImage(brand.value) && (
-                        <Image
-                          src={getCardImage(brand.value)}
-                          alt={brand.label}
-                          width={40}
-                          height={24}
-                          className="object-contain"
-                        />
-                      )}
+                      <CardLogo cardName={brand.value} width={40} height={24} />
                       {brand.label}
                     </div>
                   </TableCell>
@@ -947,15 +938,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                 <TableRow key={`noncard-brand-${brand.value}-${brandIndex}`}>
                   <TableCell className="font-medium sticky left-0 z-10 bg-card border-r min-w-[120px]">
                     <div className="flex items-center gap-2 whitespace-nowrap">
-                      {getCardImage(brand.value) && (
-                        <Image
-                          src={getCardImage(brand.value)}
-                          alt={brand.label}
-                          width={40}
-                          height={24}
-                          className="object-contain"
-                        />
-                      )}
+                      <CardLogo cardName={brand.value} width={40} height={24} />
                       {brand.label}
                     </div>
                   </TableCell>

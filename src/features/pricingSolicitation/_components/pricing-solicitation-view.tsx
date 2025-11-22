@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { CardLogo } from "@/components/ui/card-logo";
 
 import ListDocumentDownload from "@/features/pricingSolicitation/_components/list-document-download";
 import {
@@ -112,18 +113,6 @@ interface NormalizedPricingSolicitation extends Omit<PricingSolicitationForm, 'c
   non_card_eventual_anticipation_fee_admin?: string | null;
 }
 
-const getCardImage = (cardName: string): string => {
-  const cardMap: { [key: string]: string } = {
-    MASTERCARD: "/mastercard.svg",
-    VISA: "/visa.svg",
-    ELO: "/elo.svg",
-    AMERICAN_EXPRESS: "/american-express.svg",
-    HIPERCARD: "/hipercard.svg",
-    AMEX: "/american-express.svg",
-    CABAL: "/cabal.svg",
-  };
-  return cardMap[cardName] || "";
-};
 
 // Função para normalizar uma string
 function normalizeString(str: string | undefined | null): string {
@@ -647,15 +636,7 @@ export function PricingSolicitationView({
                           style={{ minWidth: "120px" }}
                         >
                           <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                            {getCardImage(item.brand.value) && (
-                              <img
-                                src={getCardImage(item.brand.value)}
-                                alt={item.brand.label}
-                                width={40}
-                                height={24}
-                                className="object-contain w-8 h-5 sm:w-10 sm:h-6 flex-shrink-0"
-                              />
-                            )}
+                            <CardLogo cardName={item.brand.value} width={40} height={24} className="w-8 h-5 sm:w-10 sm:h-6 flex-shrink-0" />
                             <span className="truncate">{item.brand.label}</span>
                           </div>
                         </TableCell>
@@ -884,15 +865,7 @@ export function PricingSolicitationView({
                           style={{ minWidth: "120px" }}
                         >
                           <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                            {getCardImage(item.brand.value) && (
-                              <img
-                                src={getCardImage(item.brand.value)}
-                                alt={item.brand.label}
-                                width={40}
-                                height={24}
-                                className="object-contain w-8 h-5 sm:w-10 sm:h-6 flex-shrink-0"
-                              />
-                            )}
+                            <CardLogo cardName={item.brand.value} width={40} height={24} className="w-8 h-5 sm:w-10 sm:h-6 flex-shrink-0" />
                             <span className="truncate">{item.brand.label}</span>
                           </div>
                         </TableCell>

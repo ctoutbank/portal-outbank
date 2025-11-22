@@ -1,9 +1,9 @@
 "use client"
 
 import React from "react"
-import Image from "next/image"
 import { FormControl, FormField } from "@/components/ui/form"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { CardLogo } from "@/components/ui/card-logo"
 import { SolicitationFeeProductTypeList } from "@/lib/lookuptables/lookuptables"
 import { brandList } from "@/lib/lookuptables/lookuptables-transactions"
 import type { CSSProperties } from "react"
@@ -14,19 +14,6 @@ import { PricingSolicitationSchemaAdmin } from "@/features/categories/schema/sch
 interface FeesSectionProps {
   control: Control<PricingSolicitationSchemaAdmin>
   isReadOnly?: boolean
-}
-
-const getCardImage = (cardName: string): string => {
-  const cardMap: { [key: string]: string } = {
-    MASTERCARD: "/mastercard.svg",
-    VISA: "/visa.svg",
-    ELO: "/elo.svg",
-    AMERICAN_EXPRESS: "/american-express.svg",
-    HIPERCARD: "/hipercard.svg",
-    AMEX: "/american-express.svg",
-    CABAL: "/cabal.svg",
-  }
-  return cardMap[cardName] || ""
 }
 
 // Style to remove all focus outlines and borders
@@ -162,15 +149,7 @@ function POSBrandTable({
                   <TableRow key={`pos-${brand.value}-${brandIndex}`} className="border-b border-border">
                     <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
                       <div className="flex items-center gap-2">
-                        {getCardImage(brand.value) && (
-                            <Image
-                                src={getCardImage(brand.value) || "/placeholder.svg"}
-                                alt={brand.label}
-                                width={40}
-                                height={24}
-                                className="object-contain"
-                            />
-                        )}
+                        <CardLogo cardName={brand.value} width={40} height={24} />
                         {brand.label}
                       </div>
                     </TableCell>
@@ -253,15 +232,7 @@ function OnlineBrandTable({
                   <TableRow key={`online-${brand.value}-${brandIndex}`} className="border-b border-border">
                     <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
                       <div className="flex items-center gap-2">
-                        {getCardImage(brand.value) && (
-                            <Image
-                                src={getCardImage(brand.value) || "/placeholder.svg"}
-                                alt={brand.label}
-                                width={40}
-                                height={24}
-                                className="object-contain"
-                            />
-                        )}
+                        <CardLogo cardName={brand.value} width={40} height={24} />
                         {brand.label}
                       </div>
                     </TableCell>
