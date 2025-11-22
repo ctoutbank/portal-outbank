@@ -539,33 +539,35 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
   };
 
   return (
-    <div>
+    <div className="w-full max-w-full overflow-x-hidden">
       {/* Tabelas de taxas e seções de PIX com scroll horizontal próprio */}
-      <div className="w-full">
+      <div className="w-full max-w-full space-y-6 sm:space-y-8">
         {/* Tabela Taxa POS */}
-        <div className="overflow-x-auto">
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-green-100"></div>
-              <span className="text-sm text-gray-600">Taxa Dock</span>
-            </div>
-           
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-yellow-100"></div>
-              <span className="text-sm text-gray-600">Taxa Admin (Outbank)</span>
+        <div className="w-full max-w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+          <div className="min-w-0">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30 border border-border flex-shrink-0"></div>
+                <span className="text-sm text-muted-foreground">Taxa Dock</span>
+              </div>
+             
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 border border-border flex-shrink-0"></div>
+                <span className="text-sm text-muted-foreground">Taxa Admin (Outbank)</span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/30 border border-border flex-shrink-0"></div>
+                <span className="text-sm text-muted-foreground">Taxa Solicitada (ISO)</span>
+              </div>
             </div>
             
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-blue-100"></div>
-              <span className="text-sm text-gray-600">Taxa Solicitada (ISO)</span>
-            </div>
-          </div>
-          
-          <h3 className="text-lg font-medium mb-4">Taxa no Pos</h3>
-          <Table className="w-full">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Taxa no Pos</h3>
+            <div className="border rounded-lg overflow-hidden bg-card">
+              <Table className="w-full min-w-[600px]">
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky left-0 z-10 bg-white">
+                <TableHead className="sticky left-0 z-10 bg-card border-r min-w-[120px] whitespace-nowrap">
                   Bandeiras
                 </TableHead>
                 {SolicitationFeeProductTypeList.map((type, index) => (
@@ -584,8 +586,8 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             <TableBody>
               {brandList.map((brand, brandIndex) => (
                 <TableRow key={`brand-${brand.value}-${brandIndex}`}>
-                  <TableCell className="font-medium sticky left-0 z-10 bg-white">
-                    <div className="flex items-center gap-2">
+                  <TableCell className="font-medium sticky left-0 z-10 bg-card border-r min-w-[120px]">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
                       {getCardImage(brand.value) && (
                         <Image
                           src={getCardImage(brand.value)}
@@ -689,15 +691,18 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
               ))}
             </TableBody>
           </Table>
+            </div>
+          </div>
         </div>
+        
         {/* Seção PIX POS */}
-        <div className="overflow-x-auto mt-12 mb-6">
-          <h3 className="text-lg font-medium mb-4">PIX Pos</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="w-full max-w-full space-y-4">
+          <h3 className="text-base sm:text-lg font-semibold">PIX Pos</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <div>
-              <h4 className="font-medium mb-2">MDR</h4>
-              <div className="flex gap-2 items-center">
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <h4 className="font-medium mb-2 text-sm">MDR</h4>
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-green-100 dark:bg-green-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <PercentageInput
                     value={formData.solicitationFee.cardPixMdrDock || ""}
                     onChange={(value) => {
@@ -712,10 +717,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Dock - Admin */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.cardPixMdrDock ?? undefined, formData.solicitationFee.cardPixMdrAdmin ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-yellow-100 dark:bg-yellow-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <PercentageInput
                     value={formData.solicitationFee.cardPixMdrAdmin || ""}
                     onChange={(value) => {
@@ -730,10 +735,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Admin - ISO */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.cardPixMdrAdmin ?? undefined, formData.solicitationFee.cardPixMdr ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-blue-100 dark:bg-blue-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <PercentageInput
                     value={formData.solicitationFee.cardPixMdr || ""}
                     onChange={() => {}}
@@ -745,9 +750,9 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
               </div>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Custo Mínimo</h4>
-              <div className="flex gap-2 items-center">
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <h4 className="font-medium mb-2 text-sm">Custo Mínimo</h4>
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-green-100 dark:bg-green-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <input
                     type="number"
                     step="0.01"
@@ -765,10 +770,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Dock - Admin */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.cardPixMinimumCostFeeDock ?? undefined, formData.solicitationFee.cardPixMinimumCostFeeAdmin ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-yellow-100 dark:bg-yellow-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <input
                     type="number"
                     step="0.01"
@@ -786,10 +791,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Admin - ISO */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.cardPixMinimumCostFeeAdmin ?? undefined, formData.solicitationFee.cardPixMinimumCostFee ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-blue-100 dark:bg-blue-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <input
                     type="number"
                     step="0.01"
@@ -803,9 +808,9 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
               </div>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Custo Máximo</h4>
-              <div className="flex gap-2 items-center">
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <h4 className="font-medium mb-2 text-sm">Custo Máximo</h4>
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-green-100 dark:bg-green-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <input
                     type="number"
                     step="0.01"
@@ -823,10 +828,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Dock - Admin */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.cardPixCeilingFeeDock ?? undefined, formData.solicitationFee.cardPixCeilingFeeAdmin ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-yellow-100 dark:bg-yellow-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <input
                     type="number"
                     step="0.01"
@@ -844,10 +849,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Admin - ISO */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.cardPixCeilingFeeAdmin ?? undefined, formData.solicitationFee.cardPixCeilingFee ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-blue-100 dark:bg-blue-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <input
                     type="number"
                     step="0.01"
@@ -861,9 +866,9 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
               </div>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Antecipação</h4>
-              <div className="flex gap-2 items-center">
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <h4 className="font-medium mb-2 text-sm">Antecipação</h4>
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-green-100 dark:bg-green-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <PercentageInput
                     value={formData.solicitationFee.eventualAnticipationFeeDock || ""}
                     onChange={(value) => {
@@ -878,10 +883,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Dock - Admin */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.eventualAnticipationFeeDock ?? undefined, formData.solicitationFee.eventualAnticipationFeeAdmin ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-yellow-100 dark:bg-yellow-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <PercentageInput
                     value={formData.solicitationFee.eventualAnticipationFeeAdmin || ""}
                     onChange={(value) => {
@@ -896,10 +901,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Admin - ISO */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.eventualAnticipationFeeAdmin ?? undefined, formData.solicitationFee.eventualAnticipationFee ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-blue-100 dark:bg-blue-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <PercentageInput
                     value={formData.solicitationFee.eventualAnticipationFee || ""}
                     onChange={() => {}}
@@ -914,14 +919,16 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
         </div>
 
         {/* Tabela Taxa Online */}
-        <div className="overflow-x-auto mt-12">
-          <h3 className="text-lg font-medium mt-12 mb-4">Taxa Online</h3>
-          <Table className="w-full">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="sticky left-0 z-10 bg-white">
-                  Bandeiras
-                </TableHead>
+        <div className="w-full max-w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 mt-8 sm:mt-12">
+          <div className="min-w-0">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Taxa Online</h3>
+            <div className="border rounded-lg overflow-hidden bg-card">
+              <Table className="w-full min-w-[600px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="sticky left-0 z-10 bg-card border-r min-w-[120px] whitespace-nowrap">
+                      Bandeiras
+                    </TableHead>
                 {SolicitationFeeProductTypeList.map((type, index) => (
                   <React.Fragment key={`noncard-header-${type.value}-${index}`}>
                     <TableHead className="text-center min-w-[100px] text-sm">{type.label}</TableHead>
@@ -938,8 +945,8 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             <TableBody>
               {brandList.map((brand, brandIndex) => (
                 <TableRow key={`noncard-brand-${brand.value}-${brandIndex}`}>
-                  <TableCell className="font-medium sticky left-0 z-10 bg-white">
-                    <div className="flex items-center gap-2">
+                  <TableCell className="font-medium sticky left-0 z-10 bg-card border-r min-w-[120px]">
+                    <div className="flex items-center gap-2 whitespace-nowrap">
                       {getCardImage(brand.value) && (
                         <Image
                           src={getCardImage(brand.value)}
@@ -1037,18 +1044,20 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   })}
                 </TableRow>
               ))}
-            </TableBody>
-          </Table>
+              </TableBody>
+            </Table>
+            </div>
+          </div>
         </div>
 
         {/* Seção PIX Online */}
-        <div className="overflow-x-auto mt-12 mb-6">
-          <h3 className="text-lg font-medium mb-4">PIX Online</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="w-full max-w-full space-y-4">
+          <h3 className="text-base sm:text-lg font-semibold">PIX Online</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <div>
-              <h4 className="font-medium mb-2">MDR</h4>
-              <div className="flex gap-2 items-center">
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <h4 className="font-medium mb-2 text-sm">MDR</h4>
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-green-100 dark:bg-green-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardPixMdrDock || ""}
                     onChange={(value) => {
@@ -1063,10 +1072,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Dock - Admin */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.nonCardPixMdrDock ?? undefined, formData.solicitationFee.nonCardPixMdrAdmin ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-yellow-100 dark:bg-yellow-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardPixMdrAdmin || ""}
                     onChange={(value) => {
@@ -1081,10 +1090,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Admin - ISO */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.nonCardPixMdrAdmin ?? undefined, formData.solicitationFee.nonCardPixMdr ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-blue-100 dark:bg-blue-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardPixMdr || ""}
                     onChange={() => {}}
@@ -1096,9 +1105,9 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
               </div>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Custo Mínimo</h4>
-              <div className="flex gap-2 items-center">
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <h4 className="font-medium mb-2 text-sm">Custo Mínimo</h4>
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-green-100 dark:bg-green-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <input
                     type="number"
                     step="0.01"
@@ -1116,10 +1125,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Dock - Admin */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.nonCardPixMinimumCostFeeDock ?? undefined, formData.solicitationFee.nonCardPixMinimumCostFeeAdmin ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-yellow-100 dark:bg-yellow-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <input
                     type="number"
                     step="0.01"
@@ -1137,10 +1146,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Admin - ISO */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.nonCardPixMinimumCostFeeAdmin ?? undefined, formData.solicitationFee.nonCardPixMinimumCostFee ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-blue-100 dark:bg-blue-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <input
                     type="number"
                     step="0.01"
@@ -1154,9 +1163,9 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
               </div>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Custo Máximo</h4>
-              <div className="flex gap-2 items-center">
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <h4 className="font-medium mb-2 text-sm">Custo Máximo</h4>
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-green-100 dark:bg-green-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <input
                     type="number"
                     step="0.01"
@@ -1174,10 +1183,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Dock - Admin */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.nonCardPixCeilingFeeDock ?? undefined, formData.solicitationFee.nonCardPixCeilingFeeAdmin ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-yellow-100 dark:bg-yellow-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <input
                     type="number"
                     step="0.01"
@@ -1195,10 +1204,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Admin - ISO */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.nonCardPixCeilingFeeAdmin ?? undefined, formData.solicitationFee.nonCardPixCeilingFee ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-blue-100 dark:bg-blue-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <input
                     type="number"
                     step="0.01"
@@ -1212,9 +1221,9 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
               </div>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Antecipação</h4>
-              <div className="flex gap-2 items-center">
-                <div className="rounded-full py-2 px-4 bg-green-100 inline-block w-[110px]">
+              <h4 className="font-medium mb-2 text-sm">Antecipação</h4>
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-green-100 dark:bg-green-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardEventualAnticipationFeeDock || ""}
                     onChange={(value) => {
@@ -1229,10 +1238,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Dock - Admin */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.nonCardEventualAnticipationFeeDock ?? undefined, formData.solicitationFee.nonCardEventualAnticipationFeeAdmin ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-yellow-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-yellow-100 dark:bg-yellow-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardEventualAnticipationFeeAdmin || ""}
                     onChange={(value) => {
@@ -1247,10 +1256,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
                   />
                 </div>
                 {/* Diferença Admin - ISO */}
-                <div className="rounded-full py-2 px-1 bg-gray-100 inline-block w-[40px] min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center">
+                <div className="rounded-full py-2 px-1 bg-muted inline-block w-[35px] sm:w-[40px] min-w-[35px] sm:min-w-[40px] text-center font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                   {calcDiff(formData.solicitationFee.nonCardEventualAnticipationFeeAdmin ?? undefined, formData.solicitationFee.nonCardEventualAnticipationFee ?? undefined)}
                 </div>
-                <div className="rounded-full py-2 px-4 bg-blue-100 inline-block w-[110px]">
+                <div className="rounded-full py-2 px-3 sm:px-4 bg-blue-100 dark:bg-blue-900/30 inline-block min-w-[90px] sm:w-[110px] flex-shrink-0">
                   <PercentageInput
                     value={formData.solicitationFee.nonCardEventualAnticipationFee || ""}
                     onChange={() => {}}
@@ -1265,10 +1274,10 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
         </div>
         
         {/* Botão Enviar */}
-        <div className="mt-4 flex justify-end">
+        <div className="mt-6 sm:mt-8 flex justify-end w-full">
           <Button 
             type="button" 
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md min-w-[120px]"
             onClick={handleSubmit}
             disabled={submitting}
           >

@@ -275,26 +275,29 @@ export default async function SolicitationFeeDetail({ params }: PageProps) {
         <BaseBody
           title="Solicitação de Taxa"
           subtitle="Visualização da solicitação de taxa"
+          className="overflow-x-hidden"
         >
-          <div className="mt-8">
-            <SolicitationFeeCard
-              solicitationFee={solicitationFee ?? undefined}
-            />
-          </div>
-
-          <div className="mt-4 flex">
-            <DownloadDocumentsButton solicitationFeeId={parseInt(id)} />
-          </div>
-
-          <div className="mt-8">
-            {solicitationFeeWithTaxes ? (
-              <TaxEditForm1
-                idsolicitationFee={parseInt(id)}
-                solicitationFeetax={formattedData}
+          <div className="w-full max-w-full overflow-x-hidden space-y-4 sm:space-y-6">
+            <div className="w-full max-w-full">
+              <SolicitationFeeCard
+                solicitationFee={solicitationFee ?? undefined}
               />
-            ) : (
-              <p>Carregando dados de taxas...</p>
-            )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <DownloadDocumentsButton solicitationFeeId={parseInt(id)} />
+            </div>
+
+            <div className="w-full max-w-full overflow-x-hidden">
+              {solicitationFeeWithTaxes ? (
+                <TaxEditForm1
+                  idsolicitationFee={parseInt(id)}
+                  solicitationFeetax={formattedData}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">Carregando dados de taxas...</p>
+              )}
+            </div>
           </div>
         </BaseBody>
       </>

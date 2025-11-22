@@ -39,25 +39,13 @@ export default async function SolicitationFeePage({
       <BaseBody
         title="Solicitações de Taxas"
         subtitle="Visualização de todas as solicitações de taxas"
+        className="overflow-x-hidden"
       >
-        <div className="flex flex-col space-y-4">
-          <div className="mb-1 flex items-center justify-between">
-            <div className="flex-1">
-              {/* Filtros podem ser adicionados aqui, similar ao CustomersFilter */}
-            </div>
-
-          </div>
-
-          <div className="flex items-start justify-between gap-4">
-            <div className="max-w-md">
-              {/* Aqui você pode adicionar um componente de dashboard se necessário */}
-            </div>
-          </div>
-
+        <div className="flex flex-col space-y-4 w-full max-w-full overflow-x-hidden">
           <SolicitationFeeList SolicitationFees={solicitationFees} />
 
           {totalCount > 0 && (
-            <div className="flex items-center justify-between mt-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 w-full">
               <PageSizeSelector
                 currentPageSize={perPage}
                 pageName="solicitationfee"

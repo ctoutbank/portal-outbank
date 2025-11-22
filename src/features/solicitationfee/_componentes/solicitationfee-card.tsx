@@ -14,62 +14,62 @@ interface SolicitationFeeCardProps {
 
 export default function SolicitationFeeCard({ solicitationFee }: SolicitationFeeCardProps) {
   return (
-    <Card className="w-full max-w-full">
-    
-      <CardContent className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-          {/* Linha de 3 em cima */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="space-y-2">
-              <Label htmlFor="cnae" className="flex items-center">
-                CNAE: <span className="text-red-500 ml-1">*</span>
-              </Label>
-              <Input
-                id="cnae"
-                value={solicitationFee?.cnae || "-"}
-                readOnly
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="mcc">MCC:</Label>
-              <Input
-                id="mcc"
-                value={solicitationFee?.mcc || "-"}
-                readOnly
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="quantidadeCnpjs">Quantidade de CNPJs:</Label>
-              <Input
-                id="quantidadeCnpjs"
-                value={solicitationFee?.cnpjQuantity?.toString() || "-"}
-                readOnly
-              />
-            </div>
+    <Card className="w-full max-w-full overflow-hidden">
+      <CardContent className="p-4 sm:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="cnae" className="flex items-center text-sm font-medium">
+              CNAE: <span className="text-red-500 ml-1">*</span>
+            </Label>
+            <Input
+              id="cnae"
+              value={solicitationFee?.cnae || "-"}
+              readOnly
+              className="bg-muted"
+            />
           </div>
-          {/* Linha de 2 em baixo */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="ticketMedio">Ticket Médio:</Label>
-              <Input
-                id="ticketMedio"
-                value={solicitationFee?.averageTicket?.toString() || "-"}
-                readOnly
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tpvMensal">TPV Mensal:</Label>
-              <Input
-                id="tpvMensal"
-                value={solicitationFee?.monthlyPosFee?.toString() || "-"}
-                readOnly
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="mcc" className="text-sm font-medium">MCC:</Label>
+            <Input
+              id="mcc"
+              value={solicitationFee?.mcc || "-"}
+              readOnly
+              className="bg-muted"
+            />
           </div>
-          
-          
-
-      
+          <div className="space-y-2">
+            <Label htmlFor="quantidadeCnpjs" className="text-sm font-medium">
+              Quantidade de CNPJs:
+            </Label>
+            <Input
+              id="quantidadeCnpjs"
+              value={solicitationFee?.cnpjQuantity?.toString() || "-"}
+              readOnly
+              className="bg-muted"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ticketMedio" className="text-sm font-medium">
+              Ticket Médio:
+            </Label>
+            <Input
+              id="ticketMedio"
+              value={solicitationFee?.averageTicket?.toString() || "-"}
+              readOnly
+              className="bg-muted"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tpvMensal" className="text-sm font-medium">
+              TPV Mensal:
+            </Label>
+            <Input
+              id="tpvMensal"
+              value={solicitationFee?.monthlyPosFee?.toString() || "-"}
+              readOnly
+              className="bg-muted"
+            />
+          </div>
         </div>
       </CardContent>
     </Card>

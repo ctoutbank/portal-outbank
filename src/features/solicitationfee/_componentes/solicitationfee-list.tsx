@@ -21,54 +21,66 @@ export default function SolicitationFeeList({SolicitationFees}:{
     }
 
     return (
-      <div>
-        <div className="border rounded-lg">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>
-                  CNAE
-                  <ChevronDown className="ml-2 h-4 w-4 inline" />
-                </TableHead>
-                <TableHead>
-                  ISO
-                  <ChevronDown className="ml-2 h-4 w-4 inline" />
-                </TableHead>
-               
-              
-                <TableHead>
-                  Data
-                  <ChevronDown className="ml-2 h-4 w-4 inline" />
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {SolicitationFees?.solicitationFees.map((fee) => (
-                <TableRow key={fee.id}>
-                  <TableCell>
-                    <Link
-                      className="text-primary underline"
-                      href={"/solicitationfee/" + fee.id}
-                    >
-                      {fee.cnae || ""}/{fee.mcc || ""}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{fee.customerName || "-"}</TableCell>
-                  
-                  <TableCell>{new Date(fee.dtinsert).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleDelete(fee.id)}
-                      className="cursor-pointer"
-                    >
-                      Excluir
-                    </Button>
-                  </TableCell>
+      <div className="w-full max-w-full overflow-x-hidden">
+        <div className="border rounded-lg shadow-sm bg-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="font-semibold text-sm whitespace-nowrap">
+                    CNAE/MCC
+                    <ChevronDown className="ml-2 h-4 w-4 inline opacity-50" />
+                  </TableHead>
+                  <TableHead className="font-semibold text-sm whitespace-nowrap">
+                    ISO
+                    <ChevronDown className="ml-2 h-4 w-4 inline opacity-50" />
+                  </TableHead>
+                  <TableHead className="font-semibold text-sm whitespace-nowrap">
+                    Data
+                    <ChevronDown className="ml-2 h-4 w-4 inline opacity-50" />
+                  </TableHead>
+                  <TableHead className="font-semibold text-sm text-center whitespace-nowrap">
+                    Ações
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {SolicitationFees?.solicitationFees.map((fee) => (
+                  <TableRow 
+                    key={fee.id}
+                    className="hover:bg-muted/30 transition-colors"
+                  >
+                    <TableCell className="py-3">
+                      <Link
+                        className="text-primary hover:underline font-medium text-sm"
+                        href={"/solicitationfee/" + fee.id}
+                      >
+                        {fee.cnae || ""}/{fee.mcc || ""}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <span className="text-sm">{fee.customerName || "-"}</span>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <span className="text-sm font-medium tabular-nums">
+                        {new Date(fee.dtinsert).toLocaleDateString("pt-BR")}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-3 text-center">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(fee.id)}
+                        className="cursor-pointer"
+                      >
+                        Excluir
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
     );
