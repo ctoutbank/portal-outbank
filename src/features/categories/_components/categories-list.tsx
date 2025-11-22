@@ -120,20 +120,21 @@ export default function Categorylist({
           >
             <Card className="border border-border rounded-none shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 md:gap-6 flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
+                  <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 flex-wrap">
                     {/* CNAE */}
-                    <div className="font-bold text-lg min-w-[100px] text-foreground">
+                    <div className="font-bold text-base sm:text-lg text-foreground">
                       {category.cnae || "-"}
                     </div>
 
-                    {/* MCC */}
-                    <div className="text-sm font-medium text-foreground min-w-[80px]">
-                      {category.mcc || "-"}
+                    {/* MCC com label */}
+                    <div className="text-xs sm:text-sm text-foreground flex items-center gap-1">
+                      <span className="text-muted-foreground">MCC:</span>
+                      <span className="font-medium">{category.mcc || "-"}</span>
                     </div>
 
-                    {/* Nome */}
-                    <div className="text-sm text-foreground flex-1 min-w-0 truncate">
+                    {/* Nome - sempre flexível */}
+                    <div className="text-xs sm:text-sm text-foreground flex-1 min-w-0 truncate">
                       {category.name || "-"}
                     </div>
 

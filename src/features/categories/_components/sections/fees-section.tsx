@@ -3,7 +3,6 @@
 import React from "react"
 import { FormControl, FormField } from "@/components/ui/form"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { CardLogo } from "@/components/ui/card-logo"
 import { SolicitationFeeProductTypeList } from "@/lib/lookuptables/lookuptables"
 import { brandList } from "@/lib/lookuptables/lookuptables-transactions"
 import type { CSSProperties } from "react"
@@ -149,7 +148,6 @@ function POSBrandTable({
                   <TableRow key={`pos-${brand.value}-${brandIndex}`} className="border-b border-border">
                     <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
                       <div className="flex items-center gap-2">
-                        <CardLogo cardName={brand.value} width={40} height={24} />
                         {brand.label}
                       </div>
                     </TableCell>
@@ -232,7 +230,6 @@ function OnlineBrandTable({
                   <TableRow key={`online-${brand.value}-${brandIndex}`} className="border-b border-border">
                     <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
                       <div className="flex items-center gap-2">
-                        <CardLogo cardName={brand.value} width={40} height={24} />
                         {brand.label}
                       </div>
                     </TableCell>
