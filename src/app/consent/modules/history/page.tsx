@@ -1,4 +1,4 @@
-import BaseHeader from "@/components/layout/base-header";
+import { BaseHeader } from "@/components/layout/base-header";
 import BaseBody from "@/components/layout/base-body";
 import ConsentHistoryList from "@/features/consent/components/consent-history-list";
 import { getUserConsentHistory } from "@/features/consent/server/consent-history";
