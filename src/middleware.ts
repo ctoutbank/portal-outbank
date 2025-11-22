@@ -74,6 +74,8 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     
     if (targetPath) {
       const rewriteUrl = new URL(targetPath, request.url);
+      // Preservar query params explicitamente
+      rewriteUrl.search = request.nextUrl.search;
       const response = NextResponse.rewrite(rewriteUrl);
       response.cookies.set("tenant", subdomain, {
         path: "/",
