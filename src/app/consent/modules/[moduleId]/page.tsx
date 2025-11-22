@@ -1,4 +1,4 @@
-import { BaseHeader } from "@/components/layout/base-header";
+import BaseHeader from "@/components/layout/base-header";
 import BaseBody from "@/components/layout/base-body";
 import ModuleConsentForm from "@/features/consent/components/module-consent-form";
 import { getModuleConsentDetails } from "@/features/consent/server/module-consent-details";
