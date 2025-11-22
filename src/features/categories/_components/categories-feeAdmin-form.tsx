@@ -237,51 +237,44 @@ export default function CategoriesFeeAdminForm({
 
 
   return (
-    <div>
-      <div className="">
-        <Card>
-          <CardContent className="pt-6">
-            <Form {...form}>
-              <form
-                ref={formRef}
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-8"
-              >
-                {/* Business Information Section */}
-                <BusinessInfoSectionFeeAdmin control={form.control} />
+    <div className="w-full max-w-full overflow-x-hidden">
+      <Card className="rounded-none border border-border shadow-sm">
+        <CardContent className="p-6">
+          <Form {...form}>
+            <form
+              ref={formRef}
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-8"
+            >
+              {/* Business Information Section */}
+              <BusinessInfoSectionFeeAdmin control={form.control} />
 
-                {/* Details Section (conditional) */}
-                {/*
-                {form.watch("cnaeInUse") && (
-                  <DetailsSection control={form.control} />
-                )}
-
-                {/* Fees Section */}
+              {/* Fees Section */}
+              <div className="pt-6 border-t border-border">
                 <FeesAdminSection
                   control={form.control}
                 />
-              </form>
-            </Form>
+              </div>
+            </form>
+          </Form>
 
- 
-            <div className="flex justify-end items-center gap-4 mt-4">
-              <Button
-                type="button"
-                onClick={() => formRef.current?.requestSubmit()}
-                disabled={isSubmitting}
-              >
-                {isSubmitting 
-                  ? "Salvando..." 
-                  : idSolicitationFee 
-                    ? "Atualizar Taxas" 
-                    : "Criar Taxas"
-                }
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
+          <div className="flex justify-end items-center gap-4 mt-6 pt-6 border-t border-border">
+            <Button
+              type="button"
+              onClick={() => formRef.current?.requestSubmit()}
+              disabled={isSubmitting}
+              className="rounded-none"
+            >
+              {isSubmitting 
+                ? "Salvando..." 
+                : idSolicitationFee 
+                  ? "Atualizar Taxas" 
+                  : "Criar Taxas"
+              }
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

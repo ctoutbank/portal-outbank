@@ -54,14 +54,9 @@ export default async function CategoriesPage({
             <BaseBody
                 title="Categorias"
                 subtitle="Visualização de todas as categorias cadastradas"
+                className="overflow-x-hidden"
             >
                 <div className="flex flex-col space-y-4">
-                    <div className="mb-1 flex items-center justify-between">
-                        <div className="flex-1">
-                            {/* Filtros futuros podem ir aqui */}
-                        </div>
-                    </div>
-
                     <Categorylist
                         Categories={categories}
                         sortField={sortField}
@@ -69,7 +64,7 @@ export default async function CategoriesPage({
                     />
 
                     {totalCount > 0 && (
-                        <div className="flex items-center justify-between mt-4">
+                        <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4 pt-4 border-t border-border">
                             <PageSizeSelector
                                 currentPageSize={perPage}
                                 pageName="categories"

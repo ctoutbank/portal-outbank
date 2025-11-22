@@ -89,11 +89,11 @@ export default function Categoriesform({ categories }: CategoriesProps) {
     };
 
     return (
-        <Card>
-            <CardContent className="pt-6">
+        <Card className="rounded-none border border-border shadow-sm">
+            <CardContent className="p-6">
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <div id="main">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <FormField
                                 control={form.control}
                                 name="name"
@@ -104,25 +104,7 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                             <Input
                                                 {...field}
                                                 value={field.value ? String(field.value) : ""}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="active"
-                                render={({ field }) => (
-                                    <FormItem className="mt-2">
-                                        <FormLabel className="block mb-1 mt-3">Ativo</FormLabel>
-                                        <FormControl>
-                                            <Checkbox
-                                                onCheckedChange={field.onChange}
-                                                checked={field.value ?? undefined}
-                                                value={field.value?.toString()}
-                                                className="w-4"
+                                                className="rounded-none"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -135,12 +117,12 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 name="mcc"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="mt-2">MCC</FormLabel>
+                                        <FormLabel>MCC</FormLabel>
                                         <FormControl>
                                             <Input
-                                                className="mb-2"
                                                 {...field}
                                                 value={field.value ?? ""}
+                                                className="rounded-none"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -153,9 +135,13 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 name="cnae"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="mt-2">CNAE</FormLabel>
+                                        <FormLabel>CNAE</FormLabel>
                                         <FormControl>
-                                            <Input {...field} value={field.value ?? ""} />
+                                            <Input
+                                                {...field}
+                                                value={field.value ?? ""}
+                                                className="rounded-none"
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -167,9 +153,14 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 name="anticipation_risk_factor_cp"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="mt-2">Fator de risco de antecipação CP</FormLabel>
+                                        <FormLabel>Fator de risco de antecipação CP</FormLabel>
                                         <FormControl>
-                                            <Input {...field} value={field.value ?? ""} />
+                                            <Input
+                                                {...field}
+                                                value={field.value ?? ""}
+                                                type="number"
+                                                className="rounded-none"
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -181,9 +172,14 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 name="anticipation_risk_factor_cnp"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="mt-2">Fator de risco de antecipação CNP</FormLabel>
+                                        <FormLabel>Fator de risco de antecipação CNP</FormLabel>
                                         <FormControl>
-                                            <Input {...field} value={field.value ?? ""} />
+                                            <Input
+                                                {...field}
+                                                value={field.value ?? ""}
+                                                type="number"
+                                                className="rounded-none"
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -195,9 +191,14 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 name="waiting_period_cp"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="mt-2">Período de espera CP</FormLabel>
+                                        <FormLabel>Período de espera CP</FormLabel>
                                         <FormControl>
-                                            <Input {...field} value={field.value ?? ""} />
+                                            <Input
+                                                {...field}
+                                                value={field.value ?? ""}
+                                                type="number"
+                                                className="rounded-none"
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -209,23 +210,48 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 name="waiting_period_cnp"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="mt-2">Período de espera CNP</FormLabel>
+                                        <FormLabel>Período de espera CNP</FormLabel>
                                         <FormControl>
-                                            <Input {...field} value={field.value ?? ""} />
+                                            <Input
+                                                {...field}
+                                                value={field.value ?? ""}
+                                                type="number"
+                                                className="rounded-none"
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
 
-                            {categories?.id && (
-                                <div className="mt-6">
-                                </div>
-                            )}
+                            <FormField
+                                control={form.control}
+                                name="active"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 border border-border p-4 rounded-none bg-muted/50">
+                                        <FormControl>
+                                            <Checkbox
+                                                onCheckedChange={field.onChange}
+                                                checked={field.value ?? undefined}
+                                                value={field.value?.toString()}
+                                                className="rounded-none"
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel className="cursor-pointer">
+                                                Ativo
+                                            </FormLabel>
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
-                            <div className="flex justify-end mt-4">
-                                <Button type="submit">Salvar</Button>
-                            </div>
+                        <div className="flex justify-end pt-4 border-t border-border">
+                            <Button type="submit" className="rounded-none">
+                                Salvar
+                            </Button>
                         </div>
                     </form>
                 </Form>

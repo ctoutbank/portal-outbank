@@ -138,9 +138,10 @@ function POSBrandTable({
   const brandsValues = useWatch({ control, name: "brands" })
 
   return (
-      <div className="w-full overflow-x-auto">
-        <h3 className="text-lg font-medium mb-4 text-foreground">Taxas Transações na POS</h3>
-        <Table className="w-full border border-border">
+      <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+        <div className="min-w-0">
+          <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">Taxas Transações na POS</h3>
+          <Table className="w-full min-w-[600px] border border-border rounded-none">
           <TableHeader>
             <TableRow className="border-b border-border">
               <TableHead className="sticky left-0 z-10 bg-background text-sm font-medium text-foreground border-r border-border">
@@ -179,7 +180,7 @@ function POSBrandTable({
                           className="p-1 text-center border-r border-border"
                       >
                         {isReadOnly ? (
-                            <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
+                            <div className="rounded-none py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
                       <span>
                         {brandsValues?.[brandIndex]?.productTypes?.[typeIndex]?.feeAdmin
                             ? `${brandsValues[brandIndex].productTypes[typeIndex].feeAdmin}%`
@@ -192,12 +193,12 @@ function POSBrandTable({
                                 name={`brands.${brandIndex}.productTypes.${typeIndex}.feeAdmin`}
                                 render={({ field }) => (
                                     <FormControl>
-                                      <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
+                                      <div className="rounded-none py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
                                         <PercentageInput
                                             value={field.value}
                                             onChange={field.onChange}
                                             placeholder="0%"
-                                            className="border-0 p-0 h-auto text-center w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                                            className="border-0 p-0 h-auto text-center w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
                                         />
                                       </div>
                                     </FormControl>
@@ -227,9 +228,10 @@ function OnlineBrandTable({
   const brandsValues = useWatch({ control, name: "brands" })
 
   return (
-      <div className="w-full overflow-x-auto mt-8">
-        <h3 className="text-lg font-medium mb-4 text-foreground">Taxas Transações Online</h3>
-        <Table className="w-full border border-border">
+      <div className="w-full overflow-x-auto mt-8 -mx-4 sm:mx-0 px-4 sm:px-0">
+        <div className="min-w-0">
+          <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">Taxas Transações Online</h3>
+          <Table className="w-full min-w-[600px] border border-border rounded-none">
           <TableHeader>
             <TableRow className="border-b border-border">
               <TableHead className="sticky left-0 z-10 bg-background text-sm font-medium text-foreground border-r border-border">
@@ -268,7 +270,7 @@ function OnlineBrandTable({
                           className="p-1 text-center border-r border-border"
                       >
                         {isReadOnly ? (
-                            <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
+                            <div className="rounded-none py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
                       <span>
                         {brandsValues?.[brandIndex]?.productTypes?.[typeIndex]?.noCardFeeAdmin
                             ? `${brandsValues[brandIndex].productTypes[typeIndex].noCardFeeAdmin}%`
@@ -281,12 +283,12 @@ function OnlineBrandTable({
                                 name={`brands.${brandIndex}.productTypes.${typeIndex}.noCardFeeAdmin`}
                                 render={({ field }) => (
                                     <FormControl>
-                                      <div className="rounded-full py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
+                                      <div className="rounded-none py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
                                         <PercentageInput
                                             value={field.value}
                                             onChange={field.onChange}
                                             placeholder="0%"
-                                            className="border-0 p-0 h-auto text-center w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                                            className="border-0 p-0 h-auto text-center w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
                                         />
                                       </div>
                                     </FormControl>
@@ -299,6 +301,7 @@ function OnlineBrandTable({
             ))}
           </TableBody>
         </Table>
+        </div>
       </div>
   )
 }
@@ -318,12 +321,12 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: Control<Pric
 
   return (
       <div className="mt-12 mb-6">
-        <h3 className="text-lg font-medium mb-4 text-foreground">PIX</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">PIX</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <h4 className="font-medium mb-2 text-foreground">MDR</h4>
             <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
+              <div className="rounded-none py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{cardPixMdrAdmin ? `${cardPixMdrAdmin}%` : "-"}</span>
                 ) : (
@@ -336,7 +339,7 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: Control<Pric
                                   value={field.value}
                                   onChange={field.onChange}
                                   placeholder="0,01%"
-                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
                               />
                             </FormControl>
                         )}
@@ -348,7 +351,7 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: Control<Pric
           <div>
             <h4 className="font-medium mb-2 text-foreground">Custo Mínimo</h4>
             <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
+              <div className="rounded-none py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{cardPixMinimumCostFeeAdmin ? `R$ ${cardPixMinimumCostFeeAdmin}` : "-"}</span>
                 ) : (
@@ -361,7 +364,7 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: Control<Pric
                                   value={field.value}
                                   onChange={field.onChange}
                                   placeholder="R$ 0,09"
-                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
                               />
                             </FormControl>
                         )}
@@ -373,7 +376,7 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: Control<Pric
           <div>
             <h4 className="font-medium mb-2 text-foreground">Custo Máximo</h4>
             <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
+              <div className="rounded-none py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{cardPixCeilingFeeAdmin ? `R$ ${cardPixCeilingFeeAdmin}` : "-"}</span>
                 ) : (
@@ -386,7 +389,7 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: Control<Pric
                                   value={field.value}
                                   onChange={field.onChange}
                                   placeholder="R$ 0,09"
-                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
                               />
                             </FormControl>
                         )}
@@ -398,7 +401,7 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: Control<Pric
           <div>
             <h4 className="font-medium mb-2 text-foreground">Antecipação</h4>
             <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
+              <div className="rounded-none py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{eventualAnticipationFeeAdmin ? `${eventualAnticipationFeeAdmin}%` : "-"}</span>
                 ) : (
@@ -411,7 +414,7 @@ function PIXFeesSection({ control, isReadOnly = false }: { control: Control<Pric
                                   value={field.value}
                                   onChange={field.onChange}
                                   placeholder="1,67%"
-                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
                               />
                             </FormControl>
                         )}
@@ -440,12 +443,12 @@ function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: Contr
 
   return (
       <div className="mt-8 mb-6">
-        <h3 className="text-lg font-medium mb-4 text-foreground">PIX sem Cartão</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">PIX sem Cartão</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <h4 className="font-medium mb-2 text-foreground">MDR</h4>
             <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
+              <div className="rounded-none py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{nonCardPixMdrAdmin ? `${nonCardPixMdrAdmin}%` : "-"}</span>
                 ) : (
@@ -458,7 +461,7 @@ function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: Contr
                                   value={field.value}
                                   onChange={field.onChange}
                                   placeholder="0,01%"
-                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
                               />
                             </FormControl>
                         )}
@@ -470,7 +473,7 @@ function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: Contr
           <div>
             <h4 className="font-medium mb-2 text-foreground">Custo Mínimo</h4>
             <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
+              <div className="rounded-none py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{nonCardPixMinimumCostFeeAdmin ? `R$ ${nonCardPixMinimumCostFeeAdmin}` : "-"}</span>
                 ) : (
@@ -483,7 +486,7 @@ function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: Contr
                                   value={field.value}
                                   onChange={field.onChange}
                                   placeholder="R$ 0,09"
-                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
                               />
                             </FormControl>
                         )}
@@ -495,7 +498,7 @@ function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: Contr
           <div>
             <h4 className="font-medium mb-2 text-foreground">Custo Máximo</h4>
             <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
+              <div className="rounded-none py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{nonCardPixCeilingFeeAdmin ? `R$ ${nonCardPixCeilingFeeAdmin}` : "-"}</span>
                 ) : (
@@ -508,7 +511,7 @@ function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: Contr
                                   value={field.value}
                                   onChange={field.onChange}
                                   placeholder="R$ 0,09"
-                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
                               />
                             </FormControl>
                         )}
@@ -520,7 +523,7 @@ function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: Contr
           <div>
             <h4 className="font-medium mb-2 text-foreground">Antecipação</h4>
             <div className="flex gap-2">
-              <div className="rounded-full py-2 px-4 bg-muted text-foreground border border-border inline-block">
+              <div className="rounded-none py-2 px-4 bg-muted text-foreground border border-border inline-block">
                 {isReadOnly ? (
                     <span>{nonCardEventualAnticipationFeeAdmin ? `${nonCardEventualAnticipationFeeAdmin}%` : "-"}</span>
                 ) : (
@@ -533,7 +536,7 @@ function NonCardPIXFeesSection({ control, isReadOnly = false }: { control: Contr
                                   value={field.value}
                                   onChange={field.onChange}
                                   placeholder="1,67%"
-                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
+                                  className="border-0 p-0 h-auto w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
                               />
                             </FormControl>
                         )}
@@ -552,7 +555,7 @@ export function FeesAdminSection({
                               isReadOnly = false,
                             }: FeesSectionProps) {
   return (
-      <div className="space-y-4">
+      <div className="space-y-8 w-full max-w-full overflow-x-hidden">
        
 
         

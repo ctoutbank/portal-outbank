@@ -27,7 +27,7 @@ const CurrencyInput = forwardRef<
       fixedDecimalScale
       prefix="R$ "
       className={cn(
-        "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-10 w-full rounded-none border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
       getInputRef={ref}
@@ -44,9 +44,9 @@ interface BusinessInfoSectionProps {
 
 export function BusinessInfoSectionFeeAdmin({ control }: BusinessInfoSectionProps) {
   return (
-    <div className="space-y-4">
-      <h3 className="font-semibold text-lg">Informações do Negócio</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div className="space-y-6">
+      <h3 className="font-semibold text-lg border-b border-border pb-2">Informações do Negócio</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
             <FormField
                 control={control}
@@ -57,7 +57,7 @@ export function BusinessInfoSectionFeeAdmin({ control }: BusinessInfoSectionProp
                         <FormControl>
                             <Input
                                 placeholder="00000/00"
-                                className="bg-muted cursor-not-allowed"
+                                className="bg-muted cursor-not-allowed rounded-none"
                                 value={field.value}
                                 readOnly
                                 disabled
@@ -78,7 +78,7 @@ export function BusinessInfoSectionFeeAdmin({ control }: BusinessInfoSectionProp
                         <FormControl>
                             <Input
                                 placeholder="0000"
-                                className="bg-muted cursor-not-allowed"
+                                className="bg-muted cursor-not-allowed rounded-none"
                                 value={field.value}
                                 readOnly
                                 disabled
@@ -97,7 +97,7 @@ export function BusinessInfoSectionFeeAdmin({ control }: BusinessInfoSectionProp
               <FormItem>
                 <FormLabel>Quantidade de CNPJs</FormLabel>
                 <FormControl>
-                  <Input placeholder="1" type="number" {...field} />
+                  <Input placeholder="1" type="number" {...field} className="rounded-none" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -116,6 +116,7 @@ export function BusinessInfoSectionFeeAdmin({ control }: BusinessInfoSectionProp
                     placeholder="R$ 0,00"
                     value={field.value}
                     onValueChange={(values) => field.onChange(values.value)}
+                    className="rounded-none"
                   />
                 </FormControl>
                 <FormMessage />
@@ -135,6 +136,7 @@ export function BusinessInfoSectionFeeAdmin({ control }: BusinessInfoSectionProp
                     placeholder="R$ 0,00"
                     value={field.value}
                     onValueChange={(values) => field.onChange(values.value)}
+                    className="rounded-none"
                   />
                 </FormControl>
                 <FormMessage />

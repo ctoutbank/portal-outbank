@@ -106,17 +106,20 @@ export default async function CategoryDetailPage({ params }: PageProps) {
             <BaseBody
                 title={`Categoria: ${category.name}`}
                 subtitle="Detalhes e edição da categoria"
+                className="overflow-x-hidden"
             >
-                <Categoriesform categories={formattedCategory} />
-                <div className="mt-8">
-                    <h1>Taxas da Solicitação</h1>
-                    <CategoriesFeeAdminForm
-                        pricingSolicitation={formattedSolicitationFee}
-                        mcc={category.mcc}
-                        cnae={category.cnae}
-                        categoryId={categoryId}
-                        idSolicitationFee={solicitationFeeId}
-                    />
+                <div className="w-full max-w-full space-y-6">
+                    <Categoriesform categories={formattedCategory} />
+                    <div className="mt-8 pt-8 border-t border-border">
+                        <h2 className="text-xl font-semibold mb-6">Taxas da Solicitação</h2>
+                        <CategoriesFeeAdminForm
+                            pricingSolicitation={formattedSolicitationFee}
+                            mcc={category.mcc}
+                            cnae={category.cnae}
+                            categoryId={categoryId}
+                            idSolicitationFee={solicitationFeeId}
+                        />
+                    </div>
                 </div>
             </BaseBody>
         </>
