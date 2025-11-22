@@ -4,8 +4,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ModuleBadge } from "@/components/ui/module-badge";
+import { Input } from "@/components/ui/input";
 import { CategoryList } from "../server/category";
-import { ChevronRight, ArrowUpDown } from "lucide-react";
+import { ChevronRight, ArrowUpDown, Search } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 
 interface CategorylistProps {
   Categories: CategoryList;
@@ -20,6 +22,42 @@ export default function Categorylist({
 }: CategorylistProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const currentSearch = searchParams?.get("search") || "";
+  const [searchValue, setSearchValue] = useState(currentSearch);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Atualizar valor do input quando searchParams mudar externamente
+  useEffect(() => {
+    const searchParam = searchParams?.get("search") || "";
+    if (searchParam !== searchValue) {
+      setSearchValue(searchParam);
+    }
+  }, [searchParams]);
+
+  // Debounce para busca
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+
+    // Limpar timer anterior
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Novo timer para debounce
+    debounceTimerRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams?.toString() ?? "");
+      
+      if (value.trim()) {
+        params.set("search", value.trim());
+        params.set("page", "1"); // Reset para primeira página ao buscar
+      } else {
+        params.delete("search");
+        params.set("page", "1");
+      }
+
+      router.push(`/categories?${params.toString()}`);
+    }, 300);
+  };
 
   const handleSort = (field: string) => {
     const params = new URLSearchParams(searchParams?.toString() ?? "");
@@ -44,6 +82,20 @@ export default function Categorylist({
 
   return (
     <div className="w-full overflow-x-hidden">
+      {/* Campo de busca */}
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Buscar por CNAE, MCC ou nome..."
+            value={searchValue}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="pl-10 pr-4 rounded-none border-border"
+          />
+        </div>
+      </div>
+
       {/* Header com botões de ordenação */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <button
@@ -58,79 +110,51 @@ export default function Categorylist({
         </button>
       </div>
 
-      {/* Grid de cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {/* Lista horizontal de cards */}
+      <div className="space-y-2">
         {Categories.categories.map((category) => (
           <Link
             key={category.id}
             href={`/categories/${category.id}`}
-            className="block h-full"
+            className="block"
           >
-            <Card className="h-full border border-border rounded-none shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
-              <CardContent className="p-4 h-full flex flex-col">
-                {/* CNAE em destaque */}
-                <div className="mb-3">
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-                    CNAE
-                  </div>
-                  <div className="text-2xl font-bold text-foreground">
-                    {category.cnae || "-"}
-                  </div>
-                </div>
-
-                {/* MCC */}
-                <div className="mb-3">
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-                    MCC
-                  </div>
-                  <div className="text-sm font-medium text-foreground">
-                    {category.mcc || "-"}
-                  </div>
-                </div>
-
-                {/* Nome da categoria */}
-                <div className="mb-4 flex-1">
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-                    Nome
-                  </div>
-                  <div className="text-sm text-foreground line-clamp-2">
-                    {category.name || "-"}
-                  </div>
-                </div>
-
-                {/* Badges e informações */}
-                <div className="mt-auto space-y-2 pt-3 border-t border-border">
-                  <div className="flex items-center justify-between gap-2">
-                    <ModuleBadge
-                      moduleSlug="adq"
-                      showIcon={true}
-                      variant="outline"
-                    />
-                    <Badge
-                      variant={category.active ? "success" : "destructive"}
-                      className="rounded-none"
-                    >
-                      {category.active ? "ATIVO" : "INATIVO"}
-                    </Badge>
-                  </div>
-
-                  {/* Valor Cartão Presente */}
-                  {category.anticipation_risk_factor_cnp !== null && (
-                    <div className="pt-2 border-t border-border">
-                      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-                        Cartão Presente
-                      </div>
-                      <div className="text-sm font-semibold text-foreground">
-                        {category.anticipation_risk_factor_cnp}%
-                      </div>
+            <Card className="border border-border rounded-none shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 md:gap-6 flex-1 min-w-0">
+                    {/* CNAE */}
+                    <div className="font-bold text-lg min-w-[100px] text-foreground">
+                      {category.cnae || "-"}
                     </div>
-                  )}
+
+                    {/* MCC */}
+                    <div className="text-sm font-medium text-foreground min-w-[80px]">
+                      {category.mcc || "-"}
+                    </div>
+
+                    {/* Nome */}
+                    <div className="text-sm text-foreground flex-1 min-w-0 truncate">
+                      {category.name || "-"}
+                    </div>
+
+                    {/* Badges - Status e Módulos */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <ModuleBadge
+                        moduleSlug="adq"
+                        showIcon={true}
+                        variant="outline"
+                      />
+                      <Badge
+                        variant={category.active ? "success" : "destructive"}
+                        className="rounded-none"
+                      >
+                        {category.active ? "ATIVO" : "INATIVO"}
+                      </Badge>
+                    </div>
+                  </div>
 
                   {/* Indicador de clique */}
-                  <div className="flex items-center justify-end pt-2 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                    Ver detalhes
-                    <ChevronRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
-                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>

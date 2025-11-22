@@ -4,7 +4,6 @@ import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Card, CardContent } from "../ui/card";
-import { CardLogo } from "../ui/card-logo";
 
 // Tipos locais para corrigir erros de tipagem sem alterar lógica
 const BANDEIRAS = ["Visa", "Mastercard", "Elo", "Amex", "Hipercard"] as const;
@@ -236,7 +235,6 @@ export default function MdrForm({
                       <tr key={bandeira} className="hover:bg-gray-50">
                         <td className="py-2 px-3">
                           <div className="flex items-center gap-2">
-                            <CardLogo cardName={bandeira} width={32} height={20} className="object-contain flex-shrink-0" />
                             <span className="font-medium text-gray-800">{bandeira}</span>
                           </div>
                         </td>
@@ -339,7 +337,6 @@ export default function MdrForm({
                       <tr key={bandeira} className="hover:bg-gray-50">
                         <td className="py-2 px-3">
                           <div className="flex items-center gap-2">
-                            <CardLogo cardName={bandeira} width={32} height={20} className="object-contain flex-shrink-0" />
                             <span className="font-medium text-gray-800">{bandeira}</span>
                           </div>
                         </td>
