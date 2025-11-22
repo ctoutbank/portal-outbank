@@ -35,12 +35,6 @@ const navMainItems: Array<{
     icon: Users,
     isActive: false,
   },
-  {
-    title: "Solicitações de Taxa",
-    url: "/solicitationfee",
-    icon: Table,
-    isActive: false,
-  },
   { title: "CNAE", url: "/categories", icon: Briefcase, isActive: false },
   {title: "Fornecedores", url: "/supplier", icon: Truck, isActive: false},
   {

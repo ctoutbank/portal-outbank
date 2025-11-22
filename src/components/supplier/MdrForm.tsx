@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Card, CardContent } from "../ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 
 // Tipos locais para corrigir erros de tipagem sem alterar lógica
 const BANDEIRAS = ["Visa", "Mastercard", "Elo", "Amex", "Hipercard"] as const;
@@ -203,225 +204,238 @@ export default function MdrForm({
       <Card className="w-full">
         <CardContent className="p-6">
           <div className="space-y-6">
-            {/* CNAE e MCC Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            
-
-                  
-
-                  
-
-              
             {/* Taxas POS */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 bg-gray-100 px-4 py-2 rounded-lg">
-                Taxas Transações POS
-              </h3>
-              
-              <div className="overflow-hidden border border-gray-200 rounded-lg">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left py-2 px-3 font-semibold text-gray-700 w-[140px]">Bandeira</th>
-                      <th className="text-center py-2 px-2 font-semibold text-gray-700">Débito</th>
-                      <th className="text-center py-2 px-2 font-semibold text-gray-700">Créd. Vista</th>
-                      <th className="text-center py-2 px-2 font-semibold text-gray-700">Créd. 2x</th>
-                      <th className="text-center py-2 px-2 font-semibold text-gray-700">Créd. 7x</th>
-                      <th className="text-center py-2 px-2 font-semibold text-gray-700">Voucher</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
+            <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+              <div className="min-w-0">
+                <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">
+                  Taxas Transações na POS
+                </h3>
+                <Table className="w-full min-w-[600px] border border-border rounded-none">
+                  <TableHeader>
+                    <TableRow className="border-b border-border">
+                      <TableHead className="sticky left-0 z-10 bg-background text-sm font-medium text-foreground border-r border-border">
+                        Bandeiras
+                      </TableHead>
+                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
+                        Débito
+                      </TableHead>
+                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
+                        Créd. Vista
+                      </TableHead>
+                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
+                        Créd. 2x
+                      </TableHead>
+                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
+                        Créd. 7x
+                      </TableHead>
+                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
+                        Voucher
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {BANDEIRAS.map((bandeira) => (
-                      <tr key={bandeira} className="hover:bg-gray-50">
-                        <td className="py-2 px-3">
+                      <TableRow key={bandeira} className="border-b border-border">
+                        <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-800">{bandeira}</span>
+                            <span className="font-medium text-foreground">{bandeira}</span>
                           </div>
-                        </td>
-                        <td className="py-2 px-2">
+                        </TableCell>
+                        <TableCell className="p-1 text-center border-r border-border">
                           <input
                             type="text"
                             value={mdrForm.taxasPos[bandeira].debito}
                             onChange={(e) => handleTaxaChange('taxasPos', bandeira, 'debito', e.target.value)}
                             placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
                           />
-                        </td>
-                        <td className="py-2 px-2">
+                        </TableCell>
+                        <TableCell className="p-1 text-center border-r border-border">
                           <input
                             type="text"
                             value={mdrForm.taxasPos[bandeira].credito}
                             onChange={(e) => handleTaxaChange('taxasPos', bandeira, 'credito', e.target.value)}
                             placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
                           />
-                        </td>
-                        <td className="py-2 px-2">
+                        </TableCell>
+                        <TableCell className="p-1 text-center border-r border-border">
                           <input
                             type="text"
                             value={mdrForm.taxasPos[bandeira].credito2x}
                             onChange={(e) => handleTaxaChange('taxasPos', bandeira, 'credito2x', e.target.value)}
                             placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
                           />
-                        </td>
-                        <td className="py-2 px-2">
+                        </TableCell>
+                        <TableCell className="p-1 text-center border-r border-border">
                           <input
                             type="text"
                             value={mdrForm.taxasPos[bandeira].credito7x}
                             onChange={(e) => handleTaxaChange('taxasPos', bandeira, 'credito7x', e.target.value)}
                             placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
                           />
-                        </td>
-                        <td className="py-2 px-2">
+                        </TableCell>
+                        <TableCell className="p-1 text-center border-r border-border">
                           <input
                             type="text"
                             value={mdrForm.taxasPos[bandeira].voucher}
                             onChange={(e) => handleTaxaChange('taxasPos', bandeira, 'voucher', e.target.value)}
                             placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
                           />
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
+            </div>
 
-              {/* Outras Taxas POS */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 bg-gray-50 p-4 rounded-lg">
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Pré-Pago (%)</label>
-                  <input type="text" name="prepos" value={mdrForm.prepos} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">MDR (%)</label>
-                  <input type="text" name="mdrpos" value={mdrForm.mdrpos} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Custo Mín (R$)</label>
-                  <input type="text" name="cminpos" value={mdrForm.cminpos} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Custo Máx (R$)</label>
-                  <input type="text" name="cmaxpos" value={mdrForm.cmaxpos} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Antecipação (%)</label>
-                  <input type="text" name="antecipacao" value={mdrForm.antecipacao} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500" />
-                </div>
+            {/* Outras Taxas POS */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 bg-muted/50 p-4 rounded-none border border-border">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Pré-Pago (%)</label>
+                <input type="text" name="prepos" value={mdrForm.prepos} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">MDR (%)</label>
+                <input type="text" name="mdrpos" value={mdrForm.mdrpos} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Custo Mín (R$)</label>
+                <input type="text" name="cminpos" value={mdrForm.cminpos} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Custo Máx (R$)</label>
+                <input type="text" name="cmaxpos" value={mdrForm.cmaxpos} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Antecipação (%)</label>
+                <input type="text" name="antecipacao" value={mdrForm.antecipacao} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
               </div>
             </div>
 
             {/* Taxas Online */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800 bg-gray-100 px-4 py-2 rounded-lg">
-                Taxas Transações Online
-              </h3>
-              
-              <div className="overflow-hidden border border-gray-200 rounded-lg">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left py-2 px-3 font-semibold text-gray-700 w-[140px]">Bandeira</th>
-                      <th className="text-center py-2 px-2 font-semibold text-gray-700">Débito</th>
-                      <th className="text-center py-2 px-2 font-semibold text-gray-700">Créd. Vista</th>
-                      <th className="text-center py-2 px-2 font-semibold text-gray-700">Créd. 2x</th>
-                      <th className="text-center py-2 px-2 font-semibold text-gray-700">Créd. 7x</th>
-                      <th className="text-center py-2 px-2 font-semibold text-gray-700">Voucher</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
+            <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+              <div className="min-w-0">
+                <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">
+                  Taxas Transações Online
+                </h3>
+                <Table className="w-full min-w-[600px] border border-border rounded-none">
+                  <TableHeader>
+                    <TableRow className="border-b border-border">
+                      <TableHead className="sticky left-0 z-10 bg-background text-sm font-medium text-foreground border-r border-border">
+                        Bandeiras
+                      </TableHead>
+                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
+                        Débito
+                      </TableHead>
+                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
+                        Créd. Vista
+                      </TableHead>
+                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
+                        Créd. 2x
+                      </TableHead>
+                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
+                        Créd. 7x
+                      </TableHead>
+                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
+                        Voucher
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {BANDEIRAS.map((bandeira) => (
-                      <tr key={bandeira} className="hover:bg-gray-50">
-                        <td className="py-2 px-3">
+                      <TableRow key={bandeira} className="border-b border-border">
+                        <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-800">{bandeira}</span>
+                            <span className="font-medium text-foreground">{bandeira}</span>
                           </div>
-                        </td>
-                        <td className="py-2 px-2">
+                        </TableCell>
+                        <TableCell className="p-1 text-center border-r border-border">
                           <input
                             type="text"
                             value={mdrForm.taxasOnline[bandeira].debito}
                             onChange={(e) => handleTaxaChange('taxasOnline', bandeira, 'debito', e.target.value)}
                             placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
                           />
-                        </td>
-                        <td className="py-2 px-2">
+                        </TableCell>
+                        <TableCell className="p-1 text-center border-r border-border">
                           <input
                             type="text"
                             value={mdrForm.taxasOnline[bandeira].credito}
                             onChange={(e) => handleTaxaChange('taxasOnline', bandeira, 'credito', e.target.value)}
                             placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
                           />
-                        </td>
-                        <td className="py-2 px-2">
+                        </TableCell>
+                        <TableCell className="p-1 text-center border-r border-border">
                           <input
                             type="text"
                             value={mdrForm.taxasOnline[bandeira].credito2x}
                             onChange={(e) => handleTaxaChange('taxasOnline', bandeira, 'credito2x', e.target.value)}
                             placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
                           />
-                        </td>
-                        <td className="py-2 px-2">
+                        </TableCell>
+                        <TableCell className="p-1 text-center border-r border-border">
                           <input
                             type="text"
                             value={mdrForm.taxasOnline[bandeira].credito7x}
                             onChange={(e) => handleTaxaChange('taxasOnline', bandeira, 'credito7x', e.target.value)}
                             placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
                           />
-                        </td>
-                        <td className="py-2 px-2">
+                        </TableCell>
+                        <TableCell className="p-1 text-center border-r border-border">
                           <input
                             type="text"
                             value={mdrForm.taxasOnline[bandeira].voucher}
                             onChange={(e) => handleTaxaChange('taxasOnline', bandeira, 'voucher', e.target.value)}
                             placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
                           />
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
+            </div>
 
-              {/* Outras Taxas Online */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 bg-gray-50 p-4 rounded-lg">
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Pré-Pago (%)</label>
-                  <input type="text" name="preonline" value={mdrForm.preonline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">MDR (%)</label>
-                  <input type="text" name="mdronline" value={mdrForm.mdronline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Custo Mín (R$)</label>
-                  <input type="text" name="cminonline" value={mdrForm.cminonline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Custo Máx (R$)</label>
-                  <input type="text" name="cmaxonline" value={mdrForm.cmaxonline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Antecipação (%)</label>
-                  <input type="text" name="antecipacaoonline" value={mdrForm.antecipacaoonline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500" />
-                </div>
+            {/* Outras Taxas Online */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 bg-muted/50 p-4 rounded-none border border-border">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Pré-Pago (%)</label>
+                <input type="text" name="preonline" value={mdrForm.preonline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">MDR (%)</label>
+                <input type="text" name="mdronline" value={mdrForm.mdronline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Custo Mín (R$)</label>
+                <input type="text" name="cminonline" value={mdrForm.cminonline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Custo Máx (R$)</label>
+                <input type="text" name="cmaxonline" value={mdrForm.cmaxonline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Antecipação (%)</label>
+                <input type="text" name="antecipacaoonline" value={mdrForm.antecipacaoonline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
               </div>
             </div>
             
             {/* Buttons */}
-            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+            <div className="flex justify-end gap-3 pt-6 border-t border-border">
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition"
+                className="px-6 py-2.5 bg-muted hover:bg-muted/80 text-foreground font-medium rounded-none transition"
               >
                 Cancelar
               </button>
@@ -429,12 +443,11 @@ export default function MdrForm({
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading}
-                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-none transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Salvando..." : isEditing ? "Atualizar" : "Salvar MDR"}
               </button>
             </div>
-          </div>
           </div>
         </CardContent>
       </Card>
