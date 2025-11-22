@@ -19,7 +19,7 @@
 
 **Total de erros identificados:** 15  
 **Erros com correção aplicada:** 15  
-**Deploys que passaram na Vercel:** 11  
+**Deploys que passaram na Vercel:** 12  
 **Deploys que falharam:** 5  
 
 ---
@@ -108,6 +108,15 @@
 ---
 
 ## ✅ ERROS RESOLVIDOS (Deploy passou na Vercel)
+
+### Commit 001 ✅
+- **Commit:** **001** - `a0cd470` (feat(001): Fase 1 - Criar estrutura base de módulos no banco de dados)
+- **Data teste:** 22/11/2025 16:01
+- **Status Vercel:** ✅ Passou
+- **Resultado:** ✅ **Deploy passou na Vercel!**
+- **Observação:** Os avisos sobre "Dynamic server usage" são esperados para rotas autenticadas e não impedem o deploy.
+
+---
 
 ### Commit 003 ✅
 - **Commit:** **003** - `ff3a75d` (feat(003): Fase 2 - Criar server actions para gerenciamento de módulos)
