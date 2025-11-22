@@ -17,9 +17,9 @@
 
 ## 📊 Estatísticas
 
-**Total de erros identificados:** 12  
-**Erros com correção aplicada:** 12  
-**Deploys que passaram na Vercel:** 7  
+**Total de erros identificados:** 15  
+**Erros com correção aplicada:** 15  
+**Deploys que passaram na Vercel:** 10  
 **Deploys que falharam:** 5  
 
 ---
@@ -108,6 +108,63 @@
 ---
 
 ## ✅ ERROS RESOLVIDOS (Deploy passou na Vercel)
+
+### Erro #15 ✅
+- **ID:** ERRO-015
+- **Mensagem do erro:** Type error: Module '"@/components/layout/base-header"' has no exported member 'BaseHeader'. `BaseHeader` é exportado como default, mas estava sendo importado como named export.
+- **Arquivos:** 
+  - `src/app/consent/modules/[moduleId]/page.tsx` (linha 1)
+  - `src/app/consent/modules/page.tsx` (linha 1)
+  - `src/app/consent/modules/history/page.tsx` (linha 1)
+- **Commit identificado:** **012** - `eb4cdd2` (docs(012): Adicionar documentação completa das implementações)
+- **Data identificação:** 22/11/2025 16:10
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** O commit 012 foi feito antes das correções de import e ainda continha o código antigo. Corrigidos imports de `import { BaseHeader } from ...` para `import BaseHeader from ...` (default import) nos 3 arquivos. Também corrigida variável `allHistory` para `history` no history/page.tsx. Os arquivos já estavam corretos no HEAD, então a correção foi aplicada diretamente.
+- **Commit de correção:** Correção aplicada diretamente nos arquivos (já estavam corretos no HEAD após commits anteriores)
+- **Push realizado:** ✅ Sim - 22/11/2025 16:15
+- **Status Vercel:** ✅ Passou
+- **Data teste Vercel:** 22/11/2025 16:16
+- **Resultado:** ✅ **Deploy passou na Vercel!**
+
+---
+
+### Erro #14 ✅
+- **ID:** ERRO-014
+- **Mensagem do erro:** Type error: Module '"@/components/layout/base-header"' has no exported member 'BaseHeader'. `BaseHeader` é exportado como default, mas estava sendo importado como named export.
+- **Arquivos:** 
+  - `src/app/consent/modules/[moduleId]/page.tsx` (linha 1)
+  - `src/app/consent/modules/page.tsx` (linha 1)
+  - `src/app/consent/modules/history/page.tsx` (linha 1)
+- **Commit identificado:** **011** - `cc663a4` (feat(011): Fase 4 - Adicionar badges fixos em Fornecedores e CNAE)
+- **Data identificação:** 21/11/2025 23:32
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Alterar imports de `import { BaseHeader } from ...` para `import BaseHeader from ...` (default import) nos 3 arquivos, pois o componente é exportado como default. Este foi um erro recorrente que apareceu novamente após alterações do usuário.
+- **Commit de correção:** `c3be89a` - fix(011): Corrigir import BaseHeader - usar default import ao invés de named import
+- **Push realizado:** ✅ Sim - 21/11/2025 23:32
+- **Status Vercel:** ✅ Passou
+- **Data teste Vercel:** 21/11/2025 23:34
+- **Resultado:** ✅ **Deploy passou na Vercel!**
+
+---
+
+### Erro #13 ✅
+- **ID:** ERRO-013
+- **Mensagem do erro:** Type error: Module '"@/components/layout/base-header"' has no exported member 'BaseHeader'. `BaseHeader` é exportado como default, mas estava sendo importado como named export.
+- **Arquivos:** 
+  - `src/app/consent/modules/[moduleId]/page.tsx` (linha 1)
+  - `src/app/consent/modules/page.tsx` (linha 1)
+  - `src/app/consent/modules/history/page.tsx` (linha 1)
+- **Commit identificado:** **011** - `cc663a4` (feat(011): Fase 4 - Adicionar badges fixos em Fornecedores e CNAE)
+- **Data identificação:** 21/11/2025 23:28
+- **Correção aplicada:** ✅ Sim
+- **Solução aplicada:** Alterar imports de `import { BaseHeader } from ...` para `import BaseHeader from ...` (default import) nos 3 arquivos. Também corrigida variável `allHistory` para `history` no history/page.tsx.
+- **Commit de correção:** `0483352` - fix(011): Corrigir imports de BaseHeader e variável allHistory nas páginas de consentimento
+- **Push realizado:** ✅ Sim - 21/11/2025 23:28
+- **Status Vercel:** ❌ Falhou - **Novo erro apareceu após correção (ERRO-014)**
+- **Data teste Vercel:** 21/11/2025 23:32
+- **Resultado:** Deploy falhou ❌ - Erro corrigido, mas novo erro (ERRO-014) apareceu após o usuário fazer alterações
+
+---
 
 ### Erro #12 ✅
 - **ID:** ERRO-012
