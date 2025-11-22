@@ -142,75 +142,76 @@ function POSBrandTable({
         <div className="min-w-0">
           <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">Taxas Transações na POS</h3>
           <Table className="w-full min-w-[600px] border border-border rounded-none">
-          <TableHeader>
-            <TableRow className="border-b border-border">
-              <TableHead className="sticky left-0 z-10 bg-background text-sm font-medium text-foreground border-r border-border">
-                Bandeiras
-              </TableHead>
-              {paymentTypes.map((type, index) => (
-                  <TableHead
-                      key={`payment-type-${type.value}-${index}`}
-                      className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border"
-                  >
-                    {type.label}
-                  </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {brandList.map((brand, brandIndex) => (
-                <TableRow key={`pos-${brand.value}-${brandIndex}`} className="border-b border-border">
-                  <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
-                    <div className="flex items-center gap-2">
-                      {getCardImage(brand.value) && (
-                          <Image
-                              src={getCardImage(brand.value) || "/placeholder.svg"}
-                              alt={brand.label}
-                              width={40}
-                              height={24}
-                              className="object-contain"
-                          />
-                      )}
-                      {brand.label}
-                    </div>
-                  </TableCell>
-                  {paymentTypes.map((type, typeIndex) => (
-                      <TableCell
-                          key={`pos-brand-${brand.value}-${type.value}-${typeIndex}`}
-                          className="p-1 text-center border-r border-border"
-                      >
-                        {isReadOnly ? (
-                            <div className="rounded-none py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
-                      <span>
-                        {brandsValues?.[brandIndex]?.productTypes?.[typeIndex]?.feeAdmin
-                            ? `${brandsValues[brandIndex].productTypes[typeIndex].feeAdmin}%`
-                            : "-"}
-                      </span>
-                            </div>
-                        ) : (
-                            <FormField
-                                control={control}
-                                name={`brands.${brandIndex}.productTypes.${typeIndex}.feeAdmin`}
-                                render={({ field }) => (
-                                    <FormControl>
-                                      <div className="rounded-none py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
-                                        <PercentageInput
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            placeholder="0%"
-                                            className="border-0 p-0 h-auto text-center w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
-                                        />
-                                      </div>
-                                    </FormControl>
-                                )}
+            <TableHeader>
+              <TableRow className="border-b border-border">
+                <TableHead className="sticky left-0 z-10 bg-background text-sm font-medium text-foreground border-r border-border">
+                  Bandeiras
+                </TableHead>
+                {paymentTypes.map((type, index) => (
+                    <TableHead
+                        key={`payment-type-${type.value}-${index}`}
+                        className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border"
+                    >
+                      {type.label}
+                    </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {brandList.map((brand, brandIndex) => (
+                  <TableRow key={`pos-${brand.value}-${brandIndex}`} className="border-b border-border">
+                    <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
+                      <div className="flex items-center gap-2">
+                        {getCardImage(brand.value) && (
+                            <Image
+                                src={getCardImage(brand.value) || "/placeholder.svg"}
+                                alt={brand.label}
+                                width={40}
+                                height={24}
+                                className="object-contain"
                             />
                         )}
-                      </TableCell>
-                  ))}
-                </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                        {brand.label}
+                      </div>
+                    </TableCell>
+                    {paymentTypes.map((type, typeIndex) => (
+                        <TableCell
+                            key={`pos-brand-${brand.value}-${type.value}-${typeIndex}`}
+                            className="p-1 text-center border-r border-border"
+                        >
+                          {isReadOnly ? (
+                              <div className="rounded-none py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
+                                <span>
+                                  {brandsValues?.[brandIndex]?.productTypes?.[typeIndex]?.feeAdmin
+                                      ? `${brandsValues[brandIndex].productTypes[typeIndex].feeAdmin}%`
+                                      : "-"}
+                                </span>
+                              </div>
+                          ) : (
+                              <FormField
+                                  control={control}
+                                  name={`brands.${brandIndex}.productTypes.${typeIndex}.feeAdmin`}
+                                  render={({ field }) => (
+                                      <FormControl>
+                                        <div className="rounded-none py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
+                                          <PercentageInput
+                                              value={field.value}
+                                              onChange={field.onChange}
+                                              placeholder="0%"
+                                              className="border-0 p-0 h-auto text-center w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
+                                          />
+                                        </div>
+                                      </FormControl>
+                                  )}
+                              />
+                          )}
+                        </TableCell>
+                    ))}
+                  </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
   )
 }
@@ -232,75 +233,75 @@ function OnlineBrandTable({
         <div className="min-w-0">
           <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">Taxas Transações Online</h3>
           <Table className="w-full min-w-[600px] border border-border rounded-none">
-          <TableHeader>
-            <TableRow className="border-b border-border">
-              <TableHead className="sticky left-0 z-10 bg-background text-sm font-medium text-foreground border-r border-border">
-                Bandeiras
-              </TableHead>
-              {paymentTypes.map((type, index) => (
-                  <TableHead
-                      key={`online-payment-type-${type.value}-${index}`}
-                      className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border"
-                  >
-                    {type.label}
-                  </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {brandList.map((brand, brandIndex) => (
-                <TableRow key={`online-${brand.value}-${brandIndex}`} className="border-b border-border">
-                  <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
-                    <div className="flex items-center gap-2">
-                      {getCardImage(brand.value) && (
-                          <Image
-                              src={getCardImage(brand.value) || "/placeholder.svg"}
-                              alt={brand.label}
-                              width={40}
-                              height={24}
-                              className="object-contain"
-                          />
-                      )}
-                      {brand.label}
-                    </div>
-                  </TableCell>
-                  {paymentTypes.map((type, typeIndex) => (
-                      <TableCell
-                          key={`online-brand-${brand.value}-${type.value}-${typeIndex}`}
-                          className="p-1 text-center border-r border-border"
-                      >
-                        {isReadOnly ? (
-                            <div className="rounded-none py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
-                      <span>
-                        {brandsValues?.[brandIndex]?.productTypes?.[typeIndex]?.noCardFeeAdmin
-                            ? `${brandsValues[brandIndex].productTypes[typeIndex].noCardFeeAdmin}%`
-                            : "-"}
-                      </span>
-                            </div>
-                        ) : (
-                            <FormField
-                                control={control}
-                                name={`brands.${brandIndex}.productTypes.${typeIndex}.noCardFeeAdmin`}
-                                render={({ field }) => (
-                                    <FormControl>
-                                      <div className="rounded-none py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
-                                        <PercentageInput
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            placeholder="0%"
-                                            className="border-0 p-0 h-auto text-center w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
-                                        />
-                                      </div>
-                                    </FormControl>
-                                )}
+            <TableHeader>
+              <TableRow className="border-b border-border">
+                <TableHead className="sticky left-0 z-10 bg-background text-sm font-medium text-foreground border-r border-border">
+                  Bandeiras
+                </TableHead>
+                {paymentTypes.map((type, index) => (
+                    <TableHead
+                        key={`online-payment-type-${type.value}-${index}`}
+                        className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border"
+                    >
+                      {type.label}
+                    </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {brandList.map((brand, brandIndex) => (
+                  <TableRow key={`online-${brand.value}-${brandIndex}`} className="border-b border-border">
+                    <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
+                      <div className="flex items-center gap-2">
+                        {getCardImage(brand.value) && (
+                            <Image
+                                src={getCardImage(brand.value) || "/placeholder.svg"}
+                                alt={brand.label}
+                                width={40}
+                                height={24}
+                                className="object-contain"
                             />
                         )}
-                      </TableCell>
-                  ))}
-                </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                        {brand.label}
+                      </div>
+                    </TableCell>
+                    {paymentTypes.map((type, typeIndex) => (
+                        <TableCell
+                            key={`online-brand-${brand.value}-${type.value}-${typeIndex}`}
+                            className="p-1 text-center border-r border-border"
+                        >
+                          {isReadOnly ? (
+                              <div className="rounded-none py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
+                                <span>
+                                  {brandsValues?.[brandIndex]?.productTypes?.[typeIndex]?.noCardFeeAdmin
+                                      ? `${brandsValues[brandIndex].productTypes[typeIndex].noCardFeeAdmin}%`
+                                      : "-"}
+                                </span>
+                              </div>
+                          ) : (
+                              <FormField
+                                  control={control}
+                                  name={`brands.${brandIndex}.productTypes.${typeIndex}.noCardFeeAdmin`}
+                                  render={({ field }) => (
+                                      <FormControl>
+                                        <div className="rounded-none py-1 px-3 inline-block w-[70px] text-center bg-muted text-foreground border border-border">
+                                          <PercentageInput
+                                              value={field.value}
+                                              onChange={field.onChange}
+                                              placeholder="0%"
+                                              className="border-0 p-0 h-auto text-center w-full bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
+                                          />
+                                        </div>
+                                      </FormControl>
+                                  )}
+                              />
+                          )}
+                        </TableCell>
+                    ))}
+                  </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
   )
