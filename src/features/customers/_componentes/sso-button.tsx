@@ -17,21 +17,18 @@ function redirectToISOWithSSO(customerSlug: string, token: string): string {
     throw new Error("Slug do ISO não encontrado");
   }
 
-  // URL base do subdomínio
-  // Extrair domínio base (ex: consolle.one)
+  // Todos os ISOs usam o domínio consolle.one
+  // Em desenvolvimento, usar localhost
   const hostname = window.location.hostname;
-  const domainParts = hostname.split(".");
+  let baseDomain = "consolle.one"; // padrão para produção
   
-  // Determinar domínio base baseado no hostname atual
-  let baseDomain = "consolle.one"; // padrão
+  // Apenas em desenvolvimento usar localhost
   if (hostname.includes("localhost") || hostname.includes("127.0.0.1")) {
-    baseDomain = "localhost:3000"; // desenvolvimento
-  } else if (domainParts.length > 1) {
-    // Extrair domínio base (ex: consolle.one de portal-outbank.consolle.one)
-    baseDomain = domainParts.slice(-2).join(".");
+    baseDomain = "localhost:3000";
   }
+  // Sempre usar consolle.one para ISOs em produção
 
-  // Construir URL do subdomínio
+  // Construir URL do subdomínio do ISO
   const protocol = window.location.protocol;
   const subdomainUrl = `${protocol}//${customerSlug}.${baseDomain}`;
 
