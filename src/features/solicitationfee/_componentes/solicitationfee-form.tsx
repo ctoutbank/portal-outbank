@@ -263,7 +263,7 @@ export default function SolicitationFeeForm({ solicitationFee }: SolicitationFee
               control={form.control}
               name="cnaeInUse"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-none border border-border p-4 bg-muted/50">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">CNAE em Uso</FormLabel>
                   </div>

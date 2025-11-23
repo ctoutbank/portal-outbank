@@ -216,7 +216,7 @@ export function FornecedorForm({
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6" onClick={(e) => e.stopPropagation()}>
-            <div className='bg-card border border-border shadow-sm p-6 rounded-none'>
+            <div className='bg-white border border-gray-100 shadow-sm p-6 rounded-lg'>
                 <h3 className="font-semibold text-gray-900 mb-4">Cadastro</h3>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                     <div>
@@ -226,7 +226,7 @@ export function FornecedorForm({
                             name="nome"
                             value={formData.nome}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             required
                         />
                     </div>
@@ -238,7 +238,7 @@ export function FornecedorForm({
                             name="cnpj"
                             value={formData.cnpj}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             required
                         />
                         {cnpjError && <p className="text-sm text-red-600 mt-1">{cnpjError}</p>}
@@ -251,7 +251,7 @@ export function FornecedorForm({
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             required
                         />
                     </div>
@@ -263,7 +263,7 @@ export function FornecedorForm({
                             name="telefone"
                             value={formData.telefone}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             required
                             placeholder='(00) 0000-0000'
                         />
@@ -273,7 +273,7 @@ export function FornecedorForm({
                     <div ref={dropdownRef} className="relative">
                         <label className="block text-sm font-medium text-gray-700 mb-2">CNAE *</label>
                         <div
-                            className="min-h-[44px] px-3 py-2 border border-border rounded-none focus-within:ring-2 focus-within:ring-ring bg-background cursor-text"
+                            className="min-h-[44px] px-3 py-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 bg-white cursor-text"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setShowDropdown(true);
@@ -295,7 +295,7 @@ export function FornecedorForm({
                                                     e.stopPropagation();
                                                     removeCnae(mccId);
                                                 }}
-                                                className="hover:bg-muted rounded-none p-0.5"
+                                                className="hover:bg-blue-200 rounded-full p-0.5"
                                             >
                                                 <X className="w-3 h-3" />
                                             </button>
@@ -320,7 +320,7 @@ export function FornecedorForm({
                             </div>
                         </div>
                         {showDropdown && categories.length > 0 && (
-                            <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-none shadow-lg max-h-60 overflow-y-auto">
+                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                 {categories
                                     .filter(
                                         (c) =>
@@ -346,7 +346,7 @@ export function FornecedorForm({
                     {/* MCC Display */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">MCC (Gerado automaticamente)</label>
-                        <div className="min-h-[44px] px-3 py-2 border border-border rounded-none bg-muted/50">
+                        <div className="min-h-[44px] px-3 py-2 border border-gray-200 rounded-lg bg-gray-50">
                             <div className="flex flex-wrap gap-2">
                                 {formData.mcc?.map((mccId: string) => {
                                     const cnae = categories.find((c) => c.id === mccId);
@@ -374,7 +374,7 @@ export function FornecedorForm({
                             name="contato_principal"
                             value={formData.contato_principal}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
 
@@ -385,7 +385,7 @@ export function FornecedorForm({
                             name="endereco"
                             value={formData.endereco}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             required
                         />
                     </div>
@@ -397,7 +397,7 @@ export function FornecedorForm({
                             name="cep"
                             value={formData.cep}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             required
                         />
                     </div>
@@ -409,7 +409,7 @@ export function FornecedorForm({
                             name="cidade"
                             value={formData.cidade}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             required
                         />
                     </div>
@@ -421,7 +421,7 @@ export function FornecedorForm({
                             name="estado"
                             value={formData.estado}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             required
                         />
                     </div>
@@ -432,7 +432,7 @@ export function FornecedorForm({
                             name="observacoes"
                             value={formData.observacoes}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
 
