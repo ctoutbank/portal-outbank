@@ -64,6 +64,23 @@ export default function MdrForm({
 
   const [loading, setLoading] = useState(false);
 
+  // Função para formatar valor com máscara de porcentagem
+  const formatValueWithPercentage = (value: string): string => {
+    if (!value || value.trim() === "") return "";
+    // Remove % se já existir e adiciona novamente
+    const cleanValue = value.replace(/%/g, "").trim();
+    return cleanValue ? `${cleanValue}%` : "";
+  };
+
+  // Função para remover % do valor ao editar
+  const removePercentage = (value: string): string => {
+    return value.replace(/%/g, "").trim();
+  };
+
+  // Função para verificar se valor está preenchido
+  const isValueFilled = (value: string | undefined): boolean => {
+    return value !== undefined && value !== null && value.trim() !== "";
+  };
   
   // Função para inicializar estrutura de taxas vazia
   const initializeTaxasStructure = (): Record<BrandValue, TaxaFields> => {
@@ -374,7 +391,7 @@ export default function MdrForm({
                 <h3 className="text-2xl font-semibold mb-6 text-[#FFFFFF] border-b border-[#1f1f1f] pb-4">
                   Taxas Transações na POS
                 </h3>
-                <div className="overflow-x-auto mb-10">
+                <div className="overflow-x-auto mb-4">
                   <Table className="w-full min-w-[600px] border-collapse border-spacing-0">
                     <TableHeader>
                       <TableRow className="h-[52px]">
@@ -402,20 +419,30 @@ export default function MdrForm({
                               <span className="font-medium text-[#FFFFFF]">{brand.label}</span>
                             </div>
                           </TableCell>
-                          {SolicitationFeeProductTypeList.map((productType, typeIndex) => (
-                            <TableCell
-                              key={`pos-${brand.value}-${productType.value}-${typeIndex}`}
-                              className="text-center bg-[#121212] border-l border-[#1f1f1f] p-4 text-[#808080] text-sm"
-                            >
-                              <input
-                                type="text"
-                                value={mdrForm.taxasPos[brand.value]?.[productType.value] || ""}
-                                onChange={(e) => handleTaxaChange('taxasPos', brand.value, productType.value, e.target.value)}
-                                placeholder="0.00"
-                                className="w-full text-center border-0 bg-transparent text-[#808080] placeholder:text-[#808080] focus-visible:outline-none text-sm px-2 py-0 h-full"
-                              />
-                            </TableCell>
-                          ))}
+                          {SolicitationFeeProductTypeList.map((productType, typeIndex) => {
+                            const currentValue = mdrForm.taxasPos[brand.value]?.[productType.value] || "";
+                            const isFilled = isValueFilled(currentValue);
+                            const displayValue = currentValue ? formatValueWithPercentage(currentValue) : "";
+                            return (
+                              <TableCell
+                                key={`pos-${brand.value}-${productType.value}-${typeIndex}`}
+                                className="text-center bg-[#121212] border-l border-[#1f1f1f] p-4 text-sm"
+                              >
+                                <input
+                                  type="text"
+                                  value={displayValue}
+                                  onChange={(e) => {
+                                    const cleanValue = removePercentage(e.target.value);
+                                    handleTaxaChange('taxasPos', brand.value, productType.value, cleanValue);
+                                  }}
+                                  placeholder="0.00"
+                                  className={`w-full text-center border-0 bg-transparent placeholder:text-[#808080] focus-visible:outline-none text-sm px-2 py-0 h-full ${
+                                    isFilled ? 'text-[#FFFFFF] font-bold' : 'text-[#808080]'
+                                  }`}
+                                />
+                              </TableCell>
+                            );
+                          })}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -425,10 +452,10 @@ export default function MdrForm({
             </div>
 
             {/* Seção PIX POS */}
-            <div className="mt-10">
+            <div className="mt-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 bg-[#0f0f0f] rounded-[8px] p-6 border border-[#1a1a1a]">
                 <div className="flex flex-col">
-                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Pré-Pago (%)</label>
+                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">PIX (%)</label>
                   <input
                     type="text"
                     name="prepos"
@@ -519,20 +546,30 @@ export default function MdrForm({
                               <span className="font-medium text-[#FFFFFF]">{brand.label}</span>
                             </div>
                           </TableCell>
-                          {SolicitationFeeProductTypeList.map((productType, typeIndex) => (
-                            <TableCell
-                              key={`online-${brand.value}-${productType.value}-${typeIndex}`}
-                              className="text-center bg-[#121212] border-l border-[#1f1f1f] p-4 text-[#808080] text-sm"
-                            >
-                              <input
-                                type="text"
-                                value={mdrForm.taxasOnline[brand.value]?.[productType.value] || ""}
-                                onChange={(e) => handleTaxaChange('taxasOnline', brand.value, productType.value, e.target.value)}
-                                placeholder="0.00"
-                                className="w-full text-center border-0 bg-transparent text-[#808080] placeholder:text-[#808080] focus-visible:outline-none text-sm px-2 py-0 h-full"
-                              />
-                            </TableCell>
-                          ))}
+                          {SolicitationFeeProductTypeList.map((productType, typeIndex) => {
+                            const currentValue = mdrForm.taxasOnline[brand.value]?.[productType.value] || "";
+                            const isFilled = isValueFilled(currentValue);
+                            const displayValue = currentValue ? formatValueWithPercentage(currentValue) : "";
+                            return (
+                              <TableCell
+                                key={`online-${brand.value}-${productType.value}-${typeIndex}`}
+                                className="text-center bg-[#121212] border-l border-[#1f1f1f] p-4 text-sm"
+                              >
+                                <input
+                                  type="text"
+                                  value={displayValue}
+                                  onChange={(e) => {
+                                    const cleanValue = removePercentage(e.target.value);
+                                    handleTaxaChange('taxasOnline', brand.value, productType.value, cleanValue);
+                                  }}
+                                  placeholder="0.00"
+                                  className={`w-full text-center border-0 bg-transparent placeholder:text-[#808080] focus-visible:outline-none text-sm px-2 py-0 h-full ${
+                                    isFilled ? 'text-[#FFFFFF] font-bold' : 'text-[#808080]'
+                                  }`}
+                                />
+                              </TableCell>
+                            );
+                          })}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -542,10 +579,10 @@ export default function MdrForm({
             </div>
 
             {/* Seção PIX Online (sem Cartão) */}
-            <div className="mt-10">
+            <div className="mt-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 bg-[#0f0f0f] rounded-[8px] p-6 border border-[#1a1a1a]">
                 <div className="flex flex-col">
-                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Pré-Pago (%)</label>
+                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">PIX (%)</label>
                   <input
                     type="text"
                     name="preonline"
