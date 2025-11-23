@@ -10,6 +10,7 @@ import ThemeInitializer from "@/components/themeInitializer";
 import { getCurrentTenantCustomization } from "@/lib/tenant-detection";
 import SessionTimeout from "@/components/session-timeout";
 import { ConditionalSidebar } from "@/components/conditional-sidebar";
+import { getClerkDomainConfig } from "@/lib/clerk-satellite-config";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,11 +25,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const tenantCustomization = await getCurrentTenantCustomization();
+  const clerkConfig = await getClerkDomainConfig();
   
   const loginBackgroundImage = tenantCustomization?.loginImageUrl || tenantCustomization?.imageUrl || '/bg_login.jpg';
   
   return (
     <ClerkProvider
+      domain={clerkConfig.domain}
+      isSatellite={clerkConfig.isSatellite}
       appearance={{
         signIn: {
           elements: {
