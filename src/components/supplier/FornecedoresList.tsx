@@ -1,8 +1,9 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Fornecedor } from '@/types/fornecedor';
 import { FornecedorCard } from './FornecedorCard';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface FornecedoresListProps {
   role: 'admin' | 'user' | 'viewer';
@@ -18,10 +19,12 @@ export function FornecedoresList({ role, onAdd, onEdit, onDelete, refreshKey }: 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
+  const [searchValue, setSearchValue] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [categories, setCategories] = useState<Array<{ id: string; label: string }>>([]);
   const canEdit = role === 'admin' || role === 'user';
   const canDelete = role === 'admin';
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   interface CnaeResponse {
     id: string | number;
@@ -70,6 +73,22 @@ export function FornecedoresList({ role, onAdd, onEdit, onDelete, refreshKey }: 
     }
   }, [page, search, statusFilter]);
 
+  // Debounce para busca
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+
+    // Limpar timer anterior
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Novo timer para debounce
+    debounceTimerRef.current = setTimeout(() => {
+      setSearch(value.trim());
+      setPage(1); // Reset para primeira página ao buscar
+    }, 300);
+  };
+
   useEffect(() => {
     async function fetchCnaes() {
       try {
@@ -93,67 +112,61 @@ export function FornecedoresList({ role, onAdd, onEdit, onDelete, refreshKey }: 
   }, [loadFornecedores, refreshKey]);
 
   return (
-    <div className="space-y-6">
-      {/* Topbar: busca pequena + filtro (left)  |  botão Novo (right) */}
-      <div className="flex items-center dark:bg-[#171717] dark:text-white justify-between gap-4">
-        {/* left group: busca pequena + filtro */}
-        <div className="flex items-center gap-3">
-          <div className="relative border border-gray-200 dark:bg-[#171717] dark:text-white rounded-lg shadow-sm px-3 py-2 flex items-center gap-2 min-w-[320px]">
-            <Search className="w-4 h-4 text-gray-400 dark:bg-[#171717] dark:text-white" />
-            <input
+    <div className="w-full overflow-x-hidden bg-[#161616] space-y-5">
+      {/* Topbar: busca + filtro + botão novo */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        {/* left group: busca + filtro */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          {/* Campo de busca com debounce */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#616161] z-10" />
+            <Input
               type="text"
-              placeholder="Buscar fornecedores..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="outline-none text-sm w-full placeholder:text-gray-400"
+              placeholder="Buscar por nome, CNPJ..."
+              value={searchValue}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="pl-10 pr-4 h-[42px] bg-[#424242] border border-[#353535] rounded-[6px] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
             />
           </div>
 
+          {/* Filtro de status */}
           <select
             onChange={(e) => {
-              // alterna o filtro simples (só visual) - você pode substituir por modal
-              setStatusFilter(e.target.value as 'all' | 'active' | 'inactive' );
+              setStatusFilter(e.target.value as 'all' | 'active' | 'inactive');
               setPage(1);
             }}
-            className="inline-flex items-center gap-2 bg-white text-black dark:bg-[#171717] dark:text-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm text-sm hover:shadow-md"
+            className="inline-flex items-center gap-2 px-4 py-2 h-[42px] border border-[#2E2E2E] bg-[#212121] hover:bg-[#2E2E2E] transition-colors rounded-[6px] text-sm font-normal text-[#E0E0E0] cursor-pointer"
             title="Filtros"
           >
-            
-            
-            <option value="all">Todos</option>
-            <option value="active">Ativos </option>
-            <option value="inactive">Inativos </option>
+            <option value="all" className="bg-[#212121] text-[#E0E0E0]">Todos</option>
+            <option value="active" className="bg-[#212121] text-[#E0E0E0]">Ativos</option>
+            <option value="inactive" className="bg-[#212121] text-[#E0E0E0]">Inativos</option>
           </select>
         </div>
 
         {/* right: botão novo fornecedor */}
-        <div>
-          <button
-            onClick={onAdd}
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium"
-          >
-            + Novo Fornecedor
-          </button>
-        </div>
+        <button
+          onClick={onAdd}
+          className="inline-flex items-center gap-2 px-4 py-2 h-[42px] bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] transition-colors rounded-[6px] text-sm font-normal text-[#E0E0E0] whitespace-nowrap"
+        >
+          + Novo Fornecedor
+        </button>
       </div>
 
-      {/* Grid de cards (sem o frame branco externo) */}
+      {/* Lista horizontal de cards */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-gray-100 animate-pulse h-40 rounded-lg" />
+            <div key={i} className="bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px] h-[72px] animate-pulse" />
           ))}
         </div>
       ) : fornecedores.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">Nenhum fornecedor encontrado.</p>
+        <div className="w-full p-7 text-center border border-[rgba(255,255,255,0.1)] rounded-[6px] bg-[#1D1D1D]">
+          <p className="text-[#5C5C5C] text-sm font-normal">Nenhum fornecedor encontrado.</p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-2">
             {fornecedores.map((fornecedor) => (
               <FornecedorCard
                 key={fornecedor.id}
@@ -173,20 +186,20 @@ export function FornecedoresList({ role, onAdd, onEdit, onDelete, refreshKey }: 
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 rounded-[6px] border border-[#2E2E2E] bg-[#212121] hover:bg-[#2E2E2E] disabled:opacity-50 disabled:cursor-not-allowed text-[#E0E0E0] transition-colors"
                 aria-label="Página anterior"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
 
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-[#5C5C5C] font-normal">
                 Página {page} de {totalPages}
               </span>
 
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 rounded-[6px] border border-[#2E2E2E] bg-[#212121] hover:bg-[#2E2E2E] disabled:opacity-50 disabled:cursor-not-allowed text-[#E0E0E0] transition-colors"
                 aria-label="Próxima página"
               >
                 <ChevronRight className="h-5 w-5" />

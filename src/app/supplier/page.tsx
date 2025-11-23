@@ -83,58 +83,44 @@ export default function FornecedoresPage() {
 }
 
     return (
-        <>
-        <BaseHeader
+        <div className="overflow-x-hidden">
+            <BaseHeader
                 breadcrumbItems={[{ title: <h1 className="text-2xl font-bold text-gray-900 dark:text-white px-5">Gestão de Fornecedores</h1>, 
                                     subtitle: <p className="text-gray-600 dark:text-white px-5">
                                     Configuração custos, taxas e parcerias com fornecedores de serviços financeiros
                                     </p>,                 
                                         url: "/supplier" }]}
-                
             />
             
-            <div>
-                <div>
-                    
-                        <FornecedorModal
-                            isOpen={isModalOpen}
-                            onClose={() => setIsModalOpen(false)}
-                            title={'Adicionar Fornecedor'}
-                            
-                        >
-                            {loading ? ( 
-                                <div> Carregando...</div>
-                            ) : (
-                            <FornecedorForm
-                                    onSubmit={async (data, files, mdr) => {
-                                        await handleSave(data, files, mdr);
-                                    } }
-                                    onCancel={() => setIsModalOpen(false)}
-                                    isEditing={false} 
-                                    categories={[]}                                                             />
-                        
-                        )}
-                            
-                        </FornecedorModal>
-                    
-                </div>
-            </div>
-
-            <div className="bg-gray-100 dark:bg-[#171717] p-6 rounded-lg shadow-sm">
-                <div className="min-h-screen dark:bg-[#171717] bg-gray-100 p-6">
-                    <div className="space-y-6">
-                        <FornecedoresList
-                            onAdd={handleAdd}
-                            role="admin"
-                            refreshKey={refreshKey}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
+            <div className="p-6">
+                <FornecedorModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    title={'Adicionar Fornecedor'}
+                >
+                    {loading ? ( 
+                        <div> Carregando...</div>
+                    ) : (
+                        <FornecedorForm
+                            onSubmit={async (data, files, mdr) => {
+                                await handleSave(data, files, mdr);
+                            }}
+                            onCancel={() => setIsModalOpen(false)}
+                            isEditing={false} 
+                            categories={[]}
                         />
-                    </div>
-                </div>
+                    )}
+                </FornecedorModal>
+
+                <FornecedoresList
+                    onAdd={handleAdd}
+                    role="admin"
+                    refreshKey={refreshKey}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                />
             </div>
-       
-        </>
+        </div>
     );
 }
 
