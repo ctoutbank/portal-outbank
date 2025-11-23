@@ -1,6 +1,8 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 
 
@@ -16,6 +18,15 @@ export function CustomersFilterContent({namein, userNameIn, onFilter, onClose}: 
     const [name,setName] = useState(namein || "")
     
     const [userName,setUserName] = useState(userNameIn || "")
+
+    // Atualizar valores quando props mudarem
+    useEffect(() => {
+        setName(namein || "")
+    }, [namein])
+
+    useEffect(() => {
+        setUserName(userNameIn || "")
+    }, [userNameIn])
 
 
     const applyFilters = () => {

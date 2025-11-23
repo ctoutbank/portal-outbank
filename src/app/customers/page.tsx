@@ -9,7 +9,6 @@ import CustomersList from "@/features/customers/_componentes/customers-list";
 import { CustomersFilter } from "@/features/customers/_componentes/custumers-filter";
 import { getCustomers, getCustomerStatistics } from "@/features/customers/server/customers";
 import { ISOStatisticsCards } from "@/features/customers/_componentes/iso-statistics-cards";
-import { Plus } from "lucide-react";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/permissions/require-admin";
 
@@ -52,7 +51,7 @@ export default async function Customerspage({
 
   return (
     <>
-      <BaseHeader breadcrumbItems={[{ title: "ISO", subtitle:"", url: "/customers" }]} />
+      <BaseHeader breadcrumbItems={[{ title: "ISOs", subtitle:"", url: "/customers" }]} />
 
       <BaseBody title="ISOs" subtitle={`visualização de todos os ISOs`}>
         <div className="flex flex-col space-y-4 w-full max-w-full overflow-x-hidden">
@@ -66,18 +65,19 @@ export default async function Customerspage({
             </div>
             <Button asChild className="sm:ml-2 flex-shrink-0">
               <Link href="/customers/0">
-                <Plus className="h-4 w-4 mr-1" />
                 Novo ISO
               </Link>
             </Button>
           </div>
 
-          <ISOStatisticsCards
-            totalActive={statistics.totalActive}
-            totalInactive={statistics.totalInactive}
-            createdThisMonth={statistics.createdThisMonth}
-            createdLastWeek={statistics.createdLastWeek}
-          />
+          <div className="mt-4">
+            <ISOStatisticsCards
+              totalActive={statistics.totalActive}
+              totalInactive={statistics.totalInactive}
+              createdThisMonth={statistics.createdThisMonth}
+              createdLastWeek={statistics.createdLastWeek}
+            />
+          </div>
 
           <CustomersList
             Customers={customers}
