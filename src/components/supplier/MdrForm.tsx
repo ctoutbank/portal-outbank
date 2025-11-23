@@ -354,23 +354,24 @@ export default function MdrForm({
 
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto p-4">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="h-6 w-6 bg-black rounded flex items-center justify-center text-white text-sm">
+    <div className="w-full max-w-[1600px] mx-auto p-4 md:p-6 overflow-x-hidden">
+      {/* Header/Título */}
+      <div className="flex items-center gap-3 mb-8">
+        <div className="h-7 w-7 bg-[#212121] border border-[#2E2E2E] rounded-[6px] flex items-center justify-center text-[#E0E0E0] text-sm font-medium">
           $
         </div>
-        <h1 className="text-xl font-semibold">
+        <h1 className="text-2xl font-semibold text-[#FFFFFF]">
           {isEditing ? "Editar" : "Cadastrar"} MDR do Fornecedor
         </h1>
       </div>
 
       <Card className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-[12px]">
-        <CardContent className="p-8">
-          <div className="space-y-6">
+        <CardContent className="p-6 md:p-8">
+          <div className="space-y-10">
             {/* Taxas POS */}
-            <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <div className="w-full overflow-x-auto">
               <div className="min-w-0">
-                <h3 className="text-lg font-semibold mb-4 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">
+                <h3 className="text-lg font-semibold mb-6 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">
                   Taxas Transações na POS
                 </h3>
                 <Table className="w-full min-w-[600px]">
@@ -422,8 +423,8 @@ export default function MdrForm({
             </div>
 
             {/* Seção PIX POS */}
-            <div className="mt-10">
-              <h3 className="text-lg font-semibold mb-4 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">PIX</h3>
+            <div className="pt-4 border-t border-[rgba(255,255,255,0.1)]">
+              <h3 className="text-lg font-semibold mb-6 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">PIX</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 bg-[#0a0a0a] rounded-[8px] p-6">
                 <div className="flex flex-col">
                   <label className="block text-[13px] text-[#FFFFFF] mb-2 font-normal">MDR (%)</label>
@@ -473,9 +474,9 @@ export default function MdrForm({
             </div>
 
             {/* Taxas Online */}
-            <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 mt-8">
+            <div className="w-full overflow-x-auto pt-4 border-t border-[rgba(255,255,255,0.1)]">
               <div className="min-w-0">
-                <h3 className="text-lg font-semibold mb-4 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">
+                <h3 className="text-lg font-semibold mb-6 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">
                   Taxas Transações Online
                 </h3>
                 <Table className="w-full min-w-[600px]">
@@ -527,8 +528,8 @@ export default function MdrForm({
             </div>
 
             {/* Seção PIX Online (sem Cartão) */}
-            <div className="mt-10">
-              <h3 className="text-lg font-semibold mb-4 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">PIX sem Cartão</h3>
+            <div className="pt-4 border-t border-[rgba(255,255,255,0.1)]">
+              <h3 className="text-lg font-semibold mb-6 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">PIX sem Cartão</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 bg-[#0a0a0a] rounded-[8px] p-6">
                 <div className="flex flex-col">
                   <label className="block text-[13px] text-[#FFFFFF] mb-2 font-normal">MDR (%)</label>
@@ -578,7 +579,7 @@ export default function MdrForm({
             </div>
             
             {/* Buttons */}
-            <div className="flex justify-end gap-3 pt-6 border-t border-[rgba(255,255,255,0.1)]">
+            <div className="flex justify-end gap-3 pt-8 mt-8 border-t border-[rgba(255,255,255,0.1)]">
               <button
                 type="button"
                 onClick={onCancel}
