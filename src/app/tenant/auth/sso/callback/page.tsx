@@ -9,7 +9,7 @@ import { validateUserAccessBySubdomain } from "@/lib/subdomain-auth";
 import { extractSubdomain } from "@/lib/subdomain-auth";
 
 interface PageProps {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; __session_token?: string }>;
 }
 
 function logCallback(level: "info" | "error" | "warn", message: string, data?: any) {
@@ -26,9 +26,11 @@ function logCallback(level: "info" | "error" | "warn", message: string, data?: a
 export default async function SSOCallbackPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const token = params.token;
+  const sessionToken = params.__session_token;
 
   logCallback("info", "Callback SSO iniciado", { 
     hasToken: !!token,
+    hasSessionToken: !!sessionToken,
     tokenPrefix: token ? token.substring(0, 8) + "..." : null,
   });
 
@@ -125,15 +127,13 @@ export default async function SSOCallbackPage({ searchParams }: PageProps) {
     });
 
     if (!clerkUserId) {
-      // Se não estiver autenticado, redirecionar para sign-in
-      // Preservar o token SSO na URL para uso após autenticação
-      // IMPORTANTE: Usar URL absoluta para garantir que o Clerk redirecione para o subdomínio correto
-      logCallback("info", "Usuário não autenticado no Clerk, redirecionando para sign-in");
+      // Se não estiver autenticado, chamar API de autenticação automática
+      // A API criará um session token e redirecionará para página de processamento
+      logCallback("info", "Usuário não autenticado, chamando API de autenticação automática");
       const protocol = headersList.get("x-forwarded-proto") || "https";
       const currentHost = headersList.get("host") || hostname;
-      const callbackUrl = `${protocol}://${currentHost}/auth/sso/callback?token=${token}`;
-      const redirectUrl = encodeURIComponent(callbackUrl);
-      redirect(`/auth/sign-in?redirect_url=${redirectUrl}`);
+      const authUrl = `${protocol}://${currentHost}/api/auth/sso/authenticate?token=${token}`;
+      redirect(authUrl);
     }
 
     // Verificar se o idClerk corresponde ao usuário autenticado
