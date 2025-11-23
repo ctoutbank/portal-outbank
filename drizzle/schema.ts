@@ -1788,3 +1788,27 @@ export type SelectFornecedor = typeof fornecedores.$inferSelect;
 // Tipo para inserção de Documento
 export type InsertFornecedorDocument = typeof fornecedorDocuments.$inferInsert;
 export type SelectFornecedorDocument = typeof fornecedorDocuments.$inferSelect;
+
+export const ssoTokens = pgTable("sso_tokens", {
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "sso_tokens_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
+	token: varchar({ length: 255 }).notNull().unique(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	userId: bigint("user_id", { mode: "number" }).notNull(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	customerId: bigint("customer_id", { mode: "number" }).notNull(),
+	expiresAt: timestamp("expires_at", { mode: 'string' }).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	used: boolean().default(false),
+}, (table) => [
+	foreignKey({
+		columns: [table.userId],
+		foreignColumns: [users.id],
+		name: "sso_tokens_user_id_fkey"
+	}),
+	foreignKey({
+		columns: [table.customerId],
+		foreignColumns: [customers.id],
+		name: "sso_tokens_customer_id_fkey"
+	}),
+]);
