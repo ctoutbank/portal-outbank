@@ -54,7 +54,7 @@ export default async function CategoryDetailPage({ params }: PageProps) {
             <BaseBody
                 title={`Categoria: ${category.name}`}
                 subtitle="Detalhes e edição da categoria"
-                className="overflow-x-hidden"
+                className="overflow-x-hidden bg-[#161616] [&_h1]:text-[#FFFFFF] [&_h1]:text-[22px] [&_h1]:font-semibold [&_p]:text-[#5C5C5C] [&_p]:text-sm [&_p]:font-normal"
             >
                 <div className="flex flex-col space-y-4">
                     <Categoriesform categories={formattedCategory} />

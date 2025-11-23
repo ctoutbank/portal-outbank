@@ -89,22 +89,22 @@ export default function Categoriesform({ categories }: CategoriesProps) {
     };
 
     return (
-        <Card className="rounded-none border border-border shadow-sm">
-            <CardContent className="p-6">
+        <Card className="rounded-[6px] border border-[rgba(255,255,255,0.1)] shadow-sm bg-[#1D1D1D]">
+            <CardContent className="p-7">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                             <FormField
                                 control={form.control}
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Nome</FormLabel>
+                                        <FormLabel className="text-sm text-[#5C5C5C] font-normal">Nome</FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
                                                 value={field.value ? String(field.value) : ""}
-                                                className="rounded-none"
+                                                className="h-[42px] bg-[#424242] border border-[#353535] rounded-[6px] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -117,12 +117,12 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 name="mcc"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>MCC</FormLabel>
+                                        <FormLabel className="text-sm text-[#5C5C5C] font-normal">MCC</FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
                                                 value={field.value ?? ""}
-                                                className="rounded-none"
+                                                className="h-[42px] bg-[#424242] border border-[#353535] rounded-[6px] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -135,12 +135,12 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 name="cnae"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>CNAE</FormLabel>
+                                        <FormLabel className="text-sm text-[#5C5C5C] font-normal">CNAE</FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
                                                 value={field.value ?? ""}
-                                                className="rounded-none"
+                                                className="h-[42px] bg-[#424242] border border-[#353535] rounded-[6px] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -153,13 +153,13 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 name="anticipation_risk_factor_cp"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Fator de risco de antecipação CP</FormLabel>
+                                        <FormLabel className="text-sm text-[#5C5C5C] font-normal">Fator de risco de antecipação CP</FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
                                                 value={field.value ?? ""}
                                                 type="number"
-                                                className="rounded-none"
+                                                className="h-[42px] bg-[#424242] border border-[#353535] rounded-[6px] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -172,13 +172,13 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 name="anticipation_risk_factor_cnp"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Fator de risco de antecipação CNP</FormLabel>
+                                        <FormLabel className="text-sm text-[#5C5C5C] font-normal">Fator de risco de antecipação CNP</FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
                                                 value={field.value ?? ""}
                                                 type="number"
-                                                className="rounded-none"
+                                                className="h-[42px] bg-[#424242] border border-[#353535] rounded-[6px] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -191,13 +191,13 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 name="waiting_period_cp"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Período de espera CP</FormLabel>
+                                        <FormLabel className="text-sm text-[#5C5C5C] font-normal">Período de espera CP</FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
                                                 value={field.value ?? ""}
                                                 type="number"
-                                                className="rounded-none"
+                                                className="h-[42px] bg-[#424242] border border-[#353535] rounded-[6px] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -210,13 +210,13 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 name="waiting_period_cnp"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Período de espera CNP</FormLabel>
+                                        <FormLabel className="text-sm text-[#5C5C5C] font-normal">Período de espera CNP</FormLabel>
                                         <FormControl>
                                             <Input
                                                 {...field}
                                                 value={field.value ?? ""}
                                                 type="number"
-                                                className="rounded-none"
+                                                className="h-[42px] bg-[#424242] border border-[#353535] rounded-[6px] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -228,17 +228,17 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                                 control={form.control}
                                 name="active"
                                 render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 border border-border p-4 rounded-none bg-muted/50">
+                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 border border-[rgba(255,255,255,0.1)] p-4 rounded-[6px] bg-[#212121]">
                                         <FormControl>
                                             <Checkbox
                                                 onCheckedChange={field.onChange}
                                                 checked={field.value ?? undefined}
                                                 value={field.value?.toString()}
-                                                className="rounded-none"
+                                                className="rounded-[6px]"
                                             />
                                         </FormControl>
                                         <div className="space-y-1 leading-none">
-                                            <FormLabel className="cursor-pointer">
+                                            <FormLabel className="cursor-pointer text-sm text-[#5C5C5C] font-normal">
                                                 Ativo
                                             </FormLabel>
                                         </div>
@@ -248,8 +248,8 @@ export default function Categoriesform({ categories }: CategoriesProps) {
                             />
                         </div>
 
-                        <div className="flex justify-end pt-4 border-t border-border">
-                            <Button type="submit" className="rounded-none">
+                        <div className="flex justify-end pt-4 border-t border-[rgba(255,255,255,0.1)]">
+                            <Button type="submit" className="h-[42px] bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px] px-4 py-2">
                                 Salvar
                             </Button>
                         </div>

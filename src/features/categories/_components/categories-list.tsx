@@ -74,7 +74,7 @@ export default function Categorylist({
 
   if (Categories.categories.length === 0) {
     return (
-      <div className="w-full p-7 text-center border border-[rgba(255,255,255,0.1)] rounded-[6px] bg-[#1D1D1D]">
+      <div className="w-full p-4 text-center border border-[rgba(255,255,255,0.1)] rounded-[6px] bg-[#1D1D1D]">
         <p className="text-[#5C5C5C] text-sm font-normal">Nenhuma categoria encontrada</p>
       </div>
     );
@@ -119,7 +119,7 @@ export default function Categorylist({
             className="block"
           >
             <Card className="border border-[rgba(255,255,255,0.1)] rounded-[6px] shadow-sm hover:shadow-md transition-shadow cursor-pointer group bg-[#1D1D1D]">
-              <CardContent className="p-7">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between gap-4 sm:gap-6 flex-wrap">
                   <div className="flex items-center gap-4 sm:gap-6 flex-1 min-w-0 flex-wrap">
                     {/* CNAE */}
