@@ -1,6 +1,14 @@
 import { SignIn } from "@clerk/nextjs";
 
-export default function TenantSignInPage() {
+interface PageProps {
+  searchParams: Promise<{ redirect_url?: string }>;
+}
+
+export default async function TenantSignInPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  // Usar redirect_url da query string se existir, caso contrário usar /dashboard
+  const afterSignInUrl = params.redirect_url || "/dashboard";
+
   return (
     <div className="flex min-h-screen items-center justify-center">
       <SignIn
@@ -21,7 +29,7 @@ export default function TenantSignInPage() {
             colorPrimary: "#000000",
           },
         }}
-        afterSignInUrl="/dashboard"
+        afterSignInUrl={afterSignInUrl}
         signUpUrl="/auth/sign-up"
         routing="path"
         path="/auth/sign-in"
