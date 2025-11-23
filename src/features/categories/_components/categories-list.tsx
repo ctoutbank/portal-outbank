@@ -74,33 +74,33 @@ export default function Categorylist({
 
   if (Categories.categories.length === 0) {
     return (
-      <div className="w-full p-8 text-center border border-border bg-card">
-        <p className="text-muted-foreground">Nenhuma categoria encontrada</p>
+      <div className="w-full p-7 text-center border border-[rgba(255,255,255,0.1)] rounded-[6px] bg-[#1D1D1D]">
+        <p className="text-[#5C5C5C] text-sm font-normal">Nenhuma categoria encontrada</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full overflow-x-hidden">
+    <div className="w-full overflow-x-hidden bg-[#161616]">
       {/* Campo de busca */}
-      <div className="mb-4">
+      <div className="mb-5">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#616161] z-10" />
           <Input
             type="text"
             placeholder="Buscar por CNAE, MCC ou nome..."
             value={searchValue}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-10 pr-4 rounded-none border-border"
+            className="pl-10 pr-4 h-[42px] bg-[#424242] border border-[#353535] rounded-[6px] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
           />
         </div>
       </div>
 
       {/* Header com botões de ordenação */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-5 flex flex-wrap items-center gap-2">
         <button
           onClick={() => handleSort("name")}
-          className="flex items-center gap-2 px-4 py-2 border border-border bg-card hover:bg-muted transition-colors rounded-none text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2 h-[42px] border border-[#2E2E2E] bg-[#212121] hover:bg-[#2E2E2E] transition-colors rounded-[6px] text-sm font-normal text-[#E0E0E0]"
         >
           Ordenar por CNAE
           <ArrowUpDown className="h-4 w-4" />
@@ -118,23 +118,23 @@ export default function Categorylist({
             href={`/categories/${category.id}`}
             className="block"
           >
-            <Card className="border border-border rounded-none shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
-                  <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0 flex-wrap">
+            <Card className="border border-[rgba(255,255,255,0.1)] rounded-[6px] shadow-sm hover:shadow-md transition-shadow cursor-pointer group bg-[#1D1D1D]">
+              <CardContent className="p-7">
+                <div className="flex items-center justify-between gap-4 sm:gap-6 flex-wrap">
+                  <div className="flex items-center gap-4 sm:gap-6 flex-1 min-w-0 flex-wrap">
                     {/* CNAE */}
-                    <div className="font-bold text-base sm:text-lg text-foreground">
+                    <div className="text-[22px] font-semibold text-[#FFFFFF]">
                       {category.cnae || "-"}
                     </div>
 
                     {/* MCC com label */}
-                    <div className="text-xs sm:text-sm text-foreground flex items-center gap-1">
-                      <span className="text-muted-foreground">MCC:</span>
-                      <span className="font-medium">{category.mcc || "-"}</span>
+                    <div className="text-sm text-[#E0E0E0] flex items-center gap-1">
+                      <span className="text-[#5C5C5C] font-normal">MCC:</span>
+                      <span className="font-normal">{category.mcc || "-"}</span>
                     </div>
 
                     {/* Nome - sempre flexível */}
-                    <div className="text-xs sm:text-sm text-foreground flex-1 min-w-0 truncate">
+                    <div className="text-sm text-[#E0E0E0] font-normal flex-1 min-w-0 truncate">
                       {category.name || "-"}
                     </div>
 
@@ -147,7 +147,7 @@ export default function Categorylist({
                       />
                       <Badge
                         variant={category.active ? "success" : "destructive"}
-                        className="rounded-none"
+                        className="rounded-[6px]"
                       >
                         {category.active ? "ATIVO" : "INATIVO"}
                       </Badge>
@@ -155,7 +155,7 @@ export default function Categorylist({
                   </div>
 
                   {/* Indicador de clique */}
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0" />
+                  <ChevronRight className="h-4 w-4 text-[#616161] group-hover:text-[#E0E0E0] group-hover:translate-x-1 transition-all flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
