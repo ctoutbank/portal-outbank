@@ -1,49 +1,11 @@
 import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
-import {getCategoryById, getFeeDetailById, type FeeDetail} from "@/features/categories/server/category";
+import { getCategoryById } from "@/features/categories/server/category";
 import Categoriesform from "@/features/categories/_components/categories-form";
-
-// Defina os mesmos campos que o schema espera (CategoriesSchema)
 import { CategoriesSchema } from "@/features/categories/schema/schema";
-import CategoriesFeeAdminForm from "@/features/categories/_components/categories-feeAdmin-form";
-import { SolicitationFeeAdminForm } from "@/features/categories/server/solicitationfee";
 
 interface PageProps {
     params: Promise<{ id: string }>;
-}
-
-// Função para converter FeeDetail para SolicitationFeeAdminForm
-function convertFeeDetailToSolicitationFeeAdminForm(feeDetail: FeeDetail): SolicitationFeeAdminForm {
-    return {
-        id: feeDetail.id,
-        cnae: "", // Será preenchido pela categoria
-        mcc: "", // Será preenchido pela categoria
-        cnpjQuantity: feeDetail.cnpjQuantity || 0,
-        monthlyPosFee: feeDetail.monthlyPosFee?.toString() || null,
-        averageTicket: feeDetail.averageTicket?.toString() || null,
-        description: feeDetail.description || null,
-        cnaeInUse: feeDetail.cnaeInUse || false,
-        cardPixMdrAdmin: feeDetail.cardPixMdr?.toString() || null,
-        cardPixCeilingFeeAdmin: feeDetail.cardPixCeilingFee?.toString() || null,
-        cardPixMinimumCostFeeAdmin: feeDetail.cardPixMinimumCostFee?.toString() || null,
-        nonCardPixMdrAdmin: feeDetail.nonCardPixMdr?.toString() || null,
-        nonCardPixCeilingFeeAdmin: feeDetail.nonCardPixCeilingFee?.toString() || null,
-        nonCardPixMinimumCostFeeAdmin: feeDetail.nonCardPixMinimumCostFee?.toString() || null,
-        compulsoryAnticipationConfigAdmin: feeDetail.compulsoryAnticipationConfig || 0,
-        eventualAnticipationFeeAdmin: feeDetail.eventualAnticipationFee?.toString() || null,
-        nonCardEventualAnticipationFeeAdmin: feeDetail.nonCardEventualAnticipationFee?.toString() || null,
-        brands: feeDetail.brands?.map((brand) => ({
-            name: brand.brand || "",
-            productTypes: brand.productTypes?.map((pt) => ({
-                name: pt.name || "",
-                feeAdmin: pt.cardTransactionFee?.toString() || "",
-                noCardFeeAdmin: pt.nonCardTransactionFee?.toString() || "",
-                transactionFeeStart: pt.installmentTransactionFeeStart?.toString() || "",
-                transactionFeeEnd: pt.installmentTransactionFeeEnd?.toString() || "",
-                transactionAnticipationMdr: pt.transactionAnticipationMdr?.toString() || "",
-            })) || [],
-        })) || [],
-    };
 }
 
 export default async function CategoryDetailPage({ params }: PageProps) {
@@ -51,7 +13,7 @@ export default async function CategoryDetailPage({ params }: PageProps) {
     const categoryId = parseInt(resolvedParams.id, 10);
 
     const category = await getCategoryById(categoryId);
-    console.log("category", category);
+    
     if (!category) {
         return (
             <BaseBody title="Categoria não encontrada" subtitle="Verifique o ID.">
@@ -59,20 +21,6 @@ export default async function CategoryDetailPage({ params }: PageProps) {
             </BaseBody>
         );
     }
-
-    // Verificar se a categoria já tem uma solicitação fee associada
-    const solicitationFeeId = category.idSolicitationFee;
-    console.log("solicitationFeeId", solicitationFeeId);
-    const existingSolicitation = solicitationFeeId ? await getFeeDetailById(solicitationFeeId) : null;
-
-    console.log("solicitationFeeId", solicitationFeeId);
-
-    console.log("existingSolicitation", existingSolicitation);
-
-    // Converter os dados para o formato esperado pelo componente
-    const formattedSolicitationFee = existingSolicitation 
-        ? convertFeeDetailToSolicitationFeeAdminForm(existingSolicitation)
-        : null;
 
     const formattedCategory: CategoriesSchema = {
         id: category.id,
@@ -85,7 +33,7 @@ export default async function CategoryDetailPage({ params }: PageProps) {
         anticipation_risk_factor_cnp: category.anticipationRiskFactorCnp ?? 0,
         waiting_period_cp: category.waitingPeriodCp ?? 0,
         waiting_period_cnp: category.waitingPeriodCnp ?? 0,
-        idSolicitationFee: solicitationFeeId,
+        idSolicitationFee: category.idSolicitationFee,
         dtinsert: category.dtinsert ?? "",
         dtupdate: category.dtupdate ?? "",
     };
@@ -108,17 +56,9 @@ export default async function CategoryDetailPage({ params }: PageProps) {
                 subtitle="Detalhes e edição da categoria"
                 className="overflow-x-hidden"
             >
-                <div className="w-full max-w-full space-y-6">
-                    <Categoriesform categories={formattedCategory} />
-                    <div className="mt-8 pt-8 border-t border-border">
-                        <h2 className="text-xl font-semibold mb-6">Taxas da Solicitação</h2>
-                        <CategoriesFeeAdminForm
-                            pricingSolicitation={formattedSolicitationFee}
-                            mcc={category.mcc}
-                            cnae={category.cnae}
-                            categoryId={categoryId}
-                            idSolicitationFee={solicitationFeeId}
-                        />
+                <div className="w-full max-w-full flex justify-center">
+                    <div className="w-full max-w-4xl">
+                        <Categoriesform categories={formattedCategory} />
                     </div>
                 </div>
             </BaseBody>

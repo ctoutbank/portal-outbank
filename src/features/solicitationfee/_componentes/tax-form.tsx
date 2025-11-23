@@ -562,7 +562,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
             </div>
             
             <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Taxa no Pos</h3>
-            <div className="border rounded-lg overflow-hidden bg-card">
+            <div className="border border-border rounded-none overflow-hidden bg-card">
               <Table className="w-full min-w-[600px]">
             <TableHeader>
               <TableRow>
@@ -913,7 +913,7 @@ export function TaxEditForm1({ idsolicitationFee, solicitationFeetax }: TaxEditF
         <div className="w-full max-w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 mt-8 sm:mt-12">
           <div className="min-w-0">
             <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Taxa Online</h3>
-            <div className="border rounded-lg overflow-hidden bg-card">
+            <div className="border border-border rounded-none overflow-hidden bg-card">
               <Table className="w-full min-w-[600px]">
                 <TableHeader>
                   <TableRow>

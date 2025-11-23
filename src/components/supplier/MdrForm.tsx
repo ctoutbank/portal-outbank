@@ -5,30 +5,39 @@ import { useEffect, useRef, useState } from "react";
 
 import { Card, CardContent } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { SolicitationFeeProductTypeList } from "@/lib/lookuptables/lookuptables";
+import { brandList } from "@/lib/lookuptables/lookuptables-transactions";
 
-// Tipos locais para corrigir erros de tipagem sem alterar lógica
-const BANDEIRAS = ["Visa", "Mastercard", "Elo", "Amex", "Hipercard"] as const;
-type Bandeira = (typeof BANDEIRAS)[number];
+// Usar brandList para garantir ordem correta: Master, Visa, Elo, Amex, Hipercard, Cabal
+type BrandValue = typeof brandList[number]['value'];
 
 type TaxaFields = {
-  debito: string;
-  credito: string;
-  credito2x: string;
-  credito7x: string;
-  voucher: string;
+  [key: string]: string; // Mapeia os productTypes (DEBIT, CREDIT, CREDIT_INSTALLMENTS_2_TO_6, etc.)
 };
-
-type TaxasPorBandeira = Record<Bandeira, TaxaFields>;
 
 interface MdrFormState {
   mcc: string[];
-  taxasPos: TaxasPorBandeira;
-  taxasOnline: TaxasPorBandeira;
+  // Taxas POS: mapeia brand -> productType -> valor
+  taxasPos: Record<BrandValue, TaxaFields>;
+  // Taxas Online: mapeia brand -> productType -> valor
+  taxasOnline: Record<BrandValue, TaxaFields>;
+  // Seção PIX POS
+  pixPosMdr: string;
+  pixPosCustoMin: string;
+  pixPosCustoMax: string;
+  pixPosAntecipacao: string;
+  // Seção PIX Online
+  pixOnlineMdr: string;
+  pixOnlineCustoMin: string;
+  pixOnlineCustoMax: string;
+  pixOnlineAntecipacao: string;
+  // Outras taxas POS (legado para compatibilidade com API)
   prepos: string;
   mdrpos: string;
   cminpos: string;
   cmaxpos: string;
   antecipacao: string;
+  // Outras taxas Online (legado para compatibilidade com API)
   preonline: string;
   mdronline: string;
   cminonline: string;
@@ -56,28 +65,40 @@ export default function MdrForm({
   const [loading, setLoading] = useState(false);
 
   
+  // Função para inicializar estrutura de taxas vazia
+  const initializeTaxasStructure = (): Record<BrandValue, TaxaFields> => {
+    const structure: Record<string, TaxaFields> = {};
+    brandList.forEach((brand) => {
+      structure[brand.value] = {};
+      SolicitationFeeProductTypeList.forEach((productType) => {
+        structure[brand.value][productType.value] = "";
+      });
+    });
+    return structure as Record<BrandValue, TaxaFields>;
+  };
+
   const [mdrForm, setMdrForm] = useState<MdrFormState>({
     mcc: mdrData?.mcc || [],
     
-    // Taxas POS por bandeira
-    taxasPos: {
-      Visa: { debito: "", credito: "", credito2x: "", credito7x: "", voucher: "" },
-      Mastercard: { debito: "", credito: "", credito2x: "", credito7x: "", voucher: "" },
-      Elo: { debito: "", credito: "", credito2x: "", credito7x: "", voucher: "" },
-      Amex: { debito: "", credito: "", credito2x: "", credito7x: "", voucher: "" },
-      Hipercard: { debito: "", credito: "", credito2x: "", credito7x: "", voucher: "" },
-    },
+    // Taxas POS por bandeira (nova estrutura usando SolicitationFeeProductTypeList)
+    taxasPos: initializeTaxasStructure(),
     
-    // Taxas Online por bandeira
-    taxasOnline: {
-      Visa: { debito: "", credito: "", credito2x: "", credito7x: "", voucher: "" },
-      Mastercard: { debito: "", credito: "", credito2x: "", credito7x: "", voucher: "" },
-      Elo: { debito: "", credito: "", credito2x: "", credito7x: "", voucher: "" },
-      Amex: { debito: "", credito: "", credito2x: "", credito7x: "", voucher: "" },
-      Hipercard: { debito: "", credito: "", credito2x: "", credito7x: "", voucher: "" },
-    },
+    // Taxas Online por bandeira (nova estrutura usando SolicitationFeeProductTypeList)
+    taxasOnline: initializeTaxasStructure(),
     
-    // Outras taxas
+    // Seção PIX POS
+    pixPosMdr: mdrData?.mdrpos || "",
+    pixPosCustoMin: mdrData?.cminpos || "",
+    pixPosCustoMax: mdrData?.cmaxpos || "",
+    pixPosAntecipacao: mdrData?.antecipacao || "",
+    
+    // Seção PIX Online
+    pixOnlineMdr: mdrData?.mdronline || "",
+    pixOnlineCustoMin: mdrData?.cminonline || "",
+    pixOnlineCustoMax: mdrData?.cmaxonline || "",
+    pixOnlineAntecipacao: mdrData?.antecipacaoonline || "",
+    
+    // Outras taxas (legado para compatibilidade com API)
     prepos: mdrData?.prepos || "",
     mdrpos: mdrData?.mdrpos || "",
     cminpos: mdrData?.cminpos || "",
@@ -93,6 +114,30 @@ export default function MdrForm({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setMdrForm((prev) => {
+      // Atualizar campos PIX
+      if (
+        name === 'pixPosMdr' ||
+        name === 'pixPosCustoMin' ||
+        name === 'pixPosCustoMax' ||
+        name === 'pixPosAntecipacao' ||
+        name === 'pixOnlineMdr' ||
+        name === 'pixOnlineCustoMin' ||
+        name === 'pixOnlineCustoMax' ||
+        name === 'pixOnlineAntecipacao'
+      ) {
+        const updated = { ...prev, [name]: value };
+        // Sincronizar com campos legados para compatibilidade
+        if (name === 'pixPosMdr') updated.mdrpos = value;
+        if (name === 'pixPosCustoMin') updated.cminpos = value;
+        if (name === 'pixPosCustoMax') updated.cmaxpos = value;
+        if (name === 'pixPosAntecipacao') updated.antecipacao = value;
+        if (name === 'pixOnlineMdr') updated.mdronline = value;
+        if (name === 'pixOnlineCustoMin') updated.cminonline = value;
+        if (name === 'pixOnlineCustoMax') updated.cmaxonline = value;
+        if (name === 'pixOnlineAntecipacao') updated.antecipacaoonline = value;
+        return updated;
+      }
+      // Campos legados
       if (
         name === 'prepos' ||
         name === 'mdrpos' ||
@@ -113,38 +158,65 @@ export default function MdrForm({
 
   const handleTaxaChange = (
     tipo: 'taxasPos' | 'taxasOnline',
-    bandeira: Bandeira,
-    campo: keyof TaxaFields,
+    brandValue: BrandValue,
+    productTypeValue: string,
     value: string
   ) => {
     setMdrForm(prev => ({
       ...prev,
       [tipo]: {
         ...prev[tipo],
-        [bandeira]: {
-          ...prev[tipo][bandeira],
-          [campo]: value
+        [brandValue]: {
+          ...prev[tipo][brandValue],
+          [productTypeValue]: value
         }
       }
-    } as MdrFormState));
+    }));
   };
 
-  // 🔥 FUNÇÃO QUE TRANSFORMA OS DADOS POR BANDEIRA EM DADOS POR TIPO
+  // Função que transforma os dados da nova estrutura para o formato da API (compatibilidade)
   const transformToApiFormat = (): FornecedorMDRForm => {
-    const bandeiras = BANDEIRAS.join(',');
+    const bandeiras = brandList.map(b => b.label).join(',');
     
-    // Concatenar valores de todas as bandeiras separados por vírgula
-    const debitopos = BANDEIRAS.map(b => mdrForm.taxasPos[b].debito || "0").join(',');
-    const creditopos = BANDEIRAS.map(b => mdrForm.taxasPos[b].credito || "0").join(',');
-    const credito2xpos = BANDEIRAS.map(b => mdrForm.taxasPos[b].credito2x || "0").join(',');
-    const credito7xpos = BANDEIRAS.map(b => mdrForm.taxasPos[b].credito7x || "0").join(',');
-    const voucherpos = BANDEIRAS.map(b => mdrForm.taxasPos[b].voucher || "0").join(',');
+    // Mapear os valores usando SolicitationFeeProductTypeList
+    const getTaxaValue = (taxas: Record<BrandValue, TaxaFields>, brandValue: BrandValue, productType: string): string => {
+      // Mapear valores novos para antigos (compatibilidade)
+      const mapToOldFormat: Record<string, string> = {
+        'DEBIT': 'DEBIT',
+        'CREDIT': 'CREDIT',
+        'CREDIT_INSTALLMENTS_2_TO_6': 'CREDIT_INSTALLMENTS_2_TO_6',
+        'CREDIT_INSTALLMENTS_7_TO_12': 'CREDIT_INSTALLMENTS_7_TO_12',
+        'VOUCHER': 'VOUCHER',
+        'PREPAID_CREDIT': 'PREPAID_CREDIT',
+      };
+      
+      // Para compatibilidade com API antiga, mapear:
+      // CREDIT_INSTALLMENTS_2_TO_6 -> credito2x (primeira parcela)
+      // CREDIT_INSTALLMENTS_7_TO_12 -> credito7x (primeira parcela)
+      
+      if (productType === 'CREDIT_INSTALLMENTS_2_TO_6') {
+        return taxas[brandValue]?.[productType] || taxas[brandValue]?.['credito2x'] || "0";
+      }
+      if (productType === 'CREDIT_INSTALLMENTS_7_TO_12') {
+        return taxas[brandValue]?.[productType] || taxas[brandValue]?.['credito7x'] || "0";
+      }
+      
+      return taxas[brandValue]?.[productType] || "0";
+    };
     
-    const debitoonline = BANDEIRAS.map(b => mdrForm.taxasOnline[b].debito || "0").join(',');
-    const creditoonline = BANDEIRAS.map(b => mdrForm.taxasOnline[b].credito || "0").join(',');
-    const credito2xonline = BANDEIRAS.map(b => mdrForm.taxasOnline[b].credito2x || "0").join(',');
-    const credito7xonline = BANDEIRAS.map(b => mdrForm.taxasOnline[b].credito7x || "0").join(',');
-    const voucheronline = BANDEIRAS.map(b => mdrForm.taxasOnline[b].voucher || "0").join(',');
+    // Concatenar valores de todas as bandeiras separados por vírgula (usando ordem do brandList)
+    const debitopos = brandList.map(b => getTaxaValue(mdrForm.taxasPos, b.value, 'DEBIT')).join(',');
+    const creditopos = brandList.map(b => getTaxaValue(mdrForm.taxasPos, b.value, 'CREDIT')).join(',');
+    const credito2xpos = brandList.map(b => getTaxaValue(mdrForm.taxasPos, b.value, 'CREDIT_INSTALLMENTS_2_TO_6')).join(',');
+    const credito7xpos = brandList.map(b => getTaxaValue(mdrForm.taxasPos, b.value, 'CREDIT_INSTALLMENTS_7_TO_12')).join(',');
+    const voucherpos = brandList.map(b => getTaxaValue(mdrForm.taxasPos, b.value, 'VOUCHER')).join(',');
+    const prepagopos = brandList.map(b => getTaxaValue(mdrForm.taxasPos, b.value, 'PREPAID_CREDIT')).join(',');
+    
+    const debitoonline = brandList.map(b => getTaxaValue(mdrForm.taxasOnline, b.value, 'DEBIT')).join(',');
+    const creditoonline = brandList.map(b => getTaxaValue(mdrForm.taxasOnline, b.value, 'CREDIT')).join(',');
+    const credito2xonline = brandList.map(b => getTaxaValue(mdrForm.taxasOnline, b.value, 'CREDIT_INSTALLMENTS_2_TO_6')).join(',');
+    const credito7xonline = brandList.map(b => getTaxaValue(mdrForm.taxasOnline, b.value, 'CREDIT_INSTALLMENTS_7_TO_12')).join(',');
+    const voucheronline = brandList.map(b => getTaxaValue(mdrForm.taxasOnline, b.value, 'VOUCHER')).join(',');
 
     return {
       bandeiras,
@@ -153,24 +225,115 @@ export default function MdrForm({
       credito2xpos,
       credito7xpos,
       voucherpos,
-      prepos: mdrForm.prepos,
-      mdrpos: mdrForm.mdrpos,
-      cminpos: mdrForm.cminpos,
-      cmaxpos: mdrForm.cmaxpos,
-      antecipacao: mdrForm.antecipacao,
+      prepos: mdrForm.prepos || "",
+      mdrpos: mdrForm.pixPosMdr || mdrForm.mdrpos || "",
+      cminpos: mdrForm.pixPosCustoMin || mdrForm.cminpos || "",
+      cmaxpos: mdrForm.pixPosCustoMax || mdrForm.cmaxpos || "",
+      antecipacao: mdrForm.pixPosAntecipacao || mdrForm.antecipacao || "",
       debitoonline,
       creditoonline,
       credito2xonline,
       credito7xonline,
       voucheronline,
-      preonline: mdrForm.preonline,
-      mdronline: mdrForm.mdronline,
-      cminonline: mdrForm.cminonline,
-      cmaxonline: mdrForm.cmaxonline,
-      antecipacaoonline: mdrForm.antecipacaoonline,
+      preonline: mdrForm.preonline || "",
+      mdronline: mdrForm.pixOnlineMdr || mdrForm.mdronline || "",
+      cminonline: mdrForm.pixOnlineCustoMin || mdrForm.cminonline || "",
+      cmaxonline: mdrForm.pixOnlineCustoMax || mdrForm.cmaxonline || "",
+      antecipacaoonline: mdrForm.pixOnlineAntecipacao || mdrForm.antecipacaoonline || "",
       mcc: mdrForm.mcc,
     };
   };
+
+  // Função para carregar dados existentes do mdrData
+  useEffect(() => {
+    if (!mdrData || !isEditing) return;
+
+    // Função para parsear valores separados por vírgula
+    const parseCommaSeparatedValues = (value: string | undefined, brandIndex: number): string => {
+      if (!value) return "";
+      const values = value.split(',');
+      return values[brandIndex]?.trim() || "";
+    };
+
+    // Função para mapear valores antigos para novos productTypes
+    const mapOldToNewProductType = (oldValue: string): string => {
+      const map: Record<string, string> = {
+        'debito': 'DEBIT',
+        'credito': 'CREDIT',
+        'credito2x': 'CREDIT_INSTALLMENTS_2_TO_6',
+        'credito7x': 'CREDIT_INSTALLMENTS_7_TO_12',
+        'voucher': 'VOUCHER',
+        'prepago': 'PREPAID_CREDIT',
+      };
+      return map[oldValue.toLowerCase()] || oldValue.toUpperCase();
+    };
+
+    // Atualizar taxas POS
+    const updatedTaxasPos = initializeTaxasStructure();
+    brandList.forEach((brand, brandIndex) => {
+      SolicitationFeeProductTypeList.forEach((productType) => {
+        // Mapear para formato antigo para buscar valores
+        const oldKeyMap: Record<string, string> = {
+          'DEBIT': 'debitopos',
+          'CREDIT': 'creditopos',
+          'CREDIT_INSTALLMENTS_2_TO_6': 'credito2xpos',
+          'CREDIT_INSTALLMENTS_7_TO_12': 'credito7xpos',
+          'VOUCHER': 'voucherpos',
+          'PREPAID_CREDIT': 'prepos', // Pré-pago não tem posição específica na API antiga
+        };
+        const oldKey = oldKeyMap[productType.value];
+        if (oldKey && mdrData[oldKey as keyof FornecedorMDRForm]) {
+          const value = parseCommaSeparatedValues(
+            mdrData[oldKey as keyof FornecedorMDRForm] as string,
+            brandIndex
+          );
+          if (value) {
+            updatedTaxasPos[brand.value][productType.value] = value;
+          }
+        }
+      });
+    });
+
+    // Atualizar taxas Online
+    const updatedTaxasOnline = initializeTaxasStructure();
+    brandList.forEach((brand, brandIndex) => {
+      SolicitationFeeProductTypeList.forEach((productType) => {
+        const oldKeyMap: Record<string, string> = {
+          'DEBIT': 'debitoonline',
+          'CREDIT': 'creditoonline',
+          'CREDIT_INSTALLMENTS_2_TO_6': 'credito2xonline',
+          'CREDIT_INSTALLMENTS_7_TO_12': 'credito7xonline',
+          'VOUCHER': 'voucheronline',
+          'PREPAID_CREDIT': 'preonline',
+        };
+        const oldKey = oldKeyMap[productType.value];
+        if (oldKey && mdrData[oldKey as keyof FornecedorMDRForm]) {
+          const value = parseCommaSeparatedValues(
+            mdrData[oldKey as keyof FornecedorMDRForm] as string,
+            brandIndex
+          );
+          if (value) {
+            updatedTaxasOnline[brand.value][productType.value] = value;
+          }
+        }
+      });
+    });
+
+    setMdrForm(prev => ({
+      ...prev,
+      taxasPos: updatedTaxasPos,
+      taxasOnline: updatedTaxasOnline,
+      // Atualizar campos PIX também
+      pixPosMdr: mdrData.mdrpos || prev.pixPosMdr,
+      pixPosCustoMin: mdrData.cminpos || prev.pixPosCustoMin,
+      pixPosCustoMax: mdrData.cmaxpos || prev.pixPosCustoMax,
+      pixPosAntecipacao: mdrData.antecipacao || prev.pixPosAntecipacao,
+      pixOnlineMdr: mdrData.mdronline || prev.pixOnlineMdr,
+      pixOnlineCustoMin: mdrData.cminonline || prev.pixOnlineCustoMin,
+      pixOnlineCustoMax: mdrData.cmaxonline || prev.pixOnlineCustoMax,
+      pixOnlineAntecipacao: mdrData.antecipacaoonline || prev.pixOnlineAntecipacao,
+    }));
+  }, [mdrData, isEditing]);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -216,76 +379,38 @@ export default function MdrForm({
                       <TableHead className="sticky left-0 z-10 bg-background text-sm font-medium text-foreground border-r border-border">
                         Bandeiras
                       </TableHead>
-                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
-                        Débito
-                      </TableHead>
-                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
-                        Créd. Vista
-                      </TableHead>
-                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
-                        Créd. 2x
-                      </TableHead>
-                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
-                        Créd. 7x
-                      </TableHead>
-                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
-                        Voucher
-                      </TableHead>
+                      {SolicitationFeeProductTypeList.map((productType, index) => (
+                        <TableHead
+                          key={`pos-header-${productType.value}-${index}`}
+                          className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border"
+                        >
+                          {productType.label}
+                        </TableHead>
+                      ))}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {BANDEIRAS.map((bandeira) => (
-                      <TableRow key={bandeira} className="border-b border-border">
+                    {brandList.map((brand) => (
+                      <TableRow key={`pos-${brand.value}`} className="border-b border-border">
                         <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">{bandeira}</span>
+                            <span className="font-medium text-foreground">{brand.label}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="p-1 text-center border-r border-border">
-                          <input
-                            type="text"
-                            value={mdrForm.taxasPos[bandeira].debito}
-                            onChange={(e) => handleTaxaChange('taxasPos', bandeira, 'debito', e.target.value)}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
-                          />
-                        </TableCell>
-                        <TableCell className="p-1 text-center border-r border-border">
-                          <input
-                            type="text"
-                            value={mdrForm.taxasPos[bandeira].credito}
-                            onChange={(e) => handleTaxaChange('taxasPos', bandeira, 'credito', e.target.value)}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
-                          />
-                        </TableCell>
-                        <TableCell className="p-1 text-center border-r border-border">
-                          <input
-                            type="text"
-                            value={mdrForm.taxasPos[bandeira].credito2x}
-                            onChange={(e) => handleTaxaChange('taxasPos', bandeira, 'credito2x', e.target.value)}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
-                          />
-                        </TableCell>
-                        <TableCell className="p-1 text-center border-r border-border">
-                          <input
-                            type="text"
-                            value={mdrForm.taxasPos[bandeira].credito7x}
-                            onChange={(e) => handleTaxaChange('taxasPos', bandeira, 'credito7x', e.target.value)}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
-                          />
-                        </TableCell>
-                        <TableCell className="p-1 text-center border-r border-border">
-                          <input
-                            type="text"
-                            value={mdrForm.taxasPos[bandeira].voucher}
-                            onChange={(e) => handleTaxaChange('taxasPos', bandeira, 'voucher', e.target.value)}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
-                          />
-                        </TableCell>
+                        {SolicitationFeeProductTypeList.map((productType, typeIndex) => (
+                          <TableCell
+                            key={`pos-${brand.value}-${productType.value}-${typeIndex}`}
+                            className="p-1 text-center border-r border-border"
+                          >
+                            <input
+                              type="text"
+                              value={mdrForm.taxasPos[brand.value]?.[productType.value] || ""}
+                              onChange={(e) => handleTaxaChange('taxasPos', brand.value, productType.value, e.target.value)}
+                              placeholder="0.00"
+                              className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
+                            />
+                          </TableCell>
+                        ))}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -293,32 +418,59 @@ export default function MdrForm({
               </div>
             </div>
 
-            {/* Outras Taxas POS */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 bg-muted/50 p-4 rounded-none border border-border">
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Pré-Pago (%)</label>
-                <input type="text" name="prepos" value={mdrForm.prepos} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">MDR (%)</label>
-                <input type="text" name="mdrpos" value={mdrForm.mdrpos} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Custo Mín (R$)</label>
-                <input type="text" name="cminpos" value={mdrForm.cminpos} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Custo Máx (R$)</label>
-                <input type="text" name="cmaxpos" value={mdrForm.cmaxpos} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Antecipação (%)</label>
-                <input type="text" name="antecipacao" value={mdrForm.antecipacao} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
+            {/* Seção PIX POS */}
+            <div className="mt-6 space-y-4">
+              <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">PIX</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">MDR (%)</label>
+                  <input
+                    type="text"
+                    name="pixPosMdr"
+                    value={mdrForm.pixPosMdr}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Custo Mínimo (R$)</label>
+                  <input
+                    type="text"
+                    name="pixPosCustoMin"
+                    value={mdrForm.pixPosCustoMin}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Custo Máximo (R$)</label>
+                  <input
+                    type="text"
+                    name="pixPosCustoMax"
+                    value={mdrForm.pixPosCustoMax}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Antecipação (%)</label>
+                  <input
+                    type="text"
+                    name="pixPosAntecipacao"
+                    value={mdrForm.pixPosAntecipacao}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Taxas Online */}
-            <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 mt-8">
               <div className="min-w-0">
                 <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">
                   Taxas Transações Online
@@ -329,76 +481,38 @@ export default function MdrForm({
                       <TableHead className="sticky left-0 z-10 bg-background text-sm font-medium text-foreground border-r border-border">
                         Bandeiras
                       </TableHead>
-                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
-                        Débito
-                      </TableHead>
-                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
-                        Créd. Vista
-                      </TableHead>
-                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
-                        Créd. 2x
-                      </TableHead>
-                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
-                        Créd. 7x
-                      </TableHead>
-                      <TableHead className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border">
-                        Voucher
-                      </TableHead>
+                      {SolicitationFeeProductTypeList.map((productType, index) => (
+                        <TableHead
+                          key={`online-header-${productType.value}-${index}`}
+                          className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border"
+                        >
+                          {productType.label}
+                        </TableHead>
+                      ))}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {BANDEIRAS.map((bandeira) => (
-                      <TableRow key={bandeira} className="border-b border-border">
+                    {brandList.map((brand) => (
+                      <TableRow key={`online-${brand.value}`} className="border-b border-border">
                         <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">{bandeira}</span>
+                            <span className="font-medium text-foreground">{brand.label}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="p-1 text-center border-r border-border">
-                          <input
-                            type="text"
-                            value={mdrForm.taxasOnline[bandeira].debito}
-                            onChange={(e) => handleTaxaChange('taxasOnline', bandeira, 'debito', e.target.value)}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
-                          />
-                        </TableCell>
-                        <TableCell className="p-1 text-center border-r border-border">
-                          <input
-                            type="text"
-                            value={mdrForm.taxasOnline[bandeira].credito}
-                            onChange={(e) => handleTaxaChange('taxasOnline', bandeira, 'credito', e.target.value)}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
-                          />
-                        </TableCell>
-                        <TableCell className="p-1 text-center border-r border-border">
-                          <input
-                            type="text"
-                            value={mdrForm.taxasOnline[bandeira].credito2x}
-                            onChange={(e) => handleTaxaChange('taxasOnline', bandeira, 'credito2x', e.target.value)}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
-                          />
-                        </TableCell>
-                        <TableCell className="p-1 text-center border-r border-border">
-                          <input
-                            type="text"
-                            value={mdrForm.taxasOnline[bandeira].credito7x}
-                            onChange={(e) => handleTaxaChange('taxasOnline', bandeira, 'credito7x', e.target.value)}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
-                          />
-                        </TableCell>
-                        <TableCell className="p-1 text-center border-r border-border">
-                          <input
-                            type="text"
-                            value={mdrForm.taxasOnline[bandeira].voucher}
-                            onChange={(e) => handleTaxaChange('taxasOnline', bandeira, 'voucher', e.target.value)}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
-                          />
-                        </TableCell>
+                        {SolicitationFeeProductTypeList.map((productType, typeIndex) => (
+                          <TableCell
+                            key={`online-${brand.value}-${productType.value}-${typeIndex}`}
+                            className="p-1 text-center border-r border-border"
+                          >
+                            <input
+                              type="text"
+                              value={mdrForm.taxasOnline[brand.value]?.[productType.value] || ""}
+                              onChange={(e) => handleTaxaChange('taxasOnline', brand.value, productType.value, e.target.value)}
+                              placeholder="0.00"
+                              className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
+                            />
+                          </TableCell>
+                        ))}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -406,27 +520,54 @@ export default function MdrForm({
               </div>
             </div>
 
-            {/* Outras Taxas Online */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 bg-muted/50 p-4 rounded-none border border-border">
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Pré-Pago (%)</label>
-                <input type="text" name="preonline" value={mdrForm.preonline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">MDR (%)</label>
-                <input type="text" name="mdronline" value={mdrForm.mdronline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Custo Mín (R$)</label>
-                <input type="text" name="cminonline" value={mdrForm.cminonline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Custo Máx (R$)</label>
-                <input type="text" name="cmaxonline" value={mdrForm.cmaxonline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1">Antecipação (%)</label>
-                <input type="text" name="antecipacaoonline" value={mdrForm.antecipacaoonline} onChange={handleInputChange} placeholder="0.00" className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring" />
+            {/* Seção PIX Online (sem Cartão) */}
+            <div className="mt-6 space-y-4">
+              <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">PIX sem Cartão</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">MDR (%)</label>
+                  <input
+                    type="text"
+                    name="pixOnlineMdr"
+                    value={mdrForm.pixOnlineMdr}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Custo Mínimo (R$)</label>
+                  <input
+                    type="text"
+                    name="pixOnlineCustoMin"
+                    value={mdrForm.pixOnlineCustoMin}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Custo Máximo (R$)</label>
+                  <input
+                    type="text"
+                    name="pixOnlineCustoMax"
+                    value={mdrForm.pixOnlineCustoMax}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">Antecipação (%)</label>
+                  <input
+                    type="text"
+                    name="pixOnlineAntecipacao"
+                    value={mdrForm.pixOnlineAntecipacao}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
               </div>
             </div>
             
