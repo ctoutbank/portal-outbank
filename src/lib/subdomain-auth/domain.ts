@@ -13,7 +13,7 @@ export async function validateUserAccessBySubdomain(
     .where(sql`LOWER(${customerCustomization.slug}) = LOWER(${subdomain})`);
 
   const tenant = tenantResult[0];
-  if (!tenant)
+  if (!tenant || !tenant.customerId)
     return { authorized: false, reason: "Subdomínio inválido" };
 
   const userResult = await db
@@ -51,7 +51,7 @@ export async function validateUserAccessBySubdomain(
   }
 
   // 4. Verificar acesso via adminCustomers (ISOs individuais para Admins)
-  if (user.id) {
+  if (user.id && tenant.customerId) {
     const adminAccess = await db
       .select({
         idCustomer: adminCustomers.idCustomer,
@@ -72,7 +72,7 @@ export async function validateUserAccessBySubdomain(
   }
 
   // 5. Verificar acesso via profileCustomers (ISOs da categoria/perfil)
-  if (user.idProfile) {
+  if (user.idProfile && tenant.customerId) {
     const profileAccess = await db
       .select({
         idCustomer: profileCustomers.idCustomer,
