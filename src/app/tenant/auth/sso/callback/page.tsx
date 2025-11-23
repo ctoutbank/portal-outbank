@@ -127,8 +127,12 @@ export default async function SSOCallbackPage({ searchParams }: PageProps) {
     if (!clerkUserId) {
       // Se não estiver autenticado, redirecionar para sign-in
       // Preservar o token SSO na URL para uso após autenticação
+      // IMPORTANTE: Usar URL absoluta para garantir que o Clerk redirecione para o subdomínio correto
       logCallback("info", "Usuário não autenticado no Clerk, redirecionando para sign-in");
-      const redirectUrl = encodeURIComponent(`/auth/sso/callback?token=${token}`);
+      const protocol = headersList.get("x-forwarded-proto") || "https";
+      const currentHost = headersList.get("host") || hostname;
+      const callbackUrl = `${protocol}://${currentHost}/auth/sso/callback?token=${token}`;
+      const redirectUrl = encodeURIComponent(callbackUrl);
       redirect(`/auth/sign-in?redirect_url=${redirectUrl}`);
     }
 
