@@ -364,25 +364,25 @@ export default function MdrForm({
         </h1>
       </div>
 
-      <Card className="w-full">
-        <CardContent className="p-6">
+      <Card className="w-full bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
+        <CardContent className="p-7">
           <div className="space-y-6">
             {/* Taxas POS */}
             <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
               <div className="min-w-0">
-                <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">
+                <h3 className="text-lg font-semibold mb-4 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">
                   Taxas Transações na POS
                 </h3>
-                <Table className="w-full min-w-[600px] border border-border rounded-none">
+                <Table className="w-full min-w-[600px] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
                   <TableHeader>
-                    <TableRow className="border-b border-border">
-                      <TableHead className="sticky left-0 z-10 bg-background text-sm font-medium text-foreground border-r border-border">
+                    <TableRow className="border-b border-[rgba(255,255,255,0.1)]">
+                      <TableHead className="sticky left-0 z-10 bg-[#212121] text-sm font-semibold text-[#FFFFFF] border-r border-[rgba(255,255,255,0.1)] p-1">
                         Bandeiras
                       </TableHead>
                       {SolicitationFeeProductTypeList.map((productType, index) => (
                         <TableHead
                           key={`pos-header-${productType.value}-${index}`}
-                          className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border"
+                          className="text-center min-w-[100px] text-sm font-semibold text-[#FFFFFF] border-r border-[rgba(255,255,255,0.1)] bg-[#212121] p-1"
                         >
                           {productType.label}
                         </TableHead>
@@ -391,23 +391,23 @@ export default function MdrForm({
                   </TableHeader>
                   <TableBody>
                     {brandList.map((brand) => (
-                      <TableRow key={`pos-${brand.value}`} className="border-b border-border">
-                        <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
+                      <TableRow key={`pos-${brand.value}`} className="border-b border-[rgba(255,255,255,0.1)]">
+                        <TableCell className="font-medium sticky left-0 z-10 bg-[#1D1D1D] text-[#FFFFFF] border-r border-[rgba(255,255,255,0.1)] p-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">{brand.label}</span>
+                            <span className="font-medium text-[#FFFFFF]">{brand.label}</span>
                           </div>
                         </TableCell>
                         {SolicitationFeeProductTypeList.map((productType, typeIndex) => (
                           <TableCell
                             key={`pos-${brand.value}-${productType.value}-${typeIndex}`}
-                            className="p-1 text-center border-r border-border"
+                            className="p-1 text-center border-r border-[rgba(255,255,255,0.1)] bg-[#1D1D1D]"
                           >
                             <input
                               type="text"
                               value={mdrForm.taxasPos[brand.value]?.[productType.value] || ""}
                               onChange={(e) => handleTaxaChange('taxasPos', brand.value, productType.value, e.target.value)}
                               placeholder="0.00"
-                              className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
+                              className="w-full px-2 py-1 text-center border border-[rgba(255,255,255,0.1)] rounded-none bg-[#424242] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555] text-sm"
                             />
                           </TableCell>
                         ))}
@@ -420,50 +420,50 @@ export default function MdrForm({
 
             {/* Seção PIX POS */}
             <div className="mt-6 space-y-4">
-              <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">PIX</h3>
+              <h3 className="text-lg font-semibold mb-4 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">PIX</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">MDR (%)</label>
+                  <label className="block text-sm text-[#FFFFFF] mb-1 font-normal">MDR (%)</label>
                   <input
                     type="text"
                     name="pixPosMdr"
                     value={mdrForm.pixPosMdr}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full h-[42px] px-3 py-2 text-sm border border-[#353535] rounded-none bg-[#424242] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Custo Mínimo (R$)</label>
+                  <label className="block text-sm text-[#FFFFFF] mb-1 font-normal">Custo Mínimo (R$)</label>
                   <input
                     type="text"
                     name="pixPosCustoMin"
                     value={mdrForm.pixPosCustoMin}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full h-[42px] px-3 py-2 text-sm border border-[#353535] rounded-none bg-[#424242] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Custo Máximo (R$)</label>
+                  <label className="block text-sm text-[#FFFFFF] mb-1 font-normal">Custo Máximo (R$)</label>
                   <input
                     type="text"
                     name="pixPosCustoMax"
                     value={mdrForm.pixPosCustoMax}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full h-[42px] px-3 py-2 text-sm border border-[#353535] rounded-none bg-[#424242] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Antecipação (%)</label>
+                  <label className="block text-sm text-[#FFFFFF] mb-1 font-normal">Antecipação (%)</label>
                   <input
                     type="text"
                     name="pixPosAntecipacao"
                     value={mdrForm.pixPosAntecipacao}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full h-[42px] px-3 py-2 text-sm border border-[#353535] rounded-none bg-[#424242] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                   />
                 </div>
               </div>
@@ -472,19 +472,19 @@ export default function MdrForm({
             {/* Taxas Online */}
             <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 mt-8">
               <div className="min-w-0">
-                <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">
+                <h3 className="text-lg font-semibold mb-4 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">
                   Taxas Transações Online
                 </h3>
-                <Table className="w-full min-w-[600px] border border-border rounded-none">
+                <Table className="w-full min-w-[600px] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
                   <TableHeader>
-                    <TableRow className="border-b border-border">
-                      <TableHead className="sticky left-0 z-10 bg-background text-sm font-medium text-foreground border-r border-border">
+                    <TableRow className="border-b border-[rgba(255,255,255,0.1)]">
+                      <TableHead className="sticky left-0 z-10 bg-[#212121] text-sm font-semibold text-[#FFFFFF] border-r border-[rgba(255,255,255,0.1)] p-1">
                         Bandeiras
                       </TableHead>
                       {SolicitationFeeProductTypeList.map((productType, index) => (
                         <TableHead
                           key={`online-header-${productType.value}-${index}`}
-                          className="text-center min-w-[100px] text-sm font-medium text-foreground border-r border-border"
+                          className="text-center min-w-[100px] text-sm font-semibold text-[#FFFFFF] border-r border-[rgba(255,255,255,0.1)] bg-[#212121] p-1"
                         >
                           {productType.label}
                         </TableHead>
@@ -493,23 +493,23 @@ export default function MdrForm({
                   </TableHeader>
                   <TableBody>
                     {brandList.map((brand) => (
-                      <TableRow key={`online-${brand.value}`} className="border-b border-border">
-                        <TableCell className="font-medium sticky left-0 z-10 bg-background text-foreground border-r border-border">
+                      <TableRow key={`online-${brand.value}`} className="border-b border-[rgba(255,255,255,0.1)]">
+                        <TableCell className="font-medium sticky left-0 z-10 bg-[#1D1D1D] text-[#FFFFFF] border-r border-[rgba(255,255,255,0.1)] p-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">{brand.label}</span>
+                            <span className="font-medium text-[#FFFFFF]">{brand.label}</span>
                           </div>
                         </TableCell>
                         {SolicitationFeeProductTypeList.map((productType, typeIndex) => (
                           <TableCell
                             key={`online-${brand.value}-${productType.value}-${typeIndex}`}
-                            className="p-1 text-center border-r border-border"
+                            className="p-1 text-center border-r border-[rgba(255,255,255,0.1)] bg-[#1D1D1D]"
                           >
                             <input
                               type="text"
                               value={mdrForm.taxasOnline[brand.value]?.[productType.value] || ""}
                               onChange={(e) => handleTaxaChange('taxasOnline', brand.value, productType.value, e.target.value)}
                               placeholder="0.00"
-                              className="w-full px-2 py-1 text-center border border-border rounded-none bg-muted text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent text-sm"
+                              className="w-full px-2 py-1 text-center border border-[rgba(255,255,255,0.1)] rounded-none bg-[#424242] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555] text-sm"
                             />
                           </TableCell>
                         ))}
@@ -522,61 +522,61 @@ export default function MdrForm({
 
             {/* Seção PIX Online (sem Cartão) */}
             <div className="mt-6 space-y-4">
-              <h3 className="text-lg font-medium mb-4 text-foreground border-b border-border pb-2">PIX sem Cartão</h3>
+              <h3 className="text-lg font-semibold mb-4 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">PIX sem Cartão</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">MDR (%)</label>
+                  <label className="block text-sm text-[#FFFFFF] mb-1 font-normal">MDR (%)</label>
                   <input
                     type="text"
                     name="pixOnlineMdr"
                     value={mdrForm.pixOnlineMdr}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full h-[42px] px-3 py-2 text-sm border border-[#353535] rounded-none bg-[#424242] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Custo Mínimo (R$)</label>
+                  <label className="block text-sm text-[#FFFFFF] mb-1 font-normal">Custo Mínimo (R$)</label>
                   <input
                     type="text"
                     name="pixOnlineCustoMin"
                     value={mdrForm.pixOnlineCustoMin}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full h-[42px] px-3 py-2 text-sm border border-[#353535] rounded-none bg-[#424242] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Custo Máximo (R$)</label>
+                  <label className="block text-sm text-[#FFFFFF] mb-1 font-normal">Custo Máximo (R$)</label>
                   <input
                     type="text"
                     name="pixOnlineCustoMax"
                     value={mdrForm.pixOnlineCustoMax}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full h-[42px] px-3 py-2 text-sm border border-[#353535] rounded-none bg-[#424242] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Antecipação (%)</label>
+                  <label className="block text-sm text-[#FFFFFF] mb-1 font-normal">Antecipação (%)</label>
                   <input
                     type="text"
                     name="pixOnlineAntecipacao"
                     value={mdrForm.pixOnlineAntecipacao}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 text-sm border border-border rounded-none bg-background text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    className="w-full h-[42px] px-3 py-2 text-sm border border-[#353535] rounded-none bg-[#424242] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
                   />
                 </div>
               </div>
             </div>
             
             {/* Buttons */}
-            <div className="flex justify-end gap-3 pt-6 border-t border-border">
+            <div className="flex justify-end gap-3 pt-6 border-t border-[rgba(255,255,255,0.1)]">
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-6 py-2.5 bg-muted hover:bg-muted/80 text-foreground font-medium rounded-none transition"
+                className="px-6 py-2.5 h-[42px] bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] font-medium rounded-[6px] transition"
               >
                 Cancelar
               </button>
@@ -584,7 +584,7 @@ export default function MdrForm({
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading}
-                className="px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-none transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 h-[42px] bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] font-medium rounded-[6px] transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Salvando..." : isEditing ? "Atualizar" : "Salvar MDR"}
               </button>
