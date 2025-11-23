@@ -56,10 +56,8 @@ export default async function CategoryDetailPage({ params }: PageProps) {
                 subtitle="Detalhes e edição da categoria"
                 className="overflow-x-hidden"
             >
-                <div className="w-full max-w-full flex justify-center">
-                    <div className="w-full max-w-4xl">
-                        <Categoriesform categories={formattedCategory} />
-                    </div>
+                <div className="flex flex-col space-y-4">
+                    <Categoriesform categories={formattedCategory} />
                 </div>
             </BaseBody>
         </>
