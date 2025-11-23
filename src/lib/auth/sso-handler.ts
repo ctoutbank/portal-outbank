@@ -121,7 +121,8 @@ export async function validateSSOToken(token: string): Promise<{
       logSSO("error", "Customer não encontrado para o token SSO", {
         customerId: tokenData.customerId,
       });
-      ssoTokens.delete(token);
+      // Marcar token como usado para evitar reutilização
+      await markTokenAsUsed(token);
       return null;
     }
 
@@ -144,7 +145,8 @@ export async function validateSSOToken(token: string): Promise<{
       error: error.message,
       customerId: tokenData.customerId,
     });
-    ssoTokens.delete(token);
+    // Marcar token como usado para evitar reutilização
+    await markTokenAsUsed(token);
     return null;
   }
 }
