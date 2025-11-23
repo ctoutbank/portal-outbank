@@ -30,9 +30,15 @@ export default async function RootLayout({
   
   const loginBackgroundImage = tenantCustomization?.loginImageUrl || tenantCustomization?.imageUrl || '/bg_login.jpg';
   
+  // Obter URLs de sign-in e sign-up das variáveis de ambiente ou usar valores padrão
+  const signInUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/auth/sign-in";
+  const signUpUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/auth/sign-up";
+
   return (
     <ClerkProvider
       localization={ptBR}
+      signInUrl={signInUrl}
+      signUpUrl={signUpUrl}
       appearance={{
         signIn: {
           elements: {
