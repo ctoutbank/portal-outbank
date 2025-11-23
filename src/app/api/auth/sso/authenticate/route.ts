@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateSSOToken } from "@/lib/auth/sso-handler";
-import { clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db";
 import { eq } from "drizzle-orm";
@@ -82,53 +81,31 @@ export async function GET(request: NextRequest) {
       email: user[0].email,
     });
 
-    // Criar session token usando Clerk API
+    // Para autenticação automática, vamos redirecionar para sign-in com o token SSO preservado
+    // O Clerk não permite criar sessões diretamente via API sem autenticação prévia
+    // A solução é redirecionar para sign-in com redirect_url contendo o token SSO
+    // Após o login, o callback SSO processará o token e redirecionará para o dashboard
     try {
-      const clerk = await clerkClient();
-      
-      // Criar session token para o usuário
-      // Isso permite autenticação automática sem precisar fazer login
-      const sessionToken = await clerk.users.createSessionToken(user[0].idClerk, {
-        expiresInSeconds: 60 * 60 * 24 * 7, // 7 dias
-      });
-
-      logAuth("info", "Session token criado com sucesso", {
-        userId: user[0].id,
-        idClerk: user[0].idClerk,
-      });
-
-      // Obter hostname para construir URL de redirecionamento
-      const hostname = request.headers.get("host") || "";
       const protocol = request.headers.get("x-forwarded-proto") || "https";
+      const hostname = request.headers.get("host") || "";
+      const callbackUrl = `${protocol}://${hostname}/auth/sso/callback?token=${token}`;
+      const redirectUrl = encodeURIComponent(callbackUrl);
       
-      // Criar resposta de redirecionamento para o callback SSO
-      const redirectUrl = new URL("/auth/sso/callback", `${protocol}://${hostname}`);
-      redirectUrl.searchParams.set("token", token);
-      
-      const response = NextResponse.redirect(redirectUrl.toString());
-      
-      // Tentar definir cookie de sessão do Clerk
-      // O Clerk usa cookies específicos para autenticação
-      // Nota: O Clerk gerencia seus próprios cookies, mas podemos tentar definir um cookie auxiliar
-      // O session token será processado pela página de callback
-      response.cookies.set("__clerk_session_token", sessionToken, {
-        path: "/",
-        httpOnly: true,
-        secure: protocol === "https",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7, // 7 dias
+      logAuth("info", "Redirecionando para sign-in com token SSO preservado", {
+        callbackUrl,
       });
-
-      logAuth("info", "Cookie de sessão definido, redirecionando para callback");
       
-      return response;
+      // Redirecionar para sign-in com o callback SSO como redirect_url
+      // Isso permite que após o login, o usuário seja redirecionado para o callback SSO
+      // que então processará o token e redirecionará para o dashboard
+      return NextResponse.redirect(`${protocol}://${hostname}/auth/sign-in?redirect_url=${redirectUrl}`);
     } catch (error: any) {
-      logAuth("error", "Erro ao criar session token", {
+      logAuth("error", "Erro ao processar autenticação", {
         error: error.message,
         stack: error.stack,
       });
       return NextResponse.json(
-        { error: "Erro ao criar sessão automática" },
+        { error: "Erro ao processar autenticação automática" },
         { status: 500 }
       );
     }
