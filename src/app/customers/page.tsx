@@ -21,7 +21,7 @@ type CustomersPageProps = {
   search?: string;
   name?: string;
   customerId?: string;
-  settlementManagementType?: string;
+  userName?: string;
 };
 
 export default async function Customerspage({
@@ -43,7 +43,7 @@ export default async function Customerspage({
     page,
     perPage,
     params.customerId || "",
-    params.settlementManagementType || ""
+    params.userName || ""
   );
 
   const statistics = await getCustomerStatistics();
@@ -52,24 +52,22 @@ export default async function Customerspage({
 
   return (
     <>
-      <BaseHeader breadcrumbItems={[{ title: "Iso", subtitle:"", url: "/customers" }]} />
+      <BaseHeader breadcrumbItems={[{ title: "ISO", subtitle:"", url: "/customers" }]} />
 
-      <BaseBody title="Isos" subtitle={`visualização de todos os Isos`}>
-        <div className="flex flex-col space-y-4">
-          <div className="mb-1 flex items-center justify-between">
-            <div className="flex-1">
+      <BaseBody title="ISOs" subtitle={`visualização de todos os ISOs`}>
+        <div className="flex flex-col space-y-4 w-full max-w-full overflow-x-hidden">
+          <div className="mb-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4">
+            <div className="flex-1 min-w-0">
               <CustomersFilter
                 nameIn={params.name || ""}
                 customerIdIn={params.customerId || ""}
-                settlementManagementTypeIn={
-                  params.settlementManagementType || ""
-                }
+                userNameIn={params.userName || ""}
               />
             </div>
-            <Button asChild className="ml-2">
+            <Button asChild className="sm:ml-2 flex-shrink-0">
               <Link href="/customers/0">
                 <Plus className="h-4 w-4 mr-1" />
-                Novo Iso
+                Novo ISO
               </Link>
             </Button>
           </div>
@@ -86,7 +84,7 @@ export default async function Customerspage({
           />
 
           {totalCount > 0 && (
-            <div className="flex items-center justify-between mt-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-4">
               <PageSizeSelector
                 currentPageSize={perPage}
                 pageName="customers"
