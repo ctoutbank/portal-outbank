@@ -23,17 +23,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   const hostname = request.headers.get("host") || "";
   const subdomain = extractSubdomain(hostname);
   const isTenant = isTenantHost(hostname);
-  
-  // Tratar erros em auth() para evitar MIDDLEWARE_INVOCATION_FAILED
-  let userId: string | null = null;
-  try {
-    const authResult = await auth();
-    userId = authResult.userId;
-  } catch (error) {
-    console.error("Error getting auth in middleware:", error);
-    // Se houver erro na autenticação, continuar com userId = null (comportamento seguro)
-  }
-  
+  const { userId } = await auth();
   const pathname = request.nextUrl.pathname;
   
   if (isTenant && subdomain) {
@@ -64,17 +54,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     }
     
     if (!isPublicRoute(request)) {
-      try {
-        await auth.protect();
-      } catch (error) {
-        console.error("Error in auth.protect() (tenant):", error);
-        // Se houver erro no protect e não houver userId, redirecionar para sign-in
-        // Caso contrário, permitir que continue (pode ser erro temporário)
-        if (!userId) {
-          const signInUrl = new URL("/auth/sign-in", request.url);
-          return NextResponse.redirect(signInUrl);
-        }
-      }
+      await auth.protect();
     }
     
     const tenantRouteMap: Record<string, string> = {
@@ -114,19 +94,9 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   }
   
   if (!isPublicRoute(request)) {
-    try {
-      await auth.protect();
-    } catch (error) {
-      console.error("Error in auth.protect() (non-tenant):", error);
-      // Se houver erro no protect e não houver userId, redirecionar para sign-in
-      // Caso contrário, permitir que continue (pode ser erro temporário)
-      if (!userId) {
-        const signInUrl = new URL("/auth/sign-in", request.url);
-        return NextResponse.redirect(signInUrl);
-      }
-    }
+    await auth.protect();
   }
-
+  
   return NextResponse.next();
 });
 

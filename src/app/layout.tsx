@@ -26,14 +26,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const tenantCustomization = await getCurrentTenantCustomization();
-  let isAdmin = false;
-  try {
-    isAdmin = await isAdminOrSuperAdmin();
-  } catch (error) {
-    console.error("Error checking admin permissions in layout:", error);
-    // Em caso de erro, assumir que não é admin (comportamento seguro)
-    isAdmin = false;
-  }
+  const isAdmin = await isAdminOrSuperAdmin();
   
   const loginBackgroundImage = tenantCustomization?.loginImageUrl || tenantCustomization?.imageUrl || '/bg_login.jpg';
   
