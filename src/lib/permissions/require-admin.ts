@@ -9,6 +9,7 @@ import { isAdminOrSuperAdmin } from "./check-permissions";
  * @returns true se o usuário for Admin ou Super Admin
  */
 export async function requireAdmin() {
+  try {
   const isAdmin = await isAdminOrSuperAdmin();
   
   if (!isAdmin) {
@@ -16,4 +17,15 @@ export async function requireAdmin() {
   }
   
   return true;
+  } catch (error: any) {
+    // redirect() lança uma exceção especial em Next.js que deve ser propagada
+    // Se for um erro de redirect, re-lançar
+    if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+      throw error;
+    }
+    
+    console.error("Error in requireAdmin:", error);
+    // Em caso de erro, redirecionar para unauthorized para segurança
+    redirect("/unauthorized");
+  }
 }
