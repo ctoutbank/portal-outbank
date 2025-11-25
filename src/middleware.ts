@@ -23,7 +23,17 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   const hostname = request.headers.get("host") || "";
   const subdomain = extractSubdomain(hostname);
   const isTenant = isTenantHost(hostname);
-  const { userId } = await auth();
+  
+  // Tratar erro em auth() para evitar MIDDLEWARE_INVOCATION_FAILED
+  let userId: string | null = null;
+  try {
+    const authResult = await auth();
+    userId = authResult.userId;
+  } catch (error) {
+    console.error("Error in auth() middleware:", error);
+    // Em caso de erro, continuar com userId = null
+  }
+  
   const pathname = request.nextUrl.pathname;
   
   if (isTenant && subdomain) {
@@ -54,7 +64,17 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     }
     
     if (!isPublicRoute(request)) {
-      await auth.protect();
+      try {
+        await auth.protect();
+      } catch (error) {
+        console.error("Error in auth.protect() (tenant):", error);
+        // Se houver erro e não houver userId, redirecionar para sign-in
+        if (!userId) {
+          const signInUrl = new URL("/auth/sign-in", request.url);
+          return NextResponse.redirect(signInUrl);
+        }
+        // Se houver userId mas auth.protect() falhou, permitir continuar
+      }
     }
     
     const tenantRouteMap: Record<string, string> = {
@@ -94,9 +114,19 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   }
   
   if (!isPublicRoute(request)) {
-    await auth.protect();
+    try {
+      await auth.protect();
+    } catch (error) {
+      console.error("Error in auth.protect() (non-tenant):", error);
+      // Se houver erro e não houver userId, redirecionar para sign-in
+      if (!userId) {
+        const signInUrl = new URL("/auth/sign-in", request.url);
+        return NextResponse.redirect(signInUrl);
+      }
+      // Se houver userId mas auth.protect() falhou, permitir continuar
+    }
   }
-  
+
   return NextResponse.next();
 });
 
