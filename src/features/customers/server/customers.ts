@@ -1,10 +1,11 @@
 "use server";
 import { db } from "@/db/drizzle";
-import { customers, customerCustomization, adminCustomers, customerModules, modules } from "../../../../drizzle/schema";
+import { customers, customerCustomization, adminCustomers, customerModules, modules, users } from "../../../../drizzle/schema";
 import { and, asc, count, desc, eq, ilike, or, sql, inArray } from "drizzle-orm";
 import { CustomerSchema } from "../schema/schema";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
 import { getCustomerModuleSlugs } from "@/lib/modules/customer-modules";
+import { clerkClient } from "@clerk/nextjs/server";
 
 export type CustomersInsert = typeof customers.$inferInsert;
 export type CustomersDetail = typeof customers.$inferSelect;
@@ -15,7 +16,7 @@ export async function getCustomers(
   pageSize: number = 10,
   name?: string,
   customerId?: string,
-  settlementManagementType?: string,
+  userName?: string,
   sortField: keyof typeof customers.$inferSelect = "id",
   sortOrder: "asc" | "desc" = "desc"
 ): Promise<{
@@ -43,10 +44,42 @@ export async function getCustomers(
     whereConditions.push(ilike(customers.customerId, `%${customerId}%`));
   }
 
-  if (settlementManagementType) {
-    whereConditions.push(
-      ilike(customers.settlementManagementType, `%${settlementManagementType}%`)
-    );
+  // Filtro por usuário: buscar usuários no Clerk e filtrar ISOs pelos idCustomer
+  if (userName && userName.trim() !== "") {
+    try {
+      const clerk = await clerkClient();
+      const clerkUsers = await clerk.users.getUserList({
+        query: userName.trim(),
+        limit: 100, // Limite razoável para busca
+      });
+
+      if (clerkUsers.data && clerkUsers.data.length > 0) {
+        const clerkIds = clerkUsers.data.map((user) => user.id);
+        
+        // Buscar idCustomer dos usuários encontrados
+        const dbUsers = await db
+          .select({ idCustomer: users.idCustomer })
+          .from(users)
+          .where(inArray(users.idClerk, clerkIds));
+
+        const customerIds = dbUsers
+          .map((u) => u.idCustomer)
+          .filter((id): id is number => id !== null && id !== undefined);
+
+        if (customerIds.length > 0) {
+          whereConditions.push(inArray(customers.id, customerIds));
+        } else {
+          // Se não encontrou nenhum usuário com idCustomer, retornar lista vazia
+          whereConditions.push(sql`1 = 0`);
+        }
+      } else {
+        // Se não encontrou usuários no Clerk, retornar lista vazia
+        whereConditions.push(sql`1 = 0`);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar usuários no Clerk:", error);
+      // Em caso de erro, não aplicar filtro de usuário
+    }
   }
 
   // Filtrar por permissões do usuário

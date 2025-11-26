@@ -8,7 +8,7 @@ import { useState } from "react"
 type CustomersFilterProps = {
   nameIn?: string
   customerIdIn?: string
-  settlementManagementTypeIn?: string
+  userNameIn?: string
 }
 
 export function CustomersFilter(props: CustomersFilterProps) {
@@ -17,17 +17,17 @@ export function CustomersFilter(props: CustomersFilterProps) {
   const params = new URLSearchParams(searchParams?.toString() || "")
   const [isFiltersVisible, setIsFiltersVisible] = useState(false)
 
-  const handleFilter = (name: string, settlementManagementType: string) => {
+  const handleFilter = (name: string, userName: string) => {
     if (name) {
       params.set("name", name)
     } else {
       params.delete("name")
     }
        
-    if (settlementManagementType) {
-      params.set("settlementManagementType", settlementManagementType)
+    if (userName) {
+      params.set("userName", userName)
     } else {
-      params.delete("settlementManagementType")
+      params.delete("userName")
     }
     params.set("page", "1")
     router.push(`?${params.toString()}`)
@@ -36,7 +36,7 @@ export function CustomersFilter(props: CustomersFilterProps) {
   const handleClearFilters = () => {
     params.delete("name")
     params.delete("customerId")
-    params.delete("settlementManagementType")
+    params.delete("userName")
     params.set("page", "1")
     router.push(`?${params.toString()}`)
   }
@@ -44,7 +44,7 @@ export function CustomersFilter(props: CustomersFilterProps) {
   const activeFiltersCount =
     (props.nameIn ? 1 : 0) +
     (props.customerIdIn ? 1 : 0) +
-    (props.settlementManagementTypeIn ? 1 : 0)
+    (props.userNameIn ? 1 : 0)
 
   return (
     <CustomersFilterButton
@@ -55,8 +55,7 @@ export function CustomersFilter(props: CustomersFilterProps) {
     >
       <CustomersFilterContent
         namein={props.nameIn}
-        
-        settlementManagementTypein={props.settlementManagementTypeIn}
+        userNameIn={props.userNameIn}
         onFilter={handleFilter}
         onClose={() => setIsFiltersVisible(false)}
       />

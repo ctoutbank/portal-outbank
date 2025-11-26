@@ -64,6 +64,23 @@ export default function MdrForm({
 
   const [loading, setLoading] = useState(false);
 
+  // Função para formatar valor com máscara de porcentagem
+  const formatValueWithPercentage = (value: string): string => {
+    if (!value || value.trim() === "") return "";
+    // Remove % se já existir e adiciona novamente
+    const cleanValue = value.replace(/%/g, "").trim();
+    return cleanValue ? `${cleanValue}%` : "";
+  };
+
+  // Função para remover % do valor ao editar
+  const removePercentage = (value: string): string => {
+    return value.replace(/%/g, "").trim();
+  };
+
+  // Função para verificar se valor está preenchido
+  const isValueFilled = (value: string | undefined): boolean => {
+    return value !== undefined && value !== null && value.trim() !== "";
+  };
   
   // Função para inicializar estrutura de taxas vazia
   const initializeTaxasStructure = (): Record<BrandValue, TaxaFields> => {
@@ -354,7 +371,7 @@ export default function MdrForm({
 
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto p-4 md:p-6 overflow-x-hidden">
+    <div className="w-full max-w-[1600px] mx-auto p-4 md:p-6 overflow-x-hidden bg-[#000000]">
       {/* Header/Título */}
       <div className="flex items-center gap-3 mb-8">
         <div className="h-7 w-7 bg-[#212121] border border-[#2E2E2E] rounded-[6px] flex items-center justify-center text-[#E0E0E0] text-sm font-medium">
@@ -366,220 +383,264 @@ export default function MdrForm({
       </div>
 
       <Card className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-[12px]">
-        <CardContent className="p-6 md:p-8">
+        <CardContent className="p-8">
           <div className="space-y-10">
             {/* Taxas POS */}
             <div className="w-full overflow-x-auto">
               <div className="min-w-0">
-                <h3 className="text-lg font-semibold mb-6 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">
+                <h3 className="text-2xl font-semibold mb-6 text-[#FFFFFF] border-b border-[#1f1f1f] pb-4">
                   Taxas Transações na POS
                 </h3>
-                <Table className="w-full min-w-[600px]">
-                  <TableHeader>
-                    <TableRow className="border-b border-[#1f1f1f] h-[52px]">
-                      <TableHead className="sticky left-0 z-10 bg-transparent text-sm font-semibold text-[#FFFFFF] p-4">
-                        Bandeiras
-                      </TableHead>
-                      {SolicitationFeeProductTypeList.map((productType, index) => (
-                        <TableHead
-                          key={`pos-header-${productType.value}-${index}`}
-                          className="text-center min-w-[100px] text-sm font-semibold text-[#FFFFFF] bg-transparent p-4 h-[52px]"
-                        >
-                          {productType.label}
+                <div className="overflow-x-auto mb-4">
+                  <Table className="w-full min-w-[600px] border-collapse border-spacing-0">
+                    <TableHeader>
+                      <TableRow className="h-[52px]">
+                        <TableHead className="sticky left-0 z-10 bg-transparent text-sm font-medium text-[#FFFFFF] p-4 text-left border-b border-[#2a2a2a] border-l-0 h-[52px]">
+                          Bandeiras
                         </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {brandList.map((brand, brandIndex) => (
-                      <TableRow 
-                        key={`pos-${brand.value}`} 
-                        className={`border-b border-[#1a1a1a] h-[52px] ${brandIndex === brandList.length - 1 ? 'border-b-0' : ''}`}
-                      >
-                        <TableCell className="font-medium sticky left-0 z-10 bg-[#0a0a0a] text-[#FFFFFF] px-5 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-[#FFFFFF]">{brand.label}</span>
-                          </div>
-                        </TableCell>
-                        {SolicitationFeeProductTypeList.map((productType, typeIndex) => (
-                          <TableCell
-                            key={`pos-${brand.value}-${productType.value}-${typeIndex}`}
-                            className={`text-center bg-[#121212] border-l border-[#1f1f1f] p-4 ${typeIndex === 0 ? 'border-l-0' : ''}`}
+                        {SolicitationFeeProductTypeList.map((productType, index) => (
+                          <TableHead
+                            key={`pos-header-${productType.value}-${index}`}
+                            className="text-center min-w-[100px] text-sm font-medium text-[#FFFFFF] bg-transparent p-4 h-[52px] border-b border-[#2a2a2a] border-l border-[#2a2a2a]"
                           >
-                            <input
-                              type="text"
-                              value={mdrForm.taxasPos[brand.value]?.[productType.value] || ""}
-                              onChange={(e) => handleTaxaChange('taxasPos', brand.value, productType.value, e.target.value)}
-                              placeholder="0.00"
-                              className="w-full text-center border border-[#2a2a2a] rounded-[6px] bg-[#000000] text-[#FFFFFF] placeholder:text-[#999999] focus-visible:border-[#3a3a3a] focus-visible:outline-none text-sm px-4 py-0 h-full"
-                            />
-                          </TableCell>
+                            {productType.label}
+                          </TableHead>
                         ))}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {brandList.map((brand, brandIndex) => (
+                        <TableRow 
+                          key={`pos-${brand.value}`} 
+                          className="h-[52px] border-b border-[#1f1f1f] hover:[&>td]:bg-[#161616] hover:[&>td:first-child]:bg-[#050505]"
+                        >
+                          <TableCell className="font-medium sticky left-0 z-10 bg-[#000000] text-[#FFFFFF] px-5 py-4 text-left border-l-0 border-r border-[#1f1f1f]">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-[#FFFFFF]">{brand.label}</span>
+                            </div>
+                          </TableCell>
+                          {SolicitationFeeProductTypeList.map((productType, typeIndex) => {
+                            const currentValue = mdrForm.taxasPos[brand.value]?.[productType.value] || "";
+                            const isFilled = isValueFilled(currentValue);
+                            const displayValue = currentValue ? formatValueWithPercentage(currentValue) : "";
+                            return (
+                              <TableCell
+                                key={`pos-${brand.value}-${productType.value}-${typeIndex}`}
+                                className="text-center bg-[#121212] border-l border-[#1f1f1f] p-4 text-sm"
+                              >
+                                <input
+                                  type="text"
+                                  value={displayValue}
+                                  onChange={(e) => {
+                                    const cleanValue = removePercentage(e.target.value);
+                                    handleTaxaChange('taxasPos', brand.value, productType.value, cleanValue);
+                                  }}
+                                  placeholder="0.00"
+                                  className={`w-full text-center border-0 bg-transparent placeholder:text-[#808080] focus-visible:outline-none text-sm px-2 py-0 h-full ${
+                                    isFilled ? 'text-[#FFFFFF] font-bold' : 'text-[#808080]'
+                                  }`}
+                                />
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </div>
 
             {/* Seção PIX POS */}
-            <div className="pt-4 border-t border-[rgba(255,255,255,0.1)]">
-              <h3 className="text-lg font-semibold mb-6 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">PIX</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 bg-[#0a0a0a] rounded-[8px] p-6">
+            <div className="mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 bg-[#0f0f0f] rounded-[8px] p-6 border border-[#1a1a1a]">
                 <div className="flex flex-col">
-                  <label className="block text-[13px] text-[#FFFFFF] mb-2 font-normal">MDR (%)</label>
+                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">PIX (%)</label>
+                  <input
+                    type="text"
+                    name="prepos"
+                    value={mdrForm.prepos}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">MDR (%)</label>
                   <input
                     type="text"
                     name="pixPosMdr"
                     value={mdrForm.pixPosMdr}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#000000] text-[#FFFFFF] placeholder:text-[#999999] focus-visible:border-[#3a3a3a] focus-visible:outline-none"
+                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="block text-[13px] text-[#FFFFFF] mb-2 font-normal">Custo Mínimo (R$)</label>
+                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Custo Mín (R$)</label>
                   <input
                     type="text"
                     name="pixPosCustoMin"
                     value={mdrForm.pixPosCustoMin}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#000000] text-[#FFFFFF] placeholder:text-[#999999] focus-visible:border-[#3a3a3a] focus-visible:outline-none"
+                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="block text-[13px] text-[#FFFFFF] mb-2 font-normal">Custo Máximo (R$)</label>
+                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Custo Máx (R$)</label>
                   <input
                     type="text"
                     name="pixPosCustoMax"
                     value={mdrForm.pixPosCustoMax}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#000000] text-[#FFFFFF] placeholder:text-[#999999] focus-visible:border-[#3a3a3a] focus-visible:outline-none"
+                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="block text-[13px] text-[#FFFFFF] mb-2 font-normal">Antecipação (%)</label>
+                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Antecipação (%)</label>
                   <input
                     type="text"
                     name="pixPosAntecipacao"
                     value={mdrForm.pixPosAntecipacao}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#000000] text-[#FFFFFF] placeholder:text-[#999999] focus-visible:border-[#3a3a3a] focus-visible:outline-none"
+                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#0d0d0d] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
                   />
                 </div>
               </div>
             </div>
 
             {/* Taxas Online */}
-            <div className="w-full overflow-x-auto pt-4 border-t border-[rgba(255,255,255,0.1)]">
+            <div className="w-full overflow-x-auto mt-10">
               <div className="min-w-0">
-                <h3 className="text-lg font-semibold mb-6 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">
+                <h3 className="text-2xl font-semibold mb-6 text-[#FFFFFF] border-b border-[#1f1f1f] pb-4">
                   Taxas Transações Online
                 </h3>
-                <Table className="w-full min-w-[600px]">
-                  <TableHeader>
-                    <TableRow className="border-b border-[#1f1f1f] h-[52px]">
-                      <TableHead className="sticky left-0 z-10 bg-transparent text-sm font-semibold text-[#FFFFFF] p-4">
-                        Bandeiras
-                      </TableHead>
-                      {SolicitationFeeProductTypeList.map((productType, index) => (
-                        <TableHead
-                          key={`online-header-${productType.value}-${index}`}
-                          className="text-center min-w-[100px] text-sm font-semibold text-[#FFFFFF] bg-transparent p-4 h-[52px]"
-                        >
-                          {productType.label}
+                <div className="overflow-x-auto mb-10">
+                  <Table className="w-full min-w-[600px] border-collapse border-spacing-0">
+                    <TableHeader>
+                      <TableRow className="h-[52px]">
+                        <TableHead className="sticky left-0 z-10 bg-transparent text-sm font-medium text-[#FFFFFF] p-4 text-left border-b border-[#2a2a2a] border-l-0 h-[52px]">
+                          Bandeiras
                         </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {brandList.map((brand, brandIndex) => (
-                      <TableRow 
-                        key={`online-${brand.value}`} 
-                        className={`border-b border-[#1a1a1a] h-[52px] ${brandIndex === brandList.length - 1 ? 'border-b-0' : ''}`}
-                      >
-                        <TableCell className="font-medium sticky left-0 z-10 bg-[#0a0a0a] text-[#FFFFFF] px-5 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-[#FFFFFF]">{brand.label}</span>
-                          </div>
-                        </TableCell>
-                        {SolicitationFeeProductTypeList.map((productType, typeIndex) => (
-                          <TableCell
-                            key={`online-${brand.value}-${productType.value}-${typeIndex}`}
-                            className={`text-center bg-[#121212] border-l border-[#1f1f1f] p-4 ${typeIndex === 0 ? 'border-l-0' : ''}`}
+                        {SolicitationFeeProductTypeList.map((productType, index) => (
+                          <TableHead
+                            key={`online-header-${productType.value}-${index}`}
+                            className="text-center min-w-[100px] text-sm font-medium text-[#FFFFFF] bg-transparent p-4 h-[52px] border-b border-[#2a2a2a] border-l border-[#2a2a2a]"
                           >
-                            <input
-                              type="text"
-                              value={mdrForm.taxasOnline[brand.value]?.[productType.value] || ""}
-                              onChange={(e) => handleTaxaChange('taxasOnline', brand.value, productType.value, e.target.value)}
-                              placeholder="0.00"
-                              className="w-full text-center border border-[#2a2a2a] rounded-[6px] bg-[#000000] text-[#FFFFFF] placeholder:text-[#999999] focus-visible:border-[#3a3a3a] focus-visible:outline-none text-sm px-4 py-0 h-full"
-                            />
-                          </TableCell>
+                            {productType.label}
+                          </TableHead>
                         ))}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {brandList.map((brand, brandIndex) => (
+                        <TableRow 
+                          key={`online-${brand.value}`} 
+                          className="h-[52px] border-b border-[#1f1f1f] hover:[&>td]:bg-[#161616] hover:[&>td:first-child]:bg-[#050505]"
+                        >
+                          <TableCell className="font-medium sticky left-0 z-10 bg-[#000000] text-[#FFFFFF] px-5 py-4 text-left border-l-0 border-r border-[#1f1f1f]">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-[#FFFFFF]">{brand.label}</span>
+                            </div>
+                          </TableCell>
+                          {SolicitationFeeProductTypeList.map((productType, typeIndex) => {
+                            const currentValue = mdrForm.taxasOnline[brand.value]?.[productType.value] || "";
+                            const isFilled = isValueFilled(currentValue);
+                            const displayValue = currentValue ? formatValueWithPercentage(currentValue) : "";
+                            return (
+                              <TableCell
+                                key={`online-${brand.value}-${productType.value}-${typeIndex}`}
+                                className="text-center bg-[#121212] border-l border-[#1f1f1f] p-4 text-sm"
+                              >
+                                <input
+                                  type="text"
+                                  value={displayValue}
+                                  onChange={(e) => {
+                                    const cleanValue = removePercentage(e.target.value);
+                                    handleTaxaChange('taxasOnline', brand.value, productType.value, cleanValue);
+                                  }}
+                                  placeholder="0.00"
+                                  className={`w-full text-center border-0 bg-transparent placeholder:text-[#808080] focus-visible:outline-none text-sm px-2 py-0 h-full ${
+                                    isFilled ? 'text-[#FFFFFF] font-bold' : 'text-[#808080]'
+                                  }`}
+                                />
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </div>
 
             {/* Seção PIX Online (sem Cartão) */}
-            <div className="pt-4 border-t border-[rgba(255,255,255,0.1)]">
-              <h3 className="text-lg font-semibold mb-6 text-[#FFFFFF] border-b border-[rgba(255,255,255,0.1)] pb-2">PIX sem Cartão</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 bg-[#0a0a0a] rounded-[8px] p-6">
+            <div className="mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 bg-[#0f0f0f] rounded-[8px] p-6 border border-[#1a1a1a]">
                 <div className="flex flex-col">
-                  <label className="block text-[13px] text-[#FFFFFF] mb-2 font-normal">MDR (%)</label>
+                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">PIX (%)</label>
+                  <input
+                    type="text"
+                    name="preonline"
+                    value={mdrForm.preonline}
+                    onChange={handleInputChange}
+                    placeholder="0.00"
+                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">MDR (%)</label>
                   <input
                     type="text"
                     name="pixOnlineMdr"
                     value={mdrForm.pixOnlineMdr}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#000000] text-[#FFFFFF] placeholder:text-[#999999] focus-visible:border-[#3a3a3a] focus-visible:outline-none"
+                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="block text-[13px] text-[#FFFFFF] mb-2 font-normal">Custo Mínimo (R$)</label>
+                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Custo Mín (R$)</label>
                   <input
                     type="text"
                     name="pixOnlineCustoMin"
                     value={mdrForm.pixOnlineCustoMin}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#000000] text-[#FFFFFF] placeholder:text-[#999999] focus-visible:border-[#3a3a3a] focus-visible:outline-none"
+                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="block text-[13px] text-[#FFFFFF] mb-2 font-normal">Custo Máximo (R$)</label>
+                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Custo Máx (R$)</label>
                   <input
                     type="text"
                     name="pixOnlineCustoMax"
                     value={mdrForm.pixOnlineCustoMax}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#000000] text-[#FFFFFF] placeholder:text-[#999999] focus-visible:border-[#3a3a3a] focus-visible:outline-none"
+                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="block text-[13px] text-[#FFFFFF] mb-2 font-normal">Antecipação (%)</label>
+                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Antecipação (%)</label>
                   <input
                     type="text"
                     name="pixOnlineAntecipacao"
                     value={mdrForm.pixOnlineAntecipacao}
                     onChange={handleInputChange}
                     placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#000000] text-[#FFFFFF] placeholder:text-[#999999] focus-visible:border-[#3a3a3a] focus-visible:outline-none"
+                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#0d0d0d] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
                   />
                 </div>
               </div>
             </div>
             
             {/* Buttons */}
-            <div className="flex justify-end gap-3 pt-8 mt-8 border-t border-[rgba(255,255,255,0.1)]">
+            <div className="flex justify-end gap-3 pt-8 mt-10 border-t border-[#1f1f1f]">
               <button
                 type="button"
                 onClick={onCancel}

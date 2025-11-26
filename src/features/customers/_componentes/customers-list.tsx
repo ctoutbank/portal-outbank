@@ -47,97 +47,99 @@ export default function CustomersList({
   };
 
   return (
-    <div>
-      <div className="border rounded-lg shadow-sm bg-card overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="font-semibold text-sm">
-                Nome
-                <ChevronDown className="ml-2 h-4 w-4 inline opacity-50" />
-              </TableHead>
+    <div className="w-full max-w-full overflow-x-hidden">
+      <div className="border rounded-lg shadow-sm bg-card overflow-hidden w-full">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="font-semibold text-sm whitespace-nowrap">
+                  Nome
+                  <ChevronDown className="ml-2 h-4 w-4 inline opacity-50" />
+                </TableHead>
 
-              <TableHead className="font-semibold text-sm">
-                Subdomínio
-              </TableHead>
+                <TableHead className="font-semibold text-sm whitespace-nowrap">
+                  Subdomínio
+                </TableHead>
 
-              <TableHead className="font-semibold text-sm text-center">
-                SSO
-              </TableHead>
+                <TableHead className="font-semibold text-sm text-center whitespace-nowrap">
+                  SSO
+                </TableHead>
 
-              <TableHead className="font-semibold text-sm">
-                Usuários
-              </TableHead>
+                <TableHead className="font-semibold text-sm whitespace-nowrap">
+                  Usuários
+                </TableHead>
 
-              <TableHead className="font-semibold text-sm">
-                Módulos
-              </TableHead>
-              <TableHead className="font-semibold text-sm">
-                Status
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Customers?.customers.map((customer) => (
-              <TableRow 
-                key={customer.id}
-                className="hover:bg-muted/30 transition-colors"
-              >
-                <TableCell className="py-3">
-                  <Link
-                    className="text-primary hover:underline font-medium text-sm"
-                    href={"/customers/" + customer.id}
-                  >
-                    {customer.name}
-                  </Link>
-                </TableCell>
-                <TableCell className="py-3">
-                  {customer.subdomain ? (
-                    <a
-                      href={`https://${customer.subdomain}.consolle.one`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline inline-flex items-center gap-1 text-sm"
-                    >
-                      <span className="font-mono">{customer.subdomain}.consolle.one</span>
-                      <ExternalLink className="h-3 w-3 opacity-60" />
-                    </a>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">--</span>
-                  )}
-                </TableCell>
-                <TableCell className="py-3 text-center">
-                  <SSOButton
-                    customerId={customer.id}
-                    customerSlug={customer.subdomain}
-                    hasAccess={customer.subdomain ? true : false}
-                  />
-                </TableCell>
-                <TableCell className="py-3">
-                  <span className="text-sm font-medium tabular-nums">
-                    {customer.userCount || 0}
-                  </span>
-                </TableCell>
-                <TableCell className="py-3">
-                  <ModuleBadges
-                    moduleSlugs={["adq", ...(customer.moduleSlugs || [])].filter((slug, index, self) => self.indexOf(slug) === index)}
-                    maxVisible={3}
-                    showIcon={true}
-                  />
-                </TableCell>
-                <TableCell className="py-3">
-                  <StatusBadge
-                    isActive={customer.isActive ?? true}
-                    hasCustomization={customer.hasCustomization}
-                    hasUsers={customer.userCount}
-                    subdomain={customer.subdomain}
-                    isoStatus={customer.isoStatus}
-                  />
-                </TableCell>
+                <TableHead className="font-semibold text-sm whitespace-nowrap">
+                  Módulos
+                </TableHead>
+                <TableHead className="font-semibold text-sm whitespace-nowrap">
+                  Status
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {Customers?.customers.map((customer) => (
+                <TableRow 
+                  key={customer.id}
+                  className="hover:bg-muted/30 transition-colors"
+                >
+                  <TableCell className="py-3 whitespace-nowrap">
+                    <Link
+                      className="text-primary hover:underline font-medium text-sm"
+                      href={"/customers/" + customer.id}
+                    >
+                      {customer.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="py-3 whitespace-nowrap">
+                    {customer.subdomain ? (
+                      <a
+                        href={`https://${customer.subdomain}.consolle.one`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline inline-flex items-center gap-1 text-sm"
+                      >
+                        <span className="font-mono truncate max-w-[200px]">{customer.subdomain}.consolle.one</span>
+                        <ExternalLink className="h-3 w-3 opacity-60 flex-shrink-0" />
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">--</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-3 text-center whitespace-nowrap">
+                    <SSOButton
+                      customerId={customer.id}
+                      customerSlug={customer.subdomain}
+                      hasAccess={customer.subdomain ? true : false}
+                    />
+                  </TableCell>
+                  <TableCell className="py-3 whitespace-nowrap">
+                    <span className="text-sm font-medium tabular-nums">
+                      {customer.userCount || 0}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3">
+                    <ModuleBadges
+                      moduleSlugs={["adq", ...(customer.moduleSlugs || [])].filter((slug, index, self) => self.indexOf(slug) === index)}
+                      maxVisible={3}
+                      showIcon={true}
+                    />
+                  </TableCell>
+                  <TableCell className="py-3 whitespace-nowrap">
+                    <StatusBadge
+                      isActive={customer.isActive ?? true}
+                      hasCustomization={customer.hasCustomization}
+                      hasUsers={customer.userCount}
+                      subdomain={customer.subdomain}
+                      isoStatus={customer.isoStatus}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
