@@ -1,24 +1,6 @@
 import { SignIn } from "@clerk/nextjs";
-import { headers } from "next/headers";
 
-interface PageProps {
-  searchParams: Promise<{ redirect_url?: string }>;
-}
-
-export default async function TenantSignInPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const headersList = await headers();
-  const hostname = headersList.get("host") || "";
-  const protocol = headersList.get("x-forwarded-proto") || "https";
-  
-  // Usar redirect_url da query string se existir, caso contrário usar /dashboard
-  let afterSignInUrl = params.redirect_url || "/dashboard";
-  
-  // Se o redirect_url for relativo, converter para absoluto usando o hostname atual
-  if (afterSignInUrl.startsWith("/")) {
-    afterSignInUrl = `${protocol}://${hostname}${afterSignInUrl}`;
-  }
-
+export default function TenantSignInPage() {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <SignIn
@@ -39,8 +21,7 @@ export default async function TenantSignInPage({ searchParams }: PageProps) {
             colorPrimary: "#000000",
           },
         }}
-        afterSignInUrl={afterSignInUrl}
-        forceRedirectUrl={afterSignInUrl}
+        afterSignInUrl="/dashboard"
         signUpUrl="/auth/sign-up"
         routing="path"
         path="/auth/sign-in"

@@ -10,27 +10,13 @@ import { extractSubdomain } from "./index";
  * @throws Redirects to /unauthorized if user doesn't have access
  */
 export async function requireTenantAccess(hostname: string) {
-  let userId: string | null = null;
-  try {
-    const authResult = await auth();
-    userId = authResult.userId;
-  } catch (error) {
-    console.error("Error calling auth() in requireTenantAccess:", error);
-    redirect("/auth/sign-in");
-  }
+  const { userId } = await auth();
   
   if (!userId) {
     redirect("/auth/sign-in");
   }
 
-  let user;
-  try {
-    user = await currentUser();
-  } catch (error) {
-    console.error("Error calling currentUser() in requireTenantAccess:", error);
-    redirect("/unauthorized");
-  }
-  
+  const user = await currentUser();
   const email = user?.emailAddresses[0]?.emailAddress;
 
   if (!email) {

@@ -20,12 +20,12 @@ export function CustomersFilterButton({
   onVisibilityChange
 }: CategoriesFilterButtonProps) {
   return (
-    <div className="relative z-50 w-full">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
+    <div className="relative z-50">
+      <div className="flex items-center gap-4">
         <Button
           variant="outline"
           onClick={() => onVisibilityChange(!isFiltersVisible)}
-          className="flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
+          className="flex items-center gap-2 cursor-pointer"
         >
           <FilterIcon className="h-4 w-4" />
           Filtros
@@ -37,7 +37,7 @@ export function CustomersFilterButton({
           <Button
             variant="ghost"
             onClick={onClearFilters}
-            className="text-sm text-muted-foreground cursor w-full sm:w-auto"
+            className="text-sm text-muted-foreground cursor"
           >
             Limpar Filtros
           </Button>
