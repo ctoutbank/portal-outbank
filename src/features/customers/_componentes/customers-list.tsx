@@ -13,7 +13,6 @@ import {
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ModuleBadges } from "@/components/ui/module-badge";
 import { ChevronDown, ExternalLink } from "lucide-react";
-import { SSOButton } from "./sso-button";
 import { useEffect, useState } from "react";
 
 export default function CustomersList({
@@ -62,10 +61,6 @@ export default function CustomersList({
                   Subdomínio
                 </TableHead>
 
-                <TableHead className="font-semibold text-sm text-center whitespace-nowrap">
-                  SSO
-                </TableHead>
-
                 <TableHead className="font-semibold text-sm whitespace-nowrap">
                   Usuários
                 </TableHead>
@@ -106,13 +101,6 @@ export default function CustomersList({
                     ) : (
                       <span className="text-muted-foreground text-sm">--</span>
                     )}
-                  </TableCell>
-                  <TableCell className="py-3 text-center whitespace-nowrap">
-                    <SSOButton
-                      customerId={customer.id}
-                      customerSlug={customer.subdomain}
-                      hasAccess={customer.subdomain ? true : false}
-                    />
                   </TableCell>
                   <TableCell className="py-3 whitespace-nowrap">
                     <span className="text-sm font-medium tabular-nums">

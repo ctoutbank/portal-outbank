@@ -10,12 +10,10 @@ const isPublicRoute = createRouteMatcher([
   "/auth/sign-in(.*)",
   "/auth/sign-up(.*)",
   "/auth/forgot-password(.*)",
-  "/auth/sso/callback(.*)",
   "/forgot-password(.*)",
   "/password-create(.*)",
   "/api/public(.*)",
   "/api/check-subdomain-auth(.*)",
-  "/api/auth/sso(.*)",
   "/unauthorized(.*)",
 ]);
 
@@ -63,7 +61,6 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
       "/auth/sign-in": "/tenant/auth/sign-in",
       "/auth/sign-up": "/tenant/auth/sign-up",
       "/auth/forgot-password": "/tenant/auth/forgot-password",
-      "/auth/sso/callback": "/tenant/auth/sso/callback",
       "/forgot-password": "/tenant/auth/forgot-password",
       "/password-create": "/tenant/password-create",
       "/dashboard": "/tenant/dashboard",
