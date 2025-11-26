@@ -66,7 +66,12 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     if (!isPublicRoute(request)) {
       try {
         await auth.protect();
-      } catch (error) {
+      } catch (error: any) {
+        // NEXT_REDIRECT é uma exceção especial do Next.js para redirects
+        // Não deve ser tratada como erro - deve ser re-lançada
+        if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+          throw error; // Re-lançar redirect do Next.js
+        }
         console.error("Error in auth.protect() (tenant):", error);
         // Se houver erro e não houver userId, redirecionar para sign-in
         if (!userId) {
@@ -116,7 +121,12 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   if (!isPublicRoute(request)) {
     try {
       await auth.protect();
-    } catch (error) {
+    } catch (error: any) {
+      // NEXT_REDIRECT é uma exceção especial do Next.js para redirects
+      // Não deve ser tratada como erro - deve ser re-lançada
+      if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+        throw error; // Re-lançar redirect do Next.js
+      }
       console.error("Error in auth.protect() (non-tenant):", error);
       // Se houver erro e não houver userId, redirecionar para sign-in
       if (!userId) {
