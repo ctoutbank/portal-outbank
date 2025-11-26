@@ -23,7 +23,17 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   const hostname = request.headers.get("host") || "";
   const subdomain = extractSubdomain(hostname);
   const isTenant = isTenantHost(hostname);
-  const { userId } = await auth();
+  
+  // Tratar erro em auth() para evitar MIDDLEWARE_INVOCATION_FAILED
+  let userId: string | null = null;
+  try {
+    const authResult = await auth();
+    userId = authResult.userId;
+  } catch (error) {
+    console.error("Error in auth() middleware:", error);
+    // Em caso de erro, continuar com userId = null
+  }
+  
   const pathname = request.nextUrl.pathname;
   
   if (isTenant && subdomain) {
@@ -54,7 +64,37 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     }
     
     if (!isPublicRoute(request)) {
-      await auth.protect();
+      // Verificar autenticação antes de proteger
+      if (!userId) {
+        const signInUrl = new URL("/auth/sign-in", request.url);
+        signInUrl.searchParams.set("redirect_url", request.url);
+        return NextResponse.redirect(signInUrl);
+      }
+      
+      // Se houver userId, tentar proteger (pode lançar NEXT_REDIRECT)
+      try {
+        await auth.protect();
+      } catch (error: any) {
+        // NEXT_REDIRECT é uma exceção especial do Next.js para redirects
+        // Em vez de re-lançar, fazer redirect manualmente para evitar erro no clerkMiddleware
+        if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+          // Extrair URL de redirect do erro ou usar sign-in padrão
+          const redirectUrl = error?.returnBackUrl || "/auth/sign-in";
+          const signInUrl = new URL(redirectUrl.includes("/auth/sign-in") ? redirectUrl : "/auth/sign-in", request.url);
+          if (!signInUrl.searchParams.has("redirect_url")) {
+            signInUrl.searchParams.set("redirect_url", request.url);
+          }
+          return NextResponse.redirect(signInUrl);
+        }
+        console.error("Error in auth.protect() (tenant):", error);
+        // Se houver erro real e não houver userId, redirecionar para sign-in
+        if (!userId) {
+          const signInUrl = new URL("/auth/sign-in", request.url);
+          signInUrl.searchParams.set("redirect_url", request.url);
+          return NextResponse.redirect(signInUrl);
+        }
+        // Se houver userId mas auth.protect() falhou, permitir continuar
+      }
     }
     
     const tenantRouteMap: Record<string, string> = {
@@ -94,9 +134,39 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   }
   
   if (!isPublicRoute(request)) {
-    await auth.protect();
+    // Verificar autenticação antes de proteger
+    if (!userId) {
+      const signInUrl = new URL("/auth/sign-in", request.url);
+      signInUrl.searchParams.set("redirect_url", request.url);
+      return NextResponse.redirect(signInUrl);
+    }
+    
+    // Se houver userId, tentar proteger (pode lançar NEXT_REDIRECT)
+    try {
+      await auth.protect();
+    } catch (error: any) {
+      // NEXT_REDIRECT é uma exceção especial do Next.js para redirects
+      // Em vez de re-lançar, fazer redirect manualmente para evitar erro no clerkMiddleware
+      if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+        // Extrair URL de redirect do erro ou usar sign-in padrão
+        const redirectUrl = error?.returnBackUrl || "/auth/sign-in";
+        const signInUrl = new URL(redirectUrl.includes("/auth/sign-in") ? redirectUrl : "/auth/sign-in", request.url);
+        if (!signInUrl.searchParams.has("redirect_url")) {
+          signInUrl.searchParams.set("redirect_url", request.url);
+        }
+        return NextResponse.redirect(signInUrl);
+      }
+      console.error("Error in auth.protect() (non-tenant):", error);
+      // Se houver erro real e não houver userId, redirecionar para sign-in
+      if (!userId) {
+        const signInUrl = new URL("/auth/sign-in", request.url);
+        signInUrl.searchParams.set("redirect_url", request.url);
+        return NextResponse.redirect(signInUrl);
+      }
+      // Se houver userId mas auth.protect() falhou, permitir continuar
+    }
   }
-  
+
   return NextResponse.next();
 });
 
