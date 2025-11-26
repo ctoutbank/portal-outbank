@@ -11,19 +11,40 @@
 ### Dois Projetos Separados:
 
 1. **portal-outbank** (este repositório)
-   - Domínio: `portal-outbank.vercel.app` / `consolle.one`
+   - Domínio: `portal-outbank.vercel.app` / `consolle.one` (domínio primário)
    - ✅ **Correção já aplicada** (commit `3c116e9`)
+   - **Impacto**: Apenas o domínio primário
 
 2. **outbank-one** (repositório separado)
    - Domínio: `www.outbank.cloud`
+   - **Subdomínios**: `*.consolle.one` (todos os ISOs)
    - ❌ **Correção ainda não aplicada**
+   - 🔴 **CRÍTICO**: Afeta TODOS os ISOs
    - Repositório: `github.com/ctoutbank/outbank-one`
+
+### ⚠️ Impacto Crítico:
+
+**Todos os ISOs estão com o erro porque:**
+- Os subdomínios `*.consolle.one` apontam para o projeto `outbank-one`
+- O `outbank-one` tem o mesmo problema no middleware
+- **TODOS os ISOs estão inacessíveis** até a correção ser aplicada
 
 ---
 
 ## ⚠️ Problema Identificado
 
-O erro `MIDDLEWARE_INVOCATION_FAILED` está ocorrendo em ambos os projetos porque ambos usam o mesmo padrão de middleware com `auth.protect()`. A correção aplicada no `portal-outbank` precisa ser replicada no `outbank-one`.
+O erro `MIDDLEWARE_INVOCATION_FAILED` está ocorrendo em ambos os projetos porque ambos usam o mesmo padrão de middleware com `auth.protect()`. 
+
+### 🔴 Impacto Crítico:
+
+**O problema no `outbank-one` afeta:**
+- ✅ `www.outbank.cloud` (domínio principal)
+- ✅ **TODOS os subdomínios `*.consolle.one`** (todos os ISOs)
+- ✅ **TODOS os usuários dos ISOs** (inacessíveis)
+
+**Por isso a correção no `outbank-one` é URGENTE e CRÍTICA!**
+
+A correção aplicada no `portal-outbank` precisa ser replicada no `outbank-one` **imediatamente** para restaurar o acesso de todos os ISOs.
 
 ---
 
@@ -183,6 +204,7 @@ Após aplicar a correção:
 ---
 
 **Status**: ⚠️ Aguardando aplicação da correção no projeto `outbank-one`  
-**Prioridade**: 🔴 Alta (site fora do ar)  
-**Tempo estimado**: 10-15 minutos
+**Prioridade**: 🔴🔴🔴 **CRÍTICA** (todos os ISOs fora do ar)  
+**Tempo estimado**: 10-15 minutos  
+**Impacto**: Todos os ISOs (`*.consolle.one`) + `www.outbank.cloud`
 
