@@ -11,13 +11,7 @@ import { eq, and, ilike } from "drizzle-orm";
  */
 export async function isSuperAdmin(): Promise<boolean> {
   try {
-    let clerkUser;
-    try {
-      clerkUser = await currentUser();
-    } catch (error) {
-      console.error("Error calling currentUser() in isSuperAdmin:", error);
-      return false;
-    }
+    const clerkUser = await currentUser();
     if (!clerkUser) return false;
 
     const user = await db
@@ -47,13 +41,7 @@ export async function isSuperAdmin(): Promise<boolean> {
  */
 export async function isAdminUser(): Promise<boolean> {
   try {
-    let clerkUser;
-    try {
-      clerkUser = await currentUser();
-    } catch (error) {
-      console.error("Error calling currentUser() in isAdminUser:", error);
-      return false;
-    }
+    const clerkUser = await currentUser();
     if (!clerkUser) return false;
 
     const user = await db
@@ -85,14 +73,9 @@ export async function isAdminUser(): Promise<boolean> {
  * Verifica se o usuário é Admin ou Super Admin
  */
 export async function isAdminOrSuperAdmin(): Promise<boolean> {
-  try {
-    const isSuper = await isSuperAdmin();
-    const isAdmin = await isAdminUser();
-    return isSuper || isAdmin;
-  } catch (error) {
-    console.error("Error in isAdminOrSuperAdmin:", error);
-    return false;
-  }
+  const isSuper = await isSuperAdmin();
+  const isAdmin = await isAdminUser();
+  return isSuper || isAdmin;
 }
 
 /**
@@ -101,13 +84,7 @@ export async function isAdminOrSuperAdmin(): Promise<boolean> {
  */
 export async function hasPermission(functionName: string): Promise<boolean> {
   try {
-    let clerkUser;
-    try {
-      clerkUser = await currentUser();
-    } catch (error) {
-      console.error("Error calling currentUser() in hasPermission:", error);
-      return false;
-    }
+    const clerkUser = await currentUser();
     if (!clerkUser) return false;
 
     const result = await db
@@ -169,13 +146,7 @@ export async function getAdminAllowedCustomers(adminUserId: number): Promise<num
  */
 export async function getCurrentUserInfo() {
   try {
-    let clerkUser;
-    try {
-      clerkUser = await currentUser();
-    } catch (error) {
-      console.error("Error calling currentUser() in getCurrentUserInfo:", error);
-      return null;
-    }
+    const clerkUser = await currentUser();
     if (!clerkUser) return null;
 
     const user = await db
@@ -270,13 +241,7 @@ export async function getCurrentUserInfo() {
  */
 export async function hasRestrictedDataAccess(): Promise<boolean> {
   try {
-    let clerkUser;
-    try {
-      clerkUser = await currentUser();
-    } catch (error) {
-      console.error("Error calling currentUser() in hasRestrictedDataAccess:", error);
-      return false;
-    }
+    const clerkUser = await currentUser();
     if (!clerkUser) return false;
 
     // Super Admin sempre vê tudo
