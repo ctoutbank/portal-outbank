@@ -12,7 +12,6 @@ import { getCurrentTenantCustomization } from "@/lib/tenant-detection";
 import SessionTimeout from "@/components/session-timeout";
 import { ConditionalSidebar } from "@/components/conditional-sidebar";
 import { isAdminOrSuperAdmin } from "@/lib/permissions/check-permissions";
-import { validateAndLogClerkEnv } from "@/lib/clerk/env-validation";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,43 +25,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Validar variáveis de ambiente do Clerk (apenas em desenvolvimento)
-  validateAndLogClerkEnv();
-
   const tenantCustomization = await getCurrentTenantCustomization();
-  let isAdmin = false;
-  try {
-    isAdmin = await isAdminOrSuperAdmin();
-  } catch (error) {
-    console.error("Error checking admin permissions in layout:", error);
-    // Em caso de erro, assumir que não é admin (comportamento seguro)
-  }
+  const isAdmin = await isAdminOrSuperAdmin();
   
   const loginBackgroundImage = tenantCustomization?.loginImageUrl || tenantCustomization?.imageUrl || '/bg_login.jpg';
   
-  /**
-   * Configuração do ClerkProvider
-   * 
-   * Variáveis de ambiente utilizadas:
-   * - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: Obrigatória (chave pública do Clerk)
-   * - CLERK_SECRET_KEY: Obrigatória (chave secreta do Clerk)
-   * - NEXT_PUBLIC_CLERK_SIGN_IN_URL: Opcional (fallback: /auth/sign-in)
-   * - NEXT_PUBLIC_CLERK_SIGN_UP_URL: Opcional (fallback: /auth/sign-up)
-   * 
-   * Para Satellite Domains (subdomínios), também configure:
-   * - CLERK_DOMAIN: Domínio principal do Clerk (ex: clerk.consolle.one)
-   * - CLERK_IS_SATELLITE: true (se estiver usando Satellite Domains)
-   * 
-   * Veja .env.example para mais detalhes
-   */
-  const signInUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/auth/sign-in";
-  const signUpUrl = process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/auth/sign-up";
-
   return (
     <ClerkProvider
       localization={ptBR}
-      signInUrl={signInUrl}
-      signUpUrl={signUpUrl}
       appearance={{
         signIn: {
           elements: {

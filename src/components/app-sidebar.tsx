@@ -30,7 +30,7 @@ const navMainItems: Array<{
 }> = [
   { title: "Dashboard", url: "/", icon: ChartPie, isActive: false },
   {
-    title: "ISOs",
+    title: "ISOS",
     url: "/customers",
     icon: Users,
     isActive: false,

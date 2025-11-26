@@ -27,9 +27,8 @@ export async function GET(request: NextRequest) {
 
     if (!userId) {
       // Se não estiver autenticado, redirecionar para sign-in
-      // Preservar o token SSO na URL para uso após autenticação
-      const redirectUrl = encodeURIComponent(`/auth/sso/callback?token=${token}`);
-      return NextResponse.redirect(`/auth/sign-in?redirect_url=${redirectUrl}`);
+      // O token SSO será preservado para verificação após login
+      return NextResponse.redirect(`/auth/sign-in?sso_token=${token}`);
     }
 
     // Buscar usuário no banco para verificar se corresponde ao usuário autenticado

@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, XCircle, TrendingUp, Sparkles } from "lucide-react";
 
 interface ISOStatisticsCardsProps {
@@ -21,42 +21,49 @@ export function ISOStatisticsCards({
       label: "ISOs Ativos",
       value: totalActive,
       icon: CheckCircle,
-      description: "Total de ISOs ativos",
-    },
-    {
-      label: "Criados Este Mês",
-      value: createdThisMonth,
-      icon: TrendingUp,
-      description: "ISOs criados neste mês",
-    },
-    {
-      label: "Últimos 7 Dias",
-      value: createdLastWeek,
-      icon: Sparkles,
-      description: "ISOs criados nos últimos 7 dias",
+      color: "text-green-600",
+      bgColor: "bg-green-50 dark:bg-green-950",
     },
     {
       label: "ISOs Inativos",
       value: totalInactive,
       icon: XCircle,
-      description: "Total de ISOs inativos",
+      color: "text-gray-600",
+      bgColor: "bg-gray-50 dark:bg-gray-950",
+    },
+    {
+      label: "Criados Este Mês",
+      value: createdThisMonth,
+      icon: TrendingUp,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50 dark:bg-blue-950",
+    },
+    {
+      label: "Últimos 7 Dias",
+      value: createdLastWeek,
+      icon: Sparkles,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50 dark:bg-orange-950",
     },
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6 w-full max-w-full overflow-x-hidden">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
-          <Card key={stat.label}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium">{stat.label}</CardTitle>
-              <Icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg font-bold">{stat.value}</div>
-              <div className="flex items-center space-x-2">
-                <p className="text-xs text-muted-foreground">{stat.description}</p>
+          <Card key={stat.label} className="border-0 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {stat.label}
+                  </p>
+                  <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                </div>
+                <div className={`${stat.bgColor} p-3 rounded-full`}>
+                  <Icon className={`h-6 w-6 ${stat.color}`} />
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -9,6 +9,7 @@ import CustomersList from "@/features/customers/_componentes/customers-list";
 import { CustomersFilter } from "@/features/customers/_componentes/custumers-filter";
 import { getCustomers, getCustomerStatistics } from "@/features/customers/server/customers";
 import { ISOStatisticsCards } from "@/features/customers/_componentes/iso-statistics-cards";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/permissions/require-admin";
 
@@ -20,7 +21,7 @@ type CustomersPageProps = {
   search?: string;
   name?: string;
   customerId?: string;
-  userName?: string;
+  settlementManagementType?: string;
 };
 
 export default async function Customerspage({
@@ -42,7 +43,7 @@ export default async function Customerspage({
     page,
     perPage,
     params.customerId || "",
-    params.userName || ""
+    params.settlementManagementType || ""
   );
 
   const statistics = await getCustomerStatistics();
@@ -51,40 +52,41 @@ export default async function Customerspage({
 
   return (
     <>
-      <BaseHeader breadcrumbItems={[{ title: "ISOs", subtitle:"", url: "/customers" }]} />
+      <BaseHeader breadcrumbItems={[{ title: "Iso", subtitle:"", url: "/customers" }]} />
 
-      <BaseBody title="ISOs" subtitle={`visualização de todos os ISOs`}>
-        <div className="flex flex-col space-y-4 w-full max-w-full overflow-x-hidden">
-          <div className="mb-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4">
-            <div className="flex-1 min-w-0">
+      <BaseBody title="Isos" subtitle={`visualização de todos os Isos`}>
+        <div className="flex flex-col space-y-4">
+          <div className="mb-1 flex items-center justify-between">
+            <div className="flex-1">
               <CustomersFilter
                 nameIn={params.name || ""}
                 customerIdIn={params.customerId || ""}
-                userNameIn={params.userName || ""}
+                settlementManagementTypeIn={
+                  params.settlementManagementType || ""
+                }
               />
             </div>
-            <Button asChild className="sm:ml-2 flex-shrink-0">
+            <Button asChild className="ml-2">
               <Link href="/customers/0">
-                Novo ISO
+                <Plus className="h-4 w-4 mr-1" />
+                Novo Iso
               </Link>
             </Button>
           </div>
 
-          <div className="mt-4">
-            <ISOStatisticsCards
-              totalActive={statistics.totalActive}
-              totalInactive={statistics.totalInactive}
-              createdThisMonth={statistics.createdThisMonth}
-              createdLastWeek={statistics.createdLastWeek}
-            />
-          </div>
+          <ISOStatisticsCards
+            totalActive={statistics.totalActive}
+            totalInactive={statistics.totalInactive}
+            createdThisMonth={statistics.createdThisMonth}
+            createdLastWeek={statistics.createdLastWeek}
+          />
 
           <CustomersList
             Customers={customers}
           />
 
           {totalCount > 0 && (
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-4">
+            <div className="flex items-center justify-between mt-4">
               <PageSizeSelector
                 currentPageSize={perPage}
                 pageName="customers"

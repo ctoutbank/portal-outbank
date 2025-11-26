@@ -1,36 +1,26 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 
 
 
 type CustomersFilterContentProps = {
     namein?: string;
-    userNameIn?: string;
-    onFilter: (namein: string, userName: string) => void;
+   
+    settlementManagementTypein?: string;
+    onFilter: (namein: string, settlementManagementType: string) => void;
     onClose: () => void;
 }
 
-export function CustomersFilterContent({namein, userNameIn, onFilter, onClose}: CustomersFilterContentProps) {
+export function CustomersFilterContent({namein, settlementManagementTypein, onFilter, onClose}: CustomersFilterContentProps) {
     const [name,setName] = useState(namein || "")
     
-    const [userName,setUserName] = useState(userNameIn || "")
-
-    // Atualizar valores quando props mudarem
-    useEffect(() => {
-        setName(namein || "")
-    }, [namein])
-
-    useEffect(() => {
-        setUserName(userNameIn || "")
-    }, [userNameIn])
+    const [settlementManagementType,setSettlementManagementType] = useState(settlementManagementTypein || "")
 
 
     const applyFilters = () => {
-        onFilter(name, userName)
+        onFilter(name,  settlementManagementType)
         onClose()
     }
 
@@ -46,33 +36,31 @@ export function CustomersFilterContent({namein, userNameIn, onFilter, onClose}: 
     
     return (
         <div
-          className="absolute left-0 mt-2 bg-background border rounded-lg p-4 shadow-md w-full max-w-md sm:max-w-lg md:max-w-xl z-50"
+          className="absolute left-0 mt-2 bg-background border rounded-lg p-4 shadow-md w-[900px]"
           onKeyDown={handleKeyDown}
           tabIndex={0}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="text-xs font-medium mb-1.5">Nome</div>
               <Input
-                placeholder="Nome do ISO"
+                placeholder="Nome do cliente"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="h-9"
-                maxLength={30}
               />
             </div>
 
             
             <div>
-              <div className="text-xs font-medium mb-1.5">Usuário</div>
+              <div className="text-xs font-medium mb-1.5">Tipo de Gestão</div>
               <Input
-                placeholder="Nome ou email do usuário"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
+                placeholder="Tipo de gestão de liquidação"
+                value={settlementManagementType}
+                onChange={(e) => setSettlementManagementType(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="h-9 w-full"
-                maxLength={30}
               />
             </div>
           </div>
