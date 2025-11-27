@@ -1352,411 +1352,39 @@ export default function CustomerWizardForm({
               {isFirstStepComplete && (
                 <>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {/* Coluna Esquerda - Imagens */}
-                      <div className="space-y-4">
-                        {/* Upload de Imagem */}
-                        <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">
-                            Imagem ou Logotipo
-                          </label>
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/jpg,image/png,image/svg+xml"
-                            name="image"
-                            id="image"
-                            onChange={handleImageChange}
-                            className="block w-full text-sm text-foreground
-                              file:mr-4 file:py-2 file:px-4
-                              file:rounded file:border-0
-                              file:text-sm file:font-semibold
-                              file:bg-secondary file:text-gray-700
-                              hover:file:bg-gray-300
-                              file:cursor-pointer
-                              dark:file:bg-white
-                              [&::file-selector-button]:mr-4"
-                            style={{ color: 'transparent' }}
-                          />
-                          {imageFileName && (
-                            <p className="mt-1 text-xs text-green-600 font-medium">
-                              ✓ Arquivo selecionado: {imageFileName}
-                            </p>
-                          )}
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            SVG (preferencial), PNG ou JPG • Proporção 3:1 a 4:1 • 448×160px (2×) ou 672×240px (3×) • Máx. 100KB
-                          </p>
-                          {imageError && (
-                            <p className="mt-1 text-xs text-orange-600 font-medium">
-                              {imageError}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Preview da Imagem Selecionada */}
-                        {imagePreview && (
-                          <div>
-                            <p className="text-sm text-foreground mb-1">
-                              Pré-visualização:
-                            </p>
-                            {/* Usa img simples pra evitar problemas com next/image */}
-                            <Image
-                              src={imagePreview}
-                              alt={"image preview"}
-                              height={100}
-                              width={100}
-                            ></Image>
+                    {/* LINHA 1: CORES */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                      {/* Cor Primária */}
+                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                        <label className="block text-sm font-medium text-white mb-4">
+                          <div className="flex items-center gap-1">
+                            <span>Cor Primária</span>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="text-white p-1"
+                                  >
+                                    <Info className="w-4 h-4 text-gray-400" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p>
+                                    A cor primária deve ser uma cor escura.
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
-                        )}
-
-                        {/* Preview da Imagem Atual */}
-                        {customizationData?.imageUrl && !imagePreview && (
-                          <div>
-                            <p className="text-sm text-foreground mb-1">
-                              Logo atual:
-                            </p>
-                            <img
-                              src={addCacheBustingToUrl(customizationData.imageUrl)}
-                              alt=""
-                              height={100}
-                              width={100}
-                              style={{ maxWidth: '100px', maxHeight: '100px' }}
-                              key={customizationData.imageUrl}
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleRemoveImage('logo')}
-                              disabled={isRemovingImage}
-                            >
-                              {isRemovingImage ? "Removendo..." : "Remover logo"}
-                            </Button>
-                          </div>
-                        )}
-
-                        {/* Upload de Imagem de Login */}
-                        <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">
-                            Imagem de Fundo do Login
-                          </label>
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/jpg,image/png,image/webp"
-                            name="loginImage"
-                            id="loginImage"
-                            onChange={handleLoginImageChange}
-                            className="block w-full text-sm text-foreground
-                              file:mr-4 file:py-2 file:px-4
-                              file:rounded file:border-0
-                              file:text-sm file:font-semibold
-                              file:bg-secondary file:text-gray-700
-                              hover:file:bg-gray-300
-                              file:cursor-pointer
-                              dark:file:bg-white
-                              [&::file-selector-button]:mr-4"
-                            style={{ color: 'transparent' }}
-                          />
-                          {loginImageFileName && (
-                            <p className="mt-1 text-xs text-green-600 font-medium">
-                              ✓ Arquivo selecionado: {loginImageFileName}
-                            </p>
-                          )}
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            WebP (preferencial) ou JPG/PNG • 1600×1200px (4:3) ou 1920×1440px • Conteúdo centralizado • Máx. 3MB
-                          </p>
-                          {loginImageError && (
-                            <p className="mt-1 text-xs text-orange-600 font-medium">
-                              {loginImageError}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Preview da Imagem de Login */}
-                        {loginImagePreview && (
-                          <div className="mt-4">
-                            <p className="text-sm text-foreground mb-2">
-                              Preview da Imagem de Fundo:
-                            </p>
-                            <div className="border rounded-lg overflow-hidden">
-                              <Image
-                                src={loginImagePreview}
-                                alt="Login background preview"
-                                width={400}
-                                height={225}
-                                className="w-full h-48 object-cover"
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                                {/* Preview da Imagem de Login Atual */}
-                                {customizationData?.loginImageUrl && !loginImagePreview && (
-                                  <div className="mt-4">
-                                    <p className="text-sm text-foreground mb-2">
-                                      Imagem de fundo atual:
-                                    </p>
-                                    <div className="border rounded-lg overflow-hidden">
-                                      <img
-                                        src={addCacheBustingToUrl(customizationData.loginImageUrl)}
-                                        alt="Current login background"
-                                        width={400}
-                                        height={225}
-                                        className="w-full h-48 object-cover"
-                                        key={customizationData.loginImageUrl}
-                                      />
-                            </div>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleRemoveImage('login')}
-                              disabled={isRemovingImage}
-                            >
-                              {isRemovingImage ? "Removendo..." : "Remover imagem de login"}
-                            </Button>
-                          </div>
-                        )}
-
-                        {/* Upload de Favicon */}
-                        <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">
-                            Favicon
-                          </label>
-                          <input
-                            type="file"
-                            accept="image/x-icon,image/vnd.microsoft.icon,image/ico,image/png"
-                            name="favicon"
-                            id="favicon"
-                            onChange={handleFaviconChange}
-                            className="block w-full text-sm text-foreground
-                              file:mr-4 file:py-2 file:px-4
-                              file:rounded file:border-0
-                              file:text-sm file:font-semibold
-                              file:bg-secondary file:text-gray-700
-                              hover:file:bg-gray-300
-                              file:cursor-pointer
-                              dark:file:bg-white
-                              [&::file-selector-button]:mr-4"
-                            style={{ color: 'transparent' }}
-                          />
-                          {faviconFileName && (
-                            <p className="mt-1 text-xs text-green-600 font-medium">
-                              ✓ Arquivo selecionado: {faviconFileName}
-                            </p>
-                          )}
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            ICO ou PNG • 32×32px ou 16×16px • Quadrado • Máx. 100KB
-                          </p>
-                          {faviconError && (
-                            <p className="mt-1 text-xs text-orange-600 font-medium">
-                              {faviconError}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Preview do Favicon */}
-                        {faviconPreview && (
-                          <div className="mt-4">
-                            <p className="text-sm text-foreground mb-2">
-                              Preview do Favicon:
-                            </p>
-                            <div className="flex gap-4 items-center border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
-                              <div className="flex flex-col items-center gap-1">
-                                <Image
-                                  src={faviconPreview}
-                                  alt="Favicon 16x16"
-                                  width={16}
-                                  height={16}
-                                  className="border border-gray-300"
-                                />
-                                <span className="text-xs text-muted-foreground">16×16</span>
-                              </div>
-                              <div className="flex flex-col items-center gap-1">
-                                <Image
-                                  src={faviconPreview}
-                                  alt="Favicon 32x32"
-                                  width={32}
-                                  height={32}
-                                  className="border border-gray-300"
-                                />
-                                <span className="text-xs text-muted-foreground">32×32</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                                {/* Preview do Favicon Atual */}
-                                {customizationData?.faviconUrl && !faviconPreview && (
-                                  <div className="mt-4">
-                                    <p className="text-sm text-foreground mb-2">
-                                      Favicon atual:
-                                    </p>
-                                    <div className="flex gap-4 items-center border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
-                                      <div className="flex flex-col items-center gap-1">
-                                        <img
-                                          src={addCacheBustingToUrl(customizationData.faviconUrl)}
-                                          alt="Current favicon 16x16"
-                                          width={16}
-                                          height={16}
-                                          className="border border-gray-300"
-                                          key={`${customizationData.faviconUrl}-16`}
-                                        />
-                                        <span className="text-xs text-muted-foreground">16×16</span>
-                                      </div>
-                                      <div className="flex flex-col items-center gap-1">
-                                        <img
-                                          src={addCacheBustingToUrl(customizationData.faviconUrl)}
-                                          alt="Current favicon 32x32"
-                                          width={32}
-                                          height={32}
-                                          className="border border-gray-300"
-                                          key={`${customizationData.faviconUrl}-32`}
-                                        />
-                                <span className="text-xs text-muted-foreground">32×32</span>
-                              </div>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleRemoveImage('favicon')}
-                              disabled={isRemovingImage}
-                            >
-                              {isRemovingImage ? "Removendo..." : "Remover favicon"}
-                            </Button>
-                          </div>
-                        )}
-
-                        {/* Upload de Logo para Email e Relatórios */}
-                        <div>
-                          <label className="block text-sm font-medium text-foreground mb-2">
-                            Logo para Email e Relatórios
-                          </label>
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/jpg,image/png,image/svg+xml"
-                            name="emailImage"
-                            id="emailImage"
-                            onChange={handleEmailImageChange}
-                            className="block w-full text-sm text-foreground
-                              file:mr-4 file:py-2 file:px-4
-                              file:rounded file:border-0
-                              file:text-sm file:font-semibold
-                              file:bg-secondary file:text-gray-700
-                              hover:file:bg-gray-300
-                              file:cursor-pointer
-                              dark:file:bg-white
-                              [&::file-selector-button]:mr-4"
-                            style={{ color: 'transparent' }}
-                          />
-                          {emailImageFileName && (
-                            <p className="mt-1 text-xs text-green-600 font-medium">
-                              ✓ Arquivo selecionado: {emailImageFileName}
-                            </p>
-                          )}
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            SVG (preferencial), PNG ou JPG • Recomendado: logo com fundo transparente ou versão adequada para fundo branco • Máx. 3MB
-                          </p>
-                          {emailImageError && (
-                            <p className="mt-1 text-xs text-orange-600 font-medium">
-                              {emailImageError}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Preview da Logo de Email Selecionada */}
-                        {emailImagePreview && (
-                          <div>
-                            <p className="text-sm text-foreground mb-1">
-                              Pré-visualização:
-                            </p>
-                            <Image
-                              src={emailImagePreview}
-                              alt="email image preview"
-                              height={100}
-                              width={100}
-                            ></Image>
-                          </div>
-                        )}
-
-                                {/* Preview da Logo de Email Atual */}
-                                {customizationData?.emailImageUrl && !emailImagePreview && (
-                                  <div>
-                                    <p className="text-sm text-foreground mb-1">
-                                      Logo de email atual:
-                                    </p>
-                                    <img
-                                      src={addCacheBustingToUrl(customizationData.emailImageUrl)}
-                                      alt=""
-                                      height={100}
-                                      width={100}
-                                      style={{ maxWidth: '100px', maxHeight: '100px' }}
-                                      key={customizationData.emailImageUrl}
-                                    />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleRemoveImage('email')}
-                              disabled={isRemovingImage}
-                            >
-                              {isRemovingImage ? "Removendo..." : "Remover logo de email"}
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Coluna Direita - Cores */}
-                      <div className="space-y-4">
-                        {/* Botão Remover Todas as Imagens */}
-                        {(customizationData?.imageUrl || customizationData?.loginImageUrl || customizationData?.faviconUrl || customizationData?.emailImageUrl) && (
-                          <div className="pb-4 border-b">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
-                              onClick={handleRemoveAllImages}
-                              disabled={isRemovingImage}
-                            >
-                              {isRemovingImage ? "Removendo..." : "Remover todas as imagens"}
-                            </Button>
-                          </div>
-                        )}
-                        {/* Cor Primária */}
-                        <div>
-                          <label className="block text-sm font-medium text-foreground mb-1">
-                            <div className="flex items-center gap-1">
-                              <span>Cor Primária</span>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      type="button"
-                                      className="text-foreground p-1"
-                                    >
-                                      <Info className="w-4 h-4 text-muted-foreground" />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top">
-                                    <p>
-                                      A cor primária deve ser uma cor escura.
-                                    </p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          </label>
-                          <div className="flex items-center gap-4">
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-[60px] h-12">
                             <input
                               type="color"
                               name="primaryColor"
                               value={primaryColorHex}
                               onChange={(e) => {
-                                // ✅ Atualização instantânea
                                 const hexColor = e.target.value;
                                 setPrimaryColorHex(hexColor);
                                 setCustomizationData(prev => ({
@@ -1768,52 +1396,54 @@ export default function CustomerWizardForm({
                                   imageUrl: prev?.imageUrl,
                                   loginImageUrl: prev?.loginImageUrl,
                                   faviconUrl: prev?.faviconUrl,
+                                  emailImageUrl: prev?.emailImageUrl,
                                 }));
                               }}
-                              className="h-10 w-20 rounded border cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={primaryColorHex}
-                              onChange={(e) => {
-                                const hexColor = e.target.value;
-                                setPrimaryColorHex(hexColor);
-                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                  setCustomizationData(prev => ({
-                                    ...prev,
-                                    primaryColor: hexToHslForUpdate(hexColor),
-                                    id: prev?.id ?? 0,
-                                    subdomain: prev?.subdomain,
-                                    secondaryColor: prev?.secondaryColor,
-                                    imageUrl: prev?.imageUrl,
-                                    loginImageUrl: prev?.loginImageUrl,
-                                    faviconUrl: prev?.faviconUrl,
-                                  }));
-                                }
-                              }}
-                              className="flex-1 rounded border px-3 py-2 text-sm"
-                              placeholder="#000000"
-                            />
-                            {/* ✅ Preview instantâneo */}
-                            <div
-                              className="h-10 w-20 rounded border"
-                              style={{ backgroundColor: primaryColorHex }}
+                              className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
                             />
                           </div>
+                          <input
+                            type="text"
+                            value={primaryColorHex}
+                            onChange={(e) => {
+                              const hexColor = e.target.value;
+                              setPrimaryColorHex(hexColor);
+                              if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                setCustomizationData(prev => ({
+                                  ...prev,
+                                  primaryColor: hexToHslForUpdate(hexColor),
+                                  id: prev?.id ?? 0,
+                                  subdomain: prev?.subdomain,
+                                  secondaryColor: prev?.secondaryColor,
+                                  imageUrl: prev?.imageUrl,
+                                  loginImageUrl: prev?.loginImageUrl,
+                                  faviconUrl: prev?.faviconUrl,
+                                  emailImageUrl: prev?.emailImageUrl,
+                                }));
+                              }
+                            }}
+                            className="flex-1 rounded-md border border-[#2a2a2a] h-12 px-4 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                            placeholder="#000000"
+                          />
+                          <div
+                            className="w-[100px] h-12 rounded-md border border-[#2a2a2a] flex-shrink-0"
+                            style={{ backgroundColor: primaryColorHex }}
+                          />
                         </div>
+                      </div>
 
-                        {/* Cor Secundária */}
-                        <div>
-                          <label className="block text-sm font-medium text-foreground mb-1">
-                            Cor Secundária
-                          </label>
-                          <div className="flex items-center gap-4">
+                      {/* Cor Secundária */}
+                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                        <label className="block text-sm font-medium text-white mb-4">
+                          Cor Secundária
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-[60px] h-12">
                             <input
                               type="color"
                               name="secondaryColor"
                               value={secondaryColorHex}
                               onChange={(e) => {
-                                // ✅ Atualização instantânea
                                 const hexColor = e.target.value;
                                 setSecondaryColorHex(hexColor);
                                 setCustomizationData(prev => ({
@@ -1825,41 +1455,332 @@ export default function CustomerWizardForm({
                                   imageUrl: prev?.imageUrl,
                                   loginImageUrl: prev?.loginImageUrl,
                                   faviconUrl: prev?.faviconUrl,
+                                  emailImageUrl: prev?.emailImageUrl,
                                 }));
                               }}
-                              className="h-10 w-20 rounded border cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={secondaryColorHex}
-                              onChange={(e) => {
-                                const hexColor = e.target.value;
-                                setSecondaryColorHex(hexColor);
-                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                  setCustomizationData(prev => ({
-                                    ...prev,
-                                    secondaryColor: hexToHslForUpdate(hexColor),
-                                    id: prev?.id ?? 0,
-                                    subdomain: prev?.subdomain,
-                                    primaryColor: prev?.primaryColor,
-                                    imageUrl: prev?.imageUrl,
-                                    loginImageUrl: prev?.loginImageUrl,
-                                    faviconUrl: prev?.faviconUrl,
-                                  }));
-                                }
-                              }}
-                              className="flex-1 rounded border px-3 py-2 text-sm"
-                              placeholder="#ffffff"
-                            />
-                            {/* ✅ Preview instantâneo */}
-                            <div
-                              className="h-10 w-20 rounded border"
-                              style={{ backgroundColor: secondaryColorHex }}
+                              className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
                             />
                           </div>
+                          <input
+                            type="text"
+                            value={secondaryColorHex}
+                            onChange={(e) => {
+                              const hexColor = e.target.value;
+                              setSecondaryColorHex(hexColor);
+                              if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                setCustomizationData(prev => ({
+                                  ...prev,
+                                  secondaryColor: hexToHslForUpdate(hexColor),
+                                  id: prev?.id ?? 0,
+                                  subdomain: prev?.subdomain,
+                                  primaryColor: prev?.primaryColor,
+                                  imageUrl: prev?.imageUrl,
+                                  loginImageUrl: prev?.loginImageUrl,
+                                  faviconUrl: prev?.faviconUrl,
+                                  emailImageUrl: prev?.emailImageUrl,
+                                }));
+                              }
+                            }}
+                            className="flex-1 rounded-md border border-[#2a2a2a] h-12 px-4 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                            placeholder="#ffffff"
+                          />
+                          <div
+                            className="w-[100px] h-12 rounded-md border border-[#2a2a2a] flex-shrink-0"
+                            style={{ backgroundColor: secondaryColorHex }}
+                          />
                         </div>
                       </div>
                     </div>
+
+                    {/* LINHA 2: 3 CARDS DE IMAGENS */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                      {/* Card 1: Logotipo Principal */}
+                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                        <label className="text-sm font-medium text-white mb-1">
+                          Imagem ou Logotipo
+                        </label>
+                        <p className="text-xs text-gray-400 mb-4">
+                          SVG (preferencial), PNG ou JPG • Proporção 3:1 a 4:1 • 448×160px (2×) ou 672×240px (3×) • Máx. 100KB
+                        </p>
+                        
+                        <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors ${(imagePreview || customizationData?.imageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                          {imagePreview ? (
+                            <img src={imagePreview} alt="Preview" className="max-w-full max-h-[180px] object-contain" />
+                          ) : customizationData?.imageUrl ? (
+                            <img src={addCacheBustingToUrl(customizationData.imageUrl)} alt="Logo atual" className="max-w-full max-h-[180px] object-contain" key={customizationData.imageUrl} />
+                          ) : (
+                            <div className="text-center text-[#606060]">
+                              <div className="text-5xl mb-2 opacity-50">🖼️</div>
+                              <div className="text-xs">Nenhuma imagem selecionada</div>
+                            </div>
+                          )}
+                        </div>
+
+                        {imageError && (
+                          <p className="text-xs text-orange-600 font-medium mb-2">
+                            {imageError}
+                          </p>
+                        )}
+
+                        <div className="relative mb-3">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/svg+xml"
+                            name="image"
+                            id="image"
+                            onChange={handleImageChange}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor="image"
+                            className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                          >
+                            <span>📁</span>
+                            <span>Selecionar arquivo</span>
+                          </label>
+                        </div>
+
+                        {imageFileName && (
+                          <p className="text-xs text-green-600 font-medium mb-3">
+                            ✓ Arquivo selecionado: {imageFileName}
+                          </p>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage('logo')}
+                          disabled={isRemovingImage || (!imagePreview && !customizationData?.imageUrl)}
+                          className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                        >
+                          <span>🗑️</span>
+                          <span>{isRemovingImage ? "Removendo..." : "Remover logo"}</span>
+                        </button>
+                      </div>
+
+                      {/* Card 2: Logo para Email e Relatórios */}
+                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                        <label className="text-sm font-medium text-white mb-1">
+                          Logo para Email e Relatórios
+                        </label>
+                        <p className="text-xs text-gray-400 mb-4">
+                          SVG (preferencial), PNG ou JPG • Recomendado: logo com fundo transparente ou versão adequada para fundo branco • Máx. 3MB
+                        </p>
+                        
+                        <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors ${(emailImagePreview || customizationData?.emailImageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                          {emailImagePreview ? (
+                            <img src={emailImagePreview} alt="Preview" className="max-w-full max-h-[180px] object-contain" />
+                          ) : customizationData?.emailImageUrl ? (
+                            <img src={addCacheBustingToUrl(customizationData.emailImageUrl)} alt="Logo de email atual" className="max-w-full max-h-[180px] object-contain" key={customizationData.emailImageUrl} />
+                          ) : (
+                            <div className="text-center text-[#606060]">
+                              <div className="text-5xl mb-2 opacity-50">📧</div>
+                              <div className="text-xs">Nenhuma imagem selecionada</div>
+                            </div>
+                          )}
+                        </div>
+
+                        {emailImageError && (
+                          <p className="text-xs text-orange-600 font-medium mb-2">
+                            {emailImageError}
+                          </p>
+                        )}
+
+                        <div className="relative mb-3">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/svg+xml"
+                            name="emailImage"
+                            id="emailImage"
+                            onChange={handleEmailImageChange}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor="emailImage"
+                            className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                          >
+                            <span>📁</span>
+                            <span>Selecionar arquivo</span>
+                          </label>
+                        </div>
+
+                        {emailImageFileName && (
+                          <p className="text-xs text-green-600 font-medium mb-3">
+                            ✓ Arquivo selecionado: {emailImageFileName}
+                          </p>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage('email')}
+                          disabled={isRemovingImage || (!emailImagePreview && !customizationData?.emailImageUrl)}
+                          className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                        >
+                          <span>🗑️</span>
+                          <span>{isRemovingImage ? "Removendo..." : "Remover logo de email"}</span>
+                        </button>
+                      </div>
+
+                      {/* Card 3: Favicon */}
+                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                        <label className="text-sm font-medium text-white mb-1">
+                          Favicon
+                        </label>
+                        <p className="text-xs text-gray-400 mb-4">
+                          ICO ou PNG • 32×32px ou 16×16px • Quadrado • Máx. 100KB
+                        </p>
+                        
+                        <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[120px] flex items-center justify-center mb-4 transition-colors ${(faviconPreview || customizationData?.faviconUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                          {faviconPreview ? (
+                            <div className="flex gap-4 items-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <img src={faviconPreview} alt="Favicon 16x16" width={16} height={16} className="border border-[#2a2a2a]" />
+                                <span className="text-xs text-gray-400">16×16</span>
+                              </div>
+                              <div className="flex flex-col items-center gap-1">
+                                <img src={faviconPreview} alt="Favicon 32x32" width={32} height={32} className="border border-[#2a2a2a]" />
+                                <span className="text-xs text-gray-400">32×32</span>
+                              </div>
+                            </div>
+                          ) : customizationData?.faviconUrl ? (
+                            <div className="flex gap-4 items-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <img src={addCacheBustingToUrl(customizationData.faviconUrl)} alt="Favicon 16x16" width={16} height={16} className="border border-[#2a2a2a]" key={`${customizationData.faviconUrl}-16`} />
+                                <span className="text-xs text-gray-400">16×16</span>
+                              </div>
+                              <div className="flex flex-col items-center gap-1">
+                                <img src={addCacheBustingToUrl(customizationData.faviconUrl)} alt="Favicon 32x32" width={32} height={32} className="border border-[#2a2a2a]" key={`${customizationData.faviconUrl}-32`} />
+                                <span className="text-xs text-gray-400">32×32</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center text-[#606060]">
+                              <div className="text-5xl mb-2 opacity-50">⭐</div>
+                              <div className="text-xs">Nenhum ícone selecionado</div>
+                            </div>
+                          )}
+                        </div>
+
+                        {faviconError && (
+                          <p className="text-xs text-orange-600 font-medium mb-2">
+                            {faviconError}
+                          </p>
+                        )}
+
+                        <div className="relative mb-3">
+                          <input
+                            type="file"
+                            accept="image/x-icon,image/vnd.microsoft.icon,image/ico,image/png"
+                            name="favicon"
+                            id="favicon"
+                            onChange={handleFaviconChange}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor="favicon"
+                            className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                          >
+                            <span>📁</span>
+                            <span>Selecionar arquivo</span>
+                          </label>
+                        </div>
+
+                        {faviconFileName && (
+                          <p className="text-xs text-green-600 font-medium mb-3">
+                            ✓ Arquivo selecionado: {faviconFileName}
+                          </p>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage('favicon')}
+                          disabled={isRemovingImage || (!faviconPreview && !customizationData?.faviconUrl)}
+                          className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                        >
+                          <span>🗑️</span>
+                          <span>{isRemovingImage ? "Removendo..." : "Remover favicon"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* LINHA 3: IMAGEM DE FUNDO DO LOGIN */}
+                    <div className="w-full md:w-1/3 mb-10">
+                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                        <label className="text-sm font-medium text-white mb-1">
+                          Imagem de Fundo do Login
+                        </label>
+                        <p className="text-xs text-gray-400 mb-4">
+                          WebP (preferencial) ou JPG/PNG • 1600×1200px (4:3) ou 1920×1440px • Conteúdo centralizado • Máx. 3MB
+                        </p>
+                        
+                        <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors overflow-hidden ${(loginImagePreview || customizationData?.loginImageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                          {loginImagePreview ? (
+                            <img src={loginImagePreview} alt="Preview" className="w-full h-48 object-cover" />
+                          ) : customizationData?.loginImageUrl ? (
+                            <img src={addCacheBustingToUrl(customizationData.loginImageUrl)} alt="Imagem de fundo atual" className="w-full h-48 object-cover" key={customizationData.loginImageUrl} />
+                          ) : (
+                            <div className="text-center text-[#606060]">
+                              <div className="text-5xl mb-2 opacity-50">🖼️</div>
+                              <div className="text-xs">Nenhuma imagem selecionada</div>
+                            </div>
+                          )}
+                        </div>
+
+                        {loginImageError && (
+                          <p className="text-xs text-orange-600 font-medium mb-2">
+                            {loginImageError}
+                          </p>
+                        )}
+
+                        <div className="relative mb-3">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            name="loginImage"
+                            id="loginImage"
+                            onChange={handleLoginImageChange}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor="loginImage"
+                            className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                          >
+                            <span>📁</span>
+                            <span>Selecionar arquivo</span>
+                          </label>
+                        </div>
+
+                        {loginImageFileName && (
+                          <p className="text-xs text-green-600 font-medium mb-3">
+                            ✓ Arquivo selecionado: {loginImageFileName}
+                          </p>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage('login')}
+                          disabled={isRemovingImage || (!loginImagePreview && !customizationData?.loginImageUrl)}
+                          className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                        >
+                          <span>🗑️</span>
+                          <span>{isRemovingImage ? "Removendo..." : "Remover imagem de login"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Botão Remover Todas as Imagens */}
+                    {(customizationData?.imageUrl || customizationData?.loginImageUrl || customizationData?.faviconUrl || customizationData?.emailImageUrl) && (
+                      <div className="mb-6">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
+                          onClick={handleRemoveAllImages}
+                          disabled={isRemovingImage}
+                        >
+                          {isRemovingImage ? "Removendo..." : "Remover todas as imagens"}
+                        </Button>
+                      </div>
+                    )}
 
                     {/* Campos ocultos */}
                     {customizationData?.id && (
