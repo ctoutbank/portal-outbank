@@ -42,9 +42,16 @@ export default async function RootLayout({
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat'
             },
-            card: "bg-white/95 backdrop-blur-sm",
-            formButtonPrimary: "bg-black hover:bg-gray-800",
-            footerActionLink: "text-black hover:text-gray-700"
+            card: "bg-gray-900/95 backdrop-blur-sm",
+            formButtonPrimary: "bg-white hover:bg-gray-200 text-gray-900",
+            footerActionLink: "text-white hover:text-gray-300"
+          },
+          variables: {
+            colorText: "#f9fafb",
+            colorInputText: "#e5e7eb",
+            colorPrimary: "#ffffff",
+            colorBackground: "#111827",
+            colorInputBackground: "#1f2937",
           }
         }
       }}

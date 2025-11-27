@@ -7,20 +7,23 @@ export default function TenantSignInPage() {
         appearance={{
           elements: {
             rootBox: "mx-auto",
-            card: "shadow-xl",
+            card: "shadow-xl bg-gray-900/95 backdrop-blur-sm",
             // Ocultar o elemento do link no canto superior esquerdo
             headerBackLink: "hidden",
             logoLink: "hidden",
-            // Mostrar título customizado
-            headerTitle: "text-2xl font-bold text-gray-900",
-            headerSubtitle: "text-gray-600",
+            // Mostrar título customizado com nome Consolle
+            headerTitle: "text-2xl font-bold text-white",
+            headerSubtitle: "text-gray-300",
           },
           variables: {
-            colorText: "#1f2937",
-            colorInputText: "#374151",
-            colorPrimary: "#000000",
+            colorText: "#f9fafb",
+            colorInputText: "#e5e7eb",
+            colorPrimary: "#ffffff",
+            colorBackground: "#111827",
+            colorInputBackground: "#1f2937",
           },
         }}
+        headerTitle="Consolle"
         afterSignInUrl="/dashboard"
         signUpUrl="/auth/sign-up"
         routing="path"
