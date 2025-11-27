@@ -48,6 +48,62 @@ async function deleteOldImageFromS3(oldUrl: string | null | undefined) {
 }
 
 // ✅ Função helper: upload com URL única (timestamp + nanoid)
+// Função auxiliar para chamar revalidate com retry e timeout
+async function callRevalidateWithRetry(slug: string, context: string, retries = 3): Promise<boolean> {
+  const revalidateUrl = process.env.NEXT_PUBLIC_OUTBANK_ONE_URL || 'https://outbank-one.vercel.app';
+  const timeout = 5000; // 5 segundos
+  
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`[${context}] 🔄 Attempt ${attempt}/${retries} to invalidate cache for slug: ${slug}`);
+      const startTime = Date.now();
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      const response = await fetch(`${revalidateUrl}/api/revalidate/theme`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.REVALIDATE_TOKEN}`,
+        },
+        body: JSON.stringify({ slug }),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log(`[${context}] ✅ Cache invalidated successfully in ${duration}ms (attempt ${attempt}):`, responseData);
+        return true;
+      } else if (response.status === 405 || response.status === 404) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[${context}] ℹ️ Revalidate API endpoint não disponível (${response.status}) - usando cache local`);
+        }
+        return false; // Não é crítico, não precisa retry
+      } else {
+        const errorText = await response.text();
+        console.error(`[${context}] ❌ Failed to invalidate cache (attempt ${attempt}): ${response.status} ${response.statusText}`, errorText);
+        if (attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, 500 * attempt)); // Backoff exponencial
+        }
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.error(`[${context}] ⏱️ Timeout after ${timeout}ms (attempt ${attempt}/${retries})`);
+      } else {
+        console.error(`[${context}] ❌ Error calling revalidate API (attempt ${attempt}/${retries}):`, error);
+      }
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 500 * attempt)); // Backoff exponencial
+      }
+    }
+  }
+  return false;
+}
+
 async function uploadImageToS3(file: File, prefix: string): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
@@ -64,9 +120,9 @@ async function uploadImageToS3(file: File, prefix: string): Promise<string> {
     Key: key,
     Body: buffer,
     ContentType: file.type,
-    // ✅ Cache AGRESSIVO (performance máxima)
-    // Funciona porque a URL é sempre única
-    CacheControl: 'public, max-age=31536000, immutable',
+    // ✅ Cache otimizado para atualização rápida (5 segundos)
+    // Permite revalidação do browser a cada 5 segundos para atualização quase instantânea
+    CacheControl: 'public, max-age=5, must-revalidate',
   });
   
   await s3Client.send(command);
@@ -482,36 +538,8 @@ export async function saveCustomization(formData: FormData) {
 
   if (normalizedSubdomain) {
     console.log(`[saveCustomization] ⏰ Calling revalidate API for slug: ${normalizedSubdomain}`);
-    try {
-      const revalidateUrl = process.env.NEXT_PUBLIC_OUTBANK_ONE_URL || 'https://outbank-one.vercel.app';
-      const startTime = Date.now();
-      const response = await fetch(`${revalidateUrl}/api/revalidate/theme`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.REVALIDATE_TOKEN}`,
-        },
-        body: JSON.stringify({ slug: normalizedSubdomain }),
-      });
-      const duration = Date.now() - startTime;
-
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log(`[saveCustomization] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
-      } else if (response.status === 405 || response.status === 404) {
-        // 405 Method Not Allowed ou 404 - endpoint pode não existir ou não aceitar POST
-        // Não é crítico, cache local será invalidado via revalidatePath/revalidateTag
-        // Log apenas em modo debug para não poluir logs
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[saveCustomization] ℹ️ Revalidate API endpoint não disponível (${response.status}) - usando cache local`);
-        }
-      } else {
-        const errorText = await response.text();
-        console.error(`[saveCustomization] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
-      }
-    } catch (error) {
-      console.error(`[saveCustomization] ❌ Error calling revalidate API:`, error);
-    }
+    // Aguardar invalidação (não bloqueia se falhar, mas tenta)
+    await callRevalidateWithRetry(normalizedSubdomain, 'saveCustomization', 3);
   }
 
   revalidatePath("/");
@@ -823,36 +851,8 @@ export async function updateCustomization(formData: FormData) {
 
   if (normalizedSubdomain) {
     console.log(`[updateCustomization] ⏰ Calling revalidate API for slug: ${normalizedSubdomain}`);
-    try {
-      const revalidateUrl = process.env.NEXT_PUBLIC_OUTBANK_ONE_URL || 'https://outbank-one.vercel.app';
-      const startTime = Date.now();
-      const response = await fetch(`${revalidateUrl}/api/revalidate/theme`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.REVALIDATE_TOKEN}`,
-        },
-        body: JSON.stringify({ slug: normalizedSubdomain }),
-      });
-      const duration = Date.now() - startTime;
-
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log(`[updateCustomization] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
-      } else if (response.status === 405 || response.status === 404) {
-        // 405 Method Not Allowed ou 404 - endpoint pode não existir ou não aceitar POST
-        // Não é crítico, cache local será invalidado via revalidatePath/revalidateTag
-        // Log apenas em modo debug para não poluir logs
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[updateCustomization] ℹ️ Revalidate API endpoint não disponível (${response.status}) - usando cache local`);
-        }
-      } else {
-        const errorText = await response.text();
-        console.error(`[updateCustomization] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
-      }
-    } catch (error) {
-      console.error(`[updateCustomization] ❌ Error calling revalidate API:`, error);
-    }
+    // Aguardar invalidação (não bloqueia se falhar, mas tenta)
+    await callRevalidateWithRetry(normalizedSubdomain, 'updateCustomization', 3);
   }
 
   revalidatePath("/");
@@ -953,36 +953,8 @@ export async function removeImage(data: { customerId: number; type: 'logo' | 'lo
   const slug = existingCustomization.slug;
   if (slug) {
     console.log(`[removeImage] ⏰ Calling revalidate API for slug: ${slug}`);
-    try {
-      const revalidateUrl = process.env.NEXT_PUBLIC_OUTBANK_ONE_URL || 'https://outbank-one.vercel.app';
-      const startTime = Date.now();
-      const response = await fetch(`${revalidateUrl}/api/revalidate/theme`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.REVALIDATE_TOKEN}`,
-        },
-        body: JSON.stringify({ slug }),
-      });
-      const duration = Date.now() - startTime;
-
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log(`[removeImage] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
-      } else if (response.status === 405 || response.status === 404) {
-        // 405 Method Not Allowed ou 404 - endpoint pode não existir ou não aceitar POST
-        // Não é crítico, cache local será invalidado via revalidatePath/revalidateTag
-        // Log apenas em modo debug para não poluir logs
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[removeImage] ℹ️ Revalidate API endpoint não disponível (${response.status}) - usando cache local`);
-        }
-      } else {
-        const errorText = await response.text();
-        console.error(`[removeImage] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
-      }
-    } catch (error) {
-      console.error(`[removeImage] ❌ Error calling revalidate API:`, error);
-    }
+    // Aguardar invalidação (não bloqueia se falhar, mas tenta)
+    await callRevalidateWithRetry(slug, 'removeImage', 3);
   }
 
   const updatedCustomization = await getCustomizationByCustomerId(customerId);
@@ -1079,36 +1051,8 @@ export async function removeAllImages(data: { customerId: number }) {
   const slug = existingCustomization.slug;
   if (slug) {
     console.log(`[removeAllImages] ⏰ Calling revalidate API for slug: ${slug}`);
-    try {
-      const revalidateUrl = process.env.NEXT_PUBLIC_OUTBANK_ONE_URL || 'https://outbank-one.vercel.app';
-      const startTime = Date.now();
-      const response = await fetch(`${revalidateUrl}/api/revalidate/theme`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.REVALIDATE_TOKEN}`,
-        },
-        body: JSON.stringify({ slug }),
-      });
-      const duration = Date.now() - startTime;
-
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log(`[removeAllImages] ✅ Cache invalidated successfully in ${duration}ms:`, responseData);
-      } else if (response.status === 405 || response.status === 404) {
-        // 405 Method Not Allowed ou 404 - endpoint pode não existir ou não aceitar POST
-        // Não é crítico, cache local será invalidado via revalidatePath/revalidateTag
-        // Log apenas em modo debug para não poluir logs
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[removeAllImages] ℹ️ Revalidate API endpoint não disponível (${response.status}) - usando cache local`);
-        }
-      } else {
-        const errorText = await response.text();
-        console.error(`[removeAllImages] ❌ Failed to invalidate cache: ${response.status} ${response.statusText}`, errorText);
-      }
-    } catch (error) {
-      console.error(`[removeAllImages] ❌ Error calling revalidate API:`, error);
-    }
+    // Aguardar invalidação (não bloqueia se falhar, mas tenta)
+    await callRevalidateWithRetry(slug, 'removeAllImages', 3);
   }
 
   const updatedCustomization = await getCustomizationByCustomerId(customerId);

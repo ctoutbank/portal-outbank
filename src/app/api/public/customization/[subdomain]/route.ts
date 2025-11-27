@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCustomizationBySubdomain } from "@/utils/serverActions";
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 5;
 
 export async function GET(
   request: NextRequest,
@@ -42,10 +42,8 @@ export async function GET(
     });
 
     response.headers.set('Vary', 'Host');
-    // ✅ SEM CACHE (dados devem ser sempre frescos)
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-    response.headers.set('Pragma', 'no-cache');
-    response.headers.set('Expires', '0');
+    // ✅ Cache otimizado para atualização rápida (5 segundos)
+    response.headers.set('Cache-Control', 'max-age=5, must-revalidate');
     
     return response;
   } catch (error) {

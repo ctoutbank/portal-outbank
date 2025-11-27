@@ -157,11 +157,13 @@ export default function CustomerWizardForm({
     }
   }
 
-  // ✅ Função para adicionar cache busting nas URLs
+  // ✅ Função para adicionar cache busting agressivo nas URLs (timestamp único)
   function addCacheBustingToUrl(url: string | null | undefined): string {
     if (!url) return url || '';
     const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}v=${Date.now()}`;
+    // Usar timestamp + nanoid para garantir unicidade total
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    return `${url}${separator}v=${uniqueId}`;
   }
 
   // ✅ Função para atualizar favicon no DOM instantaneamente
@@ -195,29 +197,45 @@ export default function CustomerWizardForm({
     }, 100);
   }
 
-  // ✅ Função para atualizar cores CSS variables no DOM instantaneamente
+  // ✅ Função para atualizar cores CSS variables no DOM instantaneamente (otimizada)
   function updateColorsInDOM(primaryHsl: string | null | undefined, secondaryHsl: string | null | undefined) {
     if (typeof window === 'undefined') return;
     const root = document.documentElement;
+    const html = document.documentElement;
+    const body = document.body;
     
     if (primaryHsl) {
       const primaryHex = hslToHex(primaryHsl);
-      root.style.setProperty('--tenant-primary', primaryHex);
+      // Atualizar múltiplos seletores com !important via style
+      root.style.setProperty('--tenant-primary', primaryHex, 'important');
+      html.style.setProperty('--tenant-primary', primaryHex, 'important');
+      if (body) body.style.setProperty('--tenant-primary', primaryHex, 'important');
     }
     
     if (secondaryHsl) {
       const secondaryHex = hslToHex(secondaryHsl);
-      root.style.setProperty('--tenant-secondary', secondaryHex);
+      root.style.setProperty('--tenant-secondary', secondaryHex, 'important');
+      html.style.setProperty('--tenant-secondary', secondaryHex, 'important');
+      if (body) body.style.setProperty('--tenant-secondary', secondaryHex, 'important');
     }
+    
+    // Disparar evento customizado para componentes React
+    window.dispatchEvent(new CustomEvent('theme-updated', {
+      detail: { primary: primaryHsl, secondary: secondaryHsl }
+    }));
   }
 
-  // ✅ Função para atualizar imagens de background no DOM (login image)
+  // ✅ Função para atualizar imagens de background no DOM (login image) - otimizada
   function updateBackgroundImageInDOM(url: string | null | undefined) {
     if (typeof window === 'undefined') return;
     if (!url) return;
     
     const newUrl = addCacheBustingToUrl(url);
     const body = document.body;
+    const html = document.documentElement;
+    const rootBox = document.querySelector('.clerk-rootBox') as HTMLElement;
+    
+    // Atualizar body
     if (body) {
       body.style.backgroundImage = `url('${newUrl}')`;
       body.style.backgroundSize = 'cover';
@@ -225,6 +243,75 @@ export default function CustomerWizardForm({
       body.style.backgroundRepeat = 'no-repeat';
       body.style.backgroundAttachment = 'fixed';
     }
+    
+    // Atualizar html
+    if (html) {
+      html.style.backgroundImage = `url('${newUrl}')`;
+      html.style.backgroundSize = 'cover';
+      html.style.backgroundPosition = 'center';
+    }
+    
+    // Atualizar Clerk rootBox se existir
+    if (rootBox) {
+      rootBox.style.backgroundImage = `url('${newUrl}')`;
+      rootBox.style.backgroundSize = 'cover';
+      rootBox.style.backgroundPosition = 'center';
+    }
+    
+    // Forçar reload da imagem via JavaScript
+    const img = new Image();
+    img.src = newUrl;
+    img.onload = () => {
+      console.log('[updateBackgroundImageInDOM] ✅ Login image loaded successfully');
+    };
+  }
+
+  // ✅ Função para atualizar logo no DOM (todas as ocorrências)
+  function updateLogoInDOM(url: string | null | undefined) {
+    if (typeof window === 'undefined') return;
+    if (!url) return;
+    
+    const newUrl = addCacheBustingToUrl(url);
+    
+    // Atualizar todas as imagens com logo
+    const logoImages = document.querySelectorAll('img[src*="logo"], img[alt*="logo"], img[alt*="Logo"]');
+    logoImages.forEach((img) => {
+      (img as HTMLImageElement).src = newUrl;
+    });
+    
+    // Atualizar backgroundImage que usa logo
+    const logoBackgrounds = document.querySelectorAll('[style*="background-image"][style*="logo"]');
+    logoBackgrounds.forEach((el) => {
+      (el as HTMLElement).style.backgroundImage = `url('${newUrl}')`;
+    });
+    
+    // Forçar reload da imagem via JavaScript
+    const img = new Image();
+    img.src = newUrl;
+    img.onload = () => {
+      console.log('[updateLogoInDOM] ✅ Logo loaded successfully');
+    };
+  }
+
+  // ✅ Função para atualizar email image no DOM
+  function updateEmailImageInDOM(url: string | null | undefined) {
+    if (typeof window === 'undefined') return;
+    if (!url) return;
+    
+    const newUrl = addCacheBustingToUrl(url);
+    
+    // Atualizar imagens de email (se houver elementos específicos)
+    const emailImages = document.querySelectorAll('img[src*="email"], img[alt*="email"], img[alt*="Email"]');
+    emailImages.forEach((img) => {
+      (img as HTMLImageElement).src = newUrl;
+    });
+    
+    // Forçar reload da imagem via JavaScript
+    const img = new Image();
+    img.src = newUrl;
+    img.onload = () => {
+      console.log('[updateEmailImageInDOM] ✅ Email image loaded successfully');
+    };
   }
 
   // Função para salvar todas as seções em sequência
@@ -363,15 +450,25 @@ export default function CustomerWizardForm({
                   updateFaviconInDOM(result.customization.faviconUrl);
                 }
                 
-                // 2. Atualizar cores CSS variables
+                // 2. Atualizar logo
+                if (result.customization.imageUrl) {
+                  updateLogoInDOM(result.customization.imageUrl);
+                }
+                
+                // 3. Atualizar cores CSS variables
                 updateColorsInDOM(
                   result.customization.primaryColor ?? undefined,
                   result.customization.secondaryColor ?? undefined
                 );
                 
-                // 3. Atualizar background image (login)
+                // 4. Atualizar background image (login)
                 if (result.customization.loginImageUrl) {
                   updateBackgroundImageInDOM(result.customization.loginImageUrl);
+                }
+                
+                // 5. Atualizar email image
+                if (result.customization.emailImageUrl) {
+                  updateEmailImageInDOM(result.customization.emailImageUrl);
                 }
 
                 setImagePreview(null);
@@ -1170,15 +1267,25 @@ export default function CustomerWizardForm({
                         updateFaviconInDOM(result.customization.faviconUrl);
                       }
                       
-                      // 2. Atualizar cores CSS variables
+                      // 2. Atualizar logo
+                      if (result.customization.imageUrl) {
+                        updateLogoInDOM(result.customization.imageUrl);
+                      }
+                      
+                      // 3. Atualizar cores CSS variables
                       updateColorsInDOM(
                         result.customization.primaryColor ?? undefined,
                         result.customization.secondaryColor ?? undefined
                       );
                       
-                      // 3. Atualizar background image (login)
+                      // 4. Atualizar background image (login)
                       if (result.customization.loginImageUrl) {
                         updateBackgroundImageInDOM(result.customization.loginImageUrl);
+                      }
+                      
+                      // 5. Atualizar email image
+                      if (result.customization.emailImageUrl) {
+                        updateEmailImageInDOM(result.customization.emailImageUrl);
                       }
                       
                       // Limpar previews
