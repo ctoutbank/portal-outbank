@@ -1343,12 +1343,6 @@ export default function CustomerWizardForm({
             className="space-y-6"
           >
             <Card className="border-1">
-              <CardHeader className="border-b border-border">
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Palette className="h-5 w-5" />
-                  Customização do ISO
-                </CardTitle>
-              </CardHeader>
               {isFirstStepComplete && (
                 <>
                   <CardContent>
