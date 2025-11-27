@@ -58,9 +58,6 @@ export default async function RootLayout({
     >
       <html lang="pt-BR" suppressHydrationWarning>
         <head>
-          {tenantCustomization?.faviconUrl && (
-            <link rel="icon" href={`${tenantCustomization.faviconUrl}?v=${Date.now()}`} />
-          )}
         </head>
         <body className={inter.className}>
           <ThemeInitializer />
