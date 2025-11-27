@@ -259,7 +259,7 @@ export default function CustomerWizardForm({
     }
     
     // Forçar reload da imagem via JavaScript
-    const img = new Image();
+    const img = new window.Image();
     img.src = newUrl;
     img.onload = () => {
       console.log('[updateBackgroundImageInDOM] ✅ Login image loaded successfully');
@@ -286,7 +286,7 @@ export default function CustomerWizardForm({
     });
     
     // Forçar reload da imagem via JavaScript
-    const img = new Image();
+    const img = new window.Image();
     img.src = newUrl;
     img.onload = () => {
       console.log('[updateLogoInDOM] ✅ Logo loaded successfully');
@@ -307,7 +307,7 @@ export default function CustomerWizardForm({
     });
     
     // Forçar reload da imagem via JavaScript
-    const img = new Image();
+    const img = new window.Image();
     img.src = newUrl;
     img.onload = () => {
       console.log('[updateEmailImageInDOM] ✅ Email image loaded successfully');
