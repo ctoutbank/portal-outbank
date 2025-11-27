@@ -1343,6 +1343,12 @@ export default function CustomerWizardForm({
             className="space-y-6"
           >
             <Card className="border-1">
+              <CardHeader className="border-b border-border">
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Palette className="h-5 w-5" />
+                  Customização do ISO
+                </CardTitle>
+              </CardHeader>
               {isFirstStepComplete && (
                 <>
                   <CardContent>
@@ -1820,39 +1826,27 @@ export default function CustomerWizardForm({
         </Collapsible>
 
         {/* Seção 3: Gestão de Usuários */}
-        <Collapsible open={section3Open && isFirstStepComplete} onOpenChange={(open) => isFirstStepComplete && setSection3Open(open)} className="border border-[#2a2a2a] rounded-lg">
-          {/* Cabeçalho da Seção */}
+        <Collapsible open={section3Open && isFirstStepComplete} onOpenChange={(open) => isFirstStepComplete && setSection3Open(open)} className="border rounded-lg">
           <CollapsibleTrigger 
-            className="w-full px-6 py-4 hover:bg-[#1f1f1f] transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed border-b border-[#2a2a2a]"
+            className="w-full px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!isFirstStepComplete}
           >
             <div className="flex items-center gap-3">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-semibold flex-shrink-0 ${isFirstStepComplete ? 'bg-white text-[#1a1a1a]' : 'bg-[#2a2a2a] text-[#808080]'}`}>
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${isFirstStepComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                 3
               </div>
-              <span className="text-2xl">👥</span>
-              <span className="text-xl font-semibold text-white">Gestão de Usuários</span>
+              <Users className="h-5 w-5 text-muted-foreground" />
+              <span className="text-lg font-semibold">Gestão de Usuários</span>
             </div>
-            <button
-              type="button"
-              className="text-[#808080] text-xl p-2 hover:text-white transition-colors"
-              onClick={(e) => {
-                e.preventDefault();
-                if (isFirstStepComplete) {
-                  setSection3Open(!section3Open);
-                }
-              }}
-            >
-              {section3Open ? '▲' : '▼'}
-            </button>
+            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${section3Open ? 'rotate-180' : ''}`} />
           </CollapsibleTrigger>
-          <CollapsibleContent className="px-6 pb-6 bg-[#1a1a1a]">
+          <CollapsibleContent className="px-6 pb-6">
             {isFirstStepComplete ? (
-              <div className="space-y-12">
+              <div className="space-y-6">
                 {/* Formulário de Criação de Usuário */}
                 {selectedUser === null && (
-                  <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-8">
-                    <h2 className="text-lg font-semibold text-white mb-6">Criar Novo Usuário</h2>
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Criar Novo Usuário</h3>
                     <UserCustomerForm
                       customerId={newCustomerId || undefined}
                       onSuccess={handleUserSuccess}
@@ -1864,23 +1858,19 @@ export default function CustomerWizardForm({
 
                 {/* Tabela de Usuários */}
                 {selectedUser === null && (
-                  <div className="mt-12">
-                    <h2 className="text-lg font-semibold text-white mb-6">Usuários Cadastrados</h2>
-                    <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-8">
-                      <h3 className="text-xl font-semibold text-white mb-2">Usuários</h3>
-                      <p className="text-sm text-[#808080] mb-8">Gerencie os usuários do cliente</p>
-                      {isLoadingUsers ? (
-                        <div className="text-center p-8">
-                          <p className="text-[#b0b0b0]">Carregando usuários...</p>
-                        </div>
-                      ) : (
-                        <UsersCustomerList
-                          users={users}
-                          customerId={newCustomerId || 0}
-                          onRefresh={() => loadUsers(newCustomerId || 0)}
-                        />
-                      )}
-                    </div>
+                  <div className="space-y-4 pt-6 border-t">
+                    <h3 className="text-lg font-semibold">Usuários Cadastrados</h3>
+                    {isLoadingUsers ? (
+                      <div className="text-center p-8">
+                        <p>Carregando usuários...</p>
+                      </div>
+                    ) : (
+                      <UsersCustomerList
+                        users={users}
+                        customerId={newCustomerId || 0}
+                        onRefresh={() => loadUsers(newCustomerId || 0)}
+                      />
+                    )}
                   </div>
                 )}
 
@@ -1888,11 +1878,11 @@ export default function CustomerWizardForm({
                 {selectedUser !== null && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-semibold text-white">Editar Usuário</h3>
+                      <h3 className="text-lg font-semibold">Editar Usuário</h3>
                       <Button
                         variant="outline"
                         onClick={() => setSelectedUser(null)}
-                        className="cursor-pointer bg-[#1a1a1a] border-[#2a2a2a] text-white hover:bg-[#1f1f1f]"
+                        className="cursor-pointer"
                       >
                         Voltar
                       </Button>
@@ -1900,7 +1890,7 @@ export default function CustomerWizardForm({
 
                     {isLoadingUser ? (
                       <div className="text-center p-4">
-                        <p className="text-[#b0b0b0]">Carregando dados do usuário...</p>
+                        <p>Carregando dados do usuário...</p>
                       </div>
                     ) : (
                       <UserCustomerForm
@@ -1915,7 +1905,7 @@ export default function CustomerWizardForm({
                 )}
               </div>
             ) : (
-              <div className="text-center py-8 text-[#808080]">
+              <div className="text-center py-8 text-muted-foreground">
                 <p>Por favor, crie o ISO na seção "Informações Básicas" antes de gerenciar usuários.</p>
               </div>
             )}
