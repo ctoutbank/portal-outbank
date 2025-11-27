@@ -2,7 +2,7 @@ import { SignIn } from "@clerk/nextjs";
 
 export default function TenantSignInPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center bg-gray-900">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">Consolle</h1>
