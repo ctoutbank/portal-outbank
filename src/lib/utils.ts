@@ -402,10 +402,6 @@ export function handleNumericInput(
   }
 }
 
-export function generateSlug(): string {
-  return crypto.randomBytes(16).toString("hex");
-}
-
 export function formatCep(cep: string): string {
   // Remove caracteres não numéricos
   const cleaned = cep.replace(/\D/g, "");
