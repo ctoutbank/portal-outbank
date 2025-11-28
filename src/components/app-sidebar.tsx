@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, ChartPie, Settings, Table, Truck, Users, Shield, type LucideIcon } from "lucide-react";
+import { Briefcase, ChartPie, Settings, Table, Truck, Users, Shield, Store, type LucideIcon } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
@@ -36,6 +36,7 @@ const navMainItems: Array<{
     isActive: false,
   },
   { title: "CNAE", url: "/categories", icon: Briefcase, isActive: false },
+  { title: "Estabelecimentos", url: "/merchants", icon: Store, isActive: false },
   {title: "Fornecedores", url: "/supplier", icon: Truck, isActive: false},
   {
     title: "Consentimento LGPD",
@@ -54,9 +55,10 @@ const navMainItems: Array<{
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   tenantCustomization?: CustomerCustomization | null;
   isAdmin?: boolean;
+  hasMerchantsAccess?: boolean;
 }
 
-export function AppSidebar({ tenantCustomization, isAdmin = false, ...props }: AppSidebarProps) {
+export function AppSidebar({ tenantCustomization, isAdmin = false, hasMerchantsAccess = false, ...props }: AppSidebarProps) {
   const { state } = useSidebar();
   
   const teams = [
@@ -73,6 +75,10 @@ export function AppSidebar({ tenantCustomization, isAdmin = false, ...props }: A
       // Item "ISOS" só aparece para admins
       if (item.url === "/customers") {
         return isAdmin;
+      }
+      // Item "Estabelecimentos" só aparece para quem tem acesso
+      if (item.url === "/merchants") {
+        return hasMerchantsAccess;
       }
       // Item "Configurações" só aparece para admins
       if (item.url === "/config") {

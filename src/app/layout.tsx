@@ -11,7 +11,7 @@ import ThemeInitializer from "@/components/themeInitializer";
 import { getCurrentTenantCustomization } from "@/lib/tenant-detection";
 import SessionTimeout from "@/components/session-timeout";
 import { ConditionalSidebar } from "@/components/conditional-sidebar";
-import { isAdminOrSuperAdmin } from "@/lib/permissions/check-permissions";
+import { isAdminOrSuperAdmin, hasMerchantsAccess } from "@/lib/permissions/check-permissions";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,6 +27,7 @@ export default async function RootLayout({
 }>) {
   const tenantCustomization = await getCurrentTenantCustomization();
   const isAdmin = await isAdminOrSuperAdmin();
+  const hasMerchants = await hasMerchantsAccess();
   
   const loginBackgroundImage = tenantCustomization?.loginImageUrl || tenantCustomization?.imageUrl || '/bg_login.jpg';
   
@@ -70,7 +71,7 @@ export default async function RootLayout({
             <SessionTimeout>
               <SidebarProvider>
                 <ConditionalSidebar>
-                  <AppSidebar variant="inset" tenantCustomization={tenantCustomization} isAdmin={isAdmin} />
+                  <AppSidebar variant="inset" tenantCustomization={tenantCustomization} isAdmin={isAdmin} hasMerchantsAccess={hasMerchants} />
                 </ConditionalSidebar>
                 <SidebarInset className="bg-card rounded-lg shadow">
                   {children}

@@ -30,6 +30,7 @@ import { useRouter } from "next/navigation";
 import {
   createAdminUser,
   updateUserPermissions,
+  profileHasMerchantsAccess,
 } from "@/features/users/server/admin-users";
 import { AdminCustomerAssignment } from "./admin-customer-assignment";
 import type { UserDetailForm } from "@/features/customers/users/_actions/user-actions";
@@ -42,6 +43,7 @@ const userPermissionsSchema = z.object({
   idCustomer: z.number().nullable(),
   fullAccess: z.boolean(),
   customerIds: z.array(z.number()).optional(),
+  hasMerchantsAccess: z.boolean().optional(),
   password: z
     .union([
       z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
@@ -74,6 +76,7 @@ export function AdminUserPermissionsForm({
   );
   const [isAdminProfile, setIsAdminProfile] = useState(false);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>(adminCustomers);
+  const [hasMerchantsAccess, setHasMerchantsAccess] = useState(false);
 
   const isEditing = !!(user && 'id' in user && user.id);
   const isSuperAdmin = isSuperAdminProp;
@@ -88,6 +91,7 @@ export function AdminUserPermissionsForm({
       idCustomer: ((user && 'idCustomer' in user) ? user.idCustomer : null) as number | null,
       fullAccess: user?.fullAccess || false,
       customerIds: adminCustomers,
+      hasMerchantsAccess: false,
       password: undefined,
     },
   });
@@ -123,7 +127,18 @@ export function AdminUserPermissionsForm({
     } else {
       setIsAdminProfile(false);
     }
-  }, [selectedProfile, profiles]);
+
+    // Verificar acesso a estabelecimentos do perfil
+    if (selectedProfile) {
+      profileHasMerchantsAccess(selectedProfile).then((hasAccess) => {
+        setHasMerchantsAccess(hasAccess);
+        form.setValue("hasMerchantsAccess", hasAccess);
+      });
+    } else {
+      setHasMerchantsAccess(false);
+      form.setValue("hasMerchantsAccess", false);
+    }
+  }, [selectedProfile, profiles, form]);
 
   const onSubmit = async (data: UserPermissionsFormValues) => {
     setIsLoading(true);
@@ -157,6 +172,7 @@ export function AdminUserPermissionsForm({
             fullAccess?: boolean;
             customerIds?: number[];
             password?: string;
+            hasMerchantsAccess?: boolean;
           } = {
             fullAccess: data.fullAccess,
           };
@@ -180,6 +196,11 @@ export function AdminUserPermissionsForm({
             toast.error("A senha deve ter pelo menos 8 caracteres");
             setIsLoading(false);
             return;
+          }
+
+          // Adicionar acesso a estabelecimentos se fornecido
+          if (data.hasMerchantsAccess !== undefined) {
+            updateData.hasMerchantsAccess = data.hasMerchantsAccess;
           }
 
           const userId = ('id' in user && user.id) ? (user.id as number) : null;
@@ -539,6 +560,33 @@ export function AdminUserPermissionsForm({
                 </FormItem>
               )}
             />
+
+            {/* Acesso a Estabelecimentos (apenas para Super Admin) */}
+            {isSuperAdmin && (
+              <FormField
+                control={form.control}
+                name="hasMerchantsAccess"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value || false}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          setHasMerchantsAccess(checked as boolean);
+                        }}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Acesso a Estabelecimentos</FormLabel>
+                      <FormDescription>
+                        Quando marcado, o usuário poderá visualizar estabelecimentos de todos os ISOs aos quais tem vínculo na página de Estabelecimentos do Portal-Outbank.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            )}
           </CardContent>
           <div className="flex justify-end space-x-2 p-6 border-t">
             <Button

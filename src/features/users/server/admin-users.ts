@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { users, profiles, customers, adminCustomers } from "../../../../drizzle/schema";
+import { users, profiles, customers, adminCustomers, functions, profileFunctions } from "../../../../drizzle/schema";
 import { eq, and, ilike, or, inArray, sql, count, desc, asc } from "drizzle-orm";
 import { getCurrentUserInfo, isSuperAdmin } from "@/lib/permissions/check-permissions";
 import { nanoid } from "nanoid";
@@ -623,6 +623,7 @@ export async function updateUserPermissions(
     fullAccess?: boolean;
     customerIds?: number[]; // Para Admin, atualizar ISOs autorizados
     password?: string; // Nova senha (opcional)
+    hasMerchantsAccess?: boolean; // Acesso a estabelecimentos
   }
 ) {
   const userInfo = await getCurrentUserInfo();
@@ -793,9 +794,158 @@ export async function updateUserPermissions(
     }
   }
 
+  // Atualizar acesso a estabelecimentos se fornecido
+  if (data.hasMerchantsAccess !== undefined) {
+    const profileIdToUse = data.idProfile || user.idProfile;
+    if (profileIdToUse) {
+      try {
+        await updateMerchantsAccessForProfile(profileIdToUse, data.hasMerchantsAccess);
+      } catch (error: any) {
+        console.error("Erro ao atualizar acesso a estabelecimentos:", error);
+        // Não bloquear atualização se houver erro (pode ser que a tabela não exista ainda)
+        if (!error?.message?.includes("does not exist") && !error?.message?.includes("relation")) {
+          throw error;
+        }
+      }
+    }
+  }
+
   revalidatePath("/config/users");
   
   return true;
+}
+
+/**
+ * Garante que a função VIEW_ALL_MERCHANTS existe no banco de dados
+ * Se não existir, cria a função
+ * @returns ID da função VIEW_ALL_MERCHANTS
+ */
+async function ensureViewAllMerchantsFunction(): Promise<number> {
+  try {
+    // Verificar se a função já existe
+    const existingFunction = await db
+      .select()
+      .from(functions)
+      .where(eq(functions.name, "VIEW_ALL_MERCHANTS"))
+      .limit(1);
+
+    if (existingFunction && existingFunction.length > 0) {
+      return existingFunction[0].id;
+    }
+
+    // Criar a função se não existir
+    const slug = `view-all-merchants-${nanoid(10)}`;
+    const result = await db
+      .insert(functions)
+      .values({
+        slug,
+        name: "VIEW_ALL_MERCHANTS",
+        group: "Estabelecimentos",
+        active: true,
+      })
+      .returning({ id: functions.id });
+
+    return result[0]?.id || 0;
+  } catch (error) {
+    console.error("Erro ao garantir função VIEW_ALL_MERCHANTS:", error);
+    throw error;
+  }
+}
+
+/**
+ * Verifica se um perfil tem acesso a estabelecimentos
+ * @param profileId - ID do perfil
+ * @returns true se o perfil tem acesso, false caso contrário
+ */
+export async function profileHasMerchantsAccess(profileId: number): Promise<boolean> {
+  try {
+    const functionId = await ensureViewAllMerchantsFunction();
+    
+    if (!functionId) {
+      return false;
+    }
+
+    const result = await db
+      .select()
+      .from(profileFunctions)
+      .where(
+        and(
+          eq(profileFunctions.idProfile, profileId),
+          eq(profileFunctions.idFunctions, functionId),
+          eq(profileFunctions.active, true)
+        )
+      )
+      .limit(1);
+
+    return result && result.length > 0;
+  } catch (error) {
+    console.error("Erro ao verificar acesso a estabelecimentos:", error);
+    return false;
+  }
+}
+
+/**
+ * Atribui ou remove a função VIEW_ALL_MERCHANTS de um perfil
+ * @param profileId - ID do perfil
+ * @param hasAccess - true para atribuir, false para remover
+ */
+async function updateMerchantsAccessForProfile(profileId: number, hasAccess: boolean): Promise<void> {
+  try {
+    const functionId = await ensureViewAllMerchantsFunction();
+    
+    if (!functionId) {
+      throw new Error("Não foi possível criar ou encontrar a função VIEW_ALL_MERCHANTS");
+    }
+
+    // Verificar se já existe registro
+    const existing = await db
+      .select()
+      .from(profileFunctions)
+      .where(
+        and(
+          eq(profileFunctions.idProfile, profileId),
+          eq(profileFunctions.idFunctions, functionId)
+        )
+      )
+      .limit(1);
+
+    if (hasAccess) {
+      // Atribuir função
+      if (existing && existing.length > 0) {
+        // Atualizar para ativo se já existir
+        await db
+          .update(profileFunctions)
+          .set({
+            active: true,
+            dtupdate: new Date().toISOString(),
+          })
+          .where(eq(profileFunctions.id, existing[0].id));
+      } else {
+        // Criar novo registro
+        const slug = `profile-${profileId}-function-${functionId}-${nanoid(10)}`;
+        await db.insert(profileFunctions).values({
+          slug,
+          idProfile: profileId,
+          idFunctions: functionId,
+          active: true,
+        });
+      }
+    } else {
+      // Remover função (desativar)
+      if (existing && existing.length > 0) {
+        await db
+          .update(profileFunctions)
+          .set({
+            active: false,
+            dtupdate: new Date().toISOString(),
+          })
+          .where(eq(profileFunctions.id, existing[0].id));
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao atualizar acesso a estabelecimentos:", error);
+    throw error;
+  }
 }
 
 /**

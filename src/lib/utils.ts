@@ -221,8 +221,16 @@ export function translateStatus(status: string): string {
       return "Pré Aprovado";
     case "APPROVED":
       return "Aprovado";
+    case "DECLINED":
+      return "Recusado";
+    case "NOTANALYSED":
+      return "Cadastrado";
+    case "WAITINGDOCUMENTS":
+      return "Incompleto";
+    case "KYCOFFLINE":
+      return "KYC Desligado";
     default:
-      return "";
+      return status || "";
   }
 }
 

@@ -267,3 +267,23 @@ export async function hasRestrictedDataAccess(): Promise<boolean> {
     return false; // Em caso de erro, não restringir (mostrar tudo)
   }
 }
+
+/**
+ * Verifica se o usuário tem acesso à visualização de estabelecimentos
+ * Super Admin sempre tem acesso
+ * Outros usuários precisam ter a função "VIEW_ALL_MERCHANTS" atribuída ao seu perfil
+ * @returns true se o usuário tem acesso, false caso contrário
+ */
+export async function hasMerchantsAccess(): Promise<boolean> {
+  try {
+    // Super Admin sempre tem acesso
+    const isSuper = await isSuperAdmin();
+    if (isSuper) return true;
+
+    // Verificar se tem a permissão específica
+    return await hasPermission("VIEW_ALL_MERCHANTS");
+  } catch (error) {
+    console.error("Error checking merchants access:", error);
+    return false;
+  }
+}
