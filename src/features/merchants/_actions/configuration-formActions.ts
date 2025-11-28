@@ -21,14 +21,14 @@ export async function insertConfigurationFormAction(
     dtinsert: (data.dtinsert || new Date()).toISOString(),
     dtupdate: (data.dtupdate || new Date()).toISOString(),
     anticipationRiskFactorCp: data.anticipationRiskFactorCp
-      ? Number(data.anticipationRiskFactorCp)
+      ? String(data.anticipationRiskFactorCp)
       : null,
     anticipationRiskFactorCnp: data.anticipationRiskFactorCnp
-      ? Number(data.anticipationRiskFactorCnp)
+      ? String(data.anticipationRiskFactorCnp)
       : null,
-    waitingPeriodCp: data.waitingPeriodCp ? Number(data.waitingPeriodCp) : null,
+    waitingPeriodCp: data.waitingPeriodCp ? String(data.waitingPeriodCp) : null,
     waitingPeriodCnp: data.waitingPeriodCnp
-      ? Number(data.waitingPeriodCnp)
+      ? String(data.waitingPeriodCnp)
       : null,
   };
 
@@ -53,14 +53,14 @@ export async function updateConfigurationFormAction(
     dtinsert: (data.dtinsert || new Date()).toISOString(),
     dtupdate: (data.dtupdate || new Date()).toISOString(),
     anticipationRiskFactorCp: data.anticipationRiskFactorCp
-      ? Number(data.anticipationRiskFactorCp)
+      ? String(data.anticipationRiskFactorCp)
       : null,
     anticipationRiskFactorCnp: data.anticipationRiskFactorCnp
-      ? Number(data.anticipationRiskFactorCnp)
+      ? String(data.anticipationRiskFactorCnp)
       : null,
-    waitingPeriodCp: data.waitingPeriodCp ? Number(data.waitingPeriodCp) : null,
+    waitingPeriodCp: data.waitingPeriodCp ? String(data.waitingPeriodCp) : null,
     waitingPeriodCnp: data.waitingPeriodCnp
-      ? Number(data.waitingPeriodCnp)
+      ? String(data.waitingPeriodCnp)
       : null,
   };
 
