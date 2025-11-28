@@ -8,11 +8,13 @@ import type { MerchantsListResult } from "../server/merchants";
 type MerchantsDashboardWrapperProps = {
   data: MerchantsListResult;
   children: React.ReactNode;
+  tableSettingsButton?: React.ReactNode;
 };
 
 export function MerchantsDashboardWrapper({
   data,
   children,
+  tableSettingsButton,
 }: MerchantsDashboardWrapperProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -22,6 +24,7 @@ export function MerchantsDashboardWrapper({
         <div className="flex items-center gap-2 flex-1">
           {children}
           <MerchantsDashboardToggle isOpen={isOpen} onToggle={() => setIsOpen(!isOpen)} />
+          {tableSettingsButton}
         </div>
       </div>
       <div className="mt-4">

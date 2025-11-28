@@ -8,8 +8,8 @@ import { requireMerchantsAccess } from "@/lib/permissions/require-merchants-acce
 import { getAllMerchants, getAvailableCustomersForFilter, getMerchantSuggestions, getMerchantEmailSuggestions, getMerchantDocumentSuggestions, getSalesAgentSuggestions, getStateSuggestions } from "@/features/merchants/server/merchants";
 import { MerchantsFilter } from "@/features/merchants/_components/merchants-filter";
 import { MerchantsSearchInput } from "@/features/merchants/_components/merchants-search-input";
-import MerchantsList from "@/features/merchants/_components/merchants-list";
-import { MerchantsDashboardWrapper } from "@/features/merchants/_components/merchants-dashboard-wrapper";
+import { MerchantsListWithContext } from "@/features/merchants/_components/merchants-list-with-context";
+import { MerchantsPageClient } from "@/features/merchants/_components/merchants-page-client";
 import { MerchantsSyncButton } from "@/features/merchants/_components/merchants-sync-button";
 
 export const revalidate = 300;
@@ -85,7 +85,7 @@ export default async function MerchantsPage({
         subtitle="Visualização de Todos os Estabelecimentos"
       >
         <div className="flex flex-col space-y-2">
-          <MerchantsDashboardWrapper data={merchantsData}>
+          <MerchantsPageClient data={merchantsData}>
             <MerchantsFilter
               dateFromIn={resolvedSearchParams.dateFrom}
               establishmentIn={resolvedSearchParams.establishment}
@@ -104,7 +104,7 @@ export default async function MerchantsPage({
             />
             <MerchantsSearchInput suggestions={merchantSuggestions} />
             <MerchantsSyncButton />
-          </MerchantsDashboardWrapper>
+          </MerchantsPageClient>
 
           <div className="mt-2">
             {merchantsData.merchants.length === 0 ? (
@@ -114,7 +114,7 @@ export default async function MerchantsPage({
                 description="Tente ajustar os filtros para encontrar estabelecimentos"
               />
             ) : (
-              <MerchantsList list={merchantsData} />
+              <MerchantsListWithContext list={merchantsData} />
             )}
             {totalRecords > 0 && (
               <div className="flex items-center justify-between mt-4">

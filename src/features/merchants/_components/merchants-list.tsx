@@ -1,13 +1,6 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -16,12 +9,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCNPJ, translateStatus } from "@/lib/utils";
-import { Settings } from "lucide-react";
+import { translateStatus } from "@/lib/utils";
 import { useState } from "react";
 import type { MerchantsListResult } from "../server/merchants";
+import { MerchantsTableSettings } from "./merchants-table-settings";
 
-export default function MerchantsList({ list }: { list: MerchantsListResult }) {
+export default function MerchantsList({ 
+  list,
+  columnsConfig,
+  visibleColumns,
+  onToggleColumn,
+}: { 
+  list: MerchantsListResult;
+  columnsConfig?: typeof columns;
+  visibleColumns?: string[];
+  onToggleColumn?: (columnId: string) => void;
+}) {
   const columns = [
     {
       id: "iso",
@@ -102,50 +105,37 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
     },
   ];
 
-  const [visibleColumns, setVisibleColumns] = useState(
+  const [internalVisibleColumns, setInternalVisibleColumns] = useState(
     columns.filter((column) => column.defaultVisible).map((column) => column.id)
   );
 
+  const currentVisibleColumns = visibleColumns || internalVisibleColumns;
+  const currentColumns = columnsConfig || columns;
+
   const toggleColumn = (columnId: string) => {
+    if (onToggleColumn) {
+      onToggleColumn(columnId);
+      return;
+    }
+
     const column = columns.find((col) => col.id === columnId);
     if (column?.alwaysVisible) return;
 
-    if (visibleColumns.includes(columnId)) {
-      setVisibleColumns(visibleColumns.filter((id) => id !== columnId));
+    if (internalVisibleColumns.includes(columnId)) {
+      setInternalVisibleColumns(internalVisibleColumns.filter((id) => id !== columnId));
     } else {
-      setVisibleColumns([...visibleColumns, columnId]);
+      setInternalVisibleColumns([...internalVisibleColumns, columnId]);
     }
   };
 
   return (
     <div>
-      <div className="flex justify-end mb-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Settings className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {columns.map((column) => (
-              <DropdownMenuCheckboxItem
-                key={column.id}
-                checked={visibleColumns.includes(column.id)}
-                onCheckedChange={() => toggleColumn(column.id)}
-                disabled={column.alwaysVisible}
-              >
-                {column.name}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
       <div className="border rounded-lg mt-2">
         <Table>
           <TableHeader>
             <TableRow>
-              {columns
-                .filter((column) => visibleColumns.includes(column.id))
+              {currentColumns
+                .filter((column) => currentVisibleColumns.includes(column.id))
                 .map((column) => (
                   <TableHead key={column.id} className="font-medium text-center">
                     {column.name}
@@ -156,25 +146,27 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
           <TableBody>
             {list.merchants.map((merchant) => (
               <TableRow key={merchant.merchantid}>
-                {visibleColumns.includes("iso") && (
-                  <TableCell>
+                {currentVisibleColumns.includes("iso") && (
+                  <TableCell className="text-center">
                     {merchant.customerName ? (
-                      <Badge variant="outline" className="text-xs">
-                        {merchant.customerName}
-                      </Badge>
+                      <div className="flex justify-center">
+                        <Badge variant="outline" className="text-xs">
+                          {merchant.customerName}
+                        </Badge>
+                      </div>
                     ) : (
                       <span className="text-muted-foreground">--</span>
                     )}
                   </TableCell>
                 )}
-                {visibleColumns.includes("name") && (
+                {currentVisibleColumns.includes("name") && (
                   <TableCell>
                     <span className="font-medium">
                       {merchant.name?.toUpperCase() || "-"}
                     </span>
                   </TableCell>
                 )}
-                {visibleColumns.includes("localidade") && (
+                {currentVisibleColumns.includes("localidade") && (
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <span>{merchant.addressname || "-"}</span>
@@ -186,36 +178,38 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
                     </div>
                   </TableCell>
                 )}
-                {visibleColumns.includes("statusKyc") && (
-                  <TableCell>
-                    <Badge
-                      variant={
-                        merchant.kic_status === "APPROVED"
-                          ? "default"
-                          : merchant.kic_status === "PENDING"
-                            ? "secondary"
-                            : "destructive"
-                      }
-                    >
-                      {translateStatus(merchant.kic_status || "")}
-                    </Badge>
+                {currentVisibleColumns.includes("statusKyc") && (
+                  <TableCell className="text-center">
+                    <div className="flex justify-center">
+                      <Badge
+                        variant={
+                          merchant.kic_status === "APPROVED"
+                            ? "default"
+                            : merchant.kic_status === "PENDING"
+                              ? "secondary"
+                              : "destructive"
+                        }
+                      >
+                        {translateStatus(merchant.kic_status || "")}
+                      </Badge>
+                    </div>
                   </TableCell>
                 )}
-                {visibleColumns.includes("phone") && (
+                {currentVisibleColumns.includes("phone") && (
                   <TableCell className="text-muted-foreground">
                     {merchant.areaCode && merchant.number
                       ? `(${merchant.areaCode}) ${merchant.number}`
                       : "-"}
                   </TableCell>
                 )}
-                {visibleColumns.includes("email") && (
+                {currentVisibleColumns.includes("email") && (
                   <TableCell className="text-muted-foreground">
                     <span className="truncate max-w-[200px] block">
                       {merchant.email || "-"}
                     </span>
                   </TableCell>
                 )}
-                {visibleColumns.includes("antCp") && (
+                {currentVisibleColumns.includes("antCp") && (
                   <TableCell>
                     <Badge
                       variant={
@@ -233,7 +227,7 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
                     </Badge>
                   </TableCell>
                 )}
-                {visibleColumns.includes("antCnp") && (
+                {currentVisibleColumns.includes("antCnp") && (
                   <TableCell>
                     <Badge
                       variant={
@@ -253,7 +247,7 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
                     </Badge>
                   </TableCell>
                 )}
-                {visibleColumns.includes("dtinsert") && (
+                {currentVisibleColumns.includes("dtinsert") && (
                   <TableCell>
                     <div className="flex flex-col whitespace-nowrap">
                       <span>
@@ -276,21 +270,23 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
                     </div>
                   </TableCell>
                 )}
-                {visibleColumns.includes("consultor") && (
+                {currentVisibleColumns.includes("consultor") && (
                   <TableCell>{merchant.sales_agent || "-"}</TableCell>
                 )}
                 {visibleColumns.includes("ativo") && (
-                  <TableCell>
-                    <Badge
-                      variant={merchant.active ? "default" : "destructive"}
-                      className={
-                        merchant.active
-                          ? "bg-green-600 hover:bg-green-700"
-                          : ""
-                      }
-                    >
-                      {merchant.active ? "Ativo" : "Inativo"}
-                    </Badge>
+                  <TableCell className="text-center">
+                    <div className="flex justify-center">
+                      <Badge
+                        variant={merchant.active ? "default" : "destructive"}
+                        className={
+                          merchant.active
+                            ? "bg-green-600 hover:bg-green-700"
+                            : ""
+                        }
+                      >
+                        {merchant.active ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </div>
                   </TableCell>
                 )}
               </TableRow>
