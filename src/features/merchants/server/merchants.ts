@@ -7,17 +7,17 @@ import { getCurrentUserInfo, isSuperAdmin, hasMerchantsAccess } from "@/lib/perm
 
 export interface MerchantListItem {
   merchantid: number;
-  slug: string;
-  active: boolean;
-  name: string;
-  email: string;
-  phone_type: string;
-  revenue: number | null;
+  slug: string | null;
+  active: boolean | null;
+  name: string | null;
+  email: string | null;
+  phone_type: string | null;
+  revenue: string | null;
   id_category: number | null;
-  kic_status: string;
+  kic_status: string | null;
   addressname: string | null;
   time_zone: string | null;
-  dtinsert: string;
+  dtinsert: string | null;
   dtupdate: string | null;
   lockCpAnticipationOrder: boolean | null;
   lockCnpAnticipationOrder: boolean | null;
