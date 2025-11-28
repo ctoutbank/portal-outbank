@@ -1,16 +1,8 @@
 import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
-import PageSizeSelector from "@/components/page-size-selector";
-import PaginationRecords from "@/components/pagination-Records";
-import { EmptyState } from "@/components/empty-state";
-import { Search } from "lucide-react";
 import { requireMerchantsAccess } from "@/lib/permissions/require-merchants-access";
 import { getAllMerchants, getAvailableCustomersForFilter, getMerchantSuggestions, getMerchantEmailSuggestions, getMerchantDocumentSuggestions, getSalesAgentSuggestions, getStateSuggestions } from "@/features/merchants/server/merchants";
-import { MerchantsFilter } from "@/features/merchants/_components/merchants-filter";
-import { MerchantsSearchInput } from "@/features/merchants/_components/merchants-search-input";
-import { MerchantsListWithContext } from "@/features/merchants/_components/merchants-list-with-context";
 import { MerchantsPageClient } from "@/features/merchants/_components/merchants-page-client";
-import { MerchantsSyncButton } from "@/features/merchants/_components/merchants-sync-button";
 
 export const revalidate = 300;
 
@@ -84,54 +76,19 @@ export default async function MerchantsPage({
         title="Estabelecimentos"
         subtitle="Visualização de Todos os Estabelecimentos"
       >
-        <div className="flex flex-col space-y-2">
-          <MerchantsPageClient data={merchantsData}>
-            <MerchantsFilter
-              dateFromIn={resolvedSearchParams.dateFrom}
-              establishmentIn={resolvedSearchParams.establishment}
-              statusIn={resolvedSearchParams.status}
-              stateIn={resolvedSearchParams.state}
-              emailIn={resolvedSearchParams.email}
-              cnpjIn={resolvedSearchParams.cnpj}
-              activeIn={resolvedSearchParams.active}
-              salesAgentIn={resolvedSearchParams.salesAgent}
-              customerIdIn={resolvedSearchParams.customerId}
-              availableCustomers={availableCustomers}
-              emailSuggestions={emailSuggestions}
-              documentSuggestions={documentSuggestions}
-              salesAgentSuggestions={salesAgentSuggestions}
-              stateSuggestions={stateSuggestions}
-            />
-            <MerchantsSearchInput suggestions={merchantSuggestions} />
-            <MerchantsSyncButton />
-          </MerchantsPageClient>
-
-          <div className="mt-2">
-            {merchantsData.merchants.length === 0 ? (
-              <EmptyState
-                icon={Search}
-                title="Nenhum resultado encontrado"
-                description="Tente ajustar os filtros para encontrar estabelecimentos"
-              />
-            ) : (
-              <MerchantsListWithContext list={merchantsData} />
-            )}
-            {totalRecords > 0 && (
-              <div className="flex items-center justify-between mt-4">
-                <PageSizeSelector
-                  currentPageSize={pageSize}
-                  pageName="merchants"
-                />
-                <PaginationRecords
-                  totalRecords={totalRecords}
-                  currentPage={page}
-                  pageSize={pageSize}
-                  pageName="merchants"
-                />
-              </div>
-            )}
-          </div>
-        </div>
+        <MerchantsPageClient 
+          data={merchantsData}
+          availableCustomers={availableCustomers}
+          merchantSuggestions={merchantSuggestions}
+          emailSuggestions={emailSuggestions}
+          documentSuggestions={documentSuggestions}
+          salesAgentSuggestions={salesAgentSuggestions}
+          stateSuggestions={stateSuggestions}
+          resolvedSearchParams={resolvedSearchParams}
+          totalRecords={totalRecords}
+          page={page}
+          pageSize={pageSize}
+        />
       </BaseBody>
     </>
   );
