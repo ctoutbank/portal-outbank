@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { translateStatus } from "@/lib/utils";
 import { useState } from "react";
+import Link from "next/link";
 import type { MerchantsListResult } from "../server/merchants";
 import { MerchantsTableSettings } from "./merchants-table-settings";
 
@@ -169,9 +170,12 @@ export default function MerchantsList({
                 )}
                 {currentVisibleColumns.includes("name") && (
                   <TableCell>
-                    <span className="font-medium">
+                    <Link
+                      href={`/merchants/${merchant.merchantid}`}
+                      className="font-medium hover:underline text-primary"
+                    >
                       {merchant.name?.toUpperCase() || "-"}
-                    </span>
+                    </Link>
                   </TableCell>
                 )}
                 {currentVisibleColumns.includes("localidade") && (

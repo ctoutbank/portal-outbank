@@ -402,3 +402,18 @@ export function handleNumericInput(
   }
 }
 
+export function generateSlug(): string {
+  return crypto.randomBytes(16).toString("hex");
+}
+
+export function formatCep(cep: string): string {
+  // Remove caracteres não numéricos
+  const cleaned = cep.replace(/\D/g, "");
+  
+  // Aplica a máscara: 00000-000
+  if (cleaned.length <= 5) {
+    return cleaned;
+  }
+  return `${cleaned.slice(0, 5)}-${cleaned.slice(5, 8)}`;
+}
+

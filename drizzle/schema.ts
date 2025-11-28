@@ -959,6 +959,30 @@ export const contacts = pgTable("contacts", {
 		}),
 ]);
 
+export const merchantAuthorizers = pgTable("merchant_authorizers", {
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "merchant_authorizers_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
+	slug: varchar({ length: 50 }),
+	active: boolean(),
+	dtinsert: timestamp({ mode: 'string' }),
+	dtupdate: timestamp({ mode: 'string' }),
+	type: varchar({ length: 100 }),
+	conciliarTransacoes: varchar("conciliar_transacoes", { length: 10 }),
+	merchantId: varchar("merchant_id", { length: 100 }),
+	tokenCnp: varchar("token_cnp", { length: 255 }),
+	terminalId: varchar("terminal_id", { length: 100 }),
+	idConta: varchar("id_conta", { length: 100 }),
+	chavePix: varchar("chave_pix", { length: 255 }),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	idMerchant: bigint("id_merchant", { mode: "number" }),
+}, (table) => [
+	foreignKey({
+			columns: [table.idMerchant],
+			foreignColumns: [merchants.id],
+			name: "merchant_authorizers_id_merchant_fkey"
+		}),
+]);
+
 export const paymentLink = pgTable("payment_link", {
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "payment_link_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),

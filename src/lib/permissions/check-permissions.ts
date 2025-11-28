@@ -287,3 +287,70 @@ export async function hasMerchantsAccess(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Verifica permissões de página (adaptado do Outbank-One)
+ * Retorna array de permissões do usuário para um grupo específico
+ * @param group - Nome do grupo (ex: "Estabelecimentos")
+ * @param permission - Nome da permissão específica (ex: "Atualizar")
+ * @returns Array de permissões do usuário
+ */
+export async function checkPagePermission(
+  group: string,
+  permission: string = "Listar"
+): Promise<string[]> {
+  try {
+    const clerkUser = await currentUser();
+    if (!clerkUser) {
+      return [];
+    }
+
+    // Super Admin tem todas as permissões
+    const isSuper = await isSuperAdmin();
+    if (isSuper) {
+      // Retornar permissões padrão para Super Admin
+      return [
+        "Listar",
+        "Atualizar",
+        "Inserir",
+        "Deletar",
+        "Configurar dados Bancários",
+        "Configurar Taxas do EC",
+        "Inserir documentos EC",
+      ];
+    }
+
+    // Buscar permissões do usuário para o grupo específico
+    const result = await db
+      .select({
+        functionName: functions.name,
+      })
+      .from(users)
+      .innerJoin(profiles, eq(users.idProfile, profiles.id))
+      .innerJoin(profileFunctions, eq(profiles.id, profileFunctions.idProfile))
+      .innerJoin(functions, eq(profileFunctions.idFunctions, functions.id))
+      .where(
+        and(
+          eq(users.idClerk, clerkUser.id),
+          eq(functions.group, group),
+          eq(profiles.active, true),
+          eq(functions.active, true),
+          eq(profileFunctions.active, true)
+        )
+      );
+
+    const permissions = result.map((r) => r.functionName);
+
+    // Se a permissão específica foi solicitada e não está na lista, retornar array vazio
+    // (isso fará com que componentes que verificam permissions.includes() retornem false)
+    if (permission && !permissions.includes(permission)) {
+      // Não redirecionar, apenas retornar permissões (deixar o componente decidir)
+      return permissions;
+    }
+
+    return permissions;
+  } catch (error) {
+    console.error("Error checking page permission:", error);
+    return [];
+  }
+}

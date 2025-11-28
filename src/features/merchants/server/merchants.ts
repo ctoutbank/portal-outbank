@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { merchants, customers, addresses, salesAgents, configurations, merchantPrice, legalNatures, categories, contacts, merchantBankAccounts, merchantpixaccount } from "../../../../drizzle/schema";
-import { eq, and, ilike, or, inArray, count, desc, gte, lte, asc, isNotNull } from "drizzle-orm";
+import { eq, and, ilike, or, inArray, count, desc, gte, lte, asc, isNotNull, getTableColumns } from "drizzle-orm";
 import { getCurrentUserInfo, isSuperAdmin, hasMerchantsAccess } from "@/lib/permissions/check-permissions";
 
 export interface MerchantListItem {
@@ -629,5 +629,217 @@ export async function getAllMerchants(
     cp_anticipation_count: cpAnticipationResult[0]?.count || 0,
     cnp_anticipation_count: cnpAnticipationResult[0]?.count || 0,
   };
+}
+
+/**
+ * Interface para acesso do usuário aos merchants (adaptada do Outbank-One para Portal-Outbank)
+ */
+export interface UserMerchantsAccess {
+  fullAccess: boolean;
+  idMerchants: number[];
+  idCustomer: number | null;
+  allowedCustomers: number[];
+}
+
+/**
+ * Obtém informações de acesso do usuário aos merchants
+ * Adaptado do Outbank-One para Portal-Outbank
+ */
+export async function getUserMerchantsAccess(): Promise<UserMerchantsAccess> {
+  try {
+    const userInfo = await getCurrentUserInfo();
+    
+    if (!userInfo) {
+      throw new Error("User not authenticated");
+    }
+
+    const isSuper = userInfo.isSuperAdmin;
+    const hasAccess = await hasMerchantsAccess();
+
+    // Super Admin ou usuário com acesso tem fullAccess
+    const fullAccess = isSuper || hasAccess;
+
+    // Se tem fullAccess, retornar com allowedCustomers
+    if (fullAccess) {
+      return {
+        fullAccess: true,
+        idMerchants: [],
+        idCustomer: userInfo.idCustomer,
+        allowedCustomers: userInfo.allowedCustomers || [],
+      };
+    }
+
+    // Para usuários sem fullAccess, retornar vazio (não devem acessar merchants)
+    return {
+      fullAccess: false,
+      idMerchants: [],
+      idCustomer: userInfo.idCustomer,
+      allowedCustomers: userInfo.allowedCustomers || [],
+    };
+  } catch (error) {
+    console.error("Erro ao obter acesso aos comerciantes do usuário:", error);
+    throw error;
+  }
+}
+
+/**
+ * Busca um estabelecimento por ID com todos os relacionamentos
+ * Replicado do Outbank-One, adaptado para Portal-Outbank
+ */
+export async function getMerchantById(
+  id: number,
+  userAccess?: UserMerchantsAccess
+): Promise<{
+  merchants: typeof merchants.$inferSelect;
+  categories: typeof categories.$inferSelect | null;
+  addresses: typeof addresses.$inferSelect | null;
+  configurations: typeof configurations.$inferSelect | null;
+  salesAgents: typeof salesAgents.$inferSelect | null;
+  legalNatures: typeof legalNatures.$inferSelect | null;
+  contacts: typeof contacts.$inferSelect | null;
+  pixaccounts: typeof merchantpixaccount.$inferSelect | null;
+} | null> {
+  try {
+    // Se userAccess não foi fornecido, buscar
+    if (!userAccess) {
+      userAccess = await getUserMerchantsAccess();
+    }
+
+    // Permitir acesso para criação de novo merchant (id = 0)
+    // Verificar acesso apenas para merchants existentes
+    if (id !== 0) {
+      // Verificar se o usuário tem acesso
+      if (!userAccess.fullAccess) {
+        // Se não tem fullAccess, verificar se tem acesso ao merchant específico
+        // No Portal-Outbank, verificamos pelo idCustomer (ISO)
+        const merchant = await db
+          .select({ idCustomer: merchants.idCustomer })
+          .from(merchants)
+          .where(eq(merchants.id, id))
+          .limit(1);
+
+        if (!merchant || merchant.length === 0) {
+          throw new Error("Merchant not found");
+        }
+
+        const merchantCustomerId = merchant[0].idCustomer;
+        
+        // Verificar se o merchant pertence a um ISO que o usuário tem acesso
+        if (
+          merchantCustomerId &&
+          userAccess.allowedCustomers.length > 0 &&
+          !userAccess.allowedCustomers.includes(Number(merchantCustomerId))
+        ) {
+          throw new Error("You don't have access to this merchant");
+        }
+      }
+    }
+
+    // Se o ID é 0, retornar um objeto vazio para permitir criação
+    if (id === 0) {
+      return {
+        merchants: {
+          id: 0,
+          slug: "",
+          name: "",
+          active: false,
+          dtinsert: "",
+          dtupdate: "",
+          idMerchant: "",
+          idDocument: "",
+          corporateName: "",
+          email: "",
+          areaCode: "",
+          number: "",
+          phoneType: "",
+          language: "",
+          timezone: "",
+          slugCustomer: "",
+          riskAnalysisStatus: "",
+          riskAnalysisStatusJustification: "",
+          legalPerson: "",
+          openingDate: null,
+          inclusion: "",
+          openingDays: "",
+          openingHour: "",
+          closingHour: "",
+          municipalRegistration: "",
+          stateSubcription: "",
+          hasTef: false,
+          hasPix: false,
+          hasTop: false,
+          establishmentFormat: "",
+          revenue: null,
+          idCategory: null,
+          slugCategory: "",
+          idConfiguration: null,
+          slugConfiguration: "",
+          idAddress: null,
+          idMerchantPrice: null,
+          idCustomer: userAccess.idCustomer,
+          dtdelete: null,
+          idMerchantBankAccount: null,
+          idLegalNature: null,
+          slugLegalNature: "",
+          idSalesAgent: null,
+          slugSalesAgent: "",
+        } as typeof merchants.$inferSelect,
+        categories: null,
+        addresses: null,
+        configurations: null,
+        salesAgents: null,
+        legalNatures: null,
+        contacts: null,
+        pixaccounts: null,
+      };
+    }
+
+    // Construir condições de filtro
+    const conditions = [eq(merchants.id, Number(id))];
+
+    // Se não tem fullAccess, filtrar por allowedCustomers
+    if (!userAccess.fullAccess && userAccess.allowedCustomers.length > 0) {
+      conditions.push(inArray(merchants.idCustomer, userAccess.allowedCustomers));
+    } else if (!userAccess.fullAccess && userAccess.idCustomer) {
+      // Se não tem fullAccess e tem idCustomer, filtrar por ele
+      conditions.push(eq(merchants.idCustomer, userAccess.idCustomer));
+    }
+
+    const result = await db
+      .select({
+        merchants: { ...getTableColumns(merchants) },
+        categories: { ...getTableColumns(categories) },
+        addresses: { ...getTableColumns(addresses) },
+        configurations: { ...getTableColumns(configurations) },
+        salesAgents: { ...getTableColumns(salesAgents) },
+        legalNatures: { ...getTableColumns(legalNatures) },
+        contacts: { ...getTableColumns(contacts) },
+        pixaccounts: { ...getTableColumns(merchantpixaccount) },
+      })
+      .from(merchants)
+      .where(and(...conditions))
+      .leftJoin(addresses, eq(merchants.idAddress, addresses.id))
+      .leftJoin(categories, eq(merchants.idCategory, categories.id))
+      .leftJoin(configurations, eq(merchants.idConfiguration, configurations.id))
+      .leftJoin(salesAgents, eq(merchants.idSalesAgent, salesAgents.id))
+      .leftJoin(legalNatures, eq(merchants.idLegalNature, legalNatures.id))
+      .leftJoin(contacts, eq(merchants.id, contacts.idMerchant))
+      .leftJoin(
+        merchantpixaccount,
+        eq(merchants.id, merchantpixaccount.idMerchant)
+      )
+      .limit(1);
+
+    const merchant = result[0];
+    
+    if (!merchant) {
+      return null;
+    }
+
+    return merchant;
+  } catch (error) {
+    console.error("Erro ao buscar merchant por ID:", error);
+    throw error;
+  }
 }
 
