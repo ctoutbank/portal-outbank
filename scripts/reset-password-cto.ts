@@ -31,9 +31,11 @@ async function resetPassword() {
     
     // Buscar usuário por email
     console.log("🔍 Buscando usuário...");
-    const users = await clerk.users.getUserList({
+    const usersResponse = await clerk.users.getUserList({
       emailAddress: [USER_EMAIL],
     });
+
+    const users = usersResponse.data || [];
 
     if (users.length === 0) {
       throw new Error(`Usuário com email ${USER_EMAIL} não encontrado no Clerk`);

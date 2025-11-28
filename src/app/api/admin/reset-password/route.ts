@@ -50,9 +50,11 @@ export async function POST(request: NextRequest) {
     const clerk = await clerkClient();
 
     // Buscar usuário por email
-    const users = await clerk.users.getUserList({
+    const usersResponse = await clerk.users.getUserList({
       emailAddress: [email],
     });
+
+    const users = usersResponse.data || [];
 
     if (users.length === 0) {
       return NextResponse.json(
