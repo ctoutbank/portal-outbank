@@ -9,7 +9,8 @@ import { getAllMerchants, getAvailableCustomersForFilter, getMerchantSuggestions
 import { MerchantsFilter } from "@/features/merchants/_components/merchants-filter";
 import { MerchantsSearchInput } from "@/features/merchants/_components/merchants-search-input";
 import MerchantsList from "@/features/merchants/_components/merchants-list";
-import { MerchantsDashboardContent } from "@/features/merchants/_components/merchants-dashboard-content";
+import { MerchantsDashboardWrapper } from "@/features/merchants/_components/merchants-dashboard-wrapper";
+import { MerchantsSyncButton } from "@/features/merchants/_components/merchants-sync-button";
 
 export const revalidate = 300;
 
@@ -80,25 +81,22 @@ export default async function MerchantsPage({
         subtitle="Visualização de Todos os Estabelecimentos"
       >
         <div className="flex flex-col space-y-2">
-          <div className="flex items-center gap-2 justify-between mb-1">
-            <div className="flex items-center gap-2 flex-1">
-              <MerchantsFilter
-                dateFromIn={resolvedSearchParams.dateFrom}
-                establishmentIn={resolvedSearchParams.establishment}
-                statusIn={resolvedSearchParams.status}
-                stateIn={resolvedSearchParams.state}
-                emailIn={resolvedSearchParams.email}
-                cnpjIn={resolvedSearchParams.cnpj}
-                activeIn={resolvedSearchParams.active}
-                salesAgentIn={resolvedSearchParams.salesAgent}
-                customerIdIn={resolvedSearchParams.customerId}
-                availableCustomers={availableCustomers}
-              />
-              <MerchantsSearchInput suggestions={merchantSuggestions} />
-            </div>
-          </div>
-
-          <MerchantsDashboardContent data={merchantsData} />
+          <MerchantsDashboardWrapper data={merchantsData}>
+            <MerchantsFilter
+              dateFromIn={resolvedSearchParams.dateFrom}
+              establishmentIn={resolvedSearchParams.establishment}
+              statusIn={resolvedSearchParams.status}
+              stateIn={resolvedSearchParams.state}
+              emailIn={resolvedSearchParams.email}
+              cnpjIn={resolvedSearchParams.cnpj}
+              activeIn={resolvedSearchParams.active}
+              salesAgentIn={resolvedSearchParams.salesAgent}
+              customerIdIn={resolvedSearchParams.customerId}
+              availableCustomers={availableCustomers}
+            />
+            <MerchantsSearchInput suggestions={merchantSuggestions} />
+            <MerchantsSyncButton />
+          </MerchantsDashboardWrapper>
 
           <div className="mt-2">
             {merchantsData.merchants.length === 0 ? (

@@ -47,7 +47,7 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
     {
       id: "statusKyc",
       name: "Status KYC",
-      defaultVisible: false,
+      defaultVisible: true,
       alwaysVisible: false,
       sortable: false,
     },
@@ -82,7 +82,7 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
     {
       id: "dtinsert",
       name: "Cadastro",
-      defaultVisible: true,
+      defaultVisible: false,
       alwaysVisible: false,
       sortable: false,
     },
@@ -95,7 +95,7 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
     },
     {
       id: "ativo",
-      name: "Ativo",
+      name: "Status",
       defaultVisible: true,
       alwaysVisible: false,
       sortable: false,
@@ -169,16 +169,9 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
                 )}
                 {visibleColumns.includes("name") && (
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">
-                        {merchant.name?.toUpperCase() || "-"}
-                      </span>
-                      {merchant.cnpj && (
-                        <span className="text-sm text-muted-foreground">
-                          ({formatCNPJ(merchant.cnpj)})
-                        </span>
-                      )}
-                    </div>
+                    <span className="font-medium">
+                      {merchant.name?.toUpperCase() || "-"}
+                    </span>
                   </TableCell>
                 )}
                 {visibleColumns.includes("localidade") && (
@@ -230,6 +223,11 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
                           ? "destructive"
                           : "default"
                       }
+                      className={
+                        !merchant.lockCpAnticipationOrder
+                          ? "bg-green-600 hover:bg-green-700"
+                          : ""
+                      }
                     >
                       {merchant.lockCpAnticipationOrder ? "Inativo" : "Ativo"}
                     </Badge>
@@ -242,6 +240,11 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
                         merchant.lockCnpAnticipationOrder
                           ? "destructive"
                           : "default"
+                      }
+                      className={
+                        !merchant.lockCnpAnticipationOrder
+                          ? "bg-green-600 hover:bg-green-700"
+                          : ""
                       }
                     >
                       {merchant.lockCnpAnticipationOrder
@@ -280,6 +283,11 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
                   <TableCell>
                     <Badge
                       variant={merchant.active ? "default" : "destructive"}
+                      className={
+                        merchant.active
+                          ? "bg-green-600 hover:bg-green-700"
+                          : ""
+                      }
                     >
                       {merchant.active ? "Ativo" : "Inativo"}
                     </Badge>
