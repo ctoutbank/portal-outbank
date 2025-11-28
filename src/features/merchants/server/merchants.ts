@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { merchants, customers, addresses, salesAgents, configurations, merchantPrice, legalNatures, categories, contacts, merchantBankAccounts, merchantpixaccount } from "../../../../drizzle/schema";
-import { eq, and, ilike, or, inArray, count, desc, gte, lte, asc } from "drizzle-orm";
+import { eq, and, ilike, or, inArray, count, desc, gte, lte, asc, isNotNull } from "drizzle-orm";
 import { getCurrentUserInfo, isSuperAdmin, hasMerchantsAccess } from "@/lib/permissions/check-permissions";
 
 export interface MerchantListItem {
@@ -156,6 +156,153 @@ export async function getMerchantSuggestions(): Promise<MerchantSuggestion[]> {
     .limit(1000); // Limite razoável para performance
 
   return result;
+}
+
+/**
+ * Obtém sugestões de emails únicos dos merchants
+ */
+export async function getMerchantEmailSuggestions(): Promise<string[]> {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo) {
+    return [];
+  }
+
+  const isSuper = await isSuperAdmin();
+  const userHasMerchantsAccess = await hasMerchantsAccess();
+
+  if (!isSuper && !userHasMerchantsAccess) {
+    return [];
+  }
+
+  const whereConditions = [isNotNull(merchants.email)];
+
+  // Se não for Super Admin, filtrar pelos ISOs que o usuário tem acesso
+  if (!isSuper && userHasMerchantsAccess && userInfo.allowedCustomers && userInfo.allowedCustomers.length > 0) {
+    whereConditions.push(inArray(merchants.idCustomer, userInfo.allowedCustomers));
+  } else if (!isSuper && userHasMerchantsAccess && (!userInfo.allowedCustomers || userInfo.allowedCustomers.length === 0)) {
+    return [];
+  }
+
+  const result = await db
+    .selectDistinct({ email: merchants.email })
+    .from(merchants)
+    .where(and(...whereConditions))
+    .orderBy(asc(merchants.email))
+    .limit(100);
+
+  return result.map((r) => r.email || "").filter((email) => email.trim().length > 0);
+}
+
+/**
+ * Obtém sugestões de documentos únicos dos merchants
+ */
+export async function getMerchantDocumentSuggestions(): Promise<string[]> {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo) {
+    return [];
+  }
+
+  const isSuper = await isSuperAdmin();
+  const userHasMerchantsAccess = await hasMerchantsAccess();
+
+  if (!isSuper && !userHasMerchantsAccess) {
+    return [];
+  }
+
+  const whereConditions = [isNotNull(merchants.idDocument)];
+
+  // Se não for Super Admin, filtrar pelos ISOs que o usuário tem acesso
+  if (!isSuper && userHasMerchantsAccess && userInfo.allowedCustomers && userInfo.allowedCustomers.length > 0) {
+    whereConditions.push(inArray(merchants.idCustomer, userInfo.allowedCustomers));
+  } else if (!isSuper && userHasMerchantsAccess && (!userInfo.allowedCustomers || userInfo.allowedCustomers.length === 0)) {
+    return [];
+  }
+
+  const result = await db
+    .selectDistinct({ document: merchants.idDocument })
+    .from(merchants)
+    .where(and(...whereConditions))
+    .orderBy(asc(merchants.idDocument))
+    .limit(100);
+
+  return result.map((r) => r.document || "").filter((doc) => doc.trim().length > 0);
+}
+
+/**
+ * Obtém sugestões de nomes de consultores comerciais únicos
+ */
+export async function getSalesAgentSuggestions(): Promise<string[]> {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo) {
+    return [];
+  }
+
+  const isSuper = await isSuperAdmin();
+  const userHasMerchantsAccess = await hasMerchantsAccess();
+
+  if (!isSuper && !userHasMerchantsAccess) {
+    return [];
+  }
+
+  const whereConditions = [isNotNull(salesAgents.firstName), isNotNull(salesAgents.lastName)];
+
+  // Se não for Super Admin, filtrar pelos ISOs que o usuário tem acesso
+  if (!isSuper && userHasMerchantsAccess && userInfo.allowedCustomers && userInfo.allowedCustomers.length > 0) {
+    whereConditions.push(inArray(merchants.idCustomer, userInfo.allowedCustomers));
+  } else if (!isSuper && userHasMerchantsAccess && (!userInfo.allowedCustomers || userInfo.allowedCustomers.length === 0)) {
+    return [];
+  }
+
+  const result = await db
+    .selectDistinct({
+      firstName: salesAgents.firstName,
+      lastName: salesAgents.lastName,
+    })
+    .from(merchants)
+    .innerJoin(salesAgents, eq(merchants.idSalesAgent, salesAgents.id))
+    .where(and(...whereConditions))
+    .orderBy(asc(salesAgents.firstName))
+    .limit(100);
+
+  return result
+    .map((r) => `${r.firstName || ""} ${r.lastName || ""}`.trim())
+    .filter((name) => name.length > 0);
+}
+
+/**
+ * Obtém sugestões de estados únicos dos endereços
+ */
+export async function getStateSuggestions(): Promise<string[]> {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo) {
+    return [];
+  }
+
+  const isSuper = await isSuperAdmin();
+  const userHasMerchantsAccess = await hasMerchantsAccess();
+
+  if (!isSuper && !userHasMerchantsAccess) {
+    return [];
+  }
+
+  const whereConditions = [isNotNull(addresses.state)];
+
+  // Se não for Super Admin, filtrar pelos ISOs que o usuário tem acesso
+  if (!isSuper && userHasMerchantsAccess && userInfo.allowedCustomers && userInfo.allowedCustomers.length > 0) {
+    whereConditions.push(inArray(merchants.idCustomer, userInfo.allowedCustomers));
+  } else if (!isSuper && userHasMerchantsAccess && (!userInfo.allowedCustomers || userInfo.allowedCustomers.length === 0)) {
+    return [];
+  }
+
+  const result = await db
+    .selectDistinct({ state: addresses.state })
+    .from(addresses)
+    .innerJoin(merchants, eq(merchants.idAddress, addresses.id))
+    .where(and(...whereConditions))
+    .orderBy(asc(addresses.state))
+    .limit(50);
+
+  return result.map((r) => r.state || "").filter((state) => state.trim().length > 0);
 }
 
 /**

@@ -5,7 +5,7 @@ import PaginationRecords from "@/components/pagination-Records";
 import { EmptyState } from "@/components/empty-state";
 import { Search } from "lucide-react";
 import { requireMerchantsAccess } from "@/lib/permissions/require-merchants-access";
-import { getAllMerchants, getAvailableCustomersForFilter, getMerchantSuggestions } from "@/features/merchants/server/merchants";
+import { getAllMerchants, getAvailableCustomersForFilter, getMerchantSuggestions, getMerchantEmailSuggestions, getMerchantDocumentSuggestions, getSalesAgentSuggestions, getStateSuggestions } from "@/features/merchants/server/merchants";
 import { MerchantsFilter } from "@/features/merchants/_components/merchants-filter";
 import { MerchantsSearchInput } from "@/features/merchants/_components/merchants-search-input";
 import MerchantsList from "@/features/merchants/_components/merchants-list";
@@ -43,7 +43,7 @@ export default async function MerchantsPage({
   const search = resolvedSearchParams.search || "";
 
   // Buscar dados em paralelo
-  const [merchantsData, availableCustomers, merchantSuggestions] = await Promise.all([
+  const [merchantsData, availableCustomers, merchantSuggestions, emailSuggestions, documentSuggestions, salesAgentSuggestions, stateSuggestions] = await Promise.all([
     getAllMerchants(
       page,
       pageSize,
@@ -64,6 +64,10 @@ export default async function MerchantsPage({
     ),
     getAvailableCustomersForFilter(),
     getMerchantSuggestions(),
+    getMerchantEmailSuggestions(),
+    getMerchantDocumentSuggestions(),
+    getSalesAgentSuggestions(),
+    getStateSuggestions(),
   ]);
 
   const totalRecords = merchantsData.totalCount;
@@ -93,6 +97,10 @@ export default async function MerchantsPage({
               salesAgentIn={resolvedSearchParams.salesAgent}
               customerIdIn={resolvedSearchParams.customerId}
               availableCustomers={availableCustomers}
+              emailSuggestions={emailSuggestions}
+              documentSuggestions={documentSuggestions}
+              salesAgentSuggestions={salesAgentSuggestions}
+              stateSuggestions={stateSuggestions}
             />
             <MerchantsSearchInput suggestions={merchantSuggestions} />
             <MerchantsSyncButton />

@@ -24,7 +24,9 @@ export function MerchantsDashboardWrapper({
           <MerchantsDashboardToggle isOpen={isOpen} onToggle={() => setIsOpen(!isOpen)} />
         </div>
       </div>
-      <MerchantsDashboardContent data={data} isOpen={isOpen} />
+      <div className="mt-4">
+        <MerchantsDashboardContent data={data} isOpen={isOpen} />
+      </div>
     </>
   );
 }

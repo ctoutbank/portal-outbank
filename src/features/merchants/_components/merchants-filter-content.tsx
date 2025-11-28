@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, Search } from "lucide-react";
 import { useState, type KeyboardEvent, useEffect } from "react";
+import { AutocompleteInput } from "./autocomplete-input";
 
 interface FilterMerchantsContentProps {
   onClose: () => void;
@@ -36,6 +37,10 @@ interface FilterMerchantsContentProps {
   salesAgentIn: string | undefined;
   customerIdIn: string | undefined;
   availableCustomers?: Array<{ id: number; name: string | null }>;
+  emailSuggestions?: string[];
+  documentSuggestions?: string[];
+  salesAgentSuggestions?: string[];
+  stateSuggestions?: string[];
 }
 
 export function FilterMerchantsContent({
@@ -49,6 +54,10 @@ export function FilterMerchantsContent({
   salesAgentIn,
   customerIdIn,
   availableCustomers = [],
+  emailSuggestions = [],
+  documentSuggestions = [],
+  salesAgentSuggestions = [],
+  stateSuggestions = [],
   onFilter,
   onClose,
 }: FilterMerchantsContentProps) {
@@ -160,10 +169,11 @@ export function FilterMerchantsContent({
           {/* CNPJ/CPF */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium">CNPJ/CPF</h3>
-            <Input
-              placeholder="CNPJ ou CPF"
+            <AutocompleteInput
+              suggestions={documentSuggestions}
               value={cnpj}
-              onChange={(e) => setCnpj(e.target.value)}
+              onChange={setCnpj}
+              placeholder="CNPJ ou CPF"
               onKeyDown={handleKeyDown}
             />
           </div>
@@ -171,11 +181,11 @@ export function FilterMerchantsContent({
           {/* Email */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium">Email</h3>
-            <Input
-              placeholder="Email"
-              type="email"
+            <AutocompleteInput
+              suggestions={emailSuggestions}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={setEmail}
+              placeholder="Email"
               onKeyDown={handleKeyDown}
             />
           </div>
@@ -183,10 +193,11 @@ export function FilterMerchantsContent({
           {/* Consultor Comercial */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium">Consultor Comercial</h3>
-            <Input
-              placeholder="Nome do consultor"
+            <AutocompleteInput
+              suggestions={salesAgentSuggestions}
               value={salesAgent}
-              onChange={(e) => setSalesAgent(e.target.value)}
+              onChange={setSalesAgent}
+              placeholder="Nome do consultor"
               onKeyDown={handleKeyDown}
             />
           </div>
@@ -194,10 +205,11 @@ export function FilterMerchantsContent({
           {/* Estado */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium">Estado</h3>
-            <Input
-              placeholder="Ex: SP, São Paulo, Rio de Janeiro, RJ..."
+            <AutocompleteInput
+              suggestions={stateSuggestions}
               value={state}
-              onChange={(e) => setState(e.target.value)}
+              onChange={setState}
+              placeholder="Ex: SP, São Paulo, Rio de Janeiro, RJ..."
               onKeyDown={handleKeyDown}
             />
           </div>

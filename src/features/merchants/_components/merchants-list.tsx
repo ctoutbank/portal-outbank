@@ -147,7 +147,7 @@ export default function MerchantsList({ list }: { list: MerchantsListResult }) {
               {columns
                 .filter((column) => visibleColumns.includes(column.id))
                 .map((column) => (
-                  <TableHead key={column.id} className="font-medium">
+                  <TableHead key={column.id} className="font-medium text-center">
                     {column.name}
                   </TableHead>
                 ))}

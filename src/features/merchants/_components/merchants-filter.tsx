@@ -16,6 +16,10 @@ type MerchantFilterWrapperProps = {
   salesAgentIn?: string;
   customerIdIn?: string;
   availableCustomers?: Array<{ id: number; name: string | null }>;
+  emailSuggestions?: string[];
+  documentSuggestions?: string[];
+  salesAgentSuggestions?: string[];
+  stateSuggestions?: string[];
 };
 
 export function MerchantsFilter(props: MerchantFilterWrapperProps) {
@@ -150,6 +154,10 @@ export function MerchantsFilter(props: MerchantFilterWrapperProps) {
           salesAgentIn={props.salesAgentIn}
           customerIdIn={props.customerIdIn}
           availableCustomers={props.availableCustomers}
+          emailSuggestions={props.emailSuggestions}
+          documentSuggestions={props.documentSuggestions}
+          salesAgentSuggestions={props.salesAgentSuggestions}
+          stateSuggestions={props.stateSuggestions}
           onFilter={handleFilter}
         />
       </FilterMerchantsButton>
