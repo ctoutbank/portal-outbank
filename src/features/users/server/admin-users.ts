@@ -686,13 +686,20 @@ export async function updateUserPermissions(
       throw new Error("Usuário não possui ID do Clerk. Não é possível atualizar a senha.");
     }
 
+    // Verificar se a senha é igual ao email (não permitido pelo Clerk)
+    const userEmail = user.email?.toLowerCase().trim() || "";
+    const passwordLower = newPassword.toLowerCase().trim();
+    if (passwordLower === userEmail) {
+      throw new Error("A senha não pode ser igual ao email. Por favor, escolha uma senha diferente do endereço de email.");
+    }
+
     try {
       const clerk = await clerkClient();
       
-      // Atualizar senha no Clerk
+      // Atualizar senha no Clerk com verificações de segurança ativas
       await clerk.users.updateUser(user.idClerk, {
         password: newPassword,
-        skipPasswordChecks: false, // Não pular verificações de senha (pwned, etc)
+        skipPasswordChecks: false, // Não pular verificações de senha (pwned, senha igual ao email, etc)
       });
 
       // Atualizar hash da senha e senha inicial no banco de dados
@@ -722,8 +729,10 @@ export async function updateUserPermissions(
         if (passwordError) {
           if (passwordError.code === "form_password_pwned") {
             throw new Error("Senha comprometida: Essa senha foi encontrada em vazamentos de dados. Por favor, escolha uma senha mais segura.");
+          } else if (passwordError.message?.toLowerCase().includes("email") || passwordError.message?.toLowerCase().includes("identifier")) {
+            throw new Error("A senha não pode ser igual ao email ou ao identificador do usuário. Por favor, escolha uma senha diferente.");
           } else {
-            throw new Error(passwordError.message || "A senha não atende aos requisitos de segurança. Verifique se a senha não é igual ao email.");
+            throw new Error(passwordError.message || "A senha não atende aos requisitos de segurança do Clerk. Verifique se a senha não é igual ao email e atende aos critérios de segurança.");
           }
         }
       }
