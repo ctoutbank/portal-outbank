@@ -7,11 +7,14 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import {
+  adminCustomers,
   customerCustomization,
   customers,
   file,
   profiles,
+  reportExecution,
   userMerchants,
+  userNotifications,
   users,
 } from "../../../../../drizzle/schema";
 
@@ -537,6 +540,7 @@ export async function resendWelcomeEmail(userId: number): Promise<{
 
 export async function deleteUser(id: number): Promise<boolean> {
   try {
+    // Verificar se o usuário existe
     const existingUser = await db.select().from(users).where(eq(users.id, id));
 
     if (!existingUser || existingUser.length === 0) {
@@ -545,20 +549,86 @@ export async function deleteUser(id: number): Promise<boolean> {
 
     const userToDelete = existingUser[0];
 
+    // 1. Deletar relacionamentos primeiro (para evitar erro de foreign key)
+    // 1.1. Deletar user_merchants
+    try {
+      await db.delete(userMerchants).where(eq(userMerchants.idUser, id));
+      console.log(`[deleteUser] ✅ Relacionamentos user_merchants deletados para usuário ID: ${id}`);
+    } catch (merchantError: any) {
+      // Se a tabela não existir ou não houver relacionamentos, continuar
+      if (merchantError?.code !== '42P01' && !merchantError?.message?.includes('does not exist')) {
+        console.warn(`[deleteUser] ⚠️ Aviso ao deletar relacionamentos user_merchants:`, merchantError);
+      }
+    }
+
+    // 1.2. Deletar user_notifications
+    try {
+      await db.delete(userNotifications).where(eq(userNotifications.idUser, id));
+      console.log(`[deleteUser] ✅ Notificações do usuário deletadas para usuário ID: ${id}`);
+    } catch (notificationError: any) {
+      // Se a tabela não existir ou não houver relacionamentos, continuar
+      if (notificationError?.code !== '42P01' && !notificationError?.message?.includes('does not exist')) {
+        console.warn(`[deleteUser] ⚠️ Aviso ao deletar notificações do usuário:`, notificationError);
+      }
+    }
+
+    // 1.3. Deletar admin_customers
+    try {
+      await db.delete(adminCustomers).where(eq(adminCustomers.idUser, id));
+      console.log(`[deleteUser] ✅ Relacionamentos admin_customers deletados para usuário ID: ${id}`);
+    } catch (adminCustomerError: any) {
+      // Se a tabela não existir ou não houver relacionamentos, continuar
+      if (adminCustomerError?.code !== '42P01' && !adminCustomerError?.message?.includes('does not exist')) {
+        console.warn(`[deleteUser] ⚠️ Aviso ao deletar relacionamentos admin_customers:`, adminCustomerError);
+      }
+    }
+
+    // 1.4. Deletar report_execution
+    try {
+      await db.delete(reportExecution).where(eq(reportExecution.idUser, id));
+      console.log(`[deleteUser] ✅ Execuções de relatório deletadas para usuário ID: ${id}`);
+    } catch (reportError: any) {
+      // Se a tabela não existir ou não houver relacionamentos, continuar
+      if (reportError?.code !== '42P01' && !reportError?.message?.includes('does not exist')) {
+        console.warn(`[deleteUser] ⚠️ Aviso ao deletar execuções de relatório:`, reportError);
+      }
+    }
+
+    // 2. Deletar do Clerk se tiver idClerk
     if (userToDelete.idClerk) {
       try {
         const clerk = await clerkClient();
         await clerk.users.deleteUser(userToDelete.idClerk);
-      } catch (clerkError) {
-        console.error("Erro ao excluir usuário do Clerk:", clerkError);
+        console.log(`[deleteUser] ✅ Usuário deletado do Clerk: ${userToDelete.idClerk}`);
+      } catch (clerkError: any) {
+        // Se o usuário não existir no Clerk, continuar com a deleção do banco
+        if (clerkError?.status === 404 || clerkError?.message?.includes('not found')) {
+          console.warn(`[deleteUser] ⚠️ Usuário não encontrado no Clerk (pode já ter sido deletado): ${userToDelete.idClerk}`);
+        } else {
+          console.error(`[deleteUser] ❌ Erro ao excluir usuário do Clerk:`, clerkError);
+          // Não bloquear deleção do banco se falhar no Clerk
+        }
       }
     }
 
+    // 3. Deletar do banco de dados
     await db.delete(users).where(eq(users.id, id));
+    console.log(`[deleteUser] ✅ Usuário deletado do banco de dados: ID ${id}`);
+
+    // 4. Revalidar caminhos relacionados
+    revalidatePath("/customers");
+    revalidatePath("/portal/users");
 
     return true;
-  } catch (error) {
-    console.error("Erro ao excluir usuário:", error);
-    return false;
+  } catch (error: any) {
+    console.error("[deleteUser] ❌ Erro ao excluir usuário:", error);
+    
+    // Verificar se é erro de foreign key constraint
+    if (error?.code === '23503' || error?.message?.includes('foreign key constraint')) {
+      throw new Error("Não é possível excluir este usuário pois ele possui relacionamentos com outros registros. Remova os relacionamentos primeiro.");
+    }
+    
+    // Relançar o erro para que o componente possa tratá-lo
+    throw error;
   }
 }

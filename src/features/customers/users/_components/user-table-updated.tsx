@@ -18,8 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useState } from "react";
-import { deleteUser } from "../_actions/use-Actions";
-import {getUserDetailWithClerk, UserDetailForm, revealInitialPassword} from "../_actions/user-actions";
+import {getUserDetailWithClerk, UserDetailForm, revealInitialPassword, deleteUser} from "../_actions/user-actions";
 import UserCustomerForm from "./user-form";
 import { toast } from "sonner";
 
@@ -95,14 +94,24 @@ export default function UserTable({
   }
 
   async function handleDeleteUser(userId: number) {
-    if (confirm("Tem certeza que deseja excluir este usuário?")) {
+    if (confirm("Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.")) {
       try {
+        setIsLoading(true);
         const success = await deleteUser(userId);
-        if (success && onRefresh) {
-          onRefresh();
+        if (success) {
+          toast.success("Usuário excluído com sucesso!");
+          if (onRefresh) {
+            onRefresh();
+          }
+        } else {
+          toast.error("Erro ao excluir usuário. Tente novamente.");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Erro ao excluir usuário:", error);
+        const errorMessage = error?.message || "Erro ao excluir usuário. Tente novamente.";
+        toast.error(errorMessage);
+      } finally {
+        setIsLoading(false);
       }
     }
   }
