@@ -57,7 +57,7 @@ export default async function RootLayout({
         }
       }}
     >
-      <html lang="pt-BR" suppressHydrationWarning>
+      <html lang="pt-BR" suppressHydrationWarning className="dark">
         <head>
         </head>
         <body className={inter.className}>
@@ -65,6 +65,7 @@ export default async function RootLayout({
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
+            forcedTheme="dark"
             enableSystem={false}
             disableTransitionOnChange
           >
