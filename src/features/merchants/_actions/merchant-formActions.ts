@@ -142,7 +142,7 @@ export async function updateMerchantFormAction(data: MerchantSchema) {
     slugSalesAgent: data.slugSalesAgent || "",
     idMerchantBankAccount: data.idMerchantBankAccount || null,
     idCustomer: data.idCustomer || null,
-    idMerchantPrice: data.idMerchantPrice || null,
+    idMerchantPrice: data.idMerchantPrice ? Number(data.idMerchantPrice) : null,
     dtdelete: null,
   };
   await updateMerchant(merchantUpdate);
