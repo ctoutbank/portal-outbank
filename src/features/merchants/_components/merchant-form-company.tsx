@@ -115,8 +115,8 @@ export default function MerchantFormCompany({
         ...formData,
         id: merchant?.id,
         idAddress: addressId,
-        idCategory: Number(formData.cnae) || null,
-        idLegalNature: Number(formData.idLegalNature) || null,
+        idCategory: formData.cnae ? Number(formData.cnae) : undefined,
+        idLegalNature: formData.idLegalNature ? Number(formData.idLegalNature) : undefined,
         phoneType: formData.number?.startsWith("9") ? "C" : "P",
       };
 
