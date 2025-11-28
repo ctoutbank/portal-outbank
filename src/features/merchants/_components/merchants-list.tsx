@@ -14,6 +14,14 @@ import { useState } from "react";
 import type { MerchantsListResult } from "../server/merchants";
 import { MerchantsTableSettings } from "./merchants-table-settings";
 
+type Column = {
+  id: string;
+  name: string;
+  defaultVisible: boolean;
+  alwaysVisible: boolean;
+  sortable: boolean;
+};
+
 export default function MerchantsList({ 
   list,
   columnsConfig,
@@ -21,11 +29,11 @@ export default function MerchantsList({
   onToggleColumn,
 }: { 
   list: MerchantsListResult;
-  columnsConfig?: typeof columns;
+  columnsConfig?: Column[];
   visibleColumns?: string[];
   onToggleColumn?: (columnId: string) => void;
 }) {
-  const columns = [
+  const columns: Column[] = [
     {
       id: "iso",
       name: "ISO",
