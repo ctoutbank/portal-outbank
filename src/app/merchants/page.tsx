@@ -71,7 +71,7 @@ export default async function MerchantsPage({
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Estabelecimentos", url: "/merchants" },
+          { title: "Estabelecimentos", subtitle: "", url: "/merchants" },
         ]}
       />
 
