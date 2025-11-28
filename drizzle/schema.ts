@@ -391,6 +391,8 @@ export const merchantTransactionPrice = pgTable("merchant_transaction_price", {
 	nonCardTransactionFee: integer("non_card_transaction_fee"),
 	nonCardTransactionMdr: numeric("non_card_transaction_mdr"),
 	producttype: varchar({ length: 20 }),
+	cardCompulsoryAnticipationMdr: numeric("card_compulsory_anticipation_mdr"),
+	noCardCompulsoryAnticipationMdr: numeric("no_card_compulsory_anticipation_mdr"),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	idMerchantPriceGroup: bigint("id_merchant_price_group", { mode: "number" }),
 }, (table) => [
