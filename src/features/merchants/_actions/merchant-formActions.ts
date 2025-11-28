@@ -136,7 +136,7 @@ export async function updateMerchantFormAction(data: MerchantSchema) {
     slugLegalNature: legalNatureSlug || "",
     idCategory: data.idCategory || 0,
     slugCategory: categorySlug || "",
-    idConfiguration: data.idConfiguration || undefined,
+    idConfiguration: data.idConfiguration ? Number(data.idConfiguration) : null,
     slugConfiguration: configurationSlug || "",
     idSalesAgent: data.idSalesAgent || null,
     slugSalesAgent: data.slugSalesAgent || "",
