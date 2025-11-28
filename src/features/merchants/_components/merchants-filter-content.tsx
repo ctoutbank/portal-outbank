@@ -60,7 +60,7 @@ export function FilterMerchantsContent({
   const [cnpj, setCnpj] = useState(cnpjIn || "");
   const [active, setActive] = useState(activeIn || "");
   const [salesAgent, setSalesAgent] = useState(salesAgentIn || "");
-  const [customerId, setCustomerId] = useState(customerIdIn || "");
+  const [customerId, setCustomerId] = useState(customerIdIn || "all");
 
   const activeOptions = [
     { value: "true", label: "Sim" },
@@ -77,7 +77,7 @@ export function FilterMerchantsContent({
       cnpj,
       active,
       salesAgent,
-      customerId: customerId ? parseInt(customerId) : undefined,
+      customerId: customerId && customerId !== "all" ? parseInt(customerId) : undefined,
     });
     onClose();
   };
@@ -135,7 +135,7 @@ export function FilterMerchantsContent({
                   <SelectValue placeholder="Todos os ISOs" />
                 </SelectTrigger>
                 <SelectContent onMouseDown={(e) => e.stopPropagation()}>
-                  <SelectItem value="">Todos os ISOs</SelectItem>
+                  <SelectItem value="all">Todos os ISOs</SelectItem>
                   {availableCustomers.map((customer) => (
                     <SelectItem key={customer.id} value={customer.id.toString()}>
                       {customer.name || `ISO ${customer.id}`}
