@@ -622,6 +622,7 @@ export async function updateUserPermissions(
     idCustomer?: number | null;
     fullAccess?: boolean;
     customerIds?: number[]; // Para Admin, atualizar ISOs autorizados
+    password?: string; // Nova senha (opcional)
   }
 ) {
   const userInfo = await getCurrentUserInfo();
@@ -668,6 +669,66 @@ export async function updateUserPermissions(
       }
     } else {
       throw new Error("Apenas Admin ou Super Admin pode atualizar permissões");
+    }
+  }
+
+  // Atualizar senha no Clerk se fornecida
+  if (data.password && data.password.trim().length > 0) {
+    const newPassword = data.password.trim();
+    
+    // Validar tamanho mínimo da senha
+    if (newPassword.length < 8) {
+      throw new Error("A senha deve ter pelo menos 8 caracteres");
+    }
+
+    // Verificar se o usuário tem idClerk
+    if (!user.idClerk) {
+      throw new Error("Usuário não possui ID do Clerk. Não é possível atualizar a senha.");
+    }
+
+    try {
+      const clerk = await clerkClient();
+      
+      // Atualizar senha no Clerk
+      await clerk.users.updateUser(user.idClerk, {
+        password: newPassword,
+        skipPasswordChecks: false, // Não pular verificações de senha (pwned, etc)
+      });
+
+      // Atualizar hash da senha e senha inicial no banco de dados
+      const hashedPassword = hashPassword(newPassword);
+      
+      await db
+        .update(users)
+        .set({
+          hashedPassword: hashedPassword,
+          initialPassword: newPassword,
+          dtupdate: new Date().toISOString(),
+        })
+        .where(eq(users.id, userId));
+
+      console.log(`[updateUserPermissions] ✅ Senha atualizada com sucesso para usuário ID: ${userId}`);
+    } catch (error: any) {
+      console.error(`[updateUserPermissions] ❌ Erro ao atualizar senha no Clerk:`, error);
+      
+      // Tratar erros específicos do Clerk
+      if (error?.status === 422 && error?.errors) {
+        const passwordError = error.errors.find((e: any) => 
+          e.code === "form_password_pwned" || 
+          e.message?.toLowerCase().includes("password") ||
+          e.message?.toLowerCase().includes("senha")
+        );
+        
+        if (passwordError) {
+          if (passwordError.code === "form_password_pwned") {
+            throw new Error("Senha comprometida: Essa senha foi encontrada em vazamentos de dados. Por favor, escolha uma senha mais segura.");
+          } else {
+            throw new Error(passwordError.message || "A senha não atende aos requisitos de segurança. Verifique se a senha não é igual ao email.");
+          }
+        }
+      }
+      
+      throw new Error(`Erro ao atualizar senha: ${error?.message || "Erro desconhecido"}`);
     }
   }
 

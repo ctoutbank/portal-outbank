@@ -42,7 +42,12 @@ const userPermissionsSchema = z.object({
   idCustomer: z.number().nullable(),
   fullAccess: z.boolean(),
   customerIds: z.array(z.number()).optional(),
-  password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres").optional(),
+  password: z
+    .union([
+      z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
+      z.literal(""),
+    ])
+    .optional(),
 });
 
 type UserPermissionsFormValues = z.infer<typeof userPermissionsSchema>;
@@ -151,6 +156,7 @@ export function AdminUserPermissionsForm({
             idCustomer?: number | null;
             fullAccess?: boolean;
             customerIds?: number[];
+            password?: string;
           } = {
             fullAccess: data.fullAccess,
           };
@@ -165,6 +171,15 @@ export function AdminUserPermissionsForm({
 
           if (isAdminProfile && data.customerIds) {
             updateData.customerIds = data.customerIds;
+          }
+
+          // Adicionar senha se fornecida (apenas se não estiver vazia ou apenas espaços)
+          if (data.password && data.password.trim().length >= 8) {
+            updateData.password = data.password.trim();
+          } else if (data.password && data.password.trim().length > 0 && data.password.trim().length < 8) {
+            toast.error("A senha deve ter pelo menos 8 caracteres");
+            setIsLoading(false);
+            return;
           }
 
           const userId = ('id' in user && user.id) ? (user.id as number) : null;
@@ -378,31 +393,34 @@ export function AdminUserPermissionsForm({
               />
             </div>
 
-            {/* Senha (apenas na criação) */}
-            {!isEditing && (
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Senha {!isEditing && <span className="text-muted-foreground text-xs">(opcional - será gerada automaticamente se não informada)</span>}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Digite a senha"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Mínimo de 8 caracteres. Se não informada, será gerada automaticamente.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            {/* Senha (na criação e na edição) */}
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {isEditing ? "Alterar Senha" : "Senha"}
+                    {!isEditing && <span className="text-muted-foreground text-xs"> (opcional - será gerada automaticamente se não informada)</span>}
+                    {isEditing && <span className="text-muted-foreground text-xs"> (opcional - deixe em branco para não alterar)</span>}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder={isEditing ? "Digite a nova senha (deixe em branco para não alterar)" : "Digite a senha"}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {isEditing 
+                      ? "Mínimo de 8 caracteres. Deixe em branco para manter a senha atual."
+                      : "Mínimo de 8 caracteres. Se não informada, será gerada automaticamente."
+                    }
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Perfil */}
             <FormField
