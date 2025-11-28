@@ -281,7 +281,7 @@ export default function MerchantsList({
                 {currentVisibleColumns.includes("consultor") && (
                   <TableCell>{merchant.sales_agent || "-"}</TableCell>
                 )}
-                {visibleColumns.includes("ativo") && (
+                {currentVisibleColumns.includes("ativo") && (
                   <TableCell className="text-center">
                     <div className="flex justify-center">
                       <Badge
