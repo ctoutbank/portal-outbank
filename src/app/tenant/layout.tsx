@@ -72,9 +72,6 @@ export default async function TenantLayout({
   return (
     <html lang="pt-BR">
       <head>
-        {customization?.faviconUrl && (
-          <link rel="icon" href={`${customization.faviconUrl}?v=${Date.now()}`} />
-        )}
         <style
           dangerouslySetInnerHTML={{
             __html: `
