@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CreditCard, Plus, Trash2 } from "lucide-react";
+import { CreditCard, Plus, Trash2, Pencil } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -57,11 +57,13 @@ function AuthorizerFormItem({
   initialData,
   onDataChange,
   canEdit = true,
+  isEditing = false,
 }: {
   id: number;
   initialData: AuthorizerData;
   onDataChange?: (id: number, data: AuthorizerData) => void;
   canEdit?: boolean;
+  isEditing?: boolean;
 }) {
   const [formData, setFormData] = useState<AuthorizerData>(initialData);
   // Determinar quais campos mostrar com base no tipo de autorizador
@@ -80,33 +82,33 @@ function AuthorizerFormItem({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label className="text-[#E0E0E0]">
+        <Label className="text-[#E0E0E0] mb-2">
           Conciliar transações <span className="text-red-500">*</span>
         </Label>
         <RadioGroup
           value={formData.conciliarTransacoes || "nao"}
           onValueChange={(value) => updateField("conciliarTransacoes", value)}
           className="flex space-x-4"
-          disabled={!canEdit}
+          disabled={!isEditing || !canEdit}
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="sim" id={`${id}-sim`} disabled={!canEdit} />
-            <Label htmlFor={`${id}-sim`} className="text-[#E0E0E0]">Sim</Label>
+            <Label htmlFor={`${id}-sim`} className="text-[#E0E0E0] mb-2">Sim</Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="nao" id={`${id}-nao`} disabled={!canEdit} />
-            <Label htmlFor={`${id}-nao`} className="text-[#E0E0E0]">Não</Label>
+            <Label htmlFor={`${id}-nao`} className="text-[#E0E0E0] mb-2">Não</Label>
           </div>
         </RadioGroup>
       </div>
 
       {showMerchantId && (
         <div className="space-y-2">
-          <Label className="text-[#E0E0E0]">Merchant ID:</Label>
+          <Label className="text-[#E0E0E0] mb-2">Merchant ID:</Label>
           <Input
             value={formData.merchantId || ""}
             onChange={(e) => updateField("merchantId", e.target.value)}
-            disabled={!canEdit}
+            disabled={!isEditing || !canEdit}
             className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
@@ -114,11 +116,11 @@ function AuthorizerFormItem({
 
       {showTokenCnp && (
         <div className="space-y-2">
-          <Label className="text-[#E0E0E0]">Token CNP no autorizador:</Label>
+          <Label className="text-[#E0E0E0] mb-2">Token CNP no autorizador:</Label>
           <Input
             value={formData.tokenCnp || ""}
             onChange={(e) => updateField("tokenCnp", e.target.value)}
-            disabled={!canEdit}
+            disabled={!isEditing || !canEdit}
             className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
@@ -126,11 +128,11 @@ function AuthorizerFormItem({
 
       {showIdConta && (
         <div className="space-y-2">
-          <Label className="text-[#E0E0E0]">ID Conta:</Label>
+          <Label className="text-[#E0E0E0] mb-2">ID Conta:</Label>
           <Input
             value={formData.idConta || ""}
             onChange={(e) => updateField("idConta", e.target.value)}
-            disabled={!canEdit}
+            disabled={!isEditing || !canEdit}
             className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
@@ -138,11 +140,11 @@ function AuthorizerFormItem({
 
       {showChavePix && (
         <div className="space-y-2">
-          <Label className="text-[#E0E0E0]">Chave PIX:</Label>
+          <Label className="text-[#E0E0E0] mb-2">Chave PIX:</Label>
           <Input
             value={formData.chavePix || ""}
             onChange={(e) => updateField("chavePix", e.target.value)}
-            disabled={!canEdit}
+            disabled={!isEditing || !canEdit}
             className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
@@ -150,11 +152,11 @@ function AuthorizerFormItem({
 
       {showTerminalId && (
         <div className="space-y-2">
-          <Label className="text-[#E0E0E0]">Terminal ID:</Label>
+          <Label className="text-[#E0E0E0] mb-2">Terminal ID:</Label>
           <Input
             value={formData.terminalId || ""}
             onChange={(e) => updateField("terminalId", e.target.value)}
-            disabled={!canEdit}
+            disabled={!isEditing || !canEdit}
             className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
@@ -172,6 +174,7 @@ export default function MerchantFormAuthorizers({
 }: MerchantFormAuthorizersProps) {
   const router = useRouter();
   const canEdit = canEditMerchant(permissions, isSuperAdmin);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Estado para armazenar os autorizadores
   const [authorizers, setAuthorizers] = useState<AuthorizerData[]>([]);
@@ -243,6 +246,18 @@ export default function MerchantFormAuthorizers({
     delete formRefs.current[id];
   };
 
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Recarregar autorizadores para restaurar dados
+    if (idMerchant > 0) {
+      loadAuthorizers();
+    }
+  };
+
   // Função para salvar os dados
   const onSubmit = async () => {
     try {
@@ -278,6 +293,7 @@ export default function MerchantFormAuthorizers({
 
       if (result.success) {
         toast.success("Autorizadores salvos com sucesso!");
+        setIsEditing(false);
         // Recarregar autorizadores para garantir sincronização
         await loadAuthorizers();
         refreshPage(idMerchant);
@@ -294,7 +310,21 @@ export default function MerchantFormAuthorizers({
 
   return (
     <div className="space-y-8">
-      <h2 className="text-xl font-semibold mb-4 text-[#E0E0E0]">Autorizadores</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-[#E0E0E0]">Autorizadores</h2>
+        {canEdit && !isEditing && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleEdit}
+            className="text-[#E0E0E0] hover:bg-[#2E2E2E]"
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Editar
+          </Button>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {authorizers.map((authorizer) => (
@@ -307,7 +337,7 @@ export default function MerchantFormAuthorizers({
                 <CreditCard className="w-5 h-5 text-[#E0E0E0]" />
                 <CardTitle className="text-lg text-[#E0E0E0]">{authorizer.type}</CardTitle>
               </div>
-              {authorizers.length > 1 && canEdit && (
+              {authorizers.length > 1 && canEdit && isEditing && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -324,6 +354,7 @@ export default function MerchantFormAuthorizers({
                 id={authorizer.id}
                 initialData={authorizer}
                 canEdit={canEdit}
+                isEditing={isEditing}
                 onDataChange={(id, data) => {
                   formRefs.current[id] = data;
                   setAuthorizers(
@@ -337,7 +368,7 @@ export default function MerchantFormAuthorizers({
           </Card>
         ))}
 
-        {showTypeSelector && canEdit && (
+        {showTypeSelector && canEdit && isEditing && (
           <Card className="w-full bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px] shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center border-b border-[rgba(255,255,255,0.1)] py-3">
               <div className="flex flex-row items-center space-x-2">
@@ -348,7 +379,7 @@ export default function MerchantFormAuthorizers({
             <CardContent className="p-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-[#E0E0E0]">Tipo de Autorizador</Label>
+                  <Label className="text-[#E0E0E0] mb-2">Tipo de Autorizador</Label>
                   <Select value={selectedType} onValueChange={setSelectedType}>
                     <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0]">
                       <SelectValue placeholder="Selecione um autorizador" />
@@ -387,7 +418,7 @@ export default function MerchantFormAuthorizers({
         )}
       </div>
 
-      {!showTypeSelector && canEdit && (
+      {!showTypeSelector && canEdit && isEditing && (
         <div className="flex justify-center mt-6">
           <Button
             type="button"
@@ -401,15 +432,24 @@ export default function MerchantFormAuthorizers({
         </div>
       )}
 
-      {canEdit && (
-        <div className="flex justify-end mt-8">
+      {isEditing && canEdit && (
+        <div className="flex justify-end gap-2 mt-8">
           <Button
-            type="submit"
+            type="button"
+            variant="outline"
+            onClick={handleCancel}
+            disabled={isLoading}
+            className="px-6 border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
             onClick={onSubmit}
             className="px-6 bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
             disabled={isLoading}
           >
-            {isLoading ? "Salvando..." : "Avançar"}
+            {isLoading ? "Salvando..." : "Salvar"}
           </Button>
         </div>
       )}

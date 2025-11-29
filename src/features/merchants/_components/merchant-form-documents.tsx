@@ -2,7 +2,9 @@
 
 import FileUpload from "@/components/fileUpload";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import React from "react";
+import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
+import React, { useState } from "react";
 import { canEditMerchant } from "../_utils/can-edit";
 
 interface MerchantFormDocumentsProps {
@@ -17,6 +19,7 @@ export default function MerchantFormDocuments({
   isSuperAdmin = false,
 }: MerchantFormDocumentsProps) {
   const canEdit = canEditMerchant(permissions, isSuperAdmin);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Função compatível com o onUploadComplete do FileUploader
   const handleUploadComplete = (fileData: {
@@ -51,11 +54,22 @@ export default function MerchantFormDocuments({
   return (
     <div className="space-y-6">
       <Card className="shadow-sm bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
-        <CardHeader className="pb-2 border-b border-[rgba(255,255,255,0.1)]">
+        <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-[rgba(255,255,255,0.1)]">
           <CardTitle className="text-2xl text-[#E0E0E0]">Documentos</CardTitle>
+          {canEdit && !isEditing && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              className="text-[#E0E0E0] hover:bg-[#2E2E2E]"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="p-6">
-          {canEdit &&
+          {(isEditing || canEdit) &&
             permissions?.includes("Inserir documentos EC") && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Documentos de Identificação */}

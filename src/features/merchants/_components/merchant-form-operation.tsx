@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Settings } from "lucide-react";
+import { Settings, Pencil } from "lucide-react";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -62,6 +62,7 @@ export default function MerchantFormOperations({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const canEdit = canEditMerchant(permissions, isSuperAdmin);
 
   const [formData, setFormData] = useState({
@@ -81,6 +82,25 @@ export default function MerchantFormOperations({
     params.set("tab", activeTab);
     setActiveTab(activeTab);
     router.push(`/merchants/${id}?${params.toString()}`);
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Restaurar dados originais
+    setFormData({
+      hasTef: hasTaf,
+      hasTop: hastop,
+      hasPix: hasPix,
+      timezone: timezone || "-0300",
+      idSalesAgent: idSalesAgent || null,
+      url: Configuration?.url || "",
+      lockCpAnticipationOrder: Configuration?.lockCpAnticipationOrder || false,
+      lockCnpAnticipationOrder: Configuration?.lockCnpAnticipationOrder || false,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,6 +143,7 @@ export default function MerchantFormOperations({
         .where(eq(merchants.id, idMerchant));
 
       toast.success("Configurações salvas com sucesso!");
+      setIsEditing(false);
       refreshPage(idMerchant);
     } catch (error) {
       console.error("Erro ao salvar:", error);
@@ -135,9 +156,22 @@ export default function MerchantFormOperations({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card className="w-full bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
-        <CardHeader className="flex flex-row items-center space-x-2 border-b border-[rgba(255,255,255,0.1)]">
-          <Settings className="w-5 h-5 text-[#E0E0E0]" />
-          <CardTitle className="text-[#E0E0E0]">Dados de Operação</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between border-b border-[rgba(255,255,255,0.1)]">
+          <div className="flex flex-row items-center space-x-2">
+            <Settings className="w-5 h-5 text-[#E0E0E0]" />
+            <CardTitle className="text-[#E0E0E0]">Dados de Operação</CardTitle>
+          </div>
+          {canEdit && !isEditing && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleEdit}
+              className="text-[#E0E0E0] hover:bg-[#2E2E2E]"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-4 p-6">
           <div className="grid grid-cols-3 gap-4">
@@ -148,7 +182,7 @@ export default function MerchantFormOperations({
                 onCheckedChange={(checked) =>
                   setFormData({ ...formData, hasTef: checked as boolean })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
                 className="disabled:opacity-50"
               />
               <Label htmlFor="hasTef" className="text-[#E0E0E0]">Terminal TEF</Label>
@@ -161,7 +195,7 @@ export default function MerchantFormOperations({
                 onCheckedChange={(checked) =>
                   setFormData({ ...formData, hasTop: checked as boolean })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
                 className="disabled:opacity-50"
               />
               <Label htmlFor="hasTop" className="text-[#E0E0E0]">Terminal Tap On Phone</Label>
@@ -174,7 +208,7 @@ export default function MerchantFormOperations({
                 onCheckedChange={(checked) =>
                   setFormData({ ...formData, hasPix: checked as boolean })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
                 className="disabled:opacity-50"
               />
               <Label htmlFor="hasPix" className="text-[#E0E0E0]">Pix</Label>
@@ -183,13 +217,13 @@ export default function MerchantFormOperations({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-[#E0E0E0]">Timezone</Label>
+              <Label className="text-[#E0E0E0] mb-2">Timezone</Label>
               <Select
                 value={formData.timezone}
                 onValueChange={(value) =>
                   setFormData({ ...formData, timezone: value })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
               >
                 <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed">
                   <SelectValue placeholder="Selecione o timezone" />
@@ -205,13 +239,13 @@ export default function MerchantFormOperations({
             </div>
 
             <div>
-              <Label className="text-[#E0E0E0]">Consultor de Vendas</Label>
+              <Label className="text-[#E0E0E0] mb-2">Consultor de Vendas</Label>
               <Select
                 value={formData.idSalesAgent?.toString() || ""}
                 onValueChange={(value) =>
                   setFormData({ ...formData, idSalesAgent: Number(value) || null })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
               >
                 <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed">
                   <SelectValue placeholder="Selecione o consultor" />
@@ -232,7 +266,7 @@ export default function MerchantFormOperations({
           </div>
 
           <div>
-            <Label className="text-[#E0E0E0]">URL</Label>
+            <Label className="text-[#E0E0E0] mb-2">URL</Label>
             <Input
               value={formData.url}
               onChange={(e) =>
@@ -246,14 +280,23 @@ export default function MerchantFormOperations({
         </CardContent>
       </Card>
 
-      {canEdit && (
-        <div className="flex justify-end mt-4">
-          <Button 
-            type="submit" 
-            disabled={isSubmitting} 
+      {isEditing && canEdit && (
+        <div className="flex justify-end gap-2 mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancel}
+            disabled={isSubmitting}
+            className="px-6 border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
             className="px-6 bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
           >
-            {isSubmitting ? "Salvando..." : "Avançar"}
+            {isSubmitting ? "Salvando..." : "Salvar"}
           </Button>
         </div>
       )}

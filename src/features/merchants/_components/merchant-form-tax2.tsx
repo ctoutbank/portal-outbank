@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Pencil } from "lucide-react";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -42,6 +42,7 @@ export default function MerchantFormTax2({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const canEdit = canEditMerchant(permissions, isSuperAdmin);
 
   const params = new URLSearchParams(searchParams || "");
@@ -50,6 +51,16 @@ export default function MerchantFormTax2({
     params.set("tab", activeTab);
     setActiveTab(activeTab);
     router.push(`/merchants/${id}?${params.toString()}`);
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Recarregar página para restaurar dados
+    router.refresh();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -153,6 +164,7 @@ export default function MerchantFormTax2({
       }
 
       toast.success("Taxas salvas com sucesso!");
+      setIsEditing(false);
       refreshPage(merchantId);
     } catch (error) {
       console.error("Erro ao salvar:", error);
@@ -193,9 +205,22 @@ export default function MerchantFormTax2({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card className="w-full bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
-        <CardHeader className="flex flex-row items-center space-x-2 border-b border-[rgba(255,255,255,0.1)]">
-          <CreditCard className="w-5 h-5 text-[#E0E0E0]" />
-          <CardTitle className="text-[#E0E0E0]">Taxas de Transação</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between border-b border-[rgba(255,255,255,0.1)]">
+          <div className="flex flex-row items-center space-x-2">
+            <CreditCard className="w-5 h-5 text-[#E0E0E0]" />
+            <CardTitle className="text-[#E0E0E0]">Taxas de Transação</CardTitle>
+          </div>
+          {canEdit && !isEditing && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleEdit}
+              className="text-[#E0E0E0] hover:bg-[#2E2E2E]"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="p-6">
           <div className="text-center py-8 text-[#616161]">
@@ -207,14 +232,23 @@ export default function MerchantFormTax2({
         </CardContent>
       </Card>
 
-      {canEdit && (
-        <div className="flex justify-end mt-4">
-          <Button 
-            type="submit" 
-            disabled={isSubmitting} 
+      {isEditing && canEdit && (
+        <div className="flex justify-end gap-2 mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancel}
+            disabled={isSubmitting}
+            className="px-6 border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
             className="px-6 bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
           >
-            {isSubmitting ? "Salvando..." : "Avançar"}
+            {isSubmitting ? "Salvando..." : "Salvar"}
           </Button>
         </div>
       )}

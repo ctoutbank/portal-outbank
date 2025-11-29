@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, MapPin } from "lucide-react";
+import { Building2, MapPin, Pencil } from "lucide-react";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -59,6 +59,7 @@ export default function MerchantFormCompany({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const canEdit = canEditMerchant(permissions, isSuperAdmin);
 
   const [formData, setFormData] = useState({
@@ -101,6 +102,45 @@ export default function MerchantFormCompany({
     router.push(`/merchants/${id}?${params.toString()}`);
   };
 
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Restaurar dados originais
+    setFormData({
+      name: merchant?.name || "",
+      corporateName: merchant?.corporateName || "",
+      email: merchant?.email || "",
+      idDocument: merchant?.idDocument || "",
+      areaCode: merchant?.areaCode || "",
+      number: merchant?.number || "",
+      openingDate: merchant?.openingDate || "",
+      openingDays: merchant?.openingDays || "0000000",
+      openingHour: merchant?.openingHour || "",
+      closingHour: merchant?.closingHour || "",
+      municipalRegistration: merchant?.municipalRegistration || "",
+      stateSubcription: merchant?.stateSubcription || "",
+      revenue: merchant?.revenue || "",
+      establishmentFormat: merchant?.establishmentFormat || "",
+      legalPerson: merchant?.legalPerson || "",
+      cnae: String(merchant?.idCategory) || "",
+      mcc: Mcc || "",
+      idLegalNature: merchant?.idLegalNature || "",
+    });
+    setAddressData({
+      zipCode: address?.zipCode || "",
+      street: address?.streetAddress || "",
+      number: address?.streetNumber || "",
+      complement: address?.complement || "",
+      neighborhood: address?.neighborhood || "",
+      city: address?.city || "",
+      state: address?.state || "",
+      country: address?.country || "Brasil",
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -127,6 +167,7 @@ export default function MerchantFormCompany({
       if (merchant?.id) {
         await updateMerchantFormAction(merchantData);
         toast.success("Dados atualizados com sucesso!");
+        setIsEditing(false);
         router.refresh();
       } else {
         const newId = await insertMerchantFormAction(merchantData);
@@ -144,14 +185,27 @@ export default function MerchantFormCompany({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card className="w-full bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
-        <CardHeader className="flex flex-row items-center space-x-2 border-b border-[rgba(255,255,255,0.1)]">
-          <Building2 className="w-5 h-5 text-[#E0E0E0]" />
-          <CardTitle className="text-[#E0E0E0]">Empresa</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between border-b border-[rgba(255,255,255,0.1)]">
+          <div className="flex flex-row items-center space-x-2">
+            <Building2 className="w-5 h-5 text-[#E0E0E0]" />
+            <CardTitle className="text-[#E0E0E0]">Empresa</CardTitle>
+          </div>
+          {canEdit && !isEditing && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleEdit}
+              className="text-[#E0E0E0] hover:bg-[#2E2E2E]"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-4 p-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-[#E0E0E0]">
+              <Label className="text-[#E0E0E0] mb-2">
                 CNPJ <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -161,13 +215,13 @@ export default function MerchantFormCompany({
                   setFormData({ ...formData, idDocument: value });
                 }}
                 maxLength={18}
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
                 className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
             <div>
-              <Label className="text-[#E0E0E0]">
+              <Label className="text-[#E0E0E0] mb-2">
                 Email <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -176,7 +230,7 @@ export default function MerchantFormCompany({
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
                 className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
@@ -184,7 +238,7 @@ export default function MerchantFormCompany({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-[#E0E0E0]">
+              <Label className="text-[#E0E0E0] mb-2">
                 Razão Social <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -192,13 +246,13 @@ export default function MerchantFormCompany({
                 onChange={(e) =>
                   setFormData({ ...formData, corporateName: e.target.value })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
                 className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
             <div>
-              <Label className="text-[#E0E0E0]">
+              <Label className="text-[#E0E0E0] mb-2">
                 Nome Fantasia <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -206,7 +260,7 @@ export default function MerchantFormCompany({
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
                 className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
@@ -215,7 +269,7 @@ export default function MerchantFormCompany({
           <div className="grid grid-cols-2 gap-4">
             <div className="flex gap-2">
               <div className="w-1/6">
-                <Label className="text-[#E0E0E0]">
+                <Label className="text-[#E0E0E0] mb-2">
                   DDD <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -225,12 +279,12 @@ export default function MerchantFormCompany({
                   }
                   maxLength={2}
                   onKeyDown={(e) => handleNumericInput(e, 2)}
-                  disabled={!canEdit}
+                  disabled={!isEditing || !canEdit}
                   className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div className="w-5/6">
-                <Label className="text-[#E0E0E0]">
+                <Label className="text-[#E0E0E0] mb-2">
                   Telefone <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -240,14 +294,14 @@ export default function MerchantFormCompany({
                   }
                   maxLength={9}
                   onKeyDown={(e) => handleNumericInput(e, 9)}
-                  disabled={!canEdit}
+                  disabled={!isEditing || !canEdit}
                   className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
 
             <div>
-              <Label className="text-[#E0E0E0]">
+              <Label className="text-[#E0E0E0] mb-2">
                 CNAE <span className="text-red-500">*</span>
               </Label>
               <Select
@@ -262,7 +316,7 @@ export default function MerchantFormCompany({
                     });
                   }
                 }}
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
               >
                 <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed">
                   <SelectValue placeholder="Selecione o CNAE" />
@@ -280,7 +334,7 @@ export default function MerchantFormCompany({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-[#E0E0E0]">
+              <Label className="text-[#E0E0E0] mb-2">
                 Natureza Jurídica <span className="text-red-500">*</span>
               </Label>
               <Select
@@ -288,7 +342,7 @@ export default function MerchantFormCompany({
                 onValueChange={(value) =>
                   setFormData({ ...formData, idLegalNature: value })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
               >
                 <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed">
                   <SelectValue placeholder="Selecione" />
@@ -308,7 +362,7 @@ export default function MerchantFormCompany({
             </div>
 
             <div>
-              <Label className="text-[#E0E0E0]">
+              <Label className="text-[#E0E0E0] mb-2">
                 Tipo de Pessoa <span className="text-red-500">*</span>
               </Label>
               <Select
@@ -316,7 +370,7 @@ export default function MerchantFormCompany({
                 onValueChange={(value) =>
                   setFormData({ ...formData, legalPerson: value })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
               >
                 <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed">
                   <SelectValue placeholder="Selecione" />
@@ -335,13 +389,26 @@ export default function MerchantFormCompany({
       </Card>
 
       <Card className="w-full mt-4 bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
-        <CardHeader className="flex flex-row items-center space-x-2 border-b border-[rgba(255,255,255,0.1)]">
-          <MapPin className="w-5 h-5 text-[#E0E0E0]" />
-          <CardTitle className="text-[#E0E0E0]">Endereço</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between border-b border-[rgba(255,255,255,0.1)]">
+          <div className="flex flex-row items-center space-x-2">
+            <MapPin className="w-5 h-5 text-[#E0E0E0]" />
+            <CardTitle className="text-[#E0E0E0]">Endereço</CardTitle>
+          </div>
+          {canEdit && !isEditing && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleEdit}
+              className="text-[#E0E0E0] hover:bg-[#2E2E2E]"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-4 p-6">
           <div>
-            <Label className="text-[#E0E0E0]">
+            <Label className="text-[#E0E0E0] mb-2">
               CEP <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -359,7 +426,7 @@ export default function MerchantFormCompany({
           </div>
 
           <div>
-            <Label className="text-[#E0E0E0]">
+            <Label className="text-[#E0E0E0] mb-2">
               Rua <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -374,7 +441,7 @@ export default function MerchantFormCompany({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-[#E0E0E0]">
+              <Label className="text-[#E0E0E0] mb-2">
                 Número <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -384,26 +451,26 @@ export default function MerchantFormCompany({
                 }
                 maxLength={10}
                 onKeyDown={(e) => handleNumericInput(e, 10)}
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
                 className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
             <div>
-              <Label className="text-[#E0E0E0]">Complemento</Label>
+              <Label className="text-[#E0E0E0] mb-2">Complemento</Label>
               <Input
                 value={addressData.complement}
                 onChange={(e) =>
                   setAddressData({ ...addressData, complement: e.target.value })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
                 className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
           </div>
 
           <div>
-            <Label className="text-[#E0E0E0]">
+            <Label className="text-[#E0E0E0] mb-2">
               Bairro <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -418,7 +485,7 @@ export default function MerchantFormCompany({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-[#E0E0E0]">
+              <Label className="text-[#E0E0E0] mb-2">
                 Cidade <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -426,13 +493,13 @@ export default function MerchantFormCompany({
                 onChange={(e) =>
                   setAddressData({ ...addressData, city: e.target.value })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
                 className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
             <div>
-              <Label className="text-[#E0E0E0]">
+              <Label className="text-[#E0E0E0] mb-2">
                 Estado <span className="text-red-500">*</span>
               </Label>
               <Select
@@ -440,7 +507,7 @@ export default function MerchantFormCompany({
                 onValueChange={(value) =>
                   setAddressData({ ...addressData, state: value })
                 }
-                disabled={!canEdit}
+                disabled={!isEditing || !canEdit}
               >
                 <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed">
                   <SelectValue placeholder="Selecione o estado" />
@@ -457,7 +524,7 @@ export default function MerchantFormCompany({
           </div>
 
           <div>
-            <Label className="text-[#E0E0E0]">
+            <Label className="text-[#E0E0E0] mb-2">
               País <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -472,14 +539,23 @@ export default function MerchantFormCompany({
         </CardContent>
       </Card>
 
-      {canEdit && (
-        <div className="flex justify-end mt-4">
-          <Button 
-            type="submit" 
-            disabled={isSubmitting} 
+      {isEditing && canEdit && (
+        <div className="flex justify-end gap-2 mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancel}
+            disabled={isSubmitting}
+            className="px-6 border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
             className="px-6 bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
           >
-            {isSubmitting ? "Salvando..." : merchant?.id ? "Atualizar" : "Avançar"}
+            {isSubmitting ? "Salvando..." : "Salvar"}
           </Button>
         </div>
       )}

@@ -97,14 +97,12 @@ export default function MerchantTabs({
         >
           Dados de Operação
         </TabsTrigger>
-        {permissions?.includes("Configurar dados Bancários") && (
-          <TabsTrigger
-            value="bank"
-            className={visitedTabs.has("bank") ? "" : "pointer-events-none opacity-50"}
-          >
-            Dados Bancários
-          </TabsTrigger>
-        )}
+        <TabsTrigger
+          value="bank"
+          className={visitedTabs.has("bank") ? "" : "pointer-events-none opacity-50"}
+        >
+          Dados Bancários
+        </TabsTrigger>
         <TabsTrigger
           value="authorizers"
           className={
@@ -113,24 +111,20 @@ export default function MerchantTabs({
         >
           Autorizados
         </TabsTrigger>
-        {permissions?.includes("Configurar Taxas do EC") && (
-          <TabsTrigger
-            value="rate"
-            className={visitedTabs.has("rate") ? "" : "pointer-events-none opacity-50"}
-          >
-            Taxas de Transação
-          </TabsTrigger>
-        )}
-        {permissions?.includes("Inserir documentos EC") && (
-          <TabsTrigger
-            value="documents"
-            className={
-              visitedTabs.has("documents") ? "" : "pointer-events-none opacity-50"
-            }
-          >
-            Documentos
-          </TabsTrigger>
-        )}
+        <TabsTrigger
+          value="rate"
+          className={visitedTabs.has("rate") ? "" : "pointer-events-none opacity-50"}
+        >
+          Taxas de Transação
+        </TabsTrigger>
+        <TabsTrigger
+          value="documents"
+          className={
+            visitedTabs.has("documents") ? "" : "pointer-events-none opacity-50"
+          }
+        >
+          Documentos
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="company">
@@ -256,56 +250,54 @@ export default function MerchantTabs({
           isSuperAdmin={isSuperAdmin}
         />
       </TabsContent>
-      {permissions?.includes("Configurar dados Bancários") && (
-        <TabsContent value="bank">
-          <MerchantFormBankAccount
-            merchantBankAccount={{
-              id: merchantBankAccount?.merchantBankAccount?.id || 0,
-              documentId:
-                merchantBankAccount?.merchantBankAccount?.documentId || "",
-              corporateName:
-                merchantBankAccount?.merchantBankAccount?.corporateName || "",
-              legalPerson:
-                merchantBankAccount?.merchantBankAccount?.legalPerson ||
-                "JURIDICAL",
-              bankBranchNumber:
-                merchantBankAccount?.merchantBankAccount?.bankBranchNumber ||
-                "",
-              bankBranchCheckDigit:
-                merchantBankAccount?.merchantBankAccount
-                  ?.bankBranchCheckDigit || "",
-              accountNumber:
-                merchantBankAccount?.merchantBankAccount?.accountNumber || "",
-              accountNumberCheckDigit:
-                merchantBankAccount?.merchantBankAccount
-                  ?.accountNumberCheckDigit || "",
-              accountType:
-                merchantBankAccount?.merchantBankAccount?.accountType || "",
-              compeCode:
-                merchantBankAccount?.merchantBankAccount?.compeCode || "",
-              dtinsert:
-                merchantBankAccount?.merchantBankAccount?.dtinsert || "",
-              dtupdate:
-                merchantBankAccount?.merchantBankAccount?.dtupdate || "",
-              active: merchantBankAccount?.merchantBankAccount?.active || null,
-              slug: merchantBankAccount?.merchantBankAccount?.slug || null,
-            }}
-            DDBank={DDBank}
-            idMerchant={merchant.id}
-            setActiveTab={handleTabChange}
-            activeTab={
-              listTabs[listTabs.findIndex((tab) => tab === activeTab) + 1]
-            }
-            accountTypeDD={DDAccountType}
-            permissions={permissions}
-            merchantcorporateName={merchant.corporateName || ""}
-            merchantdocumentId={merchant.idDocument || ""}
-            hasPix={merchant.hasPix || false}
-            merchantpixaccount={merchantPixAccount?.pixaccounts}
-            isSuperAdmin={isSuperAdmin}
-          />
-        </TabsContent>
-      )}
+      <TabsContent value="bank">
+        <MerchantFormBankAccount
+          merchantBankAccount={{
+            id: merchantBankAccount?.merchantBankAccount?.id || 0,
+            documentId:
+              merchantBankAccount?.merchantBankAccount?.documentId || "",
+            corporateName:
+              merchantBankAccount?.merchantBankAccount?.corporateName || "",
+            legalPerson:
+              merchantBankAccount?.merchantBankAccount?.legalPerson ||
+              "JURIDICAL",
+            bankBranchNumber:
+              merchantBankAccount?.merchantBankAccount?.bankBranchNumber ||
+              "",
+            bankBranchCheckDigit:
+              merchantBankAccount?.merchantBankAccount
+                ?.bankBranchCheckDigit || "",
+            accountNumber:
+              merchantBankAccount?.merchantBankAccount?.accountNumber || "",
+            accountNumberCheckDigit:
+              merchantBankAccount?.merchantBankAccount
+                ?.accountNumberCheckDigit || "",
+            accountType:
+              merchantBankAccount?.merchantBankAccount?.accountType || "",
+            compeCode:
+              merchantBankAccount?.merchantBankAccount?.compeCode || "",
+            dtinsert:
+              merchantBankAccount?.merchantBankAccount?.dtinsert || "",
+            dtupdate:
+              merchantBankAccount?.merchantBankAccount?.dtupdate || "",
+            active: merchantBankAccount?.merchantBankAccount?.active || null,
+            slug: merchantBankAccount?.merchantBankAccount?.slug || null,
+          }}
+          DDBank={DDBank}
+          idMerchant={merchant.id}
+          setActiveTab={handleTabChange}
+          activeTab={
+            listTabs[listTabs.findIndex((tab) => tab === activeTab) + 1]
+          }
+          accountTypeDD={DDAccountType}
+          permissions={permissions}
+          merchantcorporateName={merchant.corporateName || ""}
+          merchantdocumentId={merchant.idDocument || ""}
+          hasPix={merchant.hasPix || false}
+          merchantpixaccount={merchantPixAccount?.pixaccounts}
+          isSuperAdmin={isSuperAdmin}
+        />
+      </TabsContent>
 
       <TabsContent value="authorizers">
         <MerchantFormAuthorizers
@@ -318,72 +310,68 @@ export default function MerchantTabs({
           isSuperAdmin={isSuperAdmin}
         />
       </TabsContent>
-      {permissions?.includes("Configurar Taxas do EC") && (
-        <TabsContent value="rate">
-          <MerchantFormTax2
-            merchantprice={[
-              {
-                id: merchantPriceGroupProps?.merchantPrice?.id || 0,
-                name: merchantPriceGroupProps?.merchantPrice?.name || "",
-                active: merchantPriceGroupProps?.merchantPrice?.active || false,
-                dtinsert:
-                  merchantPriceGroupProps?.merchantPrice?.dtinsert || "",
-                dtupdate:
-                  merchantPriceGroupProps?.merchantPrice?.dtupdate || "",
-                tableType:
-                  merchantPriceGroupProps?.merchantPrice?.tableType || "",
-                slugMerchant:
-                  merchantPriceGroupProps?.merchantPrice?.slugMerchant || "",
-                compulsoryAnticipationConfig:
-                  merchantPriceGroupProps?.merchantPrice
-                    ?.compulsoryAnticipationConfig || 0,
-                anticipationType:
-                  merchantPriceGroupProps?.merchantPrice?.anticipationType ||
-                  "",
-                eventualAnticipationFee:
-                  merchantPriceGroupProps?.merchantPrice
-                    ?.eventualAnticipationFee || 0,
-                cardPixMdr:
-                  merchantPriceGroupProps?.merchantPrice?.cardPixMdr || 0,
-                cardPixCeilingFee:
-                  merchantPriceGroupProps?.merchantPrice?.cardPixCeilingFee ||
-                  0,
-                cardPixMinimumCostFee:
-                  merchantPriceGroupProps?.merchantPrice
-                    ?.cardPixMinimumCostFee || 0,
-                nonCardPixMdr:
-                  merchantPriceGroupProps?.merchantPrice?.nonCardPixMdr || 0,
-                nonCardPixCeilingFee:
-                  merchantPriceGroupProps?.merchantPrice
-                    ?.nonCardPixCeilingFee || 0,
-                nonCardPixMinimumCostFee:
-                  merchantPriceGroupProps?.merchantPrice
-                    ?.nonCardPixMinimumCostFee || 0,
-                merchantpricegroup:
-                  merchantPriceGroupProps?.merchantpricegroup || [],
-              },
-            ]}
-            idMerchantPrice={merchant.idMerchantPrice || 0}
-            permissions={permissions}
-            merchantId={merchant.id}
-            availableFees={merchantPriceGroupProps?.availableFees || []}
-            activeTab={
-              listTabs[listTabs.findIndex((tab) => tab === activeTab) + 1]
-            }
-            setActiveTab={handleTabChange}
-            isSuperAdmin={isSuperAdmin}
-          />
-        </TabsContent>
-      )}
-      {permissions?.includes("Inserir documentos EC") && (
-        <TabsContent value="documents">
-          <MerchantFormDocuments
-            merchantId={merchant.id.toString()}
-            permissions={permissions}
-            isSuperAdmin={isSuperAdmin}
-          />
-        </TabsContent>
-      )}
+      <TabsContent value="rate">
+        <MerchantFormTax2
+          merchantprice={[
+            {
+              id: merchantPriceGroupProps?.merchantPrice?.id || 0,
+              name: merchantPriceGroupProps?.merchantPrice?.name || "",
+              active: merchantPriceGroupProps?.merchantPrice?.active || false,
+              dtinsert:
+                merchantPriceGroupProps?.merchantPrice?.dtinsert || "",
+              dtupdate:
+                merchantPriceGroupProps?.merchantPrice?.dtupdate || "",
+              tableType:
+                merchantPriceGroupProps?.merchantPrice?.tableType || "",
+              slugMerchant:
+                merchantPriceGroupProps?.merchantPrice?.slugMerchant || "",
+              compulsoryAnticipationConfig:
+                merchantPriceGroupProps?.merchantPrice
+                  ?.compulsoryAnticipationConfig || 0,
+              anticipationType:
+                merchantPriceGroupProps?.merchantPrice?.anticipationType ||
+                "",
+              eventualAnticipationFee:
+                merchantPriceGroupProps?.merchantPrice
+                  ?.eventualAnticipationFee || 0,
+              cardPixMdr:
+                merchantPriceGroupProps?.merchantPrice?.cardPixMdr || 0,
+              cardPixCeilingFee:
+                merchantPriceGroupProps?.merchantPrice?.cardPixCeilingFee ||
+                0,
+              cardPixMinimumCostFee:
+                merchantPriceGroupProps?.merchantPrice
+                  ?.cardPixMinimumCostFee || 0,
+              nonCardPixMdr:
+                merchantPriceGroupProps?.merchantPrice?.nonCardPixMdr || 0,
+              nonCardPixCeilingFee:
+                merchantPriceGroupProps?.merchantPrice
+                  ?.nonCardPixCeilingFee || 0,
+              nonCardPixMinimumCostFee:
+                merchantPriceGroupProps?.merchantPrice
+                  ?.nonCardPixMinimumCostFee || 0,
+              merchantpricegroup:
+                merchantPriceGroupProps?.merchantpricegroup || [],
+            },
+          ]}
+          idMerchantPrice={merchant.idMerchantPrice || 0}
+          permissions={permissions}
+          merchantId={merchant.id}
+          availableFees={merchantPriceGroupProps?.availableFees || []}
+          activeTab={
+            listTabs[listTabs.findIndex((tab) => tab === activeTab) + 1]
+          }
+          setActiveTab={handleTabChange}
+          isSuperAdmin={isSuperAdmin}
+        />
+      </TabsContent>
+      <TabsContent value="documents">
+        <MerchantFormDocuments
+          merchantId={merchant.id.toString()}
+          permissions={permissions}
+          isSuperAdmin={isSuperAdmin}
+        />
+      </TabsContent>
     </Tabs>
   );
 }
