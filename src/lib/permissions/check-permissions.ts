@@ -339,7 +339,9 @@ export async function checkPagePermission(
         )
       );
 
-    const permissions = result.map((r) => r.functionName);
+    const permissions = result
+      .map((r) => r.functionName)
+      .filter((name): name is string => name !== null && typeof name === "string");
 
     // Se a permissão específica foi solicitada e não está na lista, retornar array vazio
     // (isso fará com que componentes que verificam permissions.includes() retornem false)
