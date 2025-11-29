@@ -70,8 +70,13 @@ export default function MccList({
 
   if (mccs.length === 0) {
     return (
-      <div className="w-full p-4 text-center border border-[rgba(255,255,255,0.1)] rounded-[6px] bg-[#1D1D1D]">
-        <p className="text-[#5C5C5C] text-sm font-normal">Nenhum MCC encontrado</p>
+      <div className="w-full p-6 text-center border border-[rgba(255,255,255,0.1)] rounded-[6px] bg-[#1D1D1D]">
+        <p className="text-[#5C5C5C] text-sm font-normal mb-2">
+          Nenhum MCC encontrado no banco de dados.
+        </p>
+        <p className="text-[#5C5C5C] text-xs font-normal">
+          Clique no botão "Sincronizar MCCs" acima para buscar os MCCs da Dock.
+        </p>
       </div>
     );
   }
