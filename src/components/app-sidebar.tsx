@@ -35,7 +35,7 @@ const navMainItems: Array<{
     icon: Users,
     isActive: false,
   },
-  { title: "CNAE", url: "/categories", icon: Briefcase, isActive: false },
+  { title: "CNAE/MCC", url: "/categories", icon: Briefcase, isActive: false },
   { title: "Estabelecimentos", url: "/merchants", icon: Store, isActive: false },
   {title: "Fornecedores", url: "/supplier", icon: Truck, isActive: false},
   {

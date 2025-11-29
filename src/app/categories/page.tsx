@@ -1,9 +1,8 @@
 import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
-import PageSizeSelector from "@/components/page-size-selector";
-import PaginationRecords from "@/components/pagination-Records";
-import Categorylist from "@/features/categories/_components/categories-list";
+import CategoriesTabs from "@/features/categories/_components/categories-tabs";
 import { getCategories } from "@/features/categories/server/category";
+import { getMccs } from "@/features/mcc/server/mcc";
 
 export default async function CategoriesPage({
                                                  searchParams,
@@ -17,6 +16,12 @@ export default async function CategoriesPage({
         status?: string;
         sortField?: string;
         sortOrder?: "asc" | "desc";
+        mccPage?: string;
+        mccPerPage?: string;
+        mccSearch?: string;
+        mccSortField?: string;
+        mccSortOrder?: "asc" | "desc";
+        tab?: string;
     }>;
 }) {
     // Aguarda searchParams antes de acessar suas propriedades
@@ -30,7 +35,15 @@ export default async function CategoriesPage({
     const mcc = typeof params.mcc === "string" ? params.mcc : undefined;
     const cnae = typeof params.cnae === "string" ? params.cnae : undefined;
     const status = typeof params.status === "string" ? params.status : undefined;
-//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+    const activeTab = typeof params.tab === "string" ? params.tab : "categories";
+    
+    // Parâmetros para MCCs
+    const mccPage = typeof params.mccPage === "string" ? parseInt(params.mccPage, 10) : 1;
+    const mccPerPage = typeof params.mccPerPage === "string" ? parseInt(params.mccPerPage, 10) : 10;
+    const mccSearch = typeof params.mccSearch === "string" ? params.mccSearch : "";
+    const mccSortField = typeof params.mccSortField === "string" ? params.mccSortField : "code";
+    const mccSortOrder = params.mccSortOrder === "desc" ? "desc" : "asc";
+
     const categories = await getCategories(
         search,
         page,
@@ -45,39 +58,38 @@ export default async function CategoriesPage({
 
     const totalCount = categories.totalCount;
 
+    // Buscar MCCs da Dock
+    const mccsData = await getMccs(
+        mccPage,
+        mccPerPage,
+        mccSearch || undefined,
+        undefined
+    );
+
     return (
         <>
             <BaseHeader
-                breadcrumbItems={[{ title: "Categorias", subtitle: "", url: "/portal/categories" }]}
+                breadcrumbItems={[{ title: "CNAE/MCC", subtitle: "", url: "/categories" }]}
             />
 
             <BaseBody
-                title="Categorias"
-                subtitle="Visualização de todas as categorias cadastradas"
+                title="CNAE/MCC"
+                subtitle="Visualização de CNAEs e MCCs cadastrados"
                 className="overflow-x-hidden bg-[#161616] [&_h1]:text-[#FFFFFF] [&_h1]:text-[22px] [&_h1]:font-semibold [&_p]:text-[#5C5C5C] [&_p]:text-sm [&_p]:font-normal"
             >
-                <div className="flex flex-col space-y-4">
-                    <Categorylist
-                        Categories={categories}
-                        sortField={sortField}
-                        sortOrder={sortOrder}
-                    />
-
-                    {totalCount > 0 && (
-                        <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4 pt-4 border-t border-border">
-                            <PageSizeSelector
-                                currentPageSize={perPage}
-                                pageName="categories"
-                            />
-                            <PaginationRecords
-                                totalRecords={totalCount}
-                                currentPage={page}
-                                pageSize={perPage}
-                                pageName="categories"
-                            />
-                        </div>
-                    )}
-                </div>
+                <CategoriesTabs
+                    categories={categories}
+                    mccs={mccsData.data}
+                    mccTotalCount={mccsData.totalCount}
+                    categorySortField={sortField}
+                    categorySortOrder={sortOrder}
+                    mccSortField={mccSortField}
+                    mccSortOrder={mccSortOrder}
+                    categoryPage={page}
+                    categoryPerPage={perPage}
+                    mccPage={mccPage}
+                    mccPerPage={mccPerPage}
+                />
             </BaseBody>
         </>
     );

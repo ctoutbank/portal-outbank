@@ -1,4 +1,4 @@
-import { pgTable, unique, serial, varchar, boolean, timestamp, char, integer, foreignKey, bigint, numeric, date, text, uuid, time, jsonb } from "drizzle-orm/pg-core"
+import { pgTable, unique, serial, varchar, boolean, timestamp, char, integer, foreignKey, bigint, numeric, date, text, uuid, time, jsonb, index } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 
@@ -1814,3 +1814,51 @@ export type SelectFornecedor = typeof fornecedores.$inferSelect;
 // Tipo para inserção de Documento
 export type InsertFornecedorDocument = typeof fornecedorDocuments.$inferInsert;
 export type SelectFornecedorDocument = typeof fornecedorDocuments.$inferSelect;
+
+// =====================================================
+// Tabelas MCC e MCC Groups para sincronização com Dock
+// =====================================================
+
+export const mccGroups = pgTable("mcc_groups", {
+  id: integer().primaryKey().notNull(),
+  description: varchar({ length: 255 }).notNull(),
+  availabilityDate: timestamp("availability_date", { mode: 'string' }),
+  databaseOperation: char("database_operation", { length: 1 }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const mcc = pgTable("mcc", {
+  id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
+    name: "mcc_id_seq", 
+    startWith: 1, 
+    increment: 1, 
+    minValue: 1, 
+    maxValue: 9223372036854775807, 
+    cache: 1 
+  }),
+  code: integer().notNull().unique(),
+  description: varchar({ length: 255 }).notNull(),
+  mccGroupId: integer("mcc_group_id").notNull(),
+  availabilityDate: timestamp("availability_date", { mode: 'string' }),
+  databaseOperation: char("database_operation", { length: 1 }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+  foreignKey({
+    columns: [table.mccGroupId],
+    foreignColumns: [mccGroups.id],
+    name: "mcc_mcc_group_id_fkey"
+  }).onDelete("restrict").onUpdate("cascade"),
+  index("mcc_code_idx").on(table.code),
+  index("mcc_mcc_group_id_idx").on(table.mccGroupId),
+  index("mcc_is_active_idx").on(table.isActive),
+]);
+
+// Tipos para MCC
+export type InsertMccGroup = typeof mccGroups.$inferInsert;
+export type SelectMccGroup = typeof mccGroups.$inferSelect;
+export type InsertMcc = typeof mcc.$inferInsert;
+export type SelectMcc = typeof mcc.$inferSelect;
