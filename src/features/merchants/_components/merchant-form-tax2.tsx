@@ -110,8 +110,8 @@ export default function MerchantFormTax2({
               // Atualizar transaction prices do grupo
               if (group.listMerchantTransactionPrice) {
                 const transactionUpdates = group.listMerchantTransactionPrice
-                  .filter((tp) => tp.id)
-                  .map((tp) => ({
+                  .filter((tp: TransactionPrice) => tp.id)
+                  .map((tp: TransactionPrice) => ({
                     id: tp.id!,
                     data: {
                       id: tp.id,
