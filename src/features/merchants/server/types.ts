@@ -172,5 +172,6 @@ export interface MerchantTabsProps {
   merchantFiles?: FileItem[];
   isCreating?: boolean;
   DDSalesAgent: SalesAgentDropdown[];
+  isSuperAdmin?: boolean;
 }
 

@@ -15,3 +15,4 @@ export const authorizerSchema = z.object({
 
 export type AuthorizerSchema = z.infer<typeof authorizerSchema>;
 
+

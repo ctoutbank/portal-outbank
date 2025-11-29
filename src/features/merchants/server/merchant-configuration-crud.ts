@@ -46,3 +46,4 @@ export async function updateConfiguration(
     .where(eq(configurations.id, configuration.id));
 }
 
+

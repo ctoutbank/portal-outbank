@@ -83,3 +83,4 @@ export async function updateMerchantPixAccount(merchantPixAccount: MerchantPixAc
     .where(eq(merchantpixaccount.id, id));
 }
 
+

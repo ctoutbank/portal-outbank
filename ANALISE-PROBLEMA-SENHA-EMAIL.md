@@ -95,3 +95,4 @@ A solução correta é **alterar a senha para algo diferente do email**.
 - Commit `8caac08`: Adição de `skipPasswordChecks: false`
 - [Documentação do Clerk sobre validação de senhas](https://clerk.com/docs)
 
+

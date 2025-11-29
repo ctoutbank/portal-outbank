@@ -38,7 +38,8 @@ export default async function RootLayout({
         signIn: {
           elements: {
             rootBox: {
-              backgroundImage: `url('${loginBackgroundImage}')`,
+              background: "#111827",
+              backgroundImage: `linear-gradient(rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0.8)), url('${loginBackgroundImage}')`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat'

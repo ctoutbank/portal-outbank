@@ -25,6 +25,7 @@ import {
   insertAddressFormAction,
   updateAddressFormAction,
 } from "../_actions/merchant-formActions";
+import { canEditMerchant } from "../_utils/can-edit";
 
 interface MerchantProps {
   Contact: any;
@@ -33,6 +34,7 @@ interface MerchantProps {
   idMerchant: number;
   setActiveTab: (tab: string) => void;
   permissions: string[];
+  isSuperAdmin?: boolean;
 }
 
 export default function MerchantFormcontact({
@@ -42,10 +44,12 @@ export default function MerchantFormcontact({
   activeTab,
   setActiveTab,
   permissions,
+  isSuperAdmin = false,
 }: MerchantProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const canEdit = canEditMerchant(permissions, isSuperAdmin);
 
   const [contactData, setContactData] = useState({
     name: Contact?.name || "",
@@ -116,15 +120,15 @@ export default function MerchantFormcontact({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Card className="w-full">
-        <CardHeader className="flex flex-row items-center space-x-2">
-          <User className="w-5 h-5" />
-          <CardTitle>Dados do Responsável</CardTitle>
+      <Card className="w-full bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
+        <CardHeader className="flex flex-row items-center space-x-2 border-b border-[rgba(255,255,255,0.1)]">
+          <User className="w-5 h-5 text-[#E0E0E0]" />
+          <CardTitle className="text-[#E0E0E0]">Dados do Responsável</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>
+              <Label className="text-[#E0E0E0]">
                 Nome <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -132,11 +136,13 @@ export default function MerchantFormcontact({
                 onChange={(e) =>
                   setContactData({ ...contactData, name: e.target.value })
                 }
+                disabled={!canEdit}
+                className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
             <div>
-              <Label>
+              <Label className="text-[#E0E0E0]">
                 CPF <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -149,13 +155,15 @@ export default function MerchantFormcontact({
                 }
                 maxLength={14}
                 onKeyDown={(e) => handleNumericInput(e, 14)}
+                disabled={!canEdit}
+                className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>
+              <Label className="text-[#E0E0E0]">
                 Email <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -164,12 +172,14 @@ export default function MerchantFormcontact({
                 onChange={(e) =>
                   setContactData({ ...contactData, email: e.target.value })
                 }
+                disabled={!canEdit}
+                className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
             <div className="flex gap-2">
               <div className="w-1/6">
-                <Label>DDD</Label>
+                <Label className="text-[#E0E0E0]">DDD</Label>
                 <Input
                   value={contactData.areaCode}
                   onChange={(e) =>
@@ -177,10 +187,12 @@ export default function MerchantFormcontact({
                   }
                   maxLength={2}
                   onKeyDown={(e) => handleNumericInput(e, 2)}
+                  disabled={!canEdit}
+                  className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div className="w-5/6">
-                <Label>Telefone</Label>
+                <Label className="text-[#E0E0E0]">Telefone</Label>
                 <Input
                   value={contactData.number}
                   onChange={(e) =>
@@ -188,6 +200,8 @@ export default function MerchantFormcontact({
                   }
                   maxLength={9}
                   onKeyDown={(e) => handleNumericInput(e, 9)}
+                  disabled={!canEdit}
+                  className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -195,13 +209,13 @@ export default function MerchantFormcontact({
         </CardContent>
       </Card>
 
-      <Card className="w-full mt-4">
-        <CardHeader>
-          <CardTitle>Endereço do Responsável</CardTitle>
+      <Card className="w-full mt-4 bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
+        <CardHeader className="border-b border-[rgba(255,255,255,0.1)]">
+          <CardTitle className="text-[#E0E0E0]">Endereço do Responsável</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-6">
           <div>
-            <Label>CEP</Label>
+            <Label className="text-[#E0E0E0]">CEP</Label>
             <Input
               value={formatCep(addressData.zipCode)}
               onChange={(e) =>
@@ -210,76 +224,89 @@ export default function MerchantFormcontact({
                   zipCode: e.target.value.replace(/\D/g, "").slice(0, 8),
                 })
               }
+              disabled={!canEdit}
+              className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
           <div>
-            <Label>Rua</Label>
+            <Label className="text-[#E0E0E0]">Rua</Label>
             <Input
               value={addressData.street}
               onChange={(e) =>
                 setAddressData({ ...addressData, street: e.target.value })
               }
+              disabled={!canEdit}
+              className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Número</Label>
+              <Label className="text-[#E0E0E0]">Número</Label>
               <Input
                 value={addressData.number}
                 onChange={(e) =>
                   setAddressData({ ...addressData, number: e.target.value })
                 }
+                disabled={!canEdit}
+                className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
             <div>
-              <Label>Complemento</Label>
+              <Label className="text-[#E0E0E0]">Complemento</Label>
               <Input
                 value={addressData.complement}
                 onChange={(e) =>
                   setAddressData({ ...addressData, complement: e.target.value })
                 }
+                disabled={!canEdit}
+                className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
           </div>
 
           <div>
-            <Label>Bairro</Label>
+            <Label className="text-[#E0E0E0]">Bairro</Label>
             <Input
               value={addressData.neighborhood}
               onChange={(e) =>
                 setAddressData({ ...addressData, neighborhood: e.target.value })
               }
+              disabled={!canEdit}
+              className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Cidade</Label>
+              <Label className="text-[#E0E0E0]">Cidade</Label>
               <Input
                 value={addressData.city}
                 onChange={(e) =>
                   setAddressData({ ...addressData, city: e.target.value })
                 }
+                disabled={!canEdit}
+                className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
             <div>
-              <Label>Estado</Label>
+              <Label className="text-[#E0E0E0]">Estado</Label>
               <Select
                 value={addressData.state}
                 onValueChange={(value) =>
                   setAddressData({ ...addressData, state: value })
                 }
+                disabled={!canEdit}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed">
                   <SelectValue placeholder="Selecione o estado" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#212121] border-[#2E2E2E]">
                   {states.map((state) => (
-                    <SelectItem key={state.value} value={state.value}>
+                    <SelectItem key={state.value} value={state.value} className="text-[#E0E0E0] hover:bg-[#2E2E2E]">
                       {state.label}
                     </SelectItem>
                   ))}
@@ -290,9 +317,13 @@ export default function MerchantFormcontact({
         </CardContent>
       </Card>
 
-      {permissions?.includes("Atualizar") && (
+      {canEdit && (
         <div className="flex justify-end mt-4">
-          <Button type="submit" disabled={isSubmitting} className="px-6">
+          <Button 
+            type="submit" 
+            disabled={isSubmitting} 
+            className="px-6 bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
+          >
             {isSubmitting ? "Salvando..." : "Avançar"}
           </Button>
         </div>

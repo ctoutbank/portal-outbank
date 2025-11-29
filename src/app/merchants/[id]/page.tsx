@@ -277,6 +277,7 @@ export default async function MerchantDetail({
             permissions={permissions}
             merchantFiles={merchantFiles}
             DDSalesAgent={DDSalesAgent}
+            isSuperAdmin={isSuper}
           />
         ) : (
           <MerchantDisplay

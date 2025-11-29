@@ -14,6 +14,7 @@ import {
   updateMerchantPriceGroupFormAction,
 } from "../_actions/merchantpricegroup-formActions";
 import { TransactionPrice } from "../server/types";
+import { canEditMerchant } from "../_utils/can-edit";
 // import { FeeData } from "@/features/newTax/server/fee-db";
 type FeeData = any; // TODO: Definir tipo correto quando disponível
 
@@ -25,6 +26,7 @@ interface MerchantProps {
   availableFees: FeeData[];
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  isSuperAdmin?: boolean;
 }
 
 export default function MerchantFormTax2({
@@ -35,10 +37,12 @@ export default function MerchantFormTax2({
   availableFees,
   activeTab,
   setActiveTab,
+  isSuperAdmin = false,
 }: MerchantProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const canEdit = canEditMerchant(permissions, isSuperAdmin);
 
   const params = new URLSearchParams(searchParams || "");
 
@@ -160,22 +164,22 @@ export default function MerchantFormTax2({
 
   if (!idMerchantPrice || idMerchantPrice === 0) {
     return (
-      <Card className="w-full">
-        <CardHeader className="flex flex-row items-center space-x-2">
-          <CreditCard className="w-5 h-5" />
-          <CardTitle>Taxas de Transação</CardTitle>
+      <Card className="w-full bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
+        <CardHeader className="flex flex-row items-center space-x-2 border-b border-[rgba(255,255,255,0.1)]">
+          <CreditCard className="w-5 h-5 text-[#E0E0E0]" />
+          <CardTitle className="text-[#E0E0E0]">Taxas de Transação</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-gray-500">
+        <CardContent className="p-6">
+          <div className="text-center py-8 text-[#616161]">
             <div className="flex flex-col items-center gap-3">
-              <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center">
-                <CreditCard className="h-6 w-6 text-gray-400" />
+              <div className="h-12 w-12 bg-[#212121] rounded-full flex items-center justify-center">
+                <CreditCard className="h-6 w-6 text-[#616161]" />
               </div>
               <div>
-                <p className="font-medium text-gray-700">
+                <p className="font-medium text-[#E0E0E0]">
                   Nenhuma taxa atribuída
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-[#616161]">
                   Este estabelecimento ainda não possui taxas configuradas
                 </p>
               </div>
@@ -188,24 +192,28 @@ export default function MerchantFormTax2({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Card className="w-full">
-        <CardHeader className="flex flex-row items-center space-x-2">
-          <CreditCard className="w-5 h-5" />
-          <CardTitle>Taxas de Transação</CardTitle>
+      <Card className="w-full bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
+        <CardHeader className="flex flex-row items-center space-x-2 border-b border-[rgba(255,255,255,0.1)]">
+          <CreditCard className="w-5 h-5 text-[#E0E0E0]" />
+          <CardTitle className="text-[#E0E0E0]">Taxas de Transação</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-gray-500">
-            <p>Configuração de taxas será implementada</p>
-            <p className="text-sm mt-2">
+        <CardContent className="p-6">
+          <div className="text-center py-8 text-[#616161]">
+            <p className="text-[#E0E0E0]">Configuração de taxas será implementada</p>
+            <p className="text-sm mt-2 text-[#616161]">
               Merchant Price ID: {idMerchantPrice}
             </p>
           </div>
         </CardContent>
       </Card>
 
-      {permissions?.includes("Atualizar") && (
+      {canEdit && (
         <div className="flex justify-end mt-4">
-          <Button type="submit" disabled={isSubmitting} className="px-6">
+          <Button 
+            type="submit" 
+            disabled={isSubmitting} 
+            className="px-6 bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
+          >
             {isSubmitting ? "Salvando..." : "Avançar"}
           </Button>
         </div>

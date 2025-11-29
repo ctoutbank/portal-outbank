@@ -73,3 +73,4 @@ export async function getAllMerchantBankAccounts() {
     .orderBy(merchantBankAccounts.corporateName);
 }
 
+

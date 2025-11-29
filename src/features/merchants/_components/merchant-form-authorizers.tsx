@@ -20,6 +20,7 @@ import {
   saveAuthorizersFormAction,
   getAuthorizersFormAction,
 } from "../_actions/authorizer-formActions";
+import { canEditMerchant } from "../_utils/can-edit";
 
 // Tipos de autorizadores disponíveis
 const AUTHORIZER_TYPES = [
@@ -47,6 +48,7 @@ interface MerchantFormAuthorizersProps {
   setActiveTab: (tab: string) => void;
   idMerchant?: number;
   permissions?: string[];
+  isSuperAdmin?: boolean;
 }
 
 // Componente para um único autorizador
@@ -54,10 +56,12 @@ function AuthorizerFormItem({
   id,
   initialData,
   onDataChange,
+  canEdit = true,
 }: {
   id: number;
   initialData: AuthorizerData;
   onDataChange?: (id: number, data: AuthorizerData) => void;
+  canEdit?: boolean;
 }) {
   const [formData, setFormData] = useState<AuthorizerData>(initialData);
   // Determinar quais campos mostrar com base no tipo de autorizador
@@ -76,71 +80,82 @@ function AuthorizerFormItem({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label>
+        <Label className="text-[#E0E0E0]">
           Conciliar transações <span className="text-red-500">*</span>
         </Label>
         <RadioGroup
           value={formData.conciliarTransacoes || "nao"}
           onValueChange={(value) => updateField("conciliarTransacoes", value)}
           className="flex space-x-4"
+          disabled={!canEdit}
         >
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="sim" id={`${id}-sim`} />
-            <Label htmlFor={`${id}-sim`}>Sim</Label>
+            <RadioGroupItem value="sim" id={`${id}-sim`} disabled={!canEdit} />
+            <Label htmlFor={`${id}-sim`} className="text-[#E0E0E0]">Sim</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="nao" id={`${id}-nao`} />
-            <Label htmlFor={`${id}-nao`}>Não</Label>
+            <RadioGroupItem value="nao" id={`${id}-nao`} disabled={!canEdit} />
+            <Label htmlFor={`${id}-nao`} className="text-[#E0E0E0]">Não</Label>
           </div>
         </RadioGroup>
       </div>
 
       {showMerchantId && (
         <div className="space-y-2">
-          <Label>Merchant ID:</Label>
+          <Label className="text-[#E0E0E0]">Merchant ID:</Label>
           <Input
             value={formData.merchantId || ""}
             onChange={(e) => updateField("merchantId", e.target.value)}
+            disabled={!canEdit}
+            className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       )}
 
       {showTokenCnp && (
         <div className="space-y-2">
-          <Label>Token CNP no autorizador:</Label>
+          <Label className="text-[#E0E0E0]">Token CNP no autorizador:</Label>
           <Input
             value={formData.tokenCnp || ""}
             onChange={(e) => updateField("tokenCnp", e.target.value)}
+            disabled={!canEdit}
+            className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       )}
 
       {showIdConta && (
         <div className="space-y-2">
-          <Label>ID Conta:</Label>
+          <Label className="text-[#E0E0E0]">ID Conta:</Label>
           <Input
             value={formData.idConta || ""}
             onChange={(e) => updateField("idConta", e.target.value)}
+            disabled={!canEdit}
+            className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       )}
 
       {showChavePix && (
         <div className="space-y-2">
-          <Label>Chave PIX:</Label>
+          <Label className="text-[#E0E0E0]">Chave PIX:</Label>
           <Input
             value={formData.chavePix || ""}
             onChange={(e) => updateField("chavePix", e.target.value)}
+            disabled={!canEdit}
+            className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       )}
 
       {showTerminalId && (
         <div className="space-y-2">
-          <Label>Terminal ID:</Label>
+          <Label className="text-[#E0E0E0]">Terminal ID:</Label>
           <Input
             value={formData.terminalId || ""}
             onChange={(e) => updateField("terminalId", e.target.value)}
+            disabled={!canEdit}
+            className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       )}
@@ -153,8 +168,10 @@ export default function MerchantFormAuthorizers({
   setActiveTab,
   idMerchant = 0,
   permissions = [],
+  isSuperAdmin = false,
 }: MerchantFormAuthorizersProps) {
   const router = useRouter();
+  const canEdit = canEditMerchant(permissions, isSuperAdmin);
 
   // Estado para armazenar os autorizadores
   const [authorizers, setAuthorizers] = useState<AuthorizerData[]>([]);
@@ -277,25 +294,26 @@ export default function MerchantFormAuthorizers({
 
   return (
     <div className="space-y-8">
-      <h2 className="text-xl font-semibold mb-4">Autorizadores</h2>
+      <h2 className="text-xl font-semibold mb-4 text-[#E0E0E0]">Autorizadores</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {authorizers.map((authorizer) => (
           <Card
             key={authorizer.id}
-            className="w-full shadow-sm hover:shadow-md transition-shadow"
+            className="w-full bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px] shadow-sm hover:shadow-md transition-shadow"
           >
-            <CardHeader className="flex flex-row items-center justify-between bg-gray-50 py-3">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-[rgba(255,255,255,0.1)] py-3">
               <div className="flex flex-row items-center space-x-2">
-                <CreditCard className="w-5 h-5 text-primary" />
-                <CardTitle className="text-lg">{authorizer.type}</CardTitle>
+                <CreditCard className="w-5 h-5 text-[#E0E0E0]" />
+                <CardTitle className="text-lg text-[#E0E0E0]">{authorizer.type}</CardTitle>
               </div>
-              {authorizers.length > 1 && (
+              {authorizers.length > 1 && canEdit && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => removeAuthorizer(authorizer.id)}
                   title="Remover autorizador"
+                  className="hover:bg-[#2E2E2E]"
                 >
                   <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>
@@ -305,6 +323,7 @@ export default function MerchantFormAuthorizers({
               <AuthorizerFormItem
                 id={authorizer.id}
                 initialData={authorizer}
+                canEdit={canEdit}
                 onDataChange={(id, data) => {
                   formRefs.current[id] = data;
                   setAuthorizers(
@@ -318,25 +337,25 @@ export default function MerchantFormAuthorizers({
           </Card>
         ))}
 
-        {showTypeSelector && (
-          <Card className="w-full shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center bg-gray-50 py-3">
+        {showTypeSelector && canEdit && (
+          <Card className="w-full bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px] shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center border-b border-[rgba(255,255,255,0.1)] py-3">
               <div className="flex flex-row items-center space-x-2">
-                <Plus className="w-5 h-5 text-primary" />
-                <CardTitle className="text-lg">Novo Autorizador</CardTitle>
+                <Plus className="w-5 h-5 text-[#E0E0E0]" />
+                <CardTitle className="text-lg text-[#E0E0E0]">Novo Autorizador</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Tipo de Autorizador</Label>
+                  <Label className="text-[#E0E0E0]">Tipo de Autorizador</Label>
                   <Select value={selectedType} onValueChange={setSelectedType}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0]">
                       <SelectValue placeholder="Selecione um autorizador" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#212121] border-[#2E2E2E]">
                       {AUTHORIZER_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
+                        <SelectItem key={type} value={type} className="text-[#E0E0E0] hover:bg-[#2E2E2E]">
                           {type}
                         </SelectItem>
                       ))}
@@ -348,6 +367,7 @@ export default function MerchantFormAuthorizers({
                   <Button
                     variant="outline"
                     onClick={() => setShowTypeSelector(false)}
+                    className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] hover:bg-[#2E2E2E] rounded-[6px]"
                   >
                     Cancelar
                   </Button>
@@ -356,6 +376,7 @@ export default function MerchantFormAuthorizers({
                       selectedType && addNewAuthorizer(selectedType)
                     }
                     disabled={!selectedType}
+                    className="bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
                   >
                     Adicionar
                   </Button>
@@ -366,12 +387,12 @@ export default function MerchantFormAuthorizers({
         )}
       </div>
 
-      {!showTypeSelector && (
+      {!showTypeSelector && canEdit && (
         <div className="flex justify-center mt-6">
           <Button
             type="button"
             onClick={() => setShowTypeSelector(true)}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
             variant="outline"
           >
             <Plus className="w-4 h-4" />
@@ -380,12 +401,12 @@ export default function MerchantFormAuthorizers({
         </div>
       )}
 
-      {permissions?.includes("Atualizar") && (
+      {canEdit && (
         <div className="flex justify-end mt-8">
           <Button
             type="submit"
             onClick={onSubmit}
-            className="px-6"
+            className="px-6 bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
             disabled={isLoading}
           >
             {isLoading ? "Salvando..." : "Avançar"}

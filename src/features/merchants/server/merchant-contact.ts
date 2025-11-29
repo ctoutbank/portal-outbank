@@ -41,3 +41,4 @@ export async function deleteContact(id: number) {
   await db.delete(contacts).where(eq(contacts.id, id));
 }
 
+

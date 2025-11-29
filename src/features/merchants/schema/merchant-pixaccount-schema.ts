@@ -28,3 +28,4 @@ export const merchantPixAccountSchema = z.object({
 
 export type MerchantPixAccountSchema = z.infer<typeof merchantPixAccountSchema>;
 
+

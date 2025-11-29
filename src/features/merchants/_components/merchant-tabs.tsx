@@ -44,6 +44,7 @@ export default function MerchantTabs({
   merchantPriceGroupProps,
   permissions,
   DDSalesAgent,
+  isSuperAdmin = false,
 }: MerchantTabsProps) {
   const [activeTab, setActiveTab] = useState("company");
   const [visitedTabs, setVisitedTabs] = useState<Set<string>>(
@@ -155,6 +156,7 @@ export default function MerchantTabs({
           }
           setActiveTab={handleTabChange}
           permissions={permissions}
+          isSuperAdmin={isSuperAdmin}
         />
       </TabsContent>
 
@@ -201,6 +203,7 @@ export default function MerchantTabs({
             listTabs[listTabs.findIndex((tab) => tab === activeTab) + 1]
           }
           setActiveTab={handleTabChange}
+          isSuperAdmin={isSuperAdmin}
         />
       </TabsContent>
 
@@ -250,6 +253,7 @@ export default function MerchantTabs({
           idConfiguration={merchant.idConfiguration || undefined}
           DDSalesAgent={DDSalesAgent}
           idSalesAgent={merchant.idSalesAgent || null}
+          isSuperAdmin={isSuperAdmin}
         />
       </TabsContent>
       {permissions?.includes("Configurar dados Bancários") && (
@@ -298,6 +302,7 @@ export default function MerchantTabs({
             merchantdocumentId={merchant.idDocument || ""}
             hasPix={merchant.hasPix || false}
             merchantpixaccount={merchantPixAccount?.pixaccounts}
+            isSuperAdmin={isSuperAdmin}
           />
         </TabsContent>
       )}
@@ -310,6 +315,7 @@ export default function MerchantTabs({
           setActiveTab={handleTabChange}
           idMerchant={merchant.id}
           permissions={permissions}
+          isSuperAdmin={isSuperAdmin}
         />
       </TabsContent>
       {permissions?.includes("Configurar Taxas do EC") && (
@@ -365,6 +371,7 @@ export default function MerchantTabs({
               listTabs[listTabs.findIndex((tab) => tab === activeTab) + 1]
             }
             setActiveTab={handleTabChange}
+            isSuperAdmin={isSuperAdmin}
           />
         </TabsContent>
       )}
@@ -373,6 +380,7 @@ export default function MerchantTabs({
           <MerchantFormDocuments
             merchantId={merchant.id.toString()}
             permissions={permissions}
+            isSuperAdmin={isSuperAdmin}
           />
         </TabsContent>
       )}

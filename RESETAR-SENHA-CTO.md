@@ -98,3 +98,4 @@ Após resetar a senha, tente fazer login:
 ### Erro: "Usuário não encontrado"
 - Solução: Verifique se o email está correto no Clerk Dashboard
 
+

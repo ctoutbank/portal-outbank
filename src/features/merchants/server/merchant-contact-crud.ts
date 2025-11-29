@@ -24,3 +24,4 @@ export async function deleteContact(id: number): Promise<void> {
   await db.delete(contacts).where(eq(contacts.id, id));
 }
 
+

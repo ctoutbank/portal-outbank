@@ -26,6 +26,7 @@ import {
   insertMerchantPixAccountFormAction,
   updateMerchantPixAccountFormAction,
 } from "../_actions/merchantPixAccount-formActions";
+import { canEditMerchant } from "../_utils/can-edit";
 
 interface MerchantProps {
   merchantBankAccount: any;
@@ -39,6 +40,7 @@ interface MerchantProps {
   accountTypeDD: accountTypeDropdown[];
   hasPix?: boolean;
   merchantpixaccount?: any;
+  isSuperAdmin?: boolean;
 }
 
 export default function MerchantFormBankAccount({
@@ -53,10 +55,12 @@ export default function MerchantFormBankAccount({
   accountTypeDD,
   hasPix = false,
   merchantpixaccount,
+  isSuperAdmin = false,
 }: MerchantProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const canEdit = canEditMerchant(permissions, isSuperAdmin);
 
   const [formData, setFormData] = useState({
     documentId: merchantBankAccount?.documentId || merchantdocumentId || "",
@@ -148,27 +152,28 @@ export default function MerchantFormBankAccount({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Card className="w-full">
-        <CardHeader className="flex flex-row items-center space-x-2">
-          <Landmark className="w-5 h-5" />
-          <CardTitle>Dados Bancários</CardTitle>
+      <Card className="w-full bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
+        <CardHeader className="flex flex-row items-center space-x-2 border-b border-[rgba(255,255,255,0.1)]">
+          <Landmark className="w-5 h-5 text-[#E0E0E0]" />
+          <CardTitle className="text-[#E0E0E0]">Dados Bancários</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Banco</Label>
+              <Label className="text-[#E0E0E0]">Banco</Label>
               <Select
                 value={formData.compeCode}
                 onValueChange={(value) =>
                   setFormData({ ...formData, compeCode: value })
                 }
+                disabled={!canEdit}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed">
                   <SelectValue placeholder="Selecione o banco" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#212121] border-[#2E2E2E]">
                   {DDBank.map((bank) => (
-                    <SelectItem key={bank.value} value={bank.value}>
+                    <SelectItem key={bank.value} value={bank.value} className="text-[#E0E0E0] hover:bg-[#2E2E2E]">
                       {bank.label}
                     </SelectItem>
                   ))}
@@ -177,19 +182,20 @@ export default function MerchantFormBankAccount({
             </div>
 
             <div>
-              <Label>Tipo de Conta</Label>
+              <Label className="text-[#E0E0E0]">Tipo de Conta</Label>
               <Select
                 value={formData.accountType}
                 onValueChange={(value) =>
                   setFormData({ ...formData, accountType: value })
                 }
+                disabled={!canEdit}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed">
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#212121] border-[#2E2E2E]">
                   {accountTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
+                    <SelectItem key={type.value} value={type.value} className="text-[#E0E0E0] hover:bg-[#2E2E2E]">
                       {type.label}
                     </SelectItem>
                   ))}
@@ -201,7 +207,7 @@ export default function MerchantFormBankAccount({
           <div className="grid grid-cols-2 gap-4">
             <div className="flex gap-2">
               <div className="w-4/5">
-                <Label>Agência</Label>
+                <Label className="text-[#E0E0E0]">Agência</Label>
                 <Input
                   value={formData.bankBranchNumber}
                   onChange={(e) =>
@@ -212,10 +218,12 @@ export default function MerchantFormBankAccount({
                   }
                   maxLength={10}
                   onKeyDown={(e) => handleNumericInput(e, 10)}
+                  disabled={!canEdit}
+                  className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div className="w-1/5">
-                <Label>DV</Label>
+                <Label className="text-[#E0E0E0]">DV</Label>
                 <Input
                   value={formData.bankBranchCheckDigit}
                   onChange={(e) =>
@@ -226,13 +234,15 @@ export default function MerchantFormBankAccount({
                   }
                   maxLength={1}
                   onKeyDown={(e) => handleNumericInput(e, 1)}
+                  disabled={!canEdit}
+                  className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
 
             <div className="flex gap-2">
               <div className="w-4/5">
-                <Label>Conta</Label>
+                <Label className="text-[#E0E0E0]">Conta</Label>
                 <Input
                   value={formData.accountNumber}
                   onChange={(e) =>
@@ -243,10 +253,12 @@ export default function MerchantFormBankAccount({
                   }
                   maxLength={10}
                   onKeyDown={(e) => handleNumericInput(e, 10)}
+                  disabled={!canEdit}
+                  className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div className="w-1/5">
-                <Label>DV</Label>
+                <Label className="text-[#E0E0E0]">DV</Label>
                 <Input
                   value={formData.accountNumberCheckDigit}
                   onChange={(e) =>
@@ -257,6 +269,8 @@ export default function MerchantFormBankAccount({
                   }
                   maxLength={1}
                   onKeyDown={(e) => handleNumericInput(e, 1)}
+                  disabled={!canEdit}
+                  className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -265,26 +279,27 @@ export default function MerchantFormBankAccount({
       </Card>
 
       {hasPix && (
-        <Card className="w-full mt-4">
-          <CardHeader>
-            <CardTitle>Conta PIX</CardTitle>
+        <Card className="w-full mt-4 bg-[#1D1D1D] border border-[rgba(255,255,255,0.1)] rounded-[6px]">
+          <CardHeader className="border-b border-[rgba(255,255,255,0.1)]">
+            <CardTitle className="text-[#E0E0E0]">Conta PIX</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Banco</Label>
+                <Label className="text-[#E0E0E0]">Banco</Label>
                 <Select
                   value={pixData.bankNumber}
                   onValueChange={(value) =>
                     setPixData({ ...pixData, bankNumber: value })
                   }
+                  disabled={!canEdit}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed">
                     <SelectValue placeholder="Selecione o banco" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#212121] border-[#2E2E2E]">
                     {DDBank.map((bank) => (
-                      <SelectItem key={bank.value} value={bank.value}>
+                      <SelectItem key={bank.value} value={bank.value} className="text-[#E0E0E0] hover:bg-[#2E2E2E]">
                         {bank.label}
                       </SelectItem>
                     ))}
@@ -293,19 +308,20 @@ export default function MerchantFormBankAccount({
               </div>
 
               <div>
-                <Label>Tipo de Conta</Label>
+                <Label className="text-[#E0E0E0]">Tipo de Conta</Label>
                 <Select
                   value={pixData.bankAccountType}
                   onValueChange={(value) =>
                     setPixData({ ...pixData, bankAccountType: value })
                   }
+                  disabled={!canEdit}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#212121] border-[#2E2E2E]">
                     {accountTypeDD.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
+                      <SelectItem key={type.value} value={type.value} className="text-[#E0E0E0] hover:bg-[#2E2E2E]">
                         {type.label}
                       </SelectItem>
                     ))}
@@ -317,7 +333,7 @@ export default function MerchantFormBankAccount({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex gap-2">
                 <div className="w-4/5">
-                  <Label>Agência</Label>
+                  <Label className="text-[#E0E0E0]">Agência</Label>
                   <Input
                     value={pixData.bankBranchNumber}
                     onChange={(e) =>
@@ -328,10 +344,12 @@ export default function MerchantFormBankAccount({
                     }
                     maxLength={10}
                     onKeyDown={(e) => handleNumericInput(e, 10)}
+                    disabled={!canEdit}
+                    className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div className="w-1/5">
-                  <Label>DV</Label>
+                  <Label className="text-[#E0E0E0]">DV</Label>
                   <Input
                     value={pixData.bankBranchDigit}
                     onChange={(e) =>
@@ -339,13 +357,15 @@ export default function MerchantFormBankAccount({
                     }
                     maxLength={1}
                     onKeyDown={(e) => handleNumericInput(e, 1)}
+                    disabled={!canEdit}
+                    className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
 
               <div className="flex gap-2">
                 <div className="w-4/5">
-                  <Label>Conta</Label>
+                  <Label className="text-[#E0E0E0]">Conta</Label>
                   <Input
                     value={pixData.bankAccountNumber}
                     onChange={(e) =>
@@ -356,10 +376,12 @@ export default function MerchantFormBankAccount({
                     }
                     maxLength={10}
                     onKeyDown={(e) => handleNumericInput(e, 10)}
+                    disabled={!canEdit}
+                    className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div className="w-1/5">
-                  <Label>DV</Label>
+                  <Label className="text-[#E0E0E0]">DV</Label>
                   <Input
                     value={pixData.bankAccountDigit}
                     onChange={(e) =>
@@ -367,6 +389,8 @@ export default function MerchantFormBankAccount({
                     }
                     maxLength={1}
                     onKeyDown={(e) => handleNumericInput(e, 1)}
+                    disabled={!canEdit}
+                    className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -375,9 +399,13 @@ export default function MerchantFormBankAccount({
         </Card>
       )}
 
-      {permissions?.includes("Atualizar") && (
+      {canEdit && (
         <div className="flex justify-end mt-4">
-          <Button type="submit" disabled={isSubmitting} className="px-6">
+          <Button 
+            type="submit" 
+            disabled={isSubmitting} 
+            className="px-6 bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] rounded-[6px]"
+          >
             {isSubmitting ? "Salvando..." : "Avançar"}
           </Button>
         </div>

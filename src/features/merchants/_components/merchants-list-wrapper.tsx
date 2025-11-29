@@ -124,3 +124,4 @@ export function MerchantsListWrapper({ list }: MerchantsListWrapperProps) {
 
 export { columns as merchantsColumns };
 
+
