@@ -13,6 +13,7 @@ import {
 import {
   updateMerchantPriceGroupFormAction,
 } from "../_actions/merchantpricegroup-formActions";
+import { TransactionPrice } from "../server/types";
 // import { FeeData } from "@/features/newTax/server/fee-db";
 type FeeData = any; // TODO: Definir tipo correto quando disponível
 
