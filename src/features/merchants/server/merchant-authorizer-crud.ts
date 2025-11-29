@@ -41,7 +41,7 @@ export async function getAuthorizersByMerchantId(
       terminalId: auth.terminalId || undefined,
       idConta: auth.idConta || undefined,
       chavePix: auth.chavePix || undefined,
-      idMerchant: auth.idMerchant,
+      idMerchant: auth.idMerchant ?? idMerchant,
     }));
   } catch (error) {
     console.error("Erro ao buscar autorizadores:", error);
