@@ -44,20 +44,28 @@ export async function syncMccGroups(): Promise<{
           }
         } else if (existingGroup) {
           // Atualizar
+          // Campos obrigatórios: id, description, availability_date, database_operation
           await updateMccGroup(dockGroup.id, {
-            description: dockGroup.description,
-            availabilityDate: dockGroup.availability_date || null,
-            databaseOperation: dbOperation,
+            description: dockGroup.description, // Obrigatório
+            availabilityDate: dockGroup.availability_date || null, // Obrigatório
+            databaseOperation: dbOperation, // Obrigatório
             isActive: true,
           });
           stats.updated++;
         } else {
           // Inserir
+          // Validar campos obrigatórios antes de inserir
+          if (!dockGroup.id || !dockGroup.description || !dockGroup.availability_date || !dbOperation) {
+            console.error(`[SYNC MCC] Grupo MCC ${dockGroup.id} com campos obrigatórios faltando. Pulando.`);
+            stats.errors++;
+            continue;
+          }
+          
           await insertMccGroup({
-            id: dockGroup.id,
-            description: dockGroup.description,
-            availabilityDate: dockGroup.availability_date || null,
-            databaseOperation: dbOperation,
+            id: dockGroup.id, // Obrigatório
+            description: dockGroup.description, // Obrigatório
+            availabilityDate: dockGroup.availability_date, // Obrigatório
+            databaseOperation: dbOperation, // Obrigatório
             isActive: true,
           });
           stats.inserted++;

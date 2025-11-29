@@ -12,17 +12,13 @@ export async function fetchDockMcc(
   offset: number = 0,
   limit: number = 1000
 ): Promise<DockMccResponse> {
-  // Usar DOCK_API_URL (variável genérica já usada no projeto) como padrão
-  // Se houver variável específica para Plataforma de Dados, usar ela primeiro
-  const baseUrl = 
-    process.env.DOCK_API_URL_PLATAFORMA_DADOS || 
-    process.env.DOCK_API_URL_PLATAFORMA ||
-    process.env.DOCK_API_URL;
+  // URL base da Plataforma de Dados - precisa ser configurada pela Dock
+  const baseUrl = process.env.DOCK_API_URL_PLATAFORMA_DADOS;
   
   if (!baseUrl) {
     throw new Error(
-      "Variável de ambiente DOCK_API_URL não configurada. " +
-      "Configure DOCK_API_URL (ou DOCK_API_URL_PLATAFORMA_DADOS para Plataforma de Dados específica)"
+      "DOCK_API_URL_PLATAFORMA_DADOS não configurado. " +
+      "Esta variável deve ser fornecida pela Dock durante o onboarding técnico."
     );
   }
 
@@ -30,18 +26,33 @@ export async function fetchDockMcc(
     throw new Error("DOCK_API_KEY não configurado");
   }
 
-  // Construir URL - verificar se baseUrl já tem /mcc ou precisa adicionar
-  const mccPath = baseUrl.endsWith('/') ? 'mcc' : '/mcc';
-  const url = new URL(`${baseUrl}${mccPath}`);
+  // Prefixo de versão da API - configurável via variável de ambiente
+  // Padrão: sem prefixo (pode ser /v1, /v2, etc. - a confirmar com Dock)
+  const apiVersion = process.env.DOCK_API_DADOS_VERSION || '';
+  const versionPath = apiVersion ? `/${apiVersion}` : '';
+  
+  // Construir URL completa
+  // Formato esperado: {BASE_URL}{VERSION}/mcc ou {BASE_URL}/mcc
+  const basePath = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const mccPath = `${versionPath}/mcc`.replace('//', '/'); // Remove dupla barra se necessário
+  const url = new URL(`${basePath}${mccPath}`);
   url.searchParams.append("limit", limit.toString());
   url.searchParams.append("offset", offset.toString());
 
+  // Headers de autenticação - usando mesmo padrão das outras APIs da Dock
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
+  };
+
+  // Adicionar X-Customer se estiver configurado (usado em outras APIs)
+  if (process.env.DOCK_X_CUSTOMER) {
+    headers["X-Customer"] = process.env.DOCK_X_CUSTOMER;
+  }
+
   const response = await fetch(url.toString(), {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -51,36 +62,72 @@ export async function fetchDockMcc(
     );
   }
 
-  const data: DockMccResponse = await response.json();
+  const rawData = await response.json();
+  
+  // Adaptar resposta - estrutura pode variar
+  // Se for array direto, converter para formato esperado
+  let data: DockMccResponse;
+  if (Array.isArray(rawData)) {
+    data = { objects: rawData };
+  } else {
+    data = rawData as DockMccResponse;
+  }
+  
   return data;
 }
 
 /**
  * Busca todos os MCCs da Dock com paginação automática
  * @returns Array completo de MCCs
+ * 
+ * Nota: A forma de paginação precisa ser confirmada com a Dock.
+ * Atualmente assume padrão limit/offset, mas pode ser diferente.
  */
 export async function fetchAllDockMcc() {
   let offset = 0;
-  const limit = 1000;
+  const limit = parseInt(process.env.DOCK_API_DADOS_LIMIT || '1000', 10);
   let hasMoreData = true;
   const allMccs: any[] = [];
+  let consecutiveErrors = 0;
+  const maxErrors = 3;
 
   while (hasMoreData) {
-    const response = await fetchDockMcc(offset, limit);
-    
-    if (response.objects && response.objects.length > 0) {
-      allMccs.push(...response.objects);
-    }
+    try {
+      const response = await fetchDockMcc(offset, limit);
+      
+      // Estrutura da resposta precisa ser confirmada com Dock
+      // Assumindo padrão objects + meta, mas pode ser diferente
+      if (response.objects && response.objects.length > 0) {
+        allMccs.push(...response.objects);
+        consecutiveErrors = 0; // Reset contador de erros
+      }
 
-    // Verificar se há mais dados
-    if (response.meta) {
-      const totalCount = response.meta.total_count || 0;
-      offset += limit;
-      hasMoreData = offset < totalCount;
-    } else {
-      // Se não houver meta, verificar se retornou menos que o limite
-      hasMoreData = response.objects && response.objects.length === limit;
-      offset += limit;
+      // Verificar se há mais dados
+      if (response.meta) {
+        const totalCount = response.meta.total_count || 0;
+        offset += limit;
+        hasMoreData = offset < totalCount;
+      } else {
+        // Se não houver meta, verificar se retornou menos que o limite
+        // Isso indica que não há mais dados
+        hasMoreData = response.objects && response.objects.length === limit;
+        offset += limit;
+      }
+
+      // Rate limiting conservador - delay entre requisições
+      const rateLimitDelay = parseInt(process.env.DOCK_API_DADOS_RATE_LIMIT_DELAY || '100', 10);
+      if (hasMoreData && rateLimitDelay > 0) {
+        await new Promise(resolve => setTimeout(resolve, rateLimitDelay));
+      }
+    } catch (error) {
+      consecutiveErrors++;
+      if (consecutiveErrors >= maxErrors) {
+        console.error(`[DOCK MCC] Muitos erros consecutivos (${consecutiveErrors}). Parando sincronização.`);
+        throw error;
+      }
+      console.warn(`[DOCK MCC] Erro na requisição (tentativa ${consecutiveErrors}/${maxErrors}):`, error);
+      // Retry com delay exponencial
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, consecutiveErrors) * 1000));
     }
   }
 
