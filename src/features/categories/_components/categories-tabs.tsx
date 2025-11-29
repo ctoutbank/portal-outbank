@@ -10,6 +10,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Loader2 } from "lucide-react";
 import Categorylist from "./categories-list";
 import MccList from "@/features/mcc/_components/mcc-list";
 import PageSizeSelector from "@/components/page-size-selector";
