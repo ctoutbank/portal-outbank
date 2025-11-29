@@ -1,7 +1,7 @@
 import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
 import { requireMerchantsAccess } from "@/lib/permissions/require-merchants-access";
-import { checkPagePermission } from "@/lib/permissions/check-permissions";
+import { checkPagePermission, isSuperAdmin } from "@/lib/permissions/check-permissions";
 import { getMerchantById, getUserMerchantsAccess } from "@/features/merchants/server/merchants";
 import { getCnaeMccForDropdown, getEstablishmentFormatForDropdown, getLegalNaturesForDropdown, getSalesAgentForDropdown } from "@/features/merchants/server/merchant-helpers";
 import { getContactByMerchantId } from "@/features/merchants/server/merchant-contact";
@@ -132,6 +132,14 @@ export default async function MerchantDetail({
   // Verificar se é criação (id = 0) ou edição
   const isCreating = merchant.merchants.id === 0 || !merchant.merchants.idMerchantPrice;
 
+  // Verificar se o usuário pode editar:
+  // 1. Super Admin sempre pode editar
+  // 2. Usuário com permissão "Atualizar" pode editar
+  // 3. O acesso ao estabelecimento específico já foi verificado pelo getMerchantById
+  //    (getMerchantById verifica se o estabelecimento pertence a um ISO que o usuário tem acesso)
+  const isSuper = await isSuperAdmin();
+  const canEdit = isSuper || permissions?.includes("Atualizar") || permissions?.includes("Inserir");
+
   return (
     <>
       <BaseHeader
@@ -149,7 +157,7 @@ export default async function MerchantDetail({
             : "Editar Estabelecimento"
         }
       >
-        {isCreating ? (
+        {(isCreating || canEdit) ? (
           <MerchantTabs
             merchant={{
               id: merchant.merchants.id,
