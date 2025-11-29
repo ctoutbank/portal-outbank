@@ -114,6 +114,8 @@ export interface TransactionPrice {
   nonCardTransactionFee: number;
   nonCardTransactionMdr: number;
   producttype: string;
+  cardCompulsoryAnticipationMdr?: number | null;
+  noCardCompulsoryAnticipationMdr?: number | null;
 }
 
 export interface MerchantPriceGroup {
