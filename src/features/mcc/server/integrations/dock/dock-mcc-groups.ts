@@ -110,7 +110,7 @@ export async function fetchAllDockMccGroups() {
       } else {
         // Se não houver meta, verificar se retornou menos que o limite
         // Isso indica que não há mais dados
-        hasMoreData = response.objects && response.objects.length === limit;
+        hasMoreData = response.objects ? response.objects.length === limit : false;
         offset += limit;
       }
 
