@@ -47,29 +47,16 @@ export default function MerchantTabs({
   isSuperAdmin = false,
 }: MerchantTabsProps) {
   const [activeTab, setActiveTab] = useState("company");
-  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(
-    new Set(["company"])
-  );
 
-  // Função para marcar uma tab como visitada e navegar para ela
+  // Função para navegar entre as tabs
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
-    setVisitedTabs((prev) => new Set(prev).add(newTab));
   };
 
   const searchParams = useSearchParams();
   useEffect(() => {
     const tab = searchParams?.get("tab") || "company";
     setActiveTab(tab);
-
-    // Quando vem da URL, marca todas as tabs até a solicitada como visitadas
-    const tabIndex = listTabs.indexOf(tab);
-    if (tabIndex > 0) {
-      const tabsToVisit = listTabs.slice(0, tabIndex + 1);
-      setVisitedTabs(new Set(tabsToVisit));
-    } else {
-      setVisitedTabs((prev) => new Set(prev).add(tab));
-    }
   }, [searchParams]);
 
   return (
@@ -79,50 +66,25 @@ export default function MerchantTabs({
       className="space-y-4 w-full"
     >
       <TabsList>
-        <TabsTrigger
-          value="company"
-          className={visitedTabs.has("company") ? "" : "pointer-events-none opacity-50"}
-        >
+        <TabsTrigger value="company">
           Dados da Empresa
         </TabsTrigger>
-        <TabsTrigger
-          value="contact"
-          className={visitedTabs.has("contact") ? "" : "pointer-events-none opacity-50"}
-        >
+        <TabsTrigger value="contact">
           Dados do Responsável
         </TabsTrigger>
-        <TabsTrigger
-          value="operation"
-          className={visitedTabs.has("operation") ? "" : "pointer-events-none opacity-50"}
-        >
+        <TabsTrigger value="operation">
           Dados de Operação
         </TabsTrigger>
-        <TabsTrigger
-          value="bank"
-          className={visitedTabs.has("bank") ? "" : "pointer-events-none opacity-50"}
-        >
+        <TabsTrigger value="bank">
           Dados Bancários
         </TabsTrigger>
-        <TabsTrigger
-          value="authorizers"
-          className={
-            visitedTabs.has("authorizers") ? "" : "pointer-events-none opacity-50"
-          }
-        >
+        <TabsTrigger value="authorizers">
           Autorizados
         </TabsTrigger>
-        <TabsTrigger
-          value="rate"
-          className={visitedTabs.has("rate") ? "" : "pointer-events-none opacity-50"}
-        >
+        <TabsTrigger value="rate">
           Taxas de Transação
         </TabsTrigger>
-        <TabsTrigger
-          value="documents"
-          className={
-            visitedTabs.has("documents") ? "" : "pointer-events-none opacity-50"
-          }
-        >
+        <TabsTrigger value="documents">
           Documentos
         </TabsTrigger>
       </TabsList>
