@@ -18,7 +18,13 @@ export async function fetchDockMcc(
     throw new Error("DOCK_API_URL ou DOCK_API_URL_PLATAFORMA_DADOS não configurado");
   }
 
-  const url = new URL(`${baseUrl}/mcc`);
+  if (!process.env.DOCK_API_KEY) {
+    throw new Error("DOCK_API_KEY não configurado");
+  }
+
+  // Construir URL - verificar se baseUrl já tem /mcc ou precisa adicionar
+  const mccPath = baseUrl.endsWith('/') ? 'mcc' : '/mcc';
+  const url = new URL(`${baseUrl}${mccPath}`);
   url.searchParams.append("limit", limit.toString());
   url.searchParams.append("offset", offset.toString());
 
@@ -31,8 +37,9 @@ export async function fetchDockMcc(
   });
 
   if (!response.ok) {
+    const errorText = await response.text().catch(() => response.statusText);
     throw new Error(
-      `Erro ao buscar MCCs da Dock: ${response.statusText} (${response.status})`
+      `Erro ao buscar MCCs da Dock: ${response.statusText} (${response.status}). URL: ${url.toString()}. Detalhes: ${errorText}`
     );
   }
 

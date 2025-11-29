@@ -35,10 +35,25 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error("[API] Erro ao sincronizar MCCs:", error);
+    
+    // Mensagem de erro mais específica
+    let errorMessage = error?.message || "Erro desconhecido";
+    
+    // Verificar se é erro de configuração
+    if (errorMessage.includes("não configurado") || errorMessage.includes("desabilitada")) {
+      errorMessage = `Configuração: ${errorMessage}`;
+    }
+    
+    // Verificar se é erro de API
+    if (errorMessage.includes("Dock") || errorMessage.includes("API")) {
+      errorMessage = `Erro na API da Dock: ${errorMessage}`;
+    }
+    
     return NextResponse.json(
       {
         error: "Erro ao sincronizar MCCs",
-        message: error?.message || "Erro desconhecido",
+        message: errorMessage,
+        details: process.env.NODE_ENV === "development" ? error?.stack : undefined,
       },
       { status: 500 }
     );

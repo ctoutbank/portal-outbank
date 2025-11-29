@@ -21,9 +21,18 @@ export async function syncMccFromDock(): Promise<{
     errors: number;
   };
 }> {
+  // Verificar variáveis de ambiente necessárias
+  if (!process.env.DOCK_API_URL && !process.env.DOCK_API_URL_PLATAFORMA_DADOS) {
+    throw new Error("DOCK_API_URL ou DOCK_API_URL_PLATAFORMA_DADOS não configurado");
+  }
+
+  if (!process.env.DOCK_API_KEY) {
+    throw new Error("DOCK_API_KEY não configurado");
+  }
+
+  // Aviso se DOCK_SYNC_ENABLED não estiver configurado, mas permite execução manual
   if (process.env.DOCK_SYNC_ENABLED !== "true") {
-    console.log("[SYNC MCC] Sincronização desabilitada. Configure DOCK_SYNC_ENABLED=true para habilitar.");
-    throw new Error("Sincronização desabilitada");
+    console.warn("[SYNC MCC] DOCK_SYNC_ENABLED não está configurado como 'true'. A sincronização manual está sendo executada.");
   }
 
   console.log("[SYNC MCC] Iniciando sincronização completa de MCCs da Dock...");

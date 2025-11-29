@@ -18,7 +18,13 @@ export async function fetchDockMccGroups(
     throw new Error("DOCK_API_URL ou DOCK_API_URL_PLATAFORMA_DADOS não configurado");
   }
 
-  const url = new URL(`${baseUrl}/mcc_group`);
+  if (!process.env.DOCK_API_KEY) {
+    throw new Error("DOCK_API_KEY não configurado");
+  }
+
+  // Construir URL - verificar se baseUrl já tem /mcc_group ou precisa adicionar
+  const mccGroupPath = baseUrl.endsWith('/') ? 'mcc_group' : '/mcc_group';
+  const url = new URL(`${baseUrl}${mccGroupPath}`);
   url.searchParams.append("limit", limit.toString());
   url.searchParams.append("offset", offset.toString());
 
@@ -31,8 +37,9 @@ export async function fetchDockMccGroups(
   });
 
   if (!response.ok) {
+    const errorText = await response.text().catch(() => response.statusText);
     throw new Error(
-      `Erro ao buscar MCC Groups da Dock: ${response.statusText} (${response.status})`
+      `Erro ao buscar MCC Groups da Dock: ${response.statusText} (${response.status}). URL: ${url.toString()}. Detalhes: ${errorText}`
     );
   }
 
