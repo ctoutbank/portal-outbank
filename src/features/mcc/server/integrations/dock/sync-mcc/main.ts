@@ -22,8 +22,17 @@ export async function syncMccFromDock(): Promise<{
   };
 }> {
   // Verificar variáveis de ambiente necessárias
-  if (!process.env.DOCK_API_URL && !process.env.DOCK_API_URL_PLATAFORMA_DADOS) {
-    throw new Error("DOCK_API_URL ou DOCK_API_URL_PLATAFORMA_DADOS não configurado");
+  // Usar DOCK_API_URL (variável genérica já usada no projeto) como padrão
+  const hasApiUrl = 
+    process.env.DOCK_API_URL_PLATAFORMA_DADOS || 
+    process.env.DOCK_API_URL_PLATAFORMA ||
+    process.env.DOCK_API_URL;
+    
+  if (!hasApiUrl) {
+    throw new Error(
+      "Variável de ambiente DOCK_API_URL não configurada. " +
+      "Configure DOCK_API_URL (ou DOCK_API_URL_PLATAFORMA_DADOS para Plataforma de Dados específica)"
+    );
   }
 
   if (!process.env.DOCK_API_KEY) {

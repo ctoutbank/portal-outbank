@@ -12,10 +12,18 @@ export async function fetchDockMccGroups(
   offset: number = 0,
   limit: number = 1000
 ): Promise<DockMccGroupResponse> {
-  const baseUrl = process.env.DOCK_API_URL || process.env.DOCK_API_URL_PLATAFORMA_DADOS;
+  // Usar DOCK_API_URL (variável genérica já usada no projeto) como padrão
+  // Se houver variável específica para Plataforma de Dados, usar ela primeiro
+  const baseUrl = 
+    process.env.DOCK_API_URL_PLATAFORMA_DADOS || 
+    process.env.DOCK_API_URL_PLATAFORMA ||
+    process.env.DOCK_API_URL;
   
   if (!baseUrl) {
-    throw new Error("DOCK_API_URL ou DOCK_API_URL_PLATAFORMA_DADOS não configurado");
+    throw new Error(
+      "Variável de ambiente DOCK_API_URL não configurada. " +
+      "Configure DOCK_API_URL (ou DOCK_API_URL_PLATAFORMA_DADOS para Plataforma de Dados específica)"
+    );
   }
 
   if (!process.env.DOCK_API_KEY) {
