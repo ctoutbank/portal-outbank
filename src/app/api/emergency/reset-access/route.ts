@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
-import { users } from "@/../../../drizzle/schema";
+import { db, users } from "@/lib/db";
 import { eq, sql } from "drizzle-orm";
 
 /**
