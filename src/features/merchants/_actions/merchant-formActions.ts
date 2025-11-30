@@ -8,7 +8,6 @@ import {
   configurations,
   legalNatures,
 } from "../../../../drizzle/schema";
-import { AddressDetail } from "../server/merchant-crud";
 import { AddressSchema, MerchantSchema } from "../schema/merchant-schema";
 import {
   AddressDetail,
