@@ -14,8 +14,13 @@ interface PageProps {
 }
 
 export default async function CustomerDetail({ params }: PageProps) {
-    // Verificar se usuário é admin antes de mostrar a página
-    await requireAdmin();
+    try {
+      // Verificar se usuário é admin antes de mostrar a página
+      await requireAdmin();
+    } catch (error) {
+      // Se requireAdmin redirecionar, isso será tratado pelo middleware
+      throw error;
+    }
     
     const { id } = await params;
     
@@ -46,7 +51,40 @@ export default async function CustomerDetail({ params }: PageProps) {
     }
     
     // Buscar o cliente usando o ID
-    const Customer = await getCustomerById(customerId);
+    let Customer;
+    try {
+      Customer = await getCustomerById(customerId);
+      
+      // Se customer não existe e ID é válido, retornar página de erro
+      if (!Customer && !isNaN(customerId)) {
+        return (
+          <>
+            <BaseHeader
+              breadcrumbItems={[{ title: "ISOS", subtitle: "", url: "/customers" }]}
+            />
+            <BaseBody title="ISO não encontrado" subtitle={`O ISO com ID ${customerId} não foi encontrado.`}>
+              <div className="p-4 text-center">
+                <p className="text-muted-foreground">O ISO solicitado não existe ou foi removido.</p>
+              </div>
+            </BaseBody>
+          </>
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching customer:", error);
+      return (
+        <>
+          <BaseHeader
+            breadcrumbItems={[{ title: "ISOS", subtitle: "", url: "/customers" }]}
+          />
+          <BaseBody title="Erro" subtitle={`Ocorreu um erro ao carregar o ISO.`}>
+            <div className="p-4 text-center">
+              <p className="text-muted-foreground">Não foi possível carregar as informações do ISO.</p>
+            </div>
+          </BaseBody>
+        </>
+      );
+    }
 
     const profiles = await getDDProfiles();
     

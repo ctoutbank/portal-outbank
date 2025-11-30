@@ -250,33 +250,37 @@ export async function getCustomizationBySubdomain(
       .limit(1);
 
     if (result.length === 0) {
-      console.log(`[getCustomizationBySubdomain] No record found for slug="${subdomain}", trying fallback by name`);
-      result = await db
-        .select({
-          id: customerCustomization.id,
-          name: customerCustomization.name,
-          slug: customerCustomization.slug,
-          primaryColor: customerCustomization.primaryColor,
-          secondaryColor: customerCustomization.secondaryColor,
-          imageUrl: file.fileUrl,
-          imageUrlDirect: customerCustomization.imageUrl,
-          loginImageUrl: customerCustomization.loginImageUrl,
-          faviconUrl: customerCustomization.faviconUrl,
-          emailImageUrl: customerCustomization.emailImageUrl,
-          customerId: customerCustomization.customerId,
-        })
-        .from(customerCustomization)
-        .leftJoin(file, eq(customerCustomization.fileId, file.id))
-        .where(eq(customerCustomization.name, subdomain))
-        .limit(1);
-      
-      if (result.length > 0) {
-        console.log(`[getCustomizationBySubdomain] Found record by name fallback for "${subdomain}"`);
+      // Tentar fallback por name apenas em desenvolvimento ou quando subdomain não é comum
+      if (process.env.NODE_ENV === 'development' || !['consolle', 'localhost', 'www'].includes(subdomain.toLowerCase())) {
+        result = await db
+          .select({
+            id: customerCustomization.id,
+            name: customerCustomization.name,
+            slug: customerCustomization.slug,
+            primaryColor: customerCustomization.primaryColor,
+            secondaryColor: customerCustomization.secondaryColor,
+            imageUrl: file.fileUrl,
+            imageUrlDirect: customerCustomization.imageUrl,
+            loginImageUrl: customerCustomization.loginImageUrl,
+            faviconUrl: customerCustomization.faviconUrl,
+            emailImageUrl: customerCustomization.emailImageUrl,
+            customerId: customerCustomization.customerId,
+          })
+          .from(customerCustomization)
+          .leftJoin(file, eq(customerCustomization.fileId, file.id))
+          .where(eq(customerCustomization.name, subdomain))
+          .limit(1);
       }
     }
 
     const row = result[0];
-    if (!row) return null;
+    if (!row) {
+      // Log apenas em desenvolvimento para reduzir ruído em produção
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[getCustomizationBySubdomain] No customization found for subdomain="${subdomain}"`);
+      }
+      return null;
+    }
 
     return {
       ...row,
