@@ -194,11 +194,8 @@ async function fixUserAccessComplete(email: string, newPassword: string) {
       
       if (clerkUser.banned) {
         console.log('⚠️  ATENÇÃO: Usuário está BANIDO no Clerk!');
-        console.log('🔧 Removendo ban...');
-        await clerk.users.updateUser(clerkUserId, {
-          banned: false,
-        });
-        console.log('✅ Ban removido!\n');
+        console.log('💡 Nota: O desbanimento precisa ser feito manualmente via Clerk Dashboard.');
+        console.log('   O campo "banned" não pode ser alterado via updateUser API.\n');
       } else {
         console.log('✅ Usuário não está banido\n');
       }
