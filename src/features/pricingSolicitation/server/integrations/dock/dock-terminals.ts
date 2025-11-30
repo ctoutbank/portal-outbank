@@ -18,7 +18,7 @@ export async function getTerminals(offset: number): Promise<Terminal[]> {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `${process.env.DOCK_API_KEY}`,
+        Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
       },
     });
     if (!response.ok) {

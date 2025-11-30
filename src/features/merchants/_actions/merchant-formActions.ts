@@ -8,6 +8,7 @@ import {
   configurations,
   legalNatures,
 } from "../../../../drizzle/schema";
+import { AddressDetail } from "../server/merchant-crud";
 import { AddressSchema, MerchantSchema } from "../schema/merchant-schema";
 import {
   AddressDetail,
@@ -22,6 +23,7 @@ import {
   updateAddress,
   updateMerchant,
 } from "../server/merchant-crud";
+import { updateMerchantWithAPI } from "../server/merchant-dock-api";
 
 export async function insertMerchantFormAction(data: MerchantSchema) {
   // Buscar os slugs usando a função genérica
@@ -145,7 +147,21 @@ export async function updateMerchantFormAction(data: MerchantSchema) {
     idMerchantPrice: data.idMerchantPrice ? Number(data.idMerchantPrice) : null,
     dtdelete: null,
   };
-  await updateMerchant(merchantUpdate);
+
+  // Buscar address se necessário para envio à API
+  let addressData: AddressDetail | undefined;
+  if (merchantUpdate.idAddress) {
+    const addressResult = await db
+      .select()
+      .from(addresses)
+      .where(eq(addresses.id, merchantUpdate.idAddress))
+      .limit(1);
+    
+    addressData = addressResult[0] || undefined;
+  }
+
+  // Atualizar com integração API Dock
+  await updateMerchantWithAPI(merchantUpdate, addressData);
 }
 
 export async function insertAddressFormAction(data: AddressSchema) {

@@ -15,7 +15,7 @@ export async function getMerchants(): Promise<Merchant[]> {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `${process.env.DOCK_API_KEY}`,
+      Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
     },
   });
   const data: GetMerchantsResponse = await response.json();

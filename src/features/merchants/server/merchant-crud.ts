@@ -223,4 +223,17 @@ export async function updateAddress(address: AddressDetail): Promise<void> {
     .where(eq(addresses.id, address.id));
 }
 
+/**
+ * Valida e normaliza o tipo de telefone
+ * @param phoneType - Tipo de telefone (C ou P)
+ * @returns "C" para celular ou "P" para fixo (padrão: "C")
+ */
+export function validatePhoneType(phoneType: string | undefined | null): "C" | "P" {
+  if (phoneType === "P") {
+    return "P"; // Telefone fixo
+  }
+  return "C"; // Celular (valor padrão)
+}
+
+
 
