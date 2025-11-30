@@ -426,7 +426,7 @@ export async function updateMerchantWithAPI(
         : null,
       // Converter revenue para string conforme esperado pelo schema
       revenue:
-        merchantData.revenue !== undefined
+        merchantData.revenue !== undefined && merchantData.revenue !== null
           ? merchantData.revenue.toString()
           : null,
     };
