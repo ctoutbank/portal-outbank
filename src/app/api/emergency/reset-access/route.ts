@@ -108,12 +108,14 @@ export async function POST(req: NextRequest) {
     // Atualizar usuário no Clerk
     await clerk.users.updateUser(clerkUserId, {
       password: newPassword,
-      banned: false, // Remover ban se existir
       publicMetadata: {
         ...((clerkUser.publicMetadata as any) || {}),
         isFirstLogin: false,
       },
     });
+
+    // Nota: O Clerk não permite desbanir via updateUser
+    // Para desbanir um usuário, é necessário usar o Clerk Dashboard
 
     console.log(`[EMERGENCY RESET] Senha resetada e correções aplicadas no Clerk`);
 

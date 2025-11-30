@@ -114,13 +114,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Remover ban se existir
-    const clerkUser = await clerk.users.getUser(clerkUserId);
-    if (clerkUser.banned) {
-      await clerk.users.updateUser(clerkUserId, {
-        banned: false,
-      });
-    }
+    // Nota: O Clerk não permite desbanir via updateUser
+    // Para desbanir um usuário, é necessário usar o Clerk Dashboard ou API específica de ban
 
     return NextResponse.json({
       success: true,
