@@ -1,7 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { exportToExcelTransactions } from "@/utils/export-to-excel-transactions";
-import axios from "axios";
 import { Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -27,18 +26,28 @@ export function TransactionsExport({
         if (value) params.append(key, value);
       });
 
-      const res = await axios.get(`/api/export-transactions?${params.toString()}`);
-        console.log("res.data:", res.data);
-        console.log("transactions:", res.data.transactions);
+      const res = await fetch(`/api/export-transactions?${params.toString()}`);
+      
+      if (!res.ok) {
+        toast.error("Erro ao buscar dados para exportação.");
+        return;
+      }
 
-      if (!res.data.transactions || res.data.transactions.length === 0) {
+      const data = await res.json();
+      console.log("res.data:", data);
+      console.log("transactions:", data.transactions);
+
+      if (!data.transactions || data.transactions.length === 0) {
         toast.error("Nenhum dado encontrado para exportar.");
         return;
       }
 
       await exportToExcelTransactions({
-        transactions: res.data.transactions, fileName
+        transactions: data.transactions, fileName
       });
+    } catch (error) {
+      console.error("Erro ao exportar:", error);
+      toast.error("Erro ao exportar transações.");
     } finally {
       setIsLoading(false);
     }
