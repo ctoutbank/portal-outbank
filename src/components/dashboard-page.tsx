@@ -80,7 +80,7 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
   const totalBruto = chartData.reduce((sum, item) => sum + item.bruto, 0);
 
   return (
-    <div className="w-full overflow-x-hidden bg-[#000000] space-y-5">
+    <div className="w-full max-w-[1600px] mx-auto p-4 md:p-6 overflow-x-hidden bg-[#000000] space-y-5">
       {/* Cabeçalho com última atualização e botão de refresh */}
       <div className="flex justify-between items-center">
         <div className="text-xs text-[#5C5C5C]">
