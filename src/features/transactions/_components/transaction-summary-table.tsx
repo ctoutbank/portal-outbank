@@ -51,14 +51,14 @@ export function TransactionSummaryTable({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-[#2a2a2a] p-6 bg-gradient-to-br from-[#1f1f1f] to-[#1a1a1a] before:absolute before:top-0 before:left-0 before:w-1 before:h-full before:bg-gradient-to-b before:from-[#3b82f6] before:to-[#8b5cf6]">
+    <div className="relative overflow-hidden rounded-xl border border-[#2a2a2a] p-4 bg-gradient-to-br from-[#1f1f1f] to-[#1a1a1a] before:absolute before:top-0 before:left-0 before:w-1 before:h-full before:bg-gradient-to-b before:from-[#3b82f6] before:to-[#8b5cf6]">
       {/* Card Header */}
-      <div className="flex justify-between items-start mb-5">
+      <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
-          <div className="text-xs text-[#808080] uppercase tracking-wider mb-1">
+          <div className="text-[10px] text-[#808080] uppercase tracking-wider mb-1">
             Transações
           </div>
-          <div className="text-lg font-semibold text-white mb-1">
+          <div className="text-sm font-semibold text-white mb-1">
             {!headersViews || headersViews.length <= 1 ? (
               labelHeader
             ) : (
@@ -93,15 +93,15 @@ export function TransactionSummaryTable({
               </div>
             )}
           </div>
-          <div className="text-sm text-[#606060]">
+          <div className="text-xs text-[#606060]">
             Vendas processadas
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <div className="text-2xl font-bold text-white">
+          <div className="text-xl font-bold text-white">
             {total.quantidade.toLocaleString('pt-BR')}
           </div>
-          <div className="text-sm text-[#808080]">
+          <div className="text-xs text-[#808080]">
             {formatCurrency(total.valorTotal)}
           </div>
         </div>
@@ -120,17 +120,17 @@ export function TransactionSummaryTable({
           return (
             <div
               key={item.id}
-              className="bg-[#0d0d0d] border border-[#2a2a2a] rounded-md p-2 px-3 flex justify-between items-center"
+              className="bg-[#0d0d0d] border border-[#2a2a2a] rounded-md p-1.5 px-2 flex justify-between items-center"
             >
-              <span className="text-xs text-[#b0b0b0] flex items-center gap-1.5">
-                <span className="bg-[#2a2a2a] text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+              <span className="text-[10px] text-[#b0b0b0] flex items-center gap-1.5">
+                <span className="bg-[#2a2a2a] text-white text-[9px] px-1.5 py-0.5 rounded font-medium">
                   {item.label}
                 </span>
-                <span className="text-[11px] text-[#808080]">
+                <span className="text-[10px] text-[#808080]">
                   ({percentage.toFixed(1)}%) {item.count.toLocaleString('pt-BR')}
                 </span>
               </span>
-              <span className="text-xs font-semibold text-white">
+              <span className="text-[10px] font-semibold text-white">
                 {formatCurrency(item.totalAmount)}
               </span>
             </div>

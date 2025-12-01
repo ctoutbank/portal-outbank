@@ -4,7 +4,7 @@ import BaseHeader from "@/components/layout/base-header";
 import PageSizeSelector from "@/components/page-size-selector";
 import PaginationRecords from "@/components/pagination-Records";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TransactionsDashboardTable } from "@/features/transactions/_components/transactions-dashboard-table";
+import { TransactionsCardsWrapper } from "@/features/transactions/_components/transactions-cards-wrapper";
 import { TransactionsFilter } from "@/features/transactions/_components/transactions-filter";
 import TransactionsList from "@/features/transactions/_components/transactions-list";
 import {
@@ -143,17 +143,9 @@ async function TransactionsContent({
             />
           </div>
 
-          <div>
-            <TransactionsDashboardTable
-                transactions={transactionsGroupedReport}
-            />
-          </div>
+          <TransactionsCardsWrapper transactions={transactionsGroupedReport} />
 
-          <div className="mt-10">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-white">Lista de Transações</h2>
-            </div>
-            {transactionList.transactions.length === 0 ? (
+          {transactionList.transactions.length === 0 ? (
                 <EmptyState
                     icon={Search}
                     title="Nenhum resultado encontrado"
@@ -184,7 +176,6 @@ async function TransactionsContent({
                   )}
                 </>
             )}
-          </div>
         </div>
       </>
   );

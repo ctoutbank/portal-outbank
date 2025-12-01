@@ -67,7 +67,7 @@ const PaginationCustom: React.FC<PaginationProps> = ({
             onClick={() => handlePageChange(page as number)}
             disabled={isPending}
             className={`bg-[#1f1f1f] border border-[#2a2a2a] rounded-md w-8 h-8 text-white text-sm cursor-pointer flex items-center justify-center transition-all hover:bg-[#252525] hover:border-[#3a3a3a] ${
-              currentPage === page ? "bg-white text-[#1a1a1a] font-semibold" : ""
+              currentPage === page ? "bg-[#1a1a1a] text-white font-semibold border-[#3a3a3a]" : ""
             } ${
               isPending ? "opacity-30 cursor-not-allowed" : ""
             }`}
