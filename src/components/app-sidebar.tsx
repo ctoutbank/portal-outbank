@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, ChartPie, Settings, Table, Truck, Users, Shield, Store, type LucideIcon } from "lucide-react";
+import { Briefcase, ChartPie, Settings, Table, Truck, Users, Shield, Store, DollarSign, type LucideIcon } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
@@ -37,6 +37,7 @@ const navMainItems: Array<{
   },
   { title: "CNAE/MCC", url: "/categories", icon: Briefcase, isActive: false },
   { title: "Estabelecimentos", url: "/merchants", icon: Store, isActive: false },
+  { title: "Vendas", url: "/transactions", icon: DollarSign, isActive: false },
   {title: "Fornecedores", url: "/supplier", icon: Truck, isActive: false},
   {
     title: "Consentimento LGPD",
