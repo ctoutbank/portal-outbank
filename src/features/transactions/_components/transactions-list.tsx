@@ -127,16 +127,75 @@ export default function TransactionsList({
   const renderBrand = (brand: string | null) => {
     if (!brand) return "-";
     
+    const brandUpper = brand.toUpperCase();
+    
+    // Configuração de tamanho proporcional para os ícones
+    const iconSize = {
+      width: 40,
+      height: 24,
+    };
+    
     // Se for Visa, exibe o ícone
-    if (brand.toUpperCase().includes("VISA")) {
+    if (brandUpper.includes("VISA")) {
       return (
-        <Image
-          src="/visa-trasso-dourado.svg"
-          alt="Visa"
-          width={40}
-          height={25}
-          className="inline-block"
-        />
+        <div className="flex items-center justify-center">
+          <Image
+            src="/visa-trasso-dourado.svg"
+            alt="Visa"
+            width={iconSize.width}
+            height={iconSize.height}
+            className="object-contain"
+            style={{ backgroundColor: 'transparent' }}
+          />
+        </div>
+      );
+    }
+    
+    // Se for Mastercard, exibe o ícone
+    if (brandUpper.includes("MASTERCARD") || brandUpper.includes("MASTER")) {
+      return (
+        <div className="flex items-center justify-center">
+          <Image
+            src="/mastercard-modern-design.svg"
+            alt="Mastercard"
+            width={iconSize.width}
+            height={iconSize.height}
+            className="object-contain"
+            style={{ backgroundColor: 'transparent' }}
+          />
+        </div>
+      );
+    }
+    
+    // Se for Hipercard, exibe o ícone
+    if (brandUpper.includes("HIPERCARD") || brandUpper.includes("HIPER")) {
+      return (
+        <div className="flex items-center justify-center">
+          <Image
+            src="/hipercard.svg"
+            alt="Hipercard"
+            width={iconSize.width}
+            height={iconSize.height}
+            className="object-contain"
+            style={{ backgroundColor: 'transparent' }}
+          />
+        </div>
+      );
+    }
+    
+    // Se for Elo, exibe o ícone
+    if (brandUpper.includes("ELO")) {
+      return (
+        <div className="flex items-center justify-center">
+          <Image
+            src="/elo.svg"
+            alt="Elo"
+            width={iconSize.width}
+            height={iconSize.height}
+            className="object-contain"
+            style={{ backgroundColor: 'transparent' }}
+          />
+        </div>
       );
     }
     
