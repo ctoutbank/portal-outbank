@@ -23,8 +23,8 @@ export default async function TransactionDetailPage({ params }: PageProps) {
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Vendas", url: "/transactions" },
-          { title: "Detalhes", url: `/transactions/${slug}` },
+          { title: "Vendas", subtitle: "", url: "/transactions" },
+          { title: "Detalhes", subtitle: "", url: `/transactions/${slug}` },
         ]}
       />
       <BaseBody title="Detalhes da Transação" subtitle="">

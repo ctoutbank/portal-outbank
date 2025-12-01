@@ -8,8 +8,8 @@ export default function NotFound() {
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Vendas", url: "/transactions" },
-          { title: "Não encontrado", url: "#" },
+          { title: "Vendas", subtitle: "", url: "/transactions" },
+          { title: "Não encontrado", subtitle: "", url: "#" },
         ]}
       />
       <BaseBody title="Transação não encontrada" subtitle="">
