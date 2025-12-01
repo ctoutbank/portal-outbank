@@ -300,8 +300,8 @@ export async function updateMerchantWithAPI(
     );
     if (bankAccount?.merchantBankAccount) {
       merchantBankData = {
-        bankId: bankAccount.merchantBankAccount.bankId || "",
-        agencyNumber: bankAccount.merchantBankAccount.agencyNumber || "",
+        bankId: bankAccount.merchantBankAccount.compeCode || "",
+        agencyNumber: bankAccount.merchantBankAccount.bankBranchNumber || "",
         accountNumber: bankAccount.merchantBankAccount.accountNumber || "",
         accountType: bankAccount.merchantBankAccount.accountType || "CHECKING",
       };
@@ -461,8 +461,8 @@ export async function createMerchantWithAPI(
           }
 
           const merchantBankData = {
-            bankId: bankAccount.merchantBankAccount.bankId || "",
-            agencyNumber: bankAccount.merchantBankAccount.agencyNumber || "",
+            bankId: bankAccount.merchantBankAccount.compeCode || "",
+            agencyNumber: bankAccount.merchantBankAccount.bankBranchNumber || "",
             accountNumber: bankAccount.merchantBankAccount.accountNumber || "",
             accountType: bankAccount.merchantBankAccount.accountType || "CHECKING",
           };
