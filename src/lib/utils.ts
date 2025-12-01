@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx"
 import crypto from "crypto";
 import { DateTime } from "luxon";
+import { ReadonlyURLSearchParams } from "next/navigation";
 import { twMerge } from "tailwind-merge";
 
 
@@ -411,5 +412,71 @@ export function formatCep(cep: string): string {
     return cleaned;
   }
   return `${cleaned.slice(0, 5)}-${cleaned.slice(5, 8)}`;
+}
+
+export function createSortUrl(
+  currentSearchParams: URLSearchParams | ReadonlyURLSearchParams | null,
+  columnId: string,
+  basePath: string
+): string {
+  if (!currentSearchParams) {
+    const params = new URLSearchParams();
+    params.set("sortBy", columnId);
+    params.set("sortOrder", "asc");
+    params.set("page", "1");
+    return `${basePath}?${params.toString()}`;
+  }
+
+  const currentSortBy = currentSearchParams.get("sortBy");
+  const currentSortOrder = currentSearchParams.get("sortOrder");
+
+  const newSortBy = columnId;
+  let newSortOrder = "asc";
+
+  // Se já está ordenando por esta coluna, inverte a ordem
+  if (currentSortBy === columnId) {
+    newSortOrder = currentSortOrder === "asc" ? "desc" : "asc";
+  }
+
+  // Criar nova URL com parâmetros de ordenação
+  const params = new URLSearchParams(currentSearchParams.toString());
+  params.set("sortBy", newSortBy);
+  params.set("sortOrder", newSortOrder);
+
+  // Resetar para página 1 quando ordenar
+  params.set("page", "1");
+
+  return `${basePath}?${params.toString()}`;
+}
+
+export function getSortIconInfo(
+  columnId: string,
+  searchParams: URLSearchParams | ReadonlyURLSearchParams | null
+): { icon: "up" | "down" | "default"; className: string } {
+  if (!searchParams) {
+    return { icon: "default", className: "ml-2 h-4 w-4 inline opacity-30" };
+  }
+
+  const currentSortBy = searchParams.get("sortBy");
+  const currentSortOrder = searchParams.get("sortOrder");
+
+  if (currentSortBy === columnId) {
+    return currentSortOrder === "asc"
+      ? { icon: "up", className: "ml-2 h-4 w-4 inline" }
+      : { icon: "down", className: "ml-2 h-4 w-4 inline" };
+  }
+  return { icon: "default", className: "ml-2 h-4 w-4 inline opacity-30" };
+}
+
+export function createSortHandler(
+  searchParams: URLSearchParams | ReadonlyURLSearchParams | null,
+  router: any,
+  basePath: string
+) {
+  return (columnId: string) => {
+    const params = searchParams ? new URLSearchParams(searchParams.toString()) : null;
+    const newUrl = createSortUrl(params, columnId, basePath);
+    router.push(newUrl);
+  };
 }
 
