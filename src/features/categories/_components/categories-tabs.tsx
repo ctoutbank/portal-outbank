@@ -21,7 +21,6 @@ import {
 import { Loader2 } from "lucide-react";
 import Categorylist from "./categories-list";
 import MccList from "@/features/mcc/_components/mcc-list";
-import { MccSyncButton } from "@/features/mcc/_components/mcc-sync-button";
 import PageSizeSelector from "@/components/page-size-selector";
 import PaginationRecords from "@/components/pagination-Records";
 import type { CategoryList } from "../server/category";
@@ -219,10 +218,6 @@ export default function CategoriesTabs({
 
       <TabsContent value="mccs">
         <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-[#E0E0E0]">MCCs Sincronizados da Dock</h3>
-            <MccSyncButton />
-          </div>
           <MccList
             mccs={mccs}
             totalCount={mccTotalCount}

@@ -19,12 +19,6 @@ export default function TenantSignInPage() {
               // Ocultar título padrão do Clerk já que temos customizado
               headerTitle: "hidden",
               headerSubtitle: "hidden",
-              // Garantir que o link "Esqueci minha senha" esteja visível
-              formFieldAction: "text-white hover:text-gray-300 underline !block !visible !opacity-100",
-              formButtonReset: "text-white hover:text-gray-300 underline !block !visible !opacity-100",
-              formFieldActionLink: "text-white hover:text-gray-300 underline !block !visible !opacity-100",
-              identityPreviewEditButton: "text-white hover:text-gray-300",
-              formResendCodeLink: "text-white hover:text-gray-300 underline",
             },
             variables: {
               colorText: "#f9fafb",

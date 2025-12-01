@@ -94,10 +94,10 @@ async function fetchData(offset: number) {
       `${process.env.DOCK_API_URL_TRANSACTIONS}/v1/financial_transactions?limit=1000&offset=${offset}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.DOCK_API_KEY || ""}`,
+          Authorization: process.env.DOCK_API_KEY || "", // Replace with your actual token
         },
       }
-    );
+    ); // Replace with your API URL
 
     const data: GetTransactionsResponse = await response.json();
     console.log(data);

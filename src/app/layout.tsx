@@ -46,11 +46,7 @@ export default async function RootLayout({
             },
             card: "bg-gray-900/95 backdrop-blur-sm",
             formButtonPrimary: "bg-white hover:bg-gray-200 text-gray-900",
-            footerActionLink: "text-white hover:text-gray-300",
-            // Garantir que o link "Esqueci minha senha" esteja visível
-            formFieldAction: "text-white hover:text-gray-300 underline !block !visible !opacity-100",
-            formButtonReset: "text-white hover:text-gray-300 underline !block !visible !opacity-100",
-            formFieldActionLink: "text-white hover:text-gray-300 underline !block !visible !opacity-100",
+            footerActionLink: "text-white hover:text-gray-300"
           },
           variables: {
             colorText: "#f9fafb",

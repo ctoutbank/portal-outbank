@@ -14,7 +14,7 @@ export async function getTransactions(
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.DOCK_API_KEY}`,
+      Authorization: `${process.env.DOCK_API_KEY}`,
     },
   });
   const data: GetTransactionsResponse = await transaction.json();
