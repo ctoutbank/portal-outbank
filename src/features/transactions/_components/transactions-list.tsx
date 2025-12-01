@@ -183,13 +183,61 @@ export default function TransactionsList({
       );
     }
     
-    // Se for Elo, exibe o ícone
+    // Se for Elo, exibe o ícone (branco)
     if (brandUpper.includes("ELO")) {
       return (
         <div className="flex items-center justify-center">
           <Image
             src="/elo.svg"
             alt="Elo"
+            width={iconSize.width}
+            height={iconSize.height}
+            className="object-contain brightness-0 invert"
+            style={{ backgroundColor: 'transparent' }}
+          />
+        </div>
+      );
+    }
+    
+    // Se for American Express, exibe o ícone
+    if (brandUpper.includes("AMEX") || brandUpper.includes("AMERICAN")) {
+      return (
+        <div className="flex items-center justify-center">
+          <Image
+            src="/american-express.svg"
+            alt="American Express"
+            width={iconSize.width}
+            height={iconSize.height}
+            className="object-contain"
+            style={{ backgroundColor: 'transparent' }}
+          />
+        </div>
+      );
+    }
+    
+    // Se for Cabal, exibe o ícone
+    if (brandUpper.includes("CABAL")) {
+      return (
+        <div className="flex items-center justify-center">
+          <Image
+            src="/cabal.svg"
+            alt="Cabal"
+            width={iconSize.width}
+            height={iconSize.height}
+            className="object-contain"
+            style={{ backgroundColor: 'transparent' }}
+          />
+        </div>
+      );
+    }
+    
+    // Se for PIX, exibe o texto em branco
+    if (brandUpper.includes("PIX")) {
+      return (
+        <div className="flex items-center justify-center">
+          <Image
+            src="/pix.svg"
+            alt="PIX"
             width={iconSize.width}
             height={iconSize.height}
             className="object-contain"
