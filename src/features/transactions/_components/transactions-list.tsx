@@ -112,6 +112,17 @@ export default function TransactionsList({
     return productTypeMap[productType] || productType;
   };
 
+  const formatCustomerName = (customerName: string | null) => {
+    if (!customerName) return null;
+    
+    // Se contém "Prisma" (case-insensitive), retorna apenas "Prisma"
+    if (customerName.toLowerCase().includes("prisma")) {
+      return "Prisma";
+    }
+    
+    return customerName;
+  };
+
   const handleRowClick = (slug: string) => {
     router.push(`/transactions/${slug}`);
   };
@@ -127,6 +138,7 @@ export default function TransactionsList({
               sortable={true}
               onSort={handleSort}
               searchParams={searchParams}
+              className="text-center"
             />
             <SortableTableHead
               columnId="dtInsert"
@@ -194,10 +206,10 @@ export default function TransactionsList({
               onClick={() => handleRowClick(transaction.slug)}
             >
               <TableCell className="text-center">
-                {transaction.customerName ? (
+                {formatCustomerName(transaction.customerName) ? (
                   <div className="flex justify-center">
                     <Badge variant="outline" className="text-xs">
-                      {transaction.customerName}
+                      {formatCustomerName(transaction.customerName)}
                     </Badge>
                   </div>
                 ) : (
