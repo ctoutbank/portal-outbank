@@ -131,6 +131,13 @@ body {
   }
 }
 
+/* Ocultar elemento decorativo estético nas páginas de login e troca de senha */
+/* Elemento com classes: relative p-3 rounded-lg bg-black/40 backdrop-blur-sm shadow-xl */
+div.relative.p-3.rounded-lg.backdrop-blur-sm.shadow-xl,
+div[class*="relative"][class*="p-3"][class*="rounded-lg"][class*="backdrop-blur-sm"][class*="shadow-xl"] {
+  display: none !important;
+}
+
 
 @layer base {
   :root {
