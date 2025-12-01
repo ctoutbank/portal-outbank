@@ -73,7 +73,9 @@ export default function TransactionDetails({ transaction }: TransactionDetailsPr
             <div>
               <p className="text-sm font-medium text-muted-foreground">Status</p>
               <Badge variant={getStatusBadgeVariant(transaction.transactionStatus)}>
-                {getTransactionStatusLabel(transaction.transactionStatus) || transaction.transactionStatus || "N/A"}
+                {transaction.transactionStatus 
+                  ? (getTransactionStatusLabel(transaction.transactionStatus) || transaction.transactionStatus)
+                  : "N/A"}
               </Badge>
             </div>
             <div>
@@ -166,7 +168,9 @@ export default function TransactionDetails({ transaction }: TransactionDetailsPr
             <div>
               <p className="text-sm font-medium text-muted-foreground">Tipo de Produto</p>
               <p className="text-base">
-                {getTransactionProductTypeLabel(transaction.productType || "") || transaction.productType || "N/A"}
+                {transaction.productType
+                  ? (getTransactionProductTypeLabel(transaction.productType) || transaction.productType)
+                  : "N/A"}
               </p>
             </div>
             <div>
@@ -176,13 +180,17 @@ export default function TransactionDetails({ transaction }: TransactionDetailsPr
             <div>
               <p className="text-sm font-medium text-muted-foreground">Método de Processamento</p>
               <p className="text-base">
-                {getCardPaymentMethodLabel(transaction.method || "") || transaction.method || "N/A"}
+                {transaction.method
+                  ? (getCardPaymentMethodLabel(transaction.method) || transaction.method)
+                  : "N/A"}
               </p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Canal de Vendas</p>
               <p className="text-base">
-                {getProcessingTypeLabel(transaction.salesChannel || "") || transaction.salesChannel || "N/A"}
+                {transaction.salesChannel
+                  ? (getProcessingTypeLabel(transaction.salesChannel) || transaction.salesChannel)
+                  : "N/A"}
               </p>
             </div>
             {transaction.rrn && (
