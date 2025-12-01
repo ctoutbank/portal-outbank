@@ -329,7 +329,7 @@ export function CategoryForm({
                     )}
                   </div>
 
-                  <div className="ml-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="ml-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                     {groupFunctions.map((func) => (
                       <div
                         key={func.id}
