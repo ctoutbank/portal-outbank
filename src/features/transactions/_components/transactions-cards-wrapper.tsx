@@ -13,7 +13,7 @@ interface TransactionsCardsWrapperProps {
 export function TransactionsCardsWrapper({
   transactions,
 }: TransactionsCardsWrapperProps) {
-  const [showCards, setShowCards] = useState(true);
+  const [showCards, setShowCards] = useState(false);
 
   return (
     <>

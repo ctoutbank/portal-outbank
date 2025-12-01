@@ -18,6 +18,7 @@ import {
 import { createSortHandler, formatCNPJ } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TransactionsListRecord } from "../serverActions/transaction";
+import Image from "next/image";
 
 interface TransactionsListProps {
   transactions: TransactionsListRecord[];
@@ -121,6 +122,26 @@ export default function TransactionsList({
     }
     
     return customerName;
+  };
+
+  const renderBrand = (brand: string | null) => {
+    if (!brand) return "-";
+    
+    // Se for Visa, exibe o ícone
+    if (brand.toUpperCase().includes("VISA")) {
+      return (
+        <Image
+          src="/visa-trasso-dourado.svg"
+          alt="Visa"
+          width={40}
+          height={25}
+          className="inline-block"
+        />
+      );
+    }
+    
+    // Caso contrário, exibe o texto
+    return brand;
   };
 
   const handleRowClick = (slug: string) => {
@@ -283,7 +304,7 @@ export default function TransactionsList({
                 {translateProductType(transaction.productType)}
               </TableCell>
               <TableCell className="p-4 text-[#b0b0b0] text-sm">
-                {transaction.brand || "-"}
+                {renderBrand(transaction.brand)}
               </TableCell>
               <TableCell className="p-4 text-white font-semibold text-sm">
                 {formatCurrency(transaction.amount)}
