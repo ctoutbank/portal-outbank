@@ -14,6 +14,7 @@ import {
 import {
   MerchantDetail,
   AddressDetail,
+  AddressInsert,
   MerchantInsert,
   insertMerchant,
   updateMerchant,
