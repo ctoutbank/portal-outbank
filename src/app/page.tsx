@@ -15,10 +15,8 @@ export default async function Dashboardpage() {
       <>
         <BaseHeader breadcrumbItems={[{ title: "Dashboard", subtitle:'', url: "/" }]} />
 
-        <BaseBody title="Dashboard" subtitle={`Visualização geral dos Estabelecimentos`}>
-          <div className="flex flex-col space-y-4">
-            <Dashboard dashboardData={dashboardData} />
-          </div>
+        <BaseBody title="" subtitle="" className="p-0">
+          <Dashboard dashboardData={dashboardData} />
         </BaseBody>
       </>
     );
@@ -39,10 +37,8 @@ export default async function Dashboardpage() {
       <>
         <BaseHeader breadcrumbItems={[{ title: "Dashboard", subtitle:"", url: "/" }]} />
 
-        <BaseBody title="Dashboard" subtitle={`Visualização geral dos Estabelecimentos`}>
-          <div className="flex flex-col space-y-4">
-            <Dashboard dashboardData={fallbackData} />
-          </div>
+        <BaseBody title="" subtitle="" className="p-0">
+          <Dashboard dashboardData={fallbackData} />
         </BaseBody>
       </>
     );
