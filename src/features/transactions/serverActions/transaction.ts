@@ -19,8 +19,11 @@ import {
   merchants,
   terminals,
   transactions,
+  customers,
 } from "../../../../drizzle/schema";
 import { db } from "@/lib/db";
+import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
+import { isSuperAdmin } from "@/lib/permissions/check-permissions";
 
 export type Transaction = typeof transactions.$inferSelect;
 export type TransactionsListRecord = {
@@ -30,6 +33,7 @@ export type TransactionsListRecord = {
   id: string;
   merchantName: string | null;
   merchantCNPJ: string | null;
+  customerName: string | null;
   terminalType: string | null;
   terminalLogicalNumber: string | null;
   method: string | null;
@@ -67,6 +71,7 @@ export async function getTransactions(
   terminal?: string,
   valueMin?: string,
   valueMax?: string,
+  customer?: string,
   sorting?: {
     sortBy?: string;
     sortOrder?: "asc" | "desc";
@@ -95,6 +100,7 @@ export async function getTransactions(
     terminal,
     valueMin,
     valueMax,
+    customer,
     userMerchants: userAccess.idMerchants,
     customerId: userAccess.idCustomer,
   });
@@ -134,6 +140,7 @@ async function buildConditions(params: {
   terminal?: string;
   valueMin?: string;
   valueMax?: string;
+  customer?: string;
   userMerchants?: number[];
   customerId?: number | null;
 }): Promise<any[] | null> {
@@ -224,6 +231,11 @@ async function buildConditions(params: {
     conditions.push(lte(transactions.totalAmount, params.valueMax));
   }
 
+  // Customer filter (busca por nome do ISO)
+  if (params.customer) {
+    conditions.push(ilike(transactions.customerName, `%${params.customer}%`));
+  }
+
   // User access filters
   if (params.userMerchants && params.userMerchants.length > 0) {
     conditions.push(inArray(merchants.id, params.userMerchants));
@@ -251,6 +263,7 @@ async function getTransactionData(
       nsu: transactions.muid,
       merchantName: merchants.name,
       merchantCNPJ: merchants.idDocument,
+      customerName: transactions.customerName,
       terminalType: terminals.type,
       terminalLogicalNumber: terminals.logicalNumber,
       method: transactions.methodType,
@@ -275,6 +288,7 @@ async function getTransactionData(
         nsu: transactions.muid,
         merchantName: merchants.name,
         merchantCNPJ: merchants.idDocument,
+        customerName: transactions.customerName,
         terminalType: terminals.type,
         terminalLogicalNumber: terminals.logicalNumber,
         method: transactions.methodType,
@@ -348,6 +362,7 @@ function processTransactionResults(transactionList: any[]) {
       id: item.nsu ?? "",
       merchantName: item.merchantName ?? null,
       merchantCNPJ: item.merchantCNPJ ?? null,
+      customerName: item.customerName ?? null,
       terminalType: item.terminalType ?? null,
       terminalLogicalNumber: item.terminalLogicalNumber ?? null,
       method: item.method ?? null,
@@ -386,7 +401,8 @@ export async function getTransactionsGroupedReport(
   terminal?: string,
   valueMin?: string,
   valueMax?: string,
-  merchant?: string
+  merchant?: string,
+  customer?: string
 ): Promise<TransactionsGroupedReport[]> {
   const userAccess = await getUserMerchantsAccess();
 
@@ -472,6 +488,10 @@ export async function getTransactionsGroupedReport(
       conditions.push(ilike(transactions.merchantName, `%${merchant}%`));
     }
 
+    if (customer) {
+      conditions.push(ilike(transactions.customerName, `%${customer}%`));
+    }
+
     // Adicionar filtro de merchants se não tiver fullAccess
     if (!userAccess.fullAccess) {
       conditions.push(inArray(merchants.id, userAccess.idMerchants));
@@ -513,6 +533,56 @@ export async function getTransactionsGroupedReport(
     console.error("Erro em getTransactionsGroupedReport:", error);
     return [];
   }
+}
+
+/**
+ * Obtém lista de ISOs disponíveis para filtro
+ * Super Admin vê todos os ISOs ativos
+ * Outros usuários veem apenas os ISOs aos quais têm acesso
+ */
+export async function getAvailableCustomersForTransactions(): Promise<Array<{ id: number; name: string | null }>> {
+  const userInfo = await getCurrentUserInfo();
+  
+  if (!userInfo) {
+    return [];
+  }
+
+  const isSuper = await isSuperAdmin();
+
+  // Super Admin vê todos os ISOs ativos
+  if (isSuper) {
+    const result = await db
+      .select({
+        id: customers.id,
+        name: customers.name,
+      })
+      .from(customers)
+      .where(eq(customers.isActive, true))
+      .orderBy(asc(customers.name));
+
+    return result;
+  }
+
+  // Outros usuários veem apenas ISOs permitidos
+  if (userInfo.allowedCustomers && userInfo.allowedCustomers.length > 0) {
+    const result = await db
+      .select({
+        id: customers.id,
+        name: customers.name,
+      })
+      .from(customers)
+      .where(
+        and(
+          inArray(customers.id, userInfo.allowedCustomers),
+          eq(customers.isActive, true)
+        )
+      )
+      .orderBy(asc(customers.name));
+
+    return result;
+  }
+
+  return [];
 }
 
 export type TransactionDetail = {

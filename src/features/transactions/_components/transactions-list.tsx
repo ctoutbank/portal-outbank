@@ -122,6 +122,13 @@ export default function TransactionsList({
         <TableHeader>
           <TableRow>
             <SortableTableHead
+              columnId="customerName"
+              name="ISO"
+              sortable={true}
+              onSort={handleSort}
+              searchParams={searchParams}
+            />
+            <SortableTableHead
               columnId="dtInsert"
               name="Data"
               sortable={true}
@@ -186,6 +193,17 @@ export default function TransactionsList({
               className="hover:bg-muted/30 cursor-pointer transition-colors"
               onClick={() => handleRowClick(transaction.slug)}
             >
+              <TableCell className="text-center">
+                {transaction.customerName ? (
+                  <div className="flex justify-center">
+                    <Badge variant="outline" className="text-xs">
+                      {transaction.customerName}
+                    </Badge>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">--</span>
+                )}
+              </TableCell>
               <TableCell>
                 <div className="flex flex-col">
                   {formatDate(transaction.dtInsert).split(" ")[0]}

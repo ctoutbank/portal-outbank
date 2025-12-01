@@ -10,6 +10,7 @@ import TransactionsList from "@/features/transactions/_components/transactions-l
 import {
   getTransactions,
   getTransactionsGroupedReport,
+  getAvailableCustomersForTransactions,
 } from "@/features/transactions/serverActions/transaction";
 import { checkPagePermission } from "@/lib/auth/check-permissions";
 import { getEndOfDay } from "@/lib/datetime-utils";
@@ -35,14 +36,17 @@ type TransactionsProps = {
   terminal?: string;
   valueMin?: string;
   valueMax?: string;
+  customer?: string;
   sortBy?: string;
   sortOrder?: string;
 };
 
 async function TransactionsContent({
                                      searchParams,
+                                     availableCustomers,
                                    }: {
   searchParams: TransactionsProps;
+  availableCustomers: Array<{ id: number; name: string | null }>;
 }) {
   const page = parseInt(searchParams.page || "1");
   const pageSize = parseInt(searchParams.perPage || searchParams.pageSize || "10");
@@ -68,6 +72,7 @@ async function TransactionsContent({
     terminal: searchParams.terminal,
     valueMin: searchParams.valueMin,
     valueMax: searchParams.valueMax,
+    customer: searchParams.customer,
   };
 
   const [transactionList, transactionsGroupedReport] = await Promise.all([
@@ -87,6 +92,7 @@ async function TransactionsContent({
       searchParams.terminal,
       searchParams.valueMin,
       searchParams.valueMax,
+      searchParams.customer,
       {
         sortBy,
         sortOrder,
@@ -103,7 +109,8 @@ async function TransactionsContent({
       searchParams.terminal,
       searchParams.valueMin,
       searchParams.valueMax,
-      searchParams.merchant
+      searchParams.merchant,
+      searchParams.customer
     )
   ]);
 
@@ -125,6 +132,8 @@ async function TransactionsContent({
                   terminalIn={searchParams.terminal}
                   valueMinIn={searchParams.valueMin}
                   valueMaxIn={searchParams.valueMax}
+                  customerIn={searchParams.customer}
+                  availableCustomers={availableCustomers}
               />
             </div>
             <TransactionsExport
@@ -176,6 +185,9 @@ export default async function TransactionsPage({
 }) {
   await checkPagePermission("Lançamentos Financeiros");
 
+  // Buscar customers disponíveis baseado em permissões
+  const availableCustomers = await getAvailableCustomersForTransactions();
+
   return (
       <>
         <BaseHeader
@@ -221,7 +233,10 @@ export default async function TransactionsPage({
                 </div>
               }
           >
-            <TransactionsContent searchParams={await searchParams} />
+            <TransactionsContent 
+              searchParams={await searchParams}
+              availableCustomers={availableCustomers}
+            />
           </Suspense>
         </BaseBody>
       </>

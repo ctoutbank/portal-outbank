@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
     const terminal = searchParams.get("terminal") || undefined;
     const valueMin = searchParams.get("valueMin") || undefined;
     const valueMax = searchParams.get("valueMax") || undefined;
+    const customer = searchParams.get("customer") || undefined;
 
     const data = await getTransactions(
         page,
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
         terminal,
         valueMin,
         valueMax,
+        customer,
         { sortBy: "dtInsert", sortOrder: "desc" }
     );
 

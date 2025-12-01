@@ -18,6 +18,8 @@ type TransactionsFilterWrapperProps = {
   terminalIn?: string;
   valueMinIn?: string;
   valueMaxIn?: string;
+  customerIn?: string;
+  availableCustomers?: Array<{ id: number; name: string | null }>;
 };
 
 export function TransactionsFilter(props: TransactionsFilterWrapperProps) {
@@ -41,6 +43,7 @@ export function TransactionsFilter(props: TransactionsFilterWrapperProps) {
     terminal: string;
     valueMin: string;
     valueMax: string;
+    customer: string;
   }) => {
     startTransition(() => {
       if (filters.status) {
@@ -103,6 +106,11 @@ export function TransactionsFilter(props: TransactionsFilterWrapperProps) {
       } else {
         params.delete("valueMax");
       }
+      if (filters.customer) {
+        params.set("customer", filters.customer);
+      } else {
+        params.delete("customer");
+      }
       params.set("page", "1");
       router.push(`?${params.toString()}`);
     });
@@ -122,6 +130,7 @@ export function TransactionsFilter(props: TransactionsFilterWrapperProps) {
       params.delete("terminal");
       params.delete("valueMin");
       params.delete("valueMax");
+      params.delete("customer");
       params.set("page", "1");
       router.push(`?${params.toString()}`);
     });
@@ -146,7 +155,8 @@ export function TransactionsFilter(props: TransactionsFilterWrapperProps) {
       getFilterCount(props.salesChannelIn) +
       (props.terminalIn ? 1 : 0) +
       (props.valueMinIn ? 1 : 0) +
-      (props.valueMaxIn ? 1 : 0);
+      (props.valueMaxIn ? 1 : 0) +
+      getFilterCount(props.customerIn);
 
   return (
       <FilterTransactionsButton
@@ -171,6 +181,8 @@ export function TransactionsFilter(props: TransactionsFilterWrapperProps) {
             terminalIn={props.terminalIn}
             valueMinIn={props.valueMinIn}
             valueMaxIn={props.valueMaxIn}
+            customerIn={props.customerIn}
+            availableCustomers={props.availableCustomers}
             onFilter={handleFilter}
         />
       </FilterTransactionsButton>

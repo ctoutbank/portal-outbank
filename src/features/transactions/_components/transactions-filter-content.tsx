@@ -36,6 +36,8 @@ type FilterTransactionsContentProps = {
   terminalIn?: string;
   valueMinIn?: string;
   valueMaxIn?: string;
+  customerIn?: string;
+  availableCustomers?: Array<{ id: number; name: string | null }>;
   onFilter: (filters: {
     status: string;
     merchant: string;
@@ -49,6 +51,7 @@ type FilterTransactionsContentProps = {
     terminal: string;
     valueMin: string;
     valueMax: string;
+    customer: string;
   }) => void;
   onClose: () => void;
 };
@@ -66,6 +69,8 @@ export function FilterTransactionsContent({
   terminalIn,
   valueMinIn,
   valueMaxIn,
+  customerIn,
+  availableCustomers = [],
   onFilter,
   onClose,
 }: FilterTransactionsContentProps) {
@@ -74,12 +79,14 @@ export function FilterTransactionsContent({
   const initialBrandValues = brandIn ? brandIn.split(",") : [];
   const initialMethodValues = methodIn ? methodIn.split(",") : [];
   const initialSalesChannelValues = salesChannelIn ? salesChannelIn.split(",") : [];
+  const initialCustomerValues = customerIn ? customerIn.split(",") : [];
 
   const [statusValues, setStatusValues] = useState<string[]>(initialStatusValues);
   const [productTypeValues, setProductTypeValues] = useState<string[]>(initialProductTypeValues);
   const [brandValues, setBrandValues] = useState<string[]>(initialBrandValues);
   const [methodValues, setMethodValues] = useState<string[]>(initialMethodValues);
   const [salesChannelValues, setSalesChannelValues] = useState<string[]>(initialSalesChannelValues);
+  const [customerValues, setCustomerValues] = useState<string[]>(initialCustomerValues);
   const [merchant, setMerchant] = useState(merchantIn || "");
   const [dateFrom, setDateFrom] = useState(dateFromIn || "");
   const [dateTo, setDateTo] = useState(dateToIn || "");
@@ -119,9 +126,16 @@ export function FilterTransactionsContent({
       terminal,
       valueMin,
       valueMax,
+      customer: customerValues.join(","),
     });
     onClose();
   };
+
+  // Converter availableCustomers para formato do MultiSelect
+  const customerOptions = availableCustomers.map(c => ({
+    value: c.name || "",
+    label: c.name || ""
+  }));
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement | HTMLDivElement>) => {
     if (e.key === "Enter") {
@@ -144,6 +158,18 @@ export function FilterTransactionsContent({
       >
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Primeira linha */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">ISO</h3>
+            <MultiSelect
+              options={customerOptions}
+              onValueChange={setCustomerValues}
+              defaultValue={initialCustomerValues}
+              placeholder="Selecione o ISO"
+              className="w-full"
+              variant="secondary"
+            />
+          </div>
+
           <div className="space-y-2">
             <h3 className="text-sm font-medium pr-2">Status</h3>
             <MultiSelect
