@@ -33,21 +33,22 @@ const PageSizeSelector: React.FC<PageSizeSelectorProps> = ({
   };
 
   return (
-    <Select
-      value={currentPageSize.toString()}
-      onValueChange={handlePageSizeChange}
-      disabled={isPending}
-    >
-      <SelectTrigger className="w-auto h-8 cursor-pointer bg-[#0d0d0d] border border-[#2a2a2a] rounded-md text-white text-sm px-3">
-        <SelectValue placeholder="20" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="10">10</SelectItem>
-        <SelectItem value="20">20</SelectItem>
-        <SelectItem value="50">50</SelectItem>
-        <SelectItem value="100">100</SelectItem>
-      </SelectContent>
-    </Select>
+    <>
+      <Select
+        value={currentPageSize.toString()}
+        onValueChange={handlePageSizeChange}
+        disabled={isPending}
+      >
+        <SelectTrigger className="w-auto h-8 cursor-pointer bg-[#0d0d0d] border border-[#2a2a2a] rounded-md text-white text-sm px-3">
+          <SelectValue placeholder="20" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="10">10</SelectItem>
+          <SelectItem value="20">20</SelectItem>
+          <SelectItem value="50">50</SelectItem>
+          <SelectItem value="100">100</SelectItem>
+        </SelectContent>
+      </Select>
       {isPending && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
           <div className="bg-white p-4 rounded-md shadow-lg">
@@ -55,7 +56,7 @@ const PageSizeSelector: React.FC<PageSizeSelectorProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
