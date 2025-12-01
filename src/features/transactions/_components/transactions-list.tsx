@@ -112,6 +112,10 @@ export default function TransactionsList({
     return productTypeMap[productType] || productType;
   };
 
+  const handleRowClick = (slug: string) => {
+    router.push(`/transactions/${slug}`);
+  };
+
   return (
     <div className="border rounded-lg mt-2">
       <Table>
@@ -177,7 +181,11 @@ export default function TransactionsList({
         </TableHeader>
         <TableBody>
           {transactions.map((transaction) => (
-            <TableRow key={transaction.slug}>
+            <TableRow 
+              key={transaction.slug}
+              className="hover:bg-muted/30 cursor-pointer transition-colors"
+              onClick={() => handleRowClick(transaction.slug)}
+            >
               <TableCell>
                 <div className="flex flex-col">
                   {formatDate(transaction.dtInsert).split(" ")[0]}

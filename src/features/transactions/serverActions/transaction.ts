@@ -515,3 +515,127 @@ export async function getTransactionsGroupedReport(
   }
 }
 
+export type TransactionDetail = {
+  slug: string;
+  dtInsert: string | null;
+  dtUpdate: string | null;
+  nsu: string | null;
+  merchantName: string | null;
+  merchantCNPJ: string | null;
+  merchantCorporateName: string | null;
+  terminalType: string | null;
+  terminalLogicalNumber: string | null;
+  method: string | null;
+  salesChannel: string | null;
+  productType: string | null;
+  brand: string | null;
+  transactionStatus: string | null;
+  amount: number | null;
+  currency: string | null;
+  rrn: string | null;
+  firstDigits: string | null;
+  lastDigits: string | null;
+  productOrIssuer: string | null;
+  settlementManagementType: string | null;
+  cancelling: boolean | null;
+  splitType: string | null;
+  customerName: string | null;
+  authorizerMerchantId: string | null;
+};
+
+export async function getTransactionBySlug(slug: string): Promise<TransactionDetail | null> {
+  try {
+    const userAccess = await getUserMerchantsAccess();
+
+    if (!userAccess.fullAccess && userAccess.idMerchants.length === 0) {
+      return null;
+    }
+
+    const conditions = [];
+
+    // Filtro de acesso do usuário
+    if (!userAccess.fullAccess) {
+      conditions.push(inArray(merchants.id, userAccess.idMerchants));
+    }
+
+    if (userAccess.idCustomer) {
+      conditions.push(eq(merchants.idCustomer, userAccess.idCustomer));
+    }
+
+    conditions.push(eq(transactions.slug, slug));
+
+    const whereClause = conditions.length ? and(...conditions) : undefined;
+
+    const result = await db
+      .select({
+        slug: transactions.slug,
+        dtInsert: transactions.dtInsert,
+        dtUpdate: transactions.dtUpdate,
+        nsu: transactions.muid,
+        merchantName: merchants.name,
+        merchantCNPJ: merchants.idDocument,
+        merchantCorporateName: transactions.merchantCorporateName,
+        terminalType: terminals.type,
+        terminalLogicalNumber: terminals.logicalNumber,
+        method: transactions.methodType,
+        salesChannel: transactions.salesChannel,
+        productType: transactions.productType,
+        brand: transactions.brand,
+        transactionStatus: transactions.transactionStatus,
+        amount: transactions.totalAmount,
+        currency: transactions.currency,
+        rrn: transactions.rrn,
+        firstDigits: transactions.firstDigits,
+        lastDigits: transactions.lastdigits,
+        productOrIssuer: transactions.productorissuer,
+        settlementManagementType: transactions.settlementmanagementtype,
+        cancelling: transactions.cancelling,
+        splitType: transactions.splitType,
+        customerName: transactions.customerName,
+        authorizerMerchantId: transactions.authorizerMerchantId,
+      })
+      .from(transactions)
+      .innerJoin(merchants, eq(transactions.slugMerchant, merchants.slug))
+      .leftJoin(terminals, eq(transactions.slugTerminal, terminals.slug))
+      .where(whereClause)
+      .limit(1);
+
+    if (result.length === 0) {
+      return null;
+    }
+
+    const transaction = result[0];
+    
+    return {
+      slug: transaction.slug,
+      dtInsert: transaction.dtInsert,
+      dtUpdate: transaction.dtUpdate,
+      nsu: transaction.nsu,
+      merchantName: transaction.merchantName,
+      merchantCNPJ: transaction.merchantCNPJ,
+      merchantCorporateName: transaction.merchantCorporateName,
+      terminalType: transaction.terminalType,
+      terminalLogicalNumber: transaction.terminalLogicalNumber,
+      method: transaction.method,
+      salesChannel: transaction.salesChannel,
+      productType: transaction.productType,
+      brand: transaction.brand,
+      transactionStatus: transaction.transactionStatus,
+      amount: transaction.amount ? Number(transaction.amount) : null,
+      currency: transaction.currency,
+      rrn: transaction.rrn,
+      firstDigits: transaction.firstDigits,
+      lastDigits: transaction.lastDigits,
+      productOrIssuer: transaction.productOrIssuer,
+      settlementManagementType: transaction.settlementManagementType,
+      cancelling: transaction.cancelling,
+      splitType: transaction.splitType,
+      customerName: transaction.customerName,
+      authorizerMerchantId: transaction.authorizerMerchantId,
+    };
+  } catch (error) {
+    console.error("Erro em getTransactionBySlug:", error);
+    return null;
+  }
+}
+
