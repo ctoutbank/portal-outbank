@@ -116,7 +116,7 @@ async function TransactionsContent({
 
   return (
       <>
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-4 max-w-[1600px] mx-auto">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4 flex-1">
               <TransactionsFilter
@@ -149,30 +149,42 @@ async function TransactionsContent({
             />
           </div>
 
-          {transactionList.transactions.length === 0 ? (
-              <EmptyState
-                  icon={Search}
-                  title="Nenhum resultado encontrado"
-                  description=""
-              />
-          ) : (
-              <TransactionsList transactions={transactionList.transactions} />
-          )}
-
-          {transactionList.totalCount > 0 && (
-              <div className="flex items-center justify-between mt-4">
-                <PageSizeSelector
-                    currentPageSize={pageSize}
-                    pageName="transactions"
+          <div className="mt-10">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-white">Lista de Transações</h2>
+            </div>
+            {transactionList.transactions.length === 0 ? (
+                <EmptyState
+                    icon={Search}
+                    title="Nenhum resultado encontrado"
+                    description=""
                 />
-                <PaginationRecords
-                    totalRecords={transactionList.totalCount}
-                    currentPage={page}
-                    pageSize={pageSize}
-                    pageName="transactions"
-                />
-              </div>
-          )}
+            ) : (
+                <>
+                  <TransactionsList transactions={transactionList.transactions} />
+                  {transactionList.totalCount > 0 && (
+                      <div className="flex items-center justify-between py-5 px-6 bg-[#1a1a1a] border-t border-[#2a2a2a]">
+                        <div className="flex items-center gap-3 text-[#808080] text-sm">
+                          <span>Itens por página:</span>
+                          <PageSizeSelector
+                              currentPageSize={pageSize}
+                              pageName="transactions"
+                          />
+                        </div>
+                        <PaginationRecords
+                            totalRecords={transactionList.totalCount}
+                            currentPage={page}
+                            pageSize={pageSize}
+                            pageName="transactions"
+                        />
+                        <div className="text-[#808080] text-sm">
+                          Total de Registros: <strong className="text-white font-semibold">{transactionList.totalCount.toLocaleString('pt-BR')}</strong>
+                        </div>
+                      </div>
+                  )}
+                </>
+            )}
+          </div>
         </div>
       </>
   );
@@ -194,9 +206,14 @@ export default async function TransactionsPage({
             breadcrumbItems={[{ title: "Vendas", subtitle: "", url: "/transactions" }]}
         />
         <BaseBody
-            title="Vendas"
-            subtitle={`Visualização de Todas as Vendas`}
+            title=""
+            subtitle=""
+            className="bg-[#1a1a1a]"
         >
+          <div className="mb-8">
+            <h1 className="text-[28px] font-semibold text-white mb-2">Vendas</h1>
+            <p className="text-sm text-[#808080]">Visualização de Todas as Vendas</p>
+          </div>
           <Suspense
               fallback={
                 <div className="flex flex-col space-y-4">

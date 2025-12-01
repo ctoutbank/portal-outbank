@@ -13,7 +13,7 @@ export function TransactionsDashboardCards({
   transactions,
 }: TransactionsDashboardCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
 
       {/* Card 1: Vendas e Transações Não Processadas */}
       <NonProcessedSummaryTable transactions={transactions} />

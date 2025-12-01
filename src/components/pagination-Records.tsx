@@ -43,56 +43,54 @@ const PaginationCustom: React.FC<PaginationProps> = ({
   if (totalPages <= 0) return null;
 
   return (
-    <>
-      <Pagination className="mt-4">
-        <PaginationContent>
-          {currentPage > 1 && (
-            <PaginationItem>
-              <PaginationPrevious
-                className={`cursor-pointer ${
-                  isPending ? "opacity-50 pointer-events-none" : ""
-                }`}
-                onClick={() => handlePageChange(currentPage - 1)}
-              />
-            </PaginationItem>
-          )}
-          {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-            const start = Math.max(1, currentPage - 3);
-            const pageNum = start + i;
-            return pageNum <= totalPages ? pageNum : null;
-          })
-            .filter(Boolean)
-            .map((page) => (
-              <PaginationItem className="cursor-pointer" key={page}>
-                <PaginationLink
-                  onClick={() => handlePageChange(page as number)}
-                  isActive={currentPage === page}
-                  className={isPending ? "opacity-50 pointer-events-none" : ""}
-                >
-                  {page}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
+    <div className="flex gap-2 items-center">
+      {currentPage > 1 && (
+        <button
+          className={`bg-[#1f1f1f] border border-[#2a2a2a] rounded-md w-8 h-8 text-white text-sm cursor-pointer flex items-center justify-center transition-all hover:bg-[#252525] hover:border-[#3a3a3a] ${
+            isPending ? "opacity-30 cursor-not-allowed" : ""
+          }`}
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={isPending}
+        >
+          ‹
+        </button>
+      )}
+      {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+        const start = Math.max(1, currentPage - 3);
+        const pageNum = start + i;
+        return pageNum <= totalPages ? pageNum : null;
+      })
+        .filter(Boolean)
+        .map((page) => (
+          <button
+            key={page}
+            onClick={() => handlePageChange(page as number)}
+            disabled={isPending}
+            className={`bg-[#1f1f1f] border border-[#2a2a2a] rounded-md w-8 h-8 text-white text-sm cursor-pointer flex items-center justify-center transition-all hover:bg-[#252525] hover:border-[#3a3a3a] ${
+              currentPage === page ? "bg-white text-[#1a1a1a] font-semibold" : ""
+            } ${
+              isPending ? "opacity-30 cursor-not-allowed" : ""
+            }`}
+          >
+            {page}
+          </button>
+        ))}
 
-          {currentPage < totalPages && (
-            <PaginationItem>
-              <PaginationNext
-                className={`cursor-pointer ${
-                  isPending ? "opacity-50 pointer-events-none" : ""
-                }`}
-                onClick={() => handlePageChange(currentPage + 1)}
-              />
-            </PaginationItem>
-          )}
-          {isPending && (
-            <PaginationItem>
-              <Loader2 className="h-4 w-4 animate-spin" />
-            </PaginationItem>
-          )}
-        </PaginationContent>
-      </Pagination>
-      <div className="text-sm">Total de Registros: {totalRecords}</div>
-    </>
+      {currentPage < totalPages && (
+        <button
+          className={`bg-[#1f1f1f] border border-[#2a2a2a] rounded-md w-8 h-8 text-white text-sm cursor-pointer flex items-center justify-center transition-all hover:bg-[#252525] hover:border-[#3a3a3a] ${
+            isPending ? "opacity-30 cursor-not-allowed" : ""
+          }`}
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={isPending}
+        >
+          ›
+        </button>
+      )}
+      {isPending && (
+        <Loader2 className="h-4 w-4 animate-spin text-[#808080]" />
+      )}
+    </div>
   );
 };
 

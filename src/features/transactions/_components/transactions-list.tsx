@@ -127,18 +127,30 @@ export default function TransactionsList({
     router.push(`/transactions/${slug}`);
   };
 
+  const getStatusBadgeClass = (status: string | null) => {
+    if (!status) return "bg-[#2a2a2a] text-[#808080]";
+    
+    if (status.includes("AUTHORIZED") || status.includes("APPROVED")) {
+      return "bg-[#1a3a2a] text-[#4ade80]";
+    } else if (status.includes("DENIED") || status.includes("REJECTED")) {
+      return "bg-[#3a1a1a] text-[#f87171]";
+    }
+    return "bg-[#2a2a2a] text-[#808080]";
+  };
+
   return (
-    <div className="border rounded-lg mt-2">
-      <Table>
+    <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="bg-[#1f1f1f] border-b border-[#2a2a2a] hover:bg-[#1f1f1f]">
             <SortableTableHead
               columnId="customerName"
               name="ISO"
               sortable={true}
               onSort={handleSort}
               searchParams={searchParams}
-              className="text-center"
+              className="text-center p-4 text-white text-xs font-medium uppercase tracking-wider"
             />
             <SortableTableHead
               columnId="dtInsert"
@@ -146,6 +158,7 @@ export default function TransactionsList({
               sortable={true}
               onSort={handleSort}
               searchParams={searchParams}
+              className="p-4 text-white text-xs font-medium uppercase tracking-wider"
             />
             <SortableTableHead
               columnId="merchantName"
@@ -153,6 +166,7 @@ export default function TransactionsList({
               sortable={true}
               onSort={handleSort}
               searchParams={searchParams}
+              className="p-4 text-white text-xs font-medium uppercase tracking-wider"
             />
             <SortableTableHead
               columnId="terminalType"
@@ -160,6 +174,7 @@ export default function TransactionsList({
               sortable={true}
               onSort={handleSort}
               searchParams={searchParams}
+              className="p-4 text-white text-xs font-medium uppercase tracking-wider"
             />
             <SortableTableHead
               columnId="method"
@@ -167,6 +182,7 @@ export default function TransactionsList({
               sortable={true}
               onSort={handleSort}
               searchParams={searchParams}
+              className="p-4 text-white text-xs font-medium uppercase tracking-wider"
             />
             <SortableTableHead
               columnId="productType"
@@ -174,6 +190,7 @@ export default function TransactionsList({
               sortable={true}
               onSort={handleSort}
               searchParams={searchParams}
+              className="p-4 text-white text-xs font-medium uppercase tracking-wider"
             />
             <SortableTableHead
               columnId="brand"
@@ -181,6 +198,7 @@ export default function TransactionsList({
               sortable={true}
               onSort={handleSort}
               searchParams={searchParams}
+              className="p-4 text-white text-xs font-medium uppercase tracking-wider"
             />
             <SortableTableHead
               columnId="amount"
@@ -188,6 +206,7 @@ export default function TransactionsList({
               sortable={true}
               onSort={handleSort}
               searchParams={searchParams}
+              className="p-4 text-white text-xs font-medium uppercase tracking-wider"
             />
             <SortableTableHead
               columnId="transactionStatus"
@@ -195,6 +214,7 @@ export default function TransactionsList({
               sortable={true}
               onSort={handleSort}
               searchParams={searchParams}
+              className="p-4 text-white text-xs font-medium uppercase tracking-wider"
             />
           </TableRow>
         </TableHeader>
@@ -202,10 +222,10 @@ export default function TransactionsList({
           {transactions.map((transaction) => (
             <TableRow 
               key={transaction.slug}
-              className="hover:bg-muted/30 cursor-pointer transition-colors"
+              className="border-b border-[#2a2a2a] hover:bg-[#1f1f1f] cursor-pointer transition-colors"
               onClick={() => handleRowClick(transaction.slug)}
             >
-              <TableCell className="text-center">
+              <TableCell className="text-center p-4 text-[#b0b0b0] text-sm">
                 {formatCustomerName(transaction.customerName) ? (
                   <div className="flex justify-center">
                     <Badge variant="outline" className="text-xs">
@@ -213,60 +233,72 @@ export default function TransactionsList({
                     </Badge>
                   </div>
                 ) : (
-                  <span className="text-muted-foreground">--</span>
+                  <span className="text-[#808080]">--</span>
                 )}
               </TableCell>
-              <TableCell>
-                <div className="flex flex-col">
-                  {formatDate(transaction.dtInsert).split(" ")[0]}
-                  <span className="text-xs text-gray-500">
+              <TableCell className="p-4 text-[#b0b0b0] text-sm">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-white font-medium">
+                    {formatDate(transaction.dtInsert).split(" ")[0]}
+                  </span>
+                  <span className="text-[11px] text-[#606060]">
                     {formatDate(transaction.dtInsert).split(" ")[1]}
                   </span>
                 </div>
               </TableCell>
-              <TableCell>
-                <div className="flex flex-col">
-                  {transaction.merchantName?.toUpperCase() || "N/A"}
-                  <span className="text-xs text-gray-500">
+              <TableCell className="p-4 text-[#b0b0b0] text-sm">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-white font-medium">
+                    {transaction.merchantName?.toUpperCase() || "N/A"}
+                  </span>
+                  <span className="text-[11px] text-[#606060] font-mono">
                     {transaction.merchantCNPJ
                       ? formatCNPJ(transaction.merchantCNPJ)
                       : ""}
                   </span>
                 </div>
               </TableCell>
-              <TableCell className="">
-                <div className="flex flex-col">
-                  {getTerminalTypeLabel(transaction.terminalType || "") || "-"}
-                  <span className="text-xs text-gray-500">
+              <TableCell className="p-4 text-[#b0b0b0] text-sm">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-white">
+                    {getTerminalTypeLabel(transaction.terminalType || "") || "-"}
+                  </span>
+                  <span className="text-[11px] text-[#606060] font-mono">
                     {transaction.terminalLogicalNumber || "-"}
                   </span>
                 </div>
               </TableCell>
-              <TableCell>
-                <div className="flex flex-col">
-                  {getCardPaymentMethodLabel(transaction.method || "") || "-"}
-                  <span className="text-xs text-gray-500">
+              <TableCell className="p-4 text-[#b0b0b0] text-sm">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-white">
+                    {getCardPaymentMethodLabel(transaction.method || "") || "-"}
+                  </span>
+                  <span className="text-[11px] text-[#606060]">
                     {getProcessingTypeLabel(transaction.salesChannel || "") ||
                       "-"}
                   </span>
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell className="p-4 text-[#b0b0b0] text-sm">
                 {translateProductType(transaction.productType)}
               </TableCell>
-              <TableCell>{transaction.brand || "-"}</TableCell>
-              <TableCell>{formatCurrency(transaction.amount)}</TableCell>
-              <TableCell>
-                <Badge
-                  variant={getStatusBadgeVariant(transaction.transactionStatus)}
-                >
+              <TableCell className="p-4 text-[#b0b0b0] text-sm">
+                {transaction.brand || "-"}
+              </TableCell>
+              <TableCell className="p-4 text-white font-semibold text-sm">
+                {formatCurrency(transaction.amount)}
+              </TableCell>
+              <TableCell className="p-4">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-medium ${getStatusBadgeClass(transaction.transactionStatus)}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${transaction.transactionStatus?.includes("AUTHORIZED") || transaction.transactionStatus?.includes("APPROVED") ? "bg-[#4ade80]" : transaction.transactionStatus?.includes("DENIED") || transaction.transactionStatus?.includes("REJECTED") ? "bg-[#f87171]" : "bg-[#808080]"}`}></span>
                   {translateStatus(transaction.transactionStatus)}
-                </Badge>
+                </span>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
-      </Table>
+        </Table>
+      </div>
     </div>
   );
 }

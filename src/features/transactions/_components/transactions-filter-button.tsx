@@ -27,20 +27,22 @@ export function FilterTransactionsButton({
         <Button
           variant="outline"
           onClick={() => onVisibilityChange(!isFiltersVisible)}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-[#1f1f1f] border border-[#2a2a2a] rounded-md h-9 px-4 text-white text-sm hover:bg-[#252525] hover:border-[#3a3a3a] transition-all"
           disabled={isPending}
         >
           <FilterIcon className="h-4 w-4" />
           Filtros
           {activeFiltersCount > 0 && (
-            <Badge variant="secondary">{activeFiltersCount}</Badge>
+            <Badge className="bg-[#3b82f6] text-white text-[11px] font-semibold px-1.5 py-0.5 rounded-[10px]">
+              {activeFiltersCount}
+            </Badge>
           )}
         </Button>
         {activeFiltersCount > 0 && (
           <Button
             variant="ghost"
             onClick={onClearFilters}
-            className="text-sm text-muted-foreground"
+            className="text-sm text-[#808080] hover:text-white bg-transparent border-none transition-colors"
             disabled={isPending}
           >
             Limpar Filtros

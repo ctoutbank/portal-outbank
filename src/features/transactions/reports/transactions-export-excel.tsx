@@ -59,7 +59,7 @@ export function TransactionsExport({
             onClick={handleExport}
             disabled={isLoading}
             variant="outline"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-white text-[#1a1a1a] border-none rounded-md h-9 px-4 text-sm font-medium hover:bg-[#e0e0e0] transition-all"
         >
           <Download className="h-4 w-4" />
           {isLoading ? "Carregando..." : "Exportar"}
