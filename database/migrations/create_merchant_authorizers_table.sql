@@ -66,3 +66,5 @@ COMMENT ON COLUMN "merchant_authorizers"."chave_pix" IS 'Chave PIX associada (ap
 COMMENT ON COLUMN "merchant_authorizers"."id_merchant" IS 'ID do estabelecimento (merchant) ao qual este autorizador pertence';
 
 
+
+

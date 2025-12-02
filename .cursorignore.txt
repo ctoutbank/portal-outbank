@@ -1,0 +1,96 @@
+# Pastas grandes e geradas automaticamente
+node_modules
+.next
+dist
+build
+out
+coverage
+.cache
+.eslintcache
+
+# Ferramentas e configs de editor
+.vscode
+.idea
+.clerk
+.cursor
+
+# Artefatos de banco e migrações pesadas
+database
+drizzle
+
+# Arquivos e pastas estáticas pesadas
+public/assets
+public/static
+public/uploads
+public/images
+public/img
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.webp
+
+# Logs, temporários e saídas de build
+logs
+log
+tmp
+temp
+*.log
+
+# Arquivos de ambiente
+.env
+.env.*
+
+# Documentos e textos da raiz que não são código
+*.md
+*.txt
+*.pdf
+*.doc
+*.docx
+*.rtf
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
+# Arquivos de documentação de processo na raiz
+ANALISE*
+CHECKLIST*
+COMMIT*
+COMMITS*
+CORRECAO*
+PROCESSO*
+PROBLEMA*
+PROBLEMAS*
+HISTORICO*
+RESUMO*
+PLANO*
+ENUMERACAO*
+GUIA*
+MIGRATION*
+PUSH*
+RESET*
+RELATORIO*
+RASTREAMENTO*
+ESTRATEGIA*
+LISTA*
+OPCOES*
+CONFIRMACAO*
+PROGRESSO*
+PRONTO*
+QUANDO*
+O-QUE-PODEMOS*
+USAR-GITHUB*
+USAR-*
+DEPLOY-*
+RESUMO-FASE*
+PROGRESSO-FASE*
+HISTORICO-COMPLETO*
+ANALISE-SISTEMA*
+ANALISE-PROBLEMA*
+CONTROLE-ERROS*
+PRONTO-COMMIT*
+PUSH-COMMIT*
+PUSH-TODOS*
+PROCESSAMENTO-MULTIPLOS*

@@ -96,3 +96,5 @@ A solução correta é **alterar a senha para algo diferente do email**.
 - [Documentação do Clerk sobre validação de senhas](https://clerk.com/docs)
 
 
+
+
