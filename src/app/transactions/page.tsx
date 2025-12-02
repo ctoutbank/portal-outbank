@@ -17,6 +17,7 @@ import { getEndOfDay } from "@/lib/datetime-utils";
 import { Search } from "lucide-react";
 import { Suspense } from "react";
 import { TransactionsExport } from "@/features/transactions/reports/transactions-export-excel";
+import { TransactionsSyncButton } from "@/features/transactions/_components/transactions-sync-button";
 import { syncTransactions } from "@/features/pricingSolicitation/server/integrations/dock/sync-transactions/main";
 
 type TransactionsProps = {
@@ -136,11 +137,14 @@ async function TransactionsContent({
                   availableCustomers={availableCustomers}
               />
             </div>
-            <TransactionsExport
-                filters={filters}
-                sheetName="Transações"
-                fileName="transacoes.xlsx"
-            />
+            <div className="flex items-center gap-2">
+              <TransactionsSyncButton />
+              <TransactionsExport
+                  filters={filters}
+                  sheetName="Transações"
+                  fileName="transacoes.xlsx"
+              />
+            </div>
           </div>
 
           <TransactionsCardsWrapper transactions={transactionsGroupedReport} />
