@@ -13,6 +13,10 @@ import {
   getAnalyticsTimeSeries,
   getAnalyticsByDimension,
   getAnalyticsByCustomer,
+  type AnalyticsKPIs,
+  type TimeSeriesDataPoint,
+  type DimensionData,
+  type CustomerComparison,
 } from "@/features/transactions/serverActions/analytics";
 import { getAvailableCustomersForTransactions } from "@/features/transactions/serverActions/transaction";
 import { checkPagePermission } from "@/lib/auth/check-permissions";
@@ -42,7 +46,12 @@ async function AnalyticsContent({
     : undefined;
 
   // Fetch all analytics data in parallel
-  let kpis, timeSeries, brandData, productData, statusData, customerComparison;
+  let kpis: AnalyticsKPIs;
+  let timeSeries: TimeSeriesDataPoint[];
+  let brandData: DimensionData[];
+  let productData: DimensionData[];
+  let statusData: DimensionData[];
+  let customerComparison: CustomerComparison[];
   
   try {
     [
