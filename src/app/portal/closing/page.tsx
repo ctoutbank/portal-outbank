@@ -130,7 +130,7 @@ export default async function SalesDashboard({
   return (
     <>
       <BaseHeader
-        breadcrumbItems={[{ title: "Fechamento", url: "/portal/closing" }]}
+        breadcrumbItems={[{ title: "Fechamento", subtitle: "", url: "/portal/closing" }]}
       />
       <BaseBody title="Fechamento" subtitle={``} className="bg-[#1a1a1a]">
         <div className="mb-4 ml-1 flex items-center justify-between">
