@@ -72,75 +72,108 @@ async function buildBaseConditions(
   dateTo?: string,
   customerIds?: number[]
 ): Promise<any[] | null> {
-  const userAccess = await getUserMerchantsAccess();
+  try {
+    const userAccess = await getUserMerchantsAccess();
 
-  if (!userAccess.fullAccess && userAccess.idMerchants.length === 0) {
+    if (!userAccess.fullAccess && userAccess.idMerchants.length === 0) {
+      return null;
+    }
+
+    const conditions = [];
+
+    // Date filters
+    if (dateFrom) {
+      try {
+        const dateFromUTC = getDateUTC(dateFrom, "America/Sao_Paulo");
+        if (dateFromUTC) conditions.push(gte(transactions.dtInsert, dateFromUTC));
+      } catch (error) {
+        console.error("Erro ao converter dateFrom:", error);
+      }
+    }
+
+    if (dateTo) {
+      try {
+        const dateToUTC = getDateUTC(dateTo, "America/Sao_Paulo");
+        if (dateToUTC) conditions.push(lte(transactions.dtInsert, dateToUTC));
+      } catch (error) {
+        console.error("Erro ao converter dateTo:", error);
+      }
+    }
+
+    // Customer filter
+    if (customerIds && customerIds.length > 0) {
+      try {
+        const customerSlugs = await db
+          .select({ slug: customers.slug })
+          .from(customers)
+          .where(inArray(customers.id, customerIds));
+        
+        if (customerSlugs.length > 0) {
+          const slugs = customerSlugs.map((c) => c.slug).filter((slug): slug is string => slug !== null);
+          if (slugs.length > 0) {
+            conditions.push(inArray(transactions.slugCustomer, slugs));
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar customer slugs:", error);
+      }
+    } else if (!userAccess.fullAccess && userAccess.idCustomer) {
+      // Se não tem fullAccess, filtrar pelo customer do usuário
+      try {
+        const customer = await db
+          .select({ slug: customers.slug })
+          .from(customers)
+          .where(eq(customers.id, userAccess.idCustomer))
+          .limit(1);
+        
+        if (customer.length > 0 && customer[0].slug) {
+          conditions.push(eq(transactions.slugCustomer, customer[0].slug));
+        }
+      } catch (error) {
+        console.error("Erro ao buscar customer do usuário:", error);
+      }
+    }
+
+    // User access filters
+    if (!userAccess.fullAccess && userAccess.idMerchants.length > 0) {
+      conditions.push(inArray(merchants.id, userAccess.idMerchants));
+    }
+
+    // Join with merchants for access control
+    return conditions;
+  } catch (error) {
+    console.error("Erro em buildBaseConditions:", error);
     return null;
   }
-
-  const conditions = [];
-
-  // Date filters
-  if (dateFrom) {
-    const dateFromUTC = getDateUTC(dateFrom, "America/Sao_Paulo");
-    if (dateFromUTC) conditions.push(gte(transactions.dtInsert, dateFromUTC));
-  }
-
-  if (dateTo) {
-    const dateToUTC = getDateUTC(dateTo, "America/Sao_Paulo");
-    if (dateToUTC) conditions.push(lte(transactions.dtInsert, dateToUTC));
-  }
-
-  // Customer filter
-  if (customerIds && customerIds.length > 0) {
-    const customerSlugs = await db
-      .select({ slug: customers.slug })
-      .from(customers)
-      .where(inArray(customers.id, customerIds));
-    
-    if (customerSlugs.length > 0) {
-      conditions.push(
-        inArray(
-          transactions.slugCustomer,
-          customerSlugs.map((c) => c.slug)
-        )
-      );
-    }
-  } else if (!userAccess.fullAccess && userAccess.idCustomer) {
-    // Se não tem fullAccess, filtrar pelo customer do usuário
-    const customer = await db
-      .select({ slug: customers.slug })
-      .from(customers)
-      .where(eq(customers.id, userAccess.idCustomer))
-      .limit(1);
-    
-    if (customer.length > 0) {
-      conditions.push(eq(transactions.slugCustomer, customer[0].slug));
-    }
-  }
-
-  // User access filters
-  if (!userAccess.fullAccess && userAccess.idMerchants.length > 0) {
-    conditions.push(inArray(merchants.id, userAccess.idMerchants));
-  }
-
-  // Join with merchants for access control
-  return conditions;
 }
 
 // Helper to calculate period before
 function getPreviousPeriod(dateFrom: string, dateTo: string): { from: string; to: string } {
-  const from = DateTime.fromISO(dateFrom);
-  const to = DateTime.fromISO(dateTo);
-  const diff = to.diff(from, "days").days;
-  
-  const prevTo = from.minus({ days: 1 });
-  const prevFrom = prevTo.minus({ days: diff });
-  
-  return {
-    from: prevFrom.toISO() || dateFrom,
-    to: prevTo.toISO() || dateTo,
-  };
+  try {
+    const from = DateTime.fromISO(dateFrom);
+    const to = DateTime.fromISO(dateTo);
+    
+    if (!from.isValid || !to.isValid) {
+      return { from: dateFrom, to: dateTo };
+    }
+    
+    const diff = to.diff(from, "days").days;
+    
+    if (isNaN(diff) || diff < 0) {
+      return { from: dateFrom, to: dateTo };
+    }
+    
+    const prevTo = from.minus({ days: 1 });
+    const prevFrom = prevTo.minus({ days: diff });
+    
+    return {
+      from: prevFrom.isValid ? (prevFrom.toISO() || dateFrom) : dateFrom,
+      to: prevTo.isValid ? (prevTo.toISO() || dateTo) : dateTo,
+    };
+  } catch (error) {
+    console.error("Erro em getPreviousPeriod:", error);
+    return { from: dateFrom, to: dateTo };
+  }
 }
 
 /**
@@ -151,19 +184,20 @@ export async function getAnalyticsKPIs(
   dateTo: string,
   customerIds?: number[]
 ): Promise<AnalyticsKPIs> {
-  const conditions = await buildBaseConditions(dateFrom, dateTo, customerIds);
-  
-  if (conditions === null) {
-    return {
-      totalTransacoes: 0,
-      totalValor: 0,
-      valorMedio: 0,
-      taxaAprovacao: 0,
-      taxaNegacao: 0,
-    };
-  }
+  try {
+    const conditions = await buildBaseConditions(dateFrom, dateTo, customerIds);
+    
+    if (conditions === null) {
+      return {
+        totalTransacoes: 0,
+        totalValor: 0,
+        valorMedio: 0,
+        taxaAprovacao: 0,
+        taxaNegacao: 0,
+      };
+    }
 
-  const whereClause = conditions.length ? and(...conditions) : undefined;
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   // Main query
   const result = await db
@@ -224,14 +258,24 @@ export async function getAnalyticsKPIs(
     };
   }
 
-  return {
-    totalTransacoes,
-    totalValor,
-    valorMedio,
-    taxaAprovacao,
-    taxaNegacao,
-    periodoAnterior,
-  };
+    return {
+      totalTransacoes,
+      totalValor,
+      valorMedio,
+      taxaAprovacao,
+      taxaNegacao,
+      periodoAnterior,
+    };
+  } catch (error) {
+    console.error("Erro em getAnalyticsKPIs:", error);
+    return {
+      totalTransacoes: 0,
+      totalValor: 0,
+      valorMedio: 0,
+      taxaAprovacao: 0,
+      taxaNegacao: 0,
+    };
+  }
 }
 
 /**
@@ -243,48 +287,53 @@ export async function getAnalyticsTimeSeries(
   groupBy: "day" | "week" | "month" = "day",
   customerIds?: number[]
 ): Promise<TimeSeriesDataPoint[]> {
-  const conditions = await buildBaseConditions(dateFrom, dateTo, customerIds);
-  
-  if (conditions === null) {
-    return [];
-  }
+  try {
+    const conditions = await buildBaseConditions(dateFrom, dateTo, customerIds);
+    
+    if (conditions === null) {
+      return [];
+    }
 
-  const whereClause = conditions.length ? and(...conditions) : undefined;
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   // Determine date format based on groupBy
-  let dateFormat: string;
+  let periodSql: ReturnType<typeof sql>;
   switch (groupBy) {
     case "day":
-      dateFormat = "YYYY-MM-DD";
+      periodSql = sql<string>`TO_CHAR(${transactions.dtInsert}, 'YYYY-MM-DD')`;
       break;
     case "week":
-      dateFormat = "IYYY-IW"; // ISO week format
+      periodSql = sql<string>`TO_CHAR(${transactions.dtInsert}, 'IYYY-IW')`;
       break;
     case "month":
-      dateFormat = "YYYY-MM";
+      periodSql = sql<string>`TO_CHAR(${transactions.dtInsert}, 'YYYY-MM')`;
       break;
     default:
-      dateFormat = "YYYY-MM-DD";
+      periodSql = sql<string>`TO_CHAR(${transactions.dtInsert}, 'YYYY-MM-DD')`;
   }
 
   const result = await db
     .select({
-      period: sql<string>`TO_CHAR(${transactions.dtInsert}, '${sql.raw(dateFormat)}')`,
+      period: periodSql,
       totalTransacoes: count(),
       totalValor: sql<number>`COALESCE(SUM(${transactions.totalAmount}), 0)`,
     })
     .from(transactions)
     .innerJoin(merchants, eq(transactions.slugMerchant, merchants.slug))
     .where(whereClause)
-    .groupBy(sql`TO_CHAR(${transactions.dtInsert}, '${sql.raw(dateFormat)}')`)
-    .orderBy(sql`TO_CHAR(${transactions.dtInsert}, '${sql.raw(dateFormat)}')`);
+    .groupBy(periodSql)
+    .orderBy(periodSql);
 
-  return result.map((item) => ({
-    period: item.period,
-    totalTransacoes: item.totalTransacoes,
-    totalValor: Number(item.totalValor),
-    valorMedio: item.totalTransacoes > 0 ? Number(item.totalValor) / item.totalTransacoes : 0,
-  }));
+    return result.map((item) => ({
+      period: item.period || "",
+      totalTransacoes: item.totalTransacoes,
+      totalValor: Number(item.totalValor || 0),
+      valorMedio: item.totalTransacoes > 0 ? Number(item.totalValor || 0) / item.totalTransacoes : 0,
+    }));
+  } catch (error) {
+    console.error("Erro em getAnalyticsTimeSeries:", error);
+    return [];
+  }
 }
 
 /**
@@ -296,13 +345,14 @@ export async function getAnalyticsByDimension(
   dateTo: string,
   customerIds?: number[]
 ): Promise<DimensionData[]> {
-  const conditions = await buildBaseConditions(dateFrom, dateTo, customerIds);
-  
-  if (conditions === null) {
-    return [];
-  }
+  try {
+    const conditions = await buildBaseConditions(dateFrom, dateTo, customerIds);
+    
+    if (conditions === null) {
+      return [];
+    }
 
-  const whereClause = conditions.length ? and(...conditions) : undefined;
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   // Map dimension to column
   const dimensionMap: Record<string, any> = {
@@ -342,12 +392,16 @@ export async function getAnalyticsByDimension(
     .groupBy(dimensionColumn)
     .orderBy(sql`totalTransacoes DESC`);
 
-  return result.map((item) => ({
-    dimension: item.dimension || "N/A",
-    totalTransacoes: item.totalTransacoes,
-    totalValor: Number(item.totalValor),
-    percentual: (item.totalTransacoes / total) * 100,
-  }));
+    return result.map((item) => ({
+      dimension: item.dimension || "N/A",
+      totalTransacoes: item.totalTransacoes,
+      totalValor: Number(item.totalValor || 0),
+      percentual: total > 0 ? (item.totalTransacoes / total) * 100 : 0,
+    }));
+  } catch (error) {
+    console.error("Erro em getAnalyticsByDimension:", error);
+    return [];
+  }
 }
 
 /**
@@ -358,13 +412,14 @@ export async function getAnalyticsByCustomer(
   dateTo: string,
   customerIds?: number[]
 ): Promise<CustomerComparison[]> {
-  const conditions = await buildBaseConditions(dateFrom, dateTo, customerIds);
-  
-  if (conditions === null) {
-    return [];
-  }
+  try {
+    const conditions = await buildBaseConditions(dateFrom, dateTo, customerIds);
+    
+    if (conditions === null) {
+      return [];
+    }
 
-  const whereClause = conditions.length ? and(...conditions) : undefined;
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   // Get customer breakdown
   const result = await db
@@ -382,14 +437,18 @@ export async function getAnalyticsByCustomer(
     .groupBy(customers.id, customers.name)
     .orderBy(sql`totalTransacoes DESC`);
 
-  return result.map((item) => ({
-    customerId: item.customerId || 0,
-    customerName: item.customerName,
-    totalTransacoes: item.totalTransacoes,
-    totalValor: Number(item.totalValor),
-    valorMedio: item.totalTransacoes > 0 ? Number(item.totalValor) / item.totalTransacoes : 0,
-    taxaAprovacao: item.totalTransacoes > 0 ? (item.totalAprovadas / item.totalTransacoes) * 100 : 0,
-  }));
+    return result.map((item) => ({
+      customerId: item.customerId || 0,
+      customerName: item.customerName,
+      totalTransacoes: item.totalTransacoes,
+      totalValor: Number(item.totalValor || 0),
+      valorMedio: item.totalTransacoes > 0 ? Number(item.totalValor || 0) / item.totalTransacoes : 0,
+      taxaAprovacao: item.totalTransacoes > 0 ? (item.totalAprovadas / item.totalTransacoes) * 100 : 0,
+    }));
+  } catch (error) {
+    console.error("Erro em getAnalyticsByCustomer:", error);
+    return [];
+  }
 }
 
 /**
@@ -401,13 +460,14 @@ export async function getAnalyticsByMerchant(
   customerIds?: number[],
   limit: number = 10
 ): Promise<MerchantTop[]> {
-  const conditions = await buildBaseConditions(dateFrom, dateTo, customerIds);
-  
-  if (conditions === null) {
-    return [];
-  }
+  try {
+    const conditions = await buildBaseConditions(dateFrom, dateTo, customerIds);
+    
+    if (conditions === null) {
+      return [];
+    }
 
-  const whereClause = conditions.length ? and(...conditions) : undefined;
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   const result = await db
     .select({
@@ -422,10 +482,14 @@ export async function getAnalyticsByMerchant(
     .orderBy(sql`totalValor DESC`)
     .limit(limit);
 
-  return result.map((item) => ({
-    merchantName: item.merchantName,
-    totalTransacoes: item.totalTransacoes,
-    totalValor: Number(item.totalValor),
-  }));
+    return result.map((item) => ({
+      merchantName: item.merchantName,
+      totalTransacoes: item.totalTransacoes,
+      totalValor: Number(item.totalValor || 0),
+    }));
+  } catch (error) {
+    console.error("Erro em getAnalyticsByMerchant:", error);
+    return [];
+  }
 }
 

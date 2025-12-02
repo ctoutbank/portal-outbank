@@ -42,21 +42,40 @@ async function AnalyticsContent({
     : undefined;
 
   // Fetch all analytics data in parallel
-  const [
-    kpis,
-    timeSeries,
-    brandData,
-    productData,
-    statusData,
-    customerComparison,
-  ] = await Promise.all([
-    getAnalyticsKPIs(dateFrom, dateTo, customerIds),
-    getAnalyticsTimeSeries(dateFrom, dateTo, groupBy, customerIds),
-    getAnalyticsByDimension("brand", dateFrom, dateTo, customerIds),
-    getAnalyticsByDimension("productType", dateFrom, dateTo, customerIds),
-    getAnalyticsByDimension("transactionStatus", dateFrom, dateTo, customerIds),
-    getAnalyticsByCustomer(dateFrom, dateTo, customerIds),
-  ]);
+  let kpis, timeSeries, brandData, productData, statusData, customerComparison;
+  
+  try {
+    [
+      kpis,
+      timeSeries,
+      brandData,
+      productData,
+      statusData,
+      customerComparison,
+    ] = await Promise.all([
+      getAnalyticsKPIs(dateFrom, dateTo, customerIds),
+      getAnalyticsTimeSeries(dateFrom, dateTo, groupBy, customerIds),
+      getAnalyticsByDimension("brand", dateFrom, dateTo, customerIds),
+      getAnalyticsByDimension("productType", dateFrom, dateTo, customerIds),
+      getAnalyticsByDimension("transactionStatus", dateFrom, dateTo, customerIds),
+      getAnalyticsByCustomer(dateFrom, dateTo, customerIds),
+    ]);
+  } catch (error) {
+    console.error("Erro ao buscar dados de analytics:", error);
+    // Valores padrão em caso de erro
+    kpis = {
+      totalTransacoes: 0,
+      totalValor: 0,
+      valorMedio: 0,
+      taxaAprovacao: 0,
+      taxaNegacao: 0,
+    };
+    timeSeries = [];
+    brandData = [];
+    productData = [];
+    statusData = [];
+    customerComparison = [];
+  }
 
   return (
     <>
