@@ -13,6 +13,7 @@ import {
   inArray,
   like,
   lte,
+  notInArray,
   sql,
 } from "drizzle-orm";
 import {
@@ -20,6 +21,11 @@ import {
   terminals,
   transactions,
   customers,
+  categories,
+  solicitationFee,
+  solicitationFeeBrand,
+  solicitationBrandProductType,
+  payout,
 } from "../../../../drizzle/schema";
 import { db } from "@/lib/db";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
@@ -54,6 +60,20 @@ export type TransactionsList = {
 
 export type MerchantTotal = {
   total: number;
+};
+
+export type GetTotalTransactionsResult = {
+  count: number;
+  sum: number;
+  revenue: number;
+};
+
+export type GetTotalTransactionsByMonthResult = {
+  dayOfMonth?: number;
+  date?: string;
+  count: number;
+  bruto: number;
+  lucro: number;
 };
 
 export async function getTransactions(
@@ -390,6 +410,24 @@ export type TransactionsGroupedReport = {
   date: string;
 };
 
+export async function normalizeDateRange(
+  start: string,
+  end: string
+): Promise<{ start: string; end: string }> {
+  // Normaliza o início para 'YYYY-MM-DDT00:00:00'
+  const startDate = start.split("T")[0] + "T00:00:00";
+
+  // Extrai a data final e adiciona 1 dia
+  const endDatePart = end.split("T")[0];
+  const date = new Date(endDatePart + "T00:00:00Z");
+  date.setUTCDate(date.getUTCDate() + 1);
+  const nextDay = date.toISOString().split("T")[0];
+
+  // Final fica como 'YYYY-MM-DDT23:59:59'
+  const endDate = `${nextDay}T23:59:59`;
+  return { start: startDate, end: endDate };
+}
+
 export async function getTransactionsGroupedReport(
   dateFrom: string,
   dateTo: string,
@@ -706,6 +744,340 @@ export async function getTransactionBySlug(slug: string): Promise<TransactionDet
   } catch (error) {
     console.error("Erro em getTransactionBySlug:", error);
     return null;
+  }
+}
+
+/**
+ * Get Total Transactions with revenue calculation
+ */
+export async function getTotalTransactions(
+  dateFrom: string,
+  dateTo: string
+): Promise<GetTotalTransactionsResult[]> {
+  const userAccess = await getUserMerchantsAccess();
+
+  if (!userAccess.fullAccess && userAccess.idMerchants.length === 0) {
+    return [];
+  }
+
+  try {
+    const startTime = performance.now();
+    const dateFromUTC = dateFrom
+      ? getDateUTC(dateFrom, "America/Sao_Paulo")
+      : null;
+    const dateToUTC = dateTo ? getDateUTC(dateTo, "America/Sao_Paulo") : null;
+
+    // Build merchant filter
+    let merchantFilter = "";
+    if (!userAccess.fullAccess) {
+      merchantFilter = `AND m.id IN (${userAccess.idMerchants.join(",")})`;
+    }
+
+    let customerFilter = "";
+    if (userAccess.idCustomer) {
+      customerFilter = `AND m.id_customer = ${userAccess.idCustomer}`;
+    }
+
+    const result = await db.execute(sql`
+      WITH filtered_transactions AS (
+        SELECT t.*
+        FROM transactions t
+        INNER JOIN merchants m ON t.slug_merchant = m.slug
+        WHERE
+          t.transaction_status NOT IN ('CANCELED', 'DENIED', 'PROCESSING', 'PENDING')
+          ${dateFromUTC ? sql`AND t.dt_insert >= ${dateFromUTC}` : sql``}
+          ${dateToUTC ? sql`AND t.dt_insert <= ${dateToUTC}` : sql``}
+          ${merchantFilter ? sql.raw(merchantFilter) : sql``}
+          ${customerFilter ? sql.raw(customerFilter) : sql``}
+      ),
+      latest_payout AS (
+        SELECT DISTINCT ON (p.payout_id)
+          p.payout_id,
+          p.transaction_mdr,
+          p.installment_number
+        FROM payout p
+        ORDER BY p.payout_id, p.installment_number DESC
+      ),
+      merchant_info AS (
+        SELECT
+          ft.*,
+          m.id_category,
+          c.mcc,
+          sf.id AS sf_id,
+          sf.card_pix_mdr_admin,
+          sf.non_card_pix_mdr_admin
+        FROM filtered_transactions ft
+        JOIN merchants m ON ft.slug_merchant = m.slug
+        LEFT JOIN categories c ON m.id_category = c.id
+        LEFT JOIN solicitation_fee sf
+          ON c.mcc = sf.mcc
+         AND sf.status = 'COMPLETED'
+      ),
+      joined_data AS (
+        SELECT
+          mi.*,
+          lp.transaction_mdr,
+          lp.installment_number,
+          sfb.id AS sfb_id,
+          sbpt.fee_admin,
+          sbpt.no_card_fee_admin
+        FROM merchant_info mi
+        LEFT JOIN latest_payout lp
+          ON lp.payout_id::uuid = mi.slug
+        LEFT JOIN solicitation_fee_brand sfb
+          ON sfb.solicitation_fee_id = mi.sf_id
+         AND sfb.brand = mi.brand
+        LEFT JOIN solicitation_brand_product_type sbpt
+          ON sbpt.solicitation_fee_brand_id = sfb.id
+         AND sbpt.product_type = SPLIT_PART(mi.product_type, '_', 1)
+         AND COALESCE(lp.installment_number, 1) BETWEEN sbpt.transaction_fee_start AND sbpt.transaction_fee_end
+      ),
+      final_data AS (
+        SELECT
+          total_amount,
+          method_type,
+          product_type,
+          COALESCE(transaction_mdr, 0) AS mdr,
+          COALESCE(
+            CASE
+              WHEN product_type ILIKE 'PIX' AND method_type = 'CP'  THEN card_pix_mdr_admin
+              WHEN product_type ILIKE 'PIX' AND method_type = 'CNP' THEN non_card_pix_mdr_admin
+              WHEN method_type = 'CP'                               THEN fee_admin
+              WHEN method_type = 'CNP'                              THEN no_card_fee_admin
+              ELSE 0
+            END
+          , 0) AS admin_fee
+        FROM joined_data
+      )
+      SELECT
+        COUNT(*)                 AS count,
+        SUM(total_amount)::TEXT  AS sum,
+        SUM(
+          CASE
+            WHEN mdr = 0 THEN 0
+            ELSE total_amount * ((mdr - admin_fee) / 100.0)
+          END
+        )::TEXT                  AS revenue
+      FROM final_data;
+    `);
+
+    const endTime = performance.now();
+    console.log(`getTotalTransactions executed in ${endTime - startTime} ms`);
+    
+    const rows = result.rows as Array<{
+      count: number;
+      sum: string;
+      revenue: string;
+    }>;
+
+    return rows.map((row) => ({
+      count: row.count || 0,
+      sum: parseFloat(row.sum || "0"),
+      revenue: parseFloat(row.revenue || "0"),
+    }));
+  } catch (error) {
+    console.error("Erro em getTotalTransactions:", error);
+    return [];
+  }
+}
+
+/**
+ * Get Total Transactions By Month/Day
+ */
+export async function getTotalTransactionsByMonth(
+  dateFrom: string,
+  dateTo: string,
+  viewMode?: string
+): Promise<GetTotalTransactionsByMonthResult[]> {
+  const userAccess = await getUserMerchantsAccess();
+  
+  if (!userAccess.fullAccess && userAccess.idMerchants.length === 0) {
+    return [];
+  }
+
+  try {
+    const startTime = performance.now();
+    const conditions: any[] = [];
+
+    if (dateFrom) {
+      const dateFromUTC = getDateUTC(dateFrom, "America/Sao_Paulo");
+      if (dateFromUTC) conditions.push(gte(transactions.dtInsert, dateFromUTC));
+    }
+    
+    if (dateTo) {
+      const dateToUTC = getDateUTC(dateTo, "America/Sao_Paulo");
+      if (dateToUTC) conditions.push(lte(transactions.dtInsert, dateToUTC));
+    }
+
+    conditions.push(
+      notInArray(transactions.transactionStatus, [
+        "CANCELED",
+        "DENIED",
+        "PROCESSING",
+        "PENDING",
+      ])
+    );
+
+    // Adicionar filtro de merchants se não tiver fullAccess
+    if (!userAccess.fullAccess) {
+      conditions.push(inArray(merchants.id, userAccess.idMerchants));
+    }
+
+    if (userAccess.idCustomer) {
+      conditions.push(eq(merchants.idCustomer, userAccess.idCustomer));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const isMonthlyView = viewMode === "month";
+
+    const dateExpression = isMonthlyView
+      ? sql`EXTRACT(DAY FROM ${transactions.dtInsert} AT TIME ZONE 'utc' AT TIME ZONE 'America/Sao_Paulo')`
+      : sql`DATE_TRUNC('month', ${transactions.dtInsert} AT TIME ZONE 'utc' AT TIME ZONE 'America/Sao_Paulo')`;
+
+    const result = await db.execute(sql`
+      SELECT
+        ${dateExpression}                       AS date,
+        SUM(transactions.total_amount)::TEXT    AS sum,
+        COUNT(1)::INT                           AS count,
+        SUM(
+          CASE
+            WHEN transactions.method_type = 'CP' THEN
+              CASE
+                WHEN COALESCE(payout.transaction_mdr, 0) = 0 THEN 0
+                ELSE 
+                CASE 
+                  WHEN transactions.brand = 'PIX'
+                  THEN (transactions.total_amount * 
+                  (COALESCE(payout.transaction_mdr, 0)/100)) - COALESCE(solicitation_fee.card_pix_mdr_admin, 0)
+                ELSE
+                transactions.total_amount *
+                  (COALESCE(payout.transaction_mdr, 0)/100 - COALESCE(solicitation_bp.fee_admin, 0)/100)
+              END
+            END
+            WHEN transactions.method_type = 'CNP' THEN
+              CASE
+                WHEN COALESCE(payout.transaction_mdr, 0) = 0 THEN 0
+                ELSE transactions.total_amount *
+                  (
+                    COALESCE(payout.transaction_mdr, 0)/100
+                    - COALESCE(
+                        CASE
+                          WHEN transactions.brand = 'PIX'
+                          THEN solicitation_fee.non_card_pix_mdr_admin
+                          ELSE solicitation_bp.no_card_fee_admin
+                        END
+                      , 0)/100
+                  )
+              END
+            ELSE 0
+          END
+        )::TEXT AS revenue
+      FROM transactions
+      INNER JOIN merchants
+        ON transactions.slug_merchant = merchants.slug
+      LEFT JOIN categories
+        ON merchants.id_category = categories.id
+      LEFT JOIN solicitation_fee
+        ON categories.mcc = solicitation_fee.mcc
+        AND solicitation_fee.status = 'COMPLETED'
+      LEFT JOIN solicitation_fee_brand AS sfb
+        ON sfb.solicitation_fee_id = solicitation_fee.id
+        AND sfb.brand = transactions.brand
+      LEFT JOIN payout
+        ON payout.payout_id::uuid = transactions.slug
+      LEFT JOIN solicitation_brand_product_type AS solicitation_bp
+        ON solicitation_bp.solicitation_fee_brand_id = sfb.id
+        AND solicitation_bp.product_type = SPLIT_PART(transactions.product_type, '_', 1)
+        AND COALESCE(payout.installment_number, 1) BETWEEN solicitation_bp.transaction_fee_start
+                                    AND solicitation_bp.transaction_fee_end
+      ${whereClause ? sql`WHERE ${whereClause}` : sql``}
+      GROUP BY ${dateExpression}
+      ORDER BY ${dateExpression};
+    `);
+
+    const rows = result.rows as Array<{
+      date: string | number | Date;
+      sum: string;
+      count: number;
+      revenue: string;
+    }>;
+
+    const totals: GetTotalTransactionsByMonthResult[] = rows.map((item) => ({
+      bruto: parseFloat(item.sum || "0"),
+      count: item.count,
+      lucro: parseFloat(item.revenue || "0"),
+      date: isMonthlyView ? undefined : (item.date as string),
+      dayOfMonth: isMonthlyView ? Number(item.date) : undefined,
+    }));
+
+    if (isMonthlyView) {
+      const dateF = new Date(dateFrom);
+      const lastDay = new Date(
+        dateF.getFullYear(),
+        dateF.getMonth() + 1,
+        0
+      ).getDate();
+      const days = Array.from({ length: lastDay }, (_, i) => i + 1);
+      return days.map(
+        (day) =>
+          totals.find((t) => t.dayOfMonth === day) || {
+            bruto: 0,
+            count: 0,
+            lucro: 0,
+            dayOfMonth: day,
+          }
+      );
+    }
+
+    const endTime = performance.now();
+    console.log(
+      `getTotalTransactionsByMonth executed in ${endTime - startTime} ms`
+    );
+    return totals;
+  } catch (error) {
+    console.error("Erro em getTotalTransactionsByMonth:", error);
+    return [];
+  }
+}
+
+/**
+ * Get Total Merchants
+ */
+export async function getTotalMerchants(): Promise<MerchantTotal[]> {
+  const userAccess = await getUserMerchantsAccess();
+  const conditions = [];
+  
+  if (!userAccess.fullAccess && userAccess.idMerchants.length === 0) {
+    return [{ total: 0 }];
+  }
+  
+  if (!userAccess.fullAccess) {
+    conditions.push(inArray(merchants.id, userAccess.idMerchants));
+  }
+  
+  if (userAccess.idCustomer) {
+    conditions.push(eq(merchants.idCustomer, userAccess.idCustomer));
+  }
+  
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+  const startTime = performance.now();
+
+  try {
+    const result = await db.execute(sql`
+      SELECT 
+        COUNT(1) AS total
+      FROM merchants
+      ${whereClause ? sql`WHERE ${whereClause}` : sql``}
+    `);
+    
+    const endTime = performance.now();
+    console.log(`getTotalMerchants executed in ${endTime - startTime} ms`);
+    const data = result.rows as MerchantTotal[];
+    return data;
+  } catch (error) {
+    console.error("Erro em getTotalMerchants:", error);
+    return [{ total: 0 }];
   }
 }
 
