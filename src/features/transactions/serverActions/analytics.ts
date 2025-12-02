@@ -324,8 +324,8 @@ export async function getAnalyticsTimeSeries(
     .groupBy(periodSql)
     .orderBy(periodSql);
 
-    return result.map((item) => ({
-      period: item.period || "",
+    return result.map((item): TimeSeriesDataPoint => ({
+      period: String(item.period || ""),
       totalTransacoes: item.totalTransacoes,
       totalValor: Number(item.totalValor || 0),
       valorMedio: item.totalTransacoes > 0 ? Number(item.totalValor || 0) / item.totalTransacoes : 0,
