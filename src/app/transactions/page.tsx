@@ -18,7 +18,6 @@ import { Search } from "lucide-react";
 import { Suspense } from "react";
 import { TransactionsExport } from "@/features/transactions/reports/transactions-export-excel";
 import { TransactionsSyncButton } from "@/features/transactions/_components/transactions-sync-button";
-import { syncTransactions } from "@/features/pricingSolicitation/server/integrations/dock/sync-transactions/main";
 
 type TransactionsProps = {
   page?: string;
@@ -77,7 +76,6 @@ async function TransactionsContent({
   };
 
   const [transactionList, transactionsGroupedReport] = await Promise.all([
-    syncTransactions().then(() => 
     getTransactions(
       page,
       pageSize,
@@ -98,7 +96,7 @@ async function TransactionsContent({
         sortBy,
         sortOrder,
       }
-    )),
+    ),
     getTransactionsGroupedReport(
       dateFrom,
       dateTo,
