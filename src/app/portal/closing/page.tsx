@@ -21,6 +21,9 @@ import { gateDateByViewMode, getPreviousPeriodFromRange } from "@/lib/utils";
 import { Search } from "lucide-react";
 import { Suspense } from "react";
 import { checkPagePermission } from "@/lib/auth/check-permissions";
+import { isSuperAdmin } from "@/lib/permissions/check-permissions";
+import { getVisibilitySettings } from "@/features/closing/serverActions/visibility-settings";
+import { LayoutEditor } from "@/features/closing/components/layout-editor";
 
 type ClosingSearchParams = {
   viewMode?: string;
@@ -130,6 +133,10 @@ export default async function SalesDashboard({
     resolvedSearchParams.dateTo || period.to
   );
 
+  // Verificar se é Super Admin e buscar configurações de visibilidade global
+  const isSuper = await isSuperAdmin();
+  const visibilitySettings = await getVisibilitySettings("closing");
+
   return (
     <>
       <BaseHeader
@@ -154,91 +161,104 @@ export default async function SalesDashboard({
               description=""
             />
           ) : (
-            <>
+            <LayoutEditor
+              initialHiddenSections={visibilitySettings.hiddenSections}
+              sectionIds={[
+                "kpi-cards",
+                "chart",
+                "non-processed-summary",
+                "brand-summary",
+                "brand-summary-prepaid",
+                "transactions-table"
+              ]}
+              canEdit={isSuper}
+            >
               {/* Primeira linha: 4 cards */}
-              <Card className="w-full border-l-8 border-black bg-transparent border-[#2a2a2a]">
-                <CardContent className="p-6">
-                  <div className="grid gap-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                      <CardValue
-                        title="Bruto total"
-                        description="Total bruto das transações"
-                        value={totalTransactions[0]?.sum || 0}
-                        percentage={
-                          totalTransactions[0]?.sum &&
-                          totalTransactionsPreviousPeriod[0]?.sum
-                            ? (
-                                ((totalTransactions[0]?.sum -
-                                  totalTransactionsPreviousPeriod[0]?.sum) /
-                                  totalTransactionsPreviousPeriod[0]?.sum) *
-                                100
-                              ).toFixed(2)
-                            : "0"
-                        }
-                        previousValue={totalTransactionsPreviousPeriod[0]?.sum}
-                        valueType="currency"
-                      />
-                      <CardValue
-                        title="Lucro total"
-                        description="Total de lucro realizado"
-                        value={totalTransactions[0]?.revenue || 0}
-                        percentage={
-                          totalTransactions[0]?.revenue &&
-                          totalTransactionsPreviousPeriod[0]?.revenue
-                            ? (
-                                ((totalTransactions[0]?.revenue -
-                                  totalTransactionsPreviousPeriod[0]?.revenue) /
-                                  totalTransactionsPreviousPeriod[0]?.revenue) *
-                                100
-                              ).toFixed(2)
-                            : "0"
-                        }
-                        previousValue={
-                          totalTransactionsPreviousPeriod[0]?.revenue
-                        }
-                        valueType="currency"
-                      />
-                      <CardValue
-                        title="Transações realizadas"
-                        description="Total de transações realizadas"
-                        value={totalTransactions[0]?.count || 0}
-                        percentage={
-                          totalTransactionsPreviousPeriod[0]?.count &&
-                          totalTransactions[0]?.count
-                            ? (
-                                ((totalTransactions[0]?.count -
-                                  totalTransactionsPreviousPeriod[0]?.count) /
-                                  totalTransactionsPreviousPeriod[0]?.count) *
-                                100
-                              ).toFixed(2)
-                            : "0"
-                        }
-                        previousValue={totalTransactionsPreviousPeriod[0]?.count}
-                        valueType="number"
-                      />
-                      <CardValue
-                        title="Estabelecimentos cadastrados"
-                        description="Total de estabelecimentos cadastrados"
-                        value={
-                          Array.isArray(totalMerchants)
-                            ? totalMerchants[0]?.total || 0
-                            : 0
-                        }
-                        percentage={"0"}
-                        previousValue={
-                          Array.isArray(totalMerchants)
-                            ? totalMerchants[0]?.total || 0
-                            : 0
-                        }
-                        valueType="number"
-                      />
+              <div sectionId="kpi-cards">
+                <Card className="w-full border-l-8 border-black bg-transparent border-[#2a2a2a]">
+                  <CardContent className="p-6">
+                    <div className="grid gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                        <CardValue
+                          title="Bruto total"
+                          description="Total bruto das transações"
+                          value={totalTransactions[0]?.sum || 0}
+                          percentage={
+                            totalTransactions[0]?.sum &&
+                            totalTransactionsPreviousPeriod[0]?.sum
+                              ? (
+                                  ((totalTransactions[0]?.sum -
+                                    totalTransactionsPreviousPeriod[0]?.sum) /
+                                    totalTransactionsPreviousPeriod[0]?.sum) *
+                                  100
+                                ).toFixed(2)
+                              : "0"
+                          }
+                          previousValue={totalTransactionsPreviousPeriod[0]?.sum}
+                          valueType="currency"
+                        />
+                        <CardValue
+                          title="Lucro total"
+                          description="Total de lucro realizado"
+                          value={totalTransactions[0]?.revenue || 0}
+                          percentage={
+                            totalTransactions[0]?.revenue &&
+                            totalTransactionsPreviousPeriod[0]?.revenue
+                              ? (
+                                  ((totalTransactions[0]?.revenue -
+                                    totalTransactionsPreviousPeriod[0]?.revenue) /
+                                    totalTransactionsPreviousPeriod[0]?.revenue) *
+                                  100
+                                ).toFixed(2)
+                              : "0"
+                          }
+                          previousValue={
+                            totalTransactionsPreviousPeriod[0]?.revenue
+                          }
+                          valueType="currency"
+                        />
+                        <CardValue
+                          title="Transações realizadas"
+                          description="Total de transações realizadas"
+                          value={totalTransactions[0]?.count || 0}
+                          percentage={
+                            totalTransactionsPreviousPeriod[0]?.count &&
+                            totalTransactions[0]?.count
+                              ? (
+                                  ((totalTransactions[0]?.count -
+                                    totalTransactionsPreviousPeriod[0]?.count) /
+                                    totalTransactionsPreviousPeriod[0]?.count) *
+                                  100
+                                ).toFixed(2)
+                              : "0"
+                          }
+                          previousValue={totalTransactionsPreviousPeriod[0]?.count}
+                          valueType="number"
+                        />
+                        <CardValue
+                          title="Estabelecimentos cadastrados"
+                          description="Total de estabelecimentos cadastrados"
+                          value={
+                            Array.isArray(totalMerchants)
+                              ? totalMerchants[0]?.total || 0
+                              : 0
+                          }
+                          percentage={"0"}
+                          previousValue={
+                            Array.isArray(totalMerchants)
+                              ? totalMerchants[0]?.total || 0
+                              : 0
+                          }
+                          valueType="number"
+                        />
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
 
               {/* Segunda linha: gráfico inteiro */}
-              <div className="mt-4">
+              <div sectionId="chart" className="mt-4">
                 <LazyClosingChart
                   chartData={totalTransactionsByMonth}
                   viewMode={viewMode}
@@ -246,26 +266,28 @@ export default async function SalesDashboard({
               </div>
 
               {/* Terceira linha: 2 cards - Transações Vendas e Não processadas */}
-              <div className="mt-4 w-full block">
+              <div sectionId="non-processed-summary" className="mt-4 w-full block">
                 <NonProcessedSummaryTable transactions={transactionsGroupedReport} />
               </div>
 
               {/* Quarta linha: 2 cards - Transações Débito por Bandeira e Crédito por Bandeira */}
-              <div className="mt-4 w-full block">
+              <div sectionId="brand-summary" className="mt-4 w-full block">
                 <BrandSummaryTable transactions={transactionsGroupedReport} />
               </div>
 
               {/* Quinta linha: 2 cards - Débito Pré-pago por Bandeira e Crédito Pré-pago por Bandeira */}
-              <div className="mt-4 w-full block">
+              <div sectionId="brand-summary-prepaid" className="mt-4 w-full block">
                 <BrandSummaryPrePaidTable transactions={transactionsGroupedReport} />
               </div>
-            </>
+
+              {/* Tabela de transações */}
+              <div sectionId="transactions-table">
+                <TransactionsDashboardTable
+                  transactions={transactionsGroupedReport}
+                />
+              </div>
+            </LayoutEditor>
           )}
-          <div>
-            <TransactionsDashboardTable
-              transactions={transactionsGroupedReport}
-            />
-          </div>
         </Suspense>
       </BaseBody>
     </>

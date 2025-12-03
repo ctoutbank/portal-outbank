@@ -1751,6 +1751,35 @@ export const moduleConsents = pgTable("module_consents", {
 	}).onDelete("cascade"),
 ]);
 
+export const pageVisibilitySettings = pgTable("page_visibility_settings", {
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
+		name: "page_visibility_settings_id_seq", 
+		startWith: 1, 
+		increment: 1, 
+		minValue: 1, 
+		maxValue: 9223372036854775807, 
+		cache: 1 
+	}),
+	pageSlug: varchar("page_slug", { length: 100 }).notNull(),
+	userId: bigint("user_id", { mode: "number" }),
+	profileId: bigint("profile_id", { mode: "number" }),
+	hiddenSections: jsonb("hidden_sections").notNull().default(sql`'[]'::jsonb`),
+	active: boolean().default(true),
+	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	dtupdate: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	foreignKey({
+		columns: [table.userId],
+		foreignColumns: [users.id],
+		name: "page_visibility_settings_user_id_fkey"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.profileId],
+		foreignColumns: [profiles.id],
+		name: "page_visibility_settings_profile_id_fkey"
+	}).onDelete("cascade"),
+]);
+
 export const stakeholders = pgTable("stakeholders", {
 	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
 		name: "stakeholders_id_seq", 
