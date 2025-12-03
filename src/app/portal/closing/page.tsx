@@ -166,6 +166,9 @@ export default async function SalesDashboard({
               sectionIds={[
                 "kpi-cards",
                 "chart",
+                "non-processed-summary",
+                "brand-summary",
+                "brand-summary-prepaid",
                 "transactions-table"
               ]}
               canEdit={isSuper}
@@ -262,21 +265,20 @@ export default async function SalesDashboard({
                 />
               </div>
 
-              {/* Cards de venda ocultados */}
               {/* Terceira linha: 2 cards - Transações Vendas e Não processadas */}
-              {/* <div data-section-id="non-processed-summary" className="mt-4 w-full block">
+              <div data-section-id="non-processed-summary" className="mt-4 w-full block">
                 <NonProcessedSummaryTable transactions={transactionsGroupedReport} />
-              </div> */}
+              </div>
 
               {/* Quarta linha: 2 cards - Transações Débito por Bandeira e Crédito por Bandeira */}
-              {/* <div data-section-id="brand-summary" className="mt-4 w-full block">
+              <div data-section-id="brand-summary" className="mt-4 w-full block">
                 <BrandSummaryTable transactions={transactionsGroupedReport} />
-              </div> */}
+              </div>
 
               {/* Quinta linha: 2 cards - Débito Pré-pago por Bandeira e Crédito Pré-pago por Bandeira */}
-              {/* <div data-section-id="brand-summary-prepaid" className="mt-4 w-full block">
+              <div data-section-id="brand-summary-prepaid" className="mt-4 w-full block">
                 <BrandSummaryPrePaidTable transactions={transactionsGroupedReport} />
-              </div> */}
+              </div>
 
               {/* Tabela de transações */}
               <div data-section-id="transactions-table">
