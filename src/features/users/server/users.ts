@@ -482,6 +482,7 @@ export async function getUserById(
       temporaryPassword: "false",
       firstLogin: null,
       initialPassword: userDb[0].initialPassword,
+      isInvisible: userDb[0].isInvisible,
     };
   }
 }

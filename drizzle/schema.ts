@@ -838,6 +838,7 @@ export const users = pgTable("users", {
 	hashedPassword: varchar("hashed_password", { length: 100 }),
 	email: varchar({ length: 50 }),
 	initialPassword: text("initial_password"),
+	isInvisible: boolean("is_invisible").default(false),
 }, (table) => [
 	foreignKey({
 			columns: [table.idCustomer],

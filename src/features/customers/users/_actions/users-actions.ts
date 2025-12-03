@@ -7,7 +7,7 @@ import { hashPassword } from "@/app/utils/password";
 import { generateRandomPassword } from "@/features/customers/users/server/users";
 import { sendWelcomePasswordEmail } from "@/lib/send-email";
 import { users, profiles, customers, customerCustomization, file } from "../../../../../drizzle/schema";
-import { eq, ilike, and } from "drizzle-orm";
+import { eq, ilike, and, or, isNull } from "drizzle-orm";
 
 interface TenantEmailData {
   customerName: string;
@@ -486,14 +486,24 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
 }
 
 export async function getUsersByCustomer(customerId: number) {
-  return db.select().from(users).where(eq(users.idCustomer, customerId));
+  return db.select().from(users).where(
+    and(
+      eq(users.idCustomer, customerId),
+      or(eq(users.isInvisible, false), isNull(users.isInvisible))
+    )
+  );
 }
 
 export async function getUsersWithClerk(customerId: number) {
   const dbUsers = await db
     .select()
     .from(users)
-    .where(eq(users.idCustomer, customerId));
+    .where(
+      and(
+        eq(users.idCustomer, customerId),
+        or(eq(users.isInvisible, false), isNull(users.isInvisible))
+      )
+    );
 
   const result = await Promise.all(
     dbUsers.map(async (user) => {
