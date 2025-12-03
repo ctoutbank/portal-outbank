@@ -9,7 +9,6 @@ import TransactionsExport from "@/features/closing/components/export-excel";
 import { TransactionsDashboardTable } from "@/features/transactions/_components/transactions-dashboard-table";
 import { NonProcessedSummaryTable } from "@/features/transactions/_components/non-processed-summary-table";
 import { BrandSummaryTable } from "@/features/transactions/_components/brand-summary-table";
-import { BrandSummaryPrePaidTable } from "@/features/transactions/_components/brand-summary-prepaid-table";
 import {
   getTotalMerchants,
   getTotalTransactions,
@@ -253,11 +252,6 @@ export default async function SalesDashboard({
               {/* Quarta linha: 2 cards - Transações Débito por Bandeira e Crédito por Bandeira */}
               <div className="mt-4 w-full block">
                 <BrandSummaryTable transactions={transactionsGroupedReport} />
-              </div>
-
-              {/* Quinta linha: 2 cards - Débito Pré-pago por Bandeira e Crédito Pré-pago por Bandeira */}
-              <div className="mt-4 w-full block">
-                <BrandSummaryPrePaidTable transactions={transactionsGroupedReport} />
               </div>
             </>
           )}
