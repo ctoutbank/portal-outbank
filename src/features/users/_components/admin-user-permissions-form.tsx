@@ -44,6 +44,7 @@ const userPermissionsSchema = z.object({
   fullAccess: z.boolean(),
   customerIds: z.array(z.number()).optional(),
   hasMerchantsAccess: z.boolean().optional(),
+  isInvisible: z.boolean().optional(),
   password: z
     .union([
       z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
@@ -92,6 +93,7 @@ export function AdminUserPermissionsForm({
       fullAccess: user?.fullAccess || false,
       customerIds: adminCustomers,
       hasMerchantsAccess: false,
+      isInvisible: false,
       password: undefined,
     },
   });
@@ -243,6 +245,7 @@ export function AdminUserPermissionsForm({
               email: data.email.trim().toLowerCase(),
               password: data.password?.trim() || undefined,
               customerIds: data.customerIds || [],
+              isInvisible: data.isInvisible || false,
             });
             
             toast.success("Admin criado com sucesso");
@@ -581,6 +584,30 @@ export function AdminUserPermissionsForm({
                       <FormLabel>Acesso a Estabelecimentos</FormLabel>
                       <FormDescription>
                         Quando marcado, o usuário poderá visualizar estabelecimentos de todos os ISOs aos quais tem vínculo na página de Estabelecimentos do Portal-Outbank.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Invisibilidade nos ISOs (apenas para Super Admin) */}
+            {isSuperAdmin && (
+              <FormField
+                control={form.control}
+                name="isInvisible"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Invisível nos ISOs</FormLabel>
+                      <FormDescription>
+                        Quando marcado, este usuário não aparecerá na área de gerenciamento de usuários dos ISOs. Útil para administradores do sistema que não devem ser visíveis para os gestores dos ISOs.
                       </FormDescription>
                     </div>
                   </FormItem>

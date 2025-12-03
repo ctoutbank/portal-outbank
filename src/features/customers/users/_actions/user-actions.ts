@@ -4,7 +4,7 @@ import { hashPassword } from "@/app/utils/password";
 import { db } from "@/db/drizzle";
 import { generateSlug } from "@/lib/utils";
 import { clerkClient } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import {
   adminCustomers,
@@ -397,9 +397,15 @@ export async function getUsersWithClerk(customerId: number) {
       hashedPassword: users.hashedPassword,
       email: users.email,
       initialPassword: users.initialPassword,
+      isInvisible: users.isInvisible,
     })
     .from(users)
-    .where(eq(users.idCustomer, customerId));
+    .where(
+      and(
+        eq(users.idCustomer, customerId),
+        eq(users.isInvisible, false)
+      )
+    );
 
   const result = await Promise.all(
     dbUsers.map(async (user) => {

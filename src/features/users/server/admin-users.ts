@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { users, profiles, customers, adminCustomers, functions, profileFunctions } from "../../../../drizzle/schema";
-import { eq, and, ilike, or, inArray, sql, count, desc, asc } from "drizzle-orm";
+import { eq, and, ilike, inArray, sql, count, desc, asc, isNull } from "drizzle-orm";
 import { getCurrentUserInfo, isSuperAdmin } from "@/lib/permissions/check-permissions";
 import { nanoid } from "nanoid";
 import { clerkClient } from "@clerk/nextjs/server";
@@ -63,6 +63,12 @@ export async function getAllUsers(
 
   if (filters?.active !== undefined) {
     whereConditions.push(eq(users.active, filters.active));
+  }
+
+  // Filtrar apenas usuários do portal (sem id_customer) - usuários de ISOs são gerenciados dentro de cada ISO
+  // Exceto se um customerId específico foi passado como filtro
+  if (!filters?.customerId) {
+    whereConditions.push(isNull(users.idCustomer));
   }
 
   // Se for Admin (não Super Admin), filtrar apenas ISOs autorizados
@@ -514,13 +520,14 @@ export async function createAdminUser(data: {
   email: string;
   password?: string;
   customerIds?: number[]; // ISOs autorizados para o Admin
+  isInvisible?: boolean; // Se o usuário deve ser invisível nos ISOs
 }) {
   const userInfo = await getCurrentUserInfo();
   if (!userInfo?.isSuperAdmin) {
     throw new Error("Apenas Super Admin pode criar Admins");
   }
 
-  const { firstName, lastName, email, password, customerIds = [] } = data;
+  const { firstName, lastName, email, password, customerIds = [], isInvisible = false } = data;
 
   // Validar email
   if (!email || !email.includes("@")) {
@@ -591,6 +598,7 @@ export async function createAdminUser(data: {
       fullAccess: false,
       hashedPassword,
       initialPassword: finalPassword,
+      isInvisible,
     })
     .returning({ id: users.id });
 
@@ -1011,5 +1019,193 @@ export async function assignSuperAdminToUser(email: string) {
   } catch (error) {
     console.error("Error assigning Super Admin to user:", error);
     throw error;
+  }
+}
+
+/**
+ * Obtém as atribuições de um usuário que serão transferidas na deleção
+ */
+export async function getUserAttributions(userId: number) {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo?.isSuperAdmin) {
+    throw new Error("Apenas Super Admin pode ver atribuições de usuários");
+  }
+
+  try {
+    // Buscar ISOs gerenciados pelo usuário
+    const managedCustomers = await db
+      .select({
+        id: adminCustomers.id,
+        idCustomer: adminCustomers.idCustomer,
+        customerName: customers.name,
+      })
+      .from(adminCustomers)
+      .leftJoin(customers, eq(adminCustomers.idCustomer, customers.id))
+      .where(and(eq(adminCustomers.idUser, userId), eq(adminCustomers.active, true)));
+
+    return {
+      managedCustomers,
+      totalCustomers: managedCustomers.length,
+    };
+  } catch (error) {
+    console.error("Erro ao buscar atribuições do usuário:", error);
+    return {
+      managedCustomers: [],
+      totalCustomers: 0,
+    };
+  }
+}
+
+/**
+ * Deleta um usuário do portal e transfere suas atribuições para outro usuário
+ * @param userIdToDelete - ID do usuário a ser deletado
+ * @param transferToUserId - ID do usuário que receberá as atribuições (opcional, padrão: Super Admin logado)
+ */
+export async function deleteUserWithTransfer(
+  userIdToDelete: number,
+  transferToUserId?: number
+) {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo?.isSuperAdmin) {
+    throw new Error("Apenas Super Admin pode deletar usuários");
+  }
+
+  // Se não foi especificado um usuário para transferir, usar o Super Admin logado
+  const targetUserId = transferToUserId || userInfo.userId;
+
+  if (userIdToDelete === targetUserId) {
+    throw new Error("Não é possível transferir atribuições para o próprio usuário que será deletado");
+  }
+
+  try {
+    // 1. Verificar se o usuário a ser deletado existe
+    const userToDelete = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userIdToDelete))
+      .limit(1);
+
+    if (!userToDelete || userToDelete.length === 0) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    // 2. Verificar se o usuário de destino existe
+    const targetUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, targetUserId))
+      .limit(1);
+
+    if (!targetUser || targetUser.length === 0) {
+      throw new Error("Usuário de destino para transferência não encontrado");
+    }
+
+    // 3. Transferir admin_customers (ISOs gerenciados)
+    try {
+      const adminCustomersToTransfer = await db
+        .select()
+        .from(adminCustomers)
+        .where(eq(adminCustomers.idUser, userIdToDelete));
+
+      for (const ac of adminCustomersToTransfer) {
+        // Verificar se o usuário de destino já gerencia este ISO
+        const existing = await db
+          .select()
+          .from(adminCustomers)
+          .where(and(
+            eq(adminCustomers.idUser, targetUserId),
+            eq(adminCustomers.idCustomer, ac.idCustomer!)
+          ))
+          .limit(1);
+
+        if (existing.length > 0) {
+          // Atualizar para ativo se existir
+          await db
+            .update(adminCustomers)
+            .set({ active: true, dtupdate: new Date().toISOString() })
+            .where(eq(adminCustomers.id, existing[0].id));
+        } else {
+          // Criar novo registro
+          await db
+            .insert(adminCustomers)
+            .values({
+              idUser: targetUserId,
+              idCustomer: ac.idCustomer,
+              slug: `admin-${targetUserId}-customer-${ac.idCustomer}-${nanoid(10)}`,
+              active: true,
+            });
+        }
+      }
+
+      // Deletar os registros do usuário a ser deletado
+      await db
+        .delete(adminCustomers)
+        .where(eq(adminCustomers.idUser, userIdToDelete));
+
+      console.log(`[deleteUserWithTransfer] ISOs transferidos de usuário ${userIdToDelete} para ${targetUserId}`);
+    } catch (error) {
+      console.error("Erro ao transferir admin_customers:", error);
+    }
+
+    // 4. Deletar do Clerk se tiver idClerk
+    if (userToDelete[0].idClerk) {
+      try {
+        const clerk = await clerkClient();
+        await clerk.users.deleteUser(userToDelete[0].idClerk);
+        console.log(`[deleteUserWithTransfer] Usuário deletado do Clerk: ${userToDelete[0].idClerk}`);
+      } catch (clerkError: any) {
+        if (clerkError?.status !== 404 && !clerkError?.message?.includes('not found')) {
+          console.error("Erro ao deletar usuário do Clerk:", clerkError);
+        }
+      }
+    }
+
+    // 5. Deletar o usuário do banco de dados
+    await db.delete(users).where(eq(users.id, userIdToDelete));
+    console.log(`[deleteUserWithTransfer] Usuário ${userIdToDelete} deletado com sucesso`);
+
+    revalidatePath("/config/users");
+
+    return {
+      success: true,
+      deletedUserId: userIdToDelete,
+      transferredToUserId: targetUserId,
+    };
+  } catch (error) {
+    console.error("Erro ao deletar usuário com transferência:", error);
+    throw error;
+  }
+}
+
+/**
+ * Lista usuários disponíveis para receber transferência de atribuições
+ */
+export async function getAvailableTransferTargets(excludeUserId: number) {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo?.isSuperAdmin) {
+    throw new Error("Apenas Super Admin pode listar usuários para transferência");
+  }
+
+  try {
+    // Buscar usuários do portal (sem id_customer) que não sejam o usuário a ser excluído
+    const availableUsers = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        profileName: profiles.name,
+      })
+      .from(users)
+      .leftJoin(profiles, eq(users.idProfile, profiles.id))
+      .where(and(
+        isNull(users.idCustomer),
+        eq(users.active, true),
+        sql`${users.id} != ${excludeUserId}`
+      ))
+      .orderBy(asc(users.email));
+
+    return availableUsers;
+  } catch (error) {
+    console.error("Erro ao buscar usuários disponíveis para transferência:", error);
+    return [];
   }
 }
