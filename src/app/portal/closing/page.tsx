@@ -246,17 +246,17 @@ export default async function SalesDashboard({
               </div>
 
               {/* Terceira linha: 2 cards - Transações Vendas e Não processadas */}
-              <div className="mt-4">
+              <div className="mt-4 w-full block">
                 <NonProcessedSummaryTable transactions={transactionsGroupedReport} />
               </div>
 
               {/* Quarta linha: 2 cards - Transações Débito por Bandeira e Crédito por Bandeira */}
-              <div className="mt-4">
+              <div className="mt-4 w-full block">
                 <BrandSummaryTable transactions={transactionsGroupedReport} />
               </div>
 
               {/* Quinta linha: 2 cards - Débito Pré-pago por Bandeira e Crédito Pré-pago por Bandeira */}
-              <div className="mt-4">
+              <div className="mt-4 w-full block">
                 <BrandSummaryPrePaidTable transactions={transactionsGroupedReport} />
               </div>
             </>

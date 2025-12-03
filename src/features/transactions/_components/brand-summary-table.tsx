@@ -19,7 +19,7 @@ export function BrandSummaryTable({ transactions }: BrandSummaryTableProps) {
     ];
 
     return (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 w-full">
             {productTypes.map(({ label, value }) => {
                 // Filtrar por tipo de produto
                 const filteredTransactions = transactions.filter(
