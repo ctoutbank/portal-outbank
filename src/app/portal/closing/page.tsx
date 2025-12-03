@@ -154,7 +154,7 @@ export default async function SalesDashboard({
             <Card className="w-full border-l-8 border-black bg-transparent border-[#2a2a2a]">
               <CardContent className="p-6">
                 <div className="grid gap-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <CardValue
                       title="Bruto total"
                       description="Total bruto das transações"
