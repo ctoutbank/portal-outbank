@@ -147,7 +147,8 @@ async function TransactionsContent({
             </div>
           </div>
 
-          <TransactionsCardsWrapper transactions={transactionsGroupedReport} />
+          {/* Cards superiores ocultados */}
+          {/* <TransactionsCardsWrapper transactions={transactionsGroupedReport} /> */}
 
           {transactionList.transactions.length === 0 ? (
                 <EmptyState
