@@ -174,7 +174,7 @@ export default async function SalesDashboard({
               canEdit={isSuper}
             >
               {/* Primeira linha: 4 cards */}
-              <div sectionId="kpi-cards">
+              <div data-section-id="kpi-cards">
                 <Card className="w-full border-l-8 border-black bg-transparent border-[#2a2a2a]">
                   <CardContent className="p-6">
                     <div className="grid gap-4">
@@ -258,7 +258,7 @@ export default async function SalesDashboard({
               </div>
 
               {/* Segunda linha: gráfico inteiro */}
-              <div sectionId="chart" className="mt-4">
+              <div data-section-id="chart" className="mt-4">
                 <LazyClosingChart
                   chartData={totalTransactionsByMonth}
                   viewMode={viewMode}
@@ -266,22 +266,22 @@ export default async function SalesDashboard({
               </div>
 
               {/* Terceira linha: 2 cards - Transações Vendas e Não processadas */}
-              <div sectionId="non-processed-summary" className="mt-4 w-full block">
+              <div data-section-id="non-processed-summary" className="mt-4 w-full block">
                 <NonProcessedSummaryTable transactions={transactionsGroupedReport} />
               </div>
 
               {/* Quarta linha: 2 cards - Transações Débito por Bandeira e Crédito por Bandeira */}
-              <div sectionId="brand-summary" className="mt-4 w-full block">
+              <div data-section-id="brand-summary" className="mt-4 w-full block">
                 <BrandSummaryTable transactions={transactionsGroupedReport} />
               </div>
 
               {/* Quinta linha: 2 cards - Débito Pré-pago por Bandeira e Crédito Pré-pago por Bandeira */}
-              <div sectionId="brand-summary-prepaid" className="mt-4 w-full block">
+              <div data-section-id="brand-summary-prepaid" className="mt-4 w-full block">
                 <BrandSummaryPrePaidTable transactions={transactionsGroupedReport} />
               </div>
 
               {/* Tabela de transações */}
-              <div sectionId="transactions-table">
+              <div data-section-id="transactions-table">
                 <TransactionsDashboardTable
                   transactions={transactionsGroupedReport}
                 />

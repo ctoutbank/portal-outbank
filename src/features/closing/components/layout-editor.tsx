@@ -122,7 +122,7 @@ export function LayoutEditor({
           
           // Verificar se é um elemento React válido
           if (React.isValidElement(child)) {
-            const sectionId = (child.props as any)?.sectionId;
+            const sectionId = (child.props as any)?.['data-section-id'];
             
             if (sectionId) {
               return (
