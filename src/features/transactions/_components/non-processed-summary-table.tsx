@@ -113,7 +113,7 @@ export function NonProcessedSummaryTable({
     );
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-2 gap-4">
             <TransactionSummaryTable
                 items={itemsVendas}
                 total={totalGeralVendas}

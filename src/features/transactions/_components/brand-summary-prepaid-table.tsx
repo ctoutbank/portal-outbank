@@ -19,7 +19,7 @@ export function BrandSummaryPrePaidTable({ transactions }: BrandSummaryTableProp
     ];
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-2 gap-4">
             {productTypes.map(({ label, value }) => {
                 // Filtrar por tipo de produto
                 const filteredTransactions = transactions.filter(
