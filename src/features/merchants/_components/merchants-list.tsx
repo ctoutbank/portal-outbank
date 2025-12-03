@@ -139,14 +139,15 @@ export default function MerchantsList({
 
   return (
     <div>
-      <div className="border rounded-lg mt-2">
-        <Table>
+      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden mt-2">
+        <div className="overflow-x-auto">
+          <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-[#1f1f1f] border-b border-[#2a2a2a] hover:bg-[#1f1f1f]">
               {currentColumns
                 .filter((column) => currentVisibleColumns.includes(column.id))
                 .map((column) => (
-                  <TableHead key={column.id} className="font-medium text-center">
+                  <TableHead key={column.id} className="p-4 text-white text-xs font-medium uppercase tracking-wider text-center">
                     {column.name}
                   </TableHead>
                 ))}
@@ -154,36 +155,36 @@ export default function MerchantsList({
           </TableHeader>
           <TableBody>
             {list.merchants.map((merchant) => (
-              <TableRow key={merchant.merchantid}>
+              <TableRow key={merchant.merchantid} className="border-b border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors">
                 {currentVisibleColumns.includes("iso") && (
-                  <TableCell className="text-center">
+                  <TableCell className="text-center p-4 text-[#b0b0b0] text-[13px]">
                     {merchant.customerName ? (
                       <div className="flex justify-center">
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-[11px]">
                           {merchant.customerName}
                         </Badge>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground">--</span>
+                      <span className="text-[#808080]">--</span>
                     )}
                   </TableCell>
                 )}
                 {currentVisibleColumns.includes("name") && (
-                  <TableCell>
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                     <Link
                       href={`/merchants/${merchant.merchantid}`}
-                      className="font-medium hover:underline text-primary"
+                      className="font-medium hover:underline text-white"
                     >
                       {merchant.name?.toUpperCase() || "-"}
                     </Link>
                   </TableCell>
                 )}
                 {currentVisibleColumns.includes("localidade") && (
-                  <TableCell>
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                     <div className="flex items-center gap-2">
-                      <span>{merchant.addressname || "-"}</span>
+                      <span className="text-white">{merchant.addressname || "-"}</span>
                       {merchant.state && (
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-[11px] text-[#606060]">
                           ({merchant.state})
                         </span>
                       )}
@@ -191,7 +192,7 @@ export default function MerchantsList({
                   </TableCell>
                 )}
                 {currentVisibleColumns.includes("statusKyc") && (
-                  <TableCell className="text-center">
+                  <TableCell className="text-center p-4 text-[#b0b0b0] text-[13px]">
                     <div className="flex justify-center">
                       <Badge
                         variant={
@@ -201,6 +202,7 @@ export default function MerchantsList({
                               ? "secondary"
                               : "destructive"
                         }
+                        className="text-[11px]"
                       >
                         {translateStatus(merchant.kic_status || "")}
                       </Badge>
@@ -208,50 +210,50 @@ export default function MerchantsList({
                   </TableCell>
                 )}
                 {currentVisibleColumns.includes("phone") && (
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                     {merchant.areaCode && merchant.number
                       ? `(${merchant.areaCode}) ${merchant.number}`
                       : "-"}
                   </TableCell>
                 )}
                 {currentVisibleColumns.includes("email") && (
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                     <span className="truncate max-w-[200px] block">
                       {merchant.email || "-"}
                     </span>
                   </TableCell>
                 )}
                 {currentVisibleColumns.includes("antCp") && (
-                  <TableCell>
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                     <Badge
                       variant={
                         merchant.lockCpAnticipationOrder
                           ? "destructive"
                           : "default"
                       }
-                      className={
+                      className={`text-[11px] ${
                         !merchant.lockCpAnticipationOrder
                           ? "bg-green-600 hover:bg-green-700"
                           : ""
-                      }
+                      }`}
                     >
                       {merchant.lockCpAnticipationOrder ? "Inativo" : "Ativo"}
                     </Badge>
                   </TableCell>
                 )}
                 {currentVisibleColumns.includes("antCnp") && (
-                  <TableCell>
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                     <Badge
                       variant={
                         merchant.lockCnpAnticipationOrder
                           ? "destructive"
                           : "default"
                       }
-                      className={
+                      className={`text-[11px] ${
                         !merchant.lockCnpAnticipationOrder
                           ? "bg-green-600 hover:bg-green-700"
                           : ""
-                      }
+                      }`}
                     >
                       {merchant.lockCnpAnticipationOrder
                         ? "Bloqueado"
@@ -260,9 +262,9 @@ export default function MerchantsList({
                   </TableCell>
                 )}
                 {currentVisibleColumns.includes("dtinsert") && (
-                  <TableCell>
-                    <div className="flex flex-col whitespace-nowrap">
-                      <span>
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
+                    <div className="flex flex-col whitespace-nowrap gap-0.5">
+                      <span className="text-white font-medium">
                         {merchant.dtinsert
                           ? new Date(merchant.dtinsert).toLocaleDateString(
                               "pt-BR"
@@ -275,7 +277,7 @@ export default function MerchantsList({
                           : "-"}
                       </span>
                       {merchant.Inclusion && (
-                        <span className="text-xs text-muted-foreground truncate max-w-[150px]">
+                        <span className="text-[11px] text-[#606060] truncate max-w-[150px]">
                           {merchant.Inclusion}
                         </span>
                       )}
@@ -283,18 +285,18 @@ export default function MerchantsList({
                   </TableCell>
                 )}
                 {currentVisibleColumns.includes("consultor") && (
-                  <TableCell>{merchant.sales_agent || "-"}</TableCell>
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px]">{merchant.sales_agent || "-"}</TableCell>
                 )}
                 {currentVisibleColumns.includes("ativo") && (
-                  <TableCell className="text-center">
+                  <TableCell className="text-center p-4 text-[#b0b0b0] text-[13px]">
                     <div className="flex justify-center">
                       <Badge
                         variant={merchant.active ? "default" : "destructive"}
-                        className={
+                        className={`text-[11px] ${
                           merchant.active
                             ? "bg-green-600 hover:bg-green-700"
                             : ""
-                        }
+                        }`}
                       >
                         {merchant.active ? "Ativo" : "Inativo"}
                       </Badge>
@@ -304,7 +306,8 @@ export default function MerchantsList({
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </div>
     </div>
   );
