@@ -1071,7 +1071,7 @@ export async function deleteUserWithTransfer(
   }
 
   // Se não foi especificado um usuário para transferir, usar o Super Admin logado
-  const targetUserId = transferToUserId || userInfo.userId;
+  const targetUserId = transferToUserId || userInfo.id;
 
   if (userIdToDelete === targetUserId) {
     throw new Error("Não é possível transferir atribuições para o próprio usuário que será deletado");
