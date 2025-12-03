@@ -353,7 +353,7 @@ export default function TransactionsList({
               className="border-b border-[#2a2a2a] hover:bg-[#1f1f1f] cursor-pointer transition-colors"
               onClick={() => handleRowClick(transaction.slug)}
             >
-              <TableCell className="text-center p-4 text-[#b0b0b0] text-sm">
+              <TableCell className="text-center p-4 text-[#b0b0b0] text-[13px]">
                 {formatCustomerName(transaction.customerName) ? (
                   <div className="flex justify-center">
                     <Badge variant="outline" className="text-xs">
@@ -364,7 +364,7 @@ export default function TransactionsList({
                   <span className="text-[#808080]">--</span>
                 )}
               </TableCell>
-              <TableCell className="p-4 text-[#b0b0b0] text-sm">
+              <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                 <div className="flex flex-col gap-0.5">
                   <span className="text-white font-medium">
                     {formatDate(transaction.dtInsert).split(" ")[0]}
@@ -374,7 +374,7 @@ export default function TransactionsList({
                   </span>
                 </div>
               </TableCell>
-              <TableCell className="p-4 text-[#b0b0b0] text-sm">
+              <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                 <div className="flex flex-col gap-0.5">
                   <span className="text-white font-medium">
                     {transaction.merchantName?.toUpperCase() || "N/A"}
@@ -386,7 +386,7 @@ export default function TransactionsList({
                   </span>
                 </div>
               </TableCell>
-              <TableCell className="p-4 text-[#b0b0b0] text-sm">
+              <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                 <div className="flex flex-col gap-0.5">
                   <span className="text-white">
                     {getTerminalTypeLabel(transaction.terminalType || "") || "-"}
@@ -396,7 +396,7 @@ export default function TransactionsList({
                   </span>
                 </div>
               </TableCell>
-              <TableCell className="p-4 text-[#b0b0b0] text-sm">
+              <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                 <div className="flex flex-col gap-0.5">
                   <span className="text-white">
                     {getCardPaymentMethodLabel(transaction.method || "") || "-"}
@@ -407,10 +407,10 @@ export default function TransactionsList({
                   </span>
                 </div>
               </TableCell>
-              <TableCell className="p-4 text-[#b0b0b0] text-sm">
+              <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                 {translateProductType(transaction.productType)}
               </TableCell>
-              <TableCell className="p-4 text-[#b0b0b0] text-sm">
+              <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                 {renderBrand(transaction.brand)}
               </TableCell>
               <TableCell className="p-4 text-white font-semibold text-sm">

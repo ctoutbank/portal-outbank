@@ -65,7 +65,6 @@ export function SortableTableHead({
     >
       <div className={cn("flex items-center gap-1", className?.includes("text-center") ? "justify-center" : "")}>
         {name}
-        {renderSortIcon()}
       </div>
     </TableHead>
   );
