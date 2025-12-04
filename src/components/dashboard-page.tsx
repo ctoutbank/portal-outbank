@@ -189,122 +189,100 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
         </CardContent>
       </Card>
 
-      {/* Top 5 Clientes Cards */}
-      <Card className="overflow-hidden">
-        <CardHeader className="pb-0">
-          <CardTitle>Top 5 Estabelecimentos</CardTitle>
-          <CardDescription>
-            Os 5 estabelecimentos com maior volume de vendas
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          {data.topMerchants.length > 0 ? (
-            <div className="mt-4">
-              {data.topMerchants.map((merchant, index) => (
+      {/* TABLE: TOP 5 ESTABELECIMENTOS (VOLUME) */}
+      <div className="table-section space-y-4">
+        <div className="section-header">
+          <h2 className="section-title text-lg font-semibold text-white">Top 5 Estabelecimentos</h2>
+          <p className="section-subtitle text-sm text-[#808080]">Os 5 estabelecimentos com maior volume de vendas</p>
+        </div>
+        {data.topMerchants.length > 0 ? (
+          <div className="establishments-table bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden">
+            {data.topMerchants.map((merchant, index) => {
+              const percentage = totalBruto > 0 ? ((merchant.bruto / totalBruto) * 100) : 0;
+              const gradientColors = [
+                'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
+                'linear-gradient(135deg, #4a90e2 0%, #357abd 100%)',
+                'linear-gradient(135deg, #4ecdc4 0%, #44a8a0 100%)',
+                'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)',
+                'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)',
+              ];
+              const progressGradients = [
+                'linear-gradient(90deg, #ff6b6b 0%, #ee5a6f 100%)',
+                'linear-gradient(90deg, #4a90e2 0%, #357abd 100%)',
+                'linear-gradient(90deg, #4ecdc4 0%, #44a8a0 100%)',
+                'linear-gradient(90deg, #a78bfa 0%, #8b5cf6 100%)',
+                'linear-gradient(90deg, #f472b6 0%, #ec4899 100%)',
+              ];
+              
+              return (
                 <div 
                   key={merchant.id} 
-                  className="group relative hover:bg-slate-50 transition-colors p-4 border-b last:border-b-0"
+                  className="table-row flex items-center gap-4 p-4 border-b border-[#2a2a2a] last:border-b-0"
                 >
-                  <div className="flex items-center gap-4">
-                    {/* Ranking e logo */}
-                    <div className="relative">
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold ${cardColors[index % cardColors.length].bg}`}>
-                        {index + 1}
-                      </div>
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-background flex items-center justify-center border">
-                        {merchant.crescimento >= 0 ? (
-                          <TrendingUp className="h-3 w-3 text-green-500" />
-                        ) : (
-                          <TrendingDown className="h-3 w-3 text-red-500" />
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Detalhes */}
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-2 items-center">
-                      {/* Nome e Módulos */}
-                      <div className="md:col-span-2">
-                        <h3 className="text-xs font-medium line-clamp-1 mb-1">{merchant.name}</h3>
-                        {merchant.moduleSlugs && merchant.moduleSlugs.length > 0 && (
-                          <ModuleBadges
-                            moduleSlugs={merchant.moduleSlugs}
-                            maxVisible={3}
-                            showIcon={true}
-                            variant="outline"
-                            className="mt-1"
-                          />
-                        )}
-                      </div>
-                      
-                      {/* Valores */}
-                      <div className="md:col-span-1">
-                        <p className="text-xs text-muted-foreground">Bruto</p>
-                        <p className="font-medium">
-                          {new Intl.NumberFormat('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                            maximumFractionDigits: 0
-                          }).format(merchant.bruto)}
-                        </p>
-                      </div>
-                      
-                      <div className="md:col-span-1">
-                        <p className="text-xs text-muted-foreground">Lucro</p>
-                        <p className="font-medium">
-                          {new Intl.NumberFormat('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                            maximumFractionDigits: 0
-                          }).format(merchant.lucro)}
-                        </p>
-                      </div>
-                      
-                      {/* Crescimento */}
-                      <div className="md:col-span-1">
-                        <p className="text-xs text-muted-foreground">Crescimento</p>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          merchant.crescimento >= 5 ? 'bg-green-100 text-green-800' : 
-                          merchant.crescimento >= 0 ? 'bg-blue-100 text-blue-800' : 
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {merchant.crescimento >= 0 ? '+' : ''}{merchant.crescimento.toFixed(1)}%
-                        </span>
-                      </div>
-                      
-                      {/* Participação */}
-                      <div className="md:col-span-1 flex flex-col">
-                        <div className="flex justify-between mb-1">
-                          <p className="text-xs text-muted-foreground">% do Total</p>
-                          <p className="text-xs font-medium">{totalBruto > 0 ? ((merchant.bruto / totalBruto) * 100).toFixed(1) : '0.0'}%</p>
-                        </div>
-                        <div className="w-full bg-secondary rounded-full h-1.5">
-                          <div
-                            className={`h-1.5 rounded-full ${cardColors[index % cardColors.length].progress}`}
-                            style={{ width: `${totalBruto > 0 ? (merchant.bruto / totalBruto) * 100 : 0}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Seta indicadora */}
-                    <div className="hidden md:flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="p-1 rounded-full hover:bg-slate-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="m9 18 6-6-6-6"/>
-                        </svg>
-                      </div>
+                  <div 
+                    className="establishment-avatar w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold text-lg"
+                    style={{ background: gradientColors[index % gradientColors.length] }}
+                  >
+                    🏪
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="establishment-name text-white font-medium truncate">
+                      {merchant.name}
                     </div>
                   </div>
+                  <div className="text-right">
+                    <div className="table-value strong text-white font-semibold text-sm">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                        maximumFractionDigits: 0
+                      }).format(merchant.bruto)}
+                    </div>
+                    <div className="table-value text-[11px] text-[#808080]">Bruto</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="table-value strong text-white font-semibold text-sm">
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                        maximumFractionDigits: 0
+                      }).format(merchant.lucro)}
+                    </div>
+                    <div className="table-value text-[11px] text-[#808080]">Lucro</div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`growth-badge inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                      merchant.crescimento >= 0 ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {merchant.crescimento >= 0 ? '+' : ''}{merchant.crescimento.toFixed(1)}%
+                    </div>
+                    <div className="table-value text-[11px] text-[#808080] mt-1">Crescimento</div>
+                  </div>
+                  <div className="text-right min-w-[120px]">
+                    <div className="progress-bar w-full bg-[#2a2a2a] rounded-full h-2 mb-1">
+                      <div 
+                        className="progress-fill h-2 rounded-full"
+                        style={{ 
+                          width: `${percentage}%`,
+                          background: progressGradients[index % progressGradients.length]
+                        }}
+                      ></div>
+                    </div>
+                    <div className="table-value text-[11px] text-[#808080]">% do Total</div>
+                  </div>
+                  <div className="percentage text-white font-semibold text-sm min-w-[50px] text-right">
+                    {percentage.toFixed(1)}%
+                  </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <p className="text-gray-500">Nenhum estabelecimento com dados reais encontrado.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-8 text-center">
+            <p className="text-[#808080]">Nenhum estabelecimento com dados reais encontrado.</p>
+          </div>
+        )}
+      </div>
 
       {/* Dados detalhados dos clientes */}
       <Card>
