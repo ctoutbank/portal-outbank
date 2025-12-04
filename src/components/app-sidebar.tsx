@@ -114,7 +114,7 @@ export function AppSidebar({ tenantCustomization, isAdmin = false, hasMerchantsA
         </div>
         <Separator orientation="horizontal" className="bg-[#2a2a2a] absolute bottom-0 left-0 right-0" />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="pt-6">
         <NavMain items={filteredNavItems} />
       </SidebarContent>
       <SidebarFooter>{state !== "collapsed" && <UserMenu />}</SidebarFooter>
