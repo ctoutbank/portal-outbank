@@ -21,8 +21,12 @@ async function generateRandomPassword(length = 8): Promise<string> {
 }
 
 /**
- * Lista todos os usuários do sistema com filtros
- * Super Admin vê todos, Admin vê apenas usuários dos ISOs autorizados
+ * Lista todos os usuarios do sistema com filtros
+ * Super Admin ve todos, Admin ve apenas usuarios dos ISOs autorizados
+ * @param page - Numero da pagina
+ * @param pageSize - Quantidade de registros por pagina
+ * @param filters - Filtros de busca
+ * @param userType - Tipo de usuario: "portal" (sem idCustomer), "iso" (com idCustomer), ou undefined (todos)
  */
 export async function getAllUsers(
   page: number = 1,
@@ -33,7 +37,8 @@ export async function getAllUsers(
     customerId?: number;
     profileId?: number;
     active?: boolean;
-  }
+  },
+  userType?: "portal" | "iso"
 ) {
   const userInfo = await getCurrentUserInfo();
   if (!userInfo) {
@@ -65,9 +70,19 @@ export async function getAllUsers(
     whereConditions.push(eq(users.active, filters.active));
   }
 
-  // Filtrar apenas usuários do portal (sem id_customer) - usuários de ISOs são gerenciados dentro de cada ISO
-  // Exceto se um customerId específico foi passado como filtro
-  if (!filters?.customerId) {
+  // Filtrar por tipo de usuario (portal vs ISO)
+  // userType = "portal": usuarios sem idCustomer (administradores do portal)
+  // userType = "iso": usuarios com idCustomer (usuarios de ISOs especificos)
+  // userType = undefined: comportamento padrao (apenas portal se nao houver filtro de customerId)
+  if (userType === "portal") {
+    // Usuarios do portal: sem idCustomer
+    whereConditions.push(isNull(users.idCustomer));
+  } else if (userType === "iso") {
+    // Usuarios de ISOs: com idCustomer
+    whereConditions.push(sql`${users.idCustomer} IS NOT NULL`);
+  } else if (!filters?.customerId) {
+    // Comportamento padrao: apenas usuarios do portal (sem id_customer)
+    // Exceto se um customerId especifico foi passado como filtro
     whereConditions.push(isNull(users.idCustomer));
   }
 
