@@ -99,7 +99,7 @@ export function ModuleBadge({
         </TooltipTrigger>
         <TooltipContent>
           <p className="font-medium">{config.name}</p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-[#CCCCCC] mt-1">
             {config.description}
           </p>
         </TooltipContent>
@@ -115,6 +115,7 @@ interface ModuleBadgesProps {
   maxVisible?: number;
   showIcon?: boolean;
   variant?: "default" | "outline" | "secondary";
+  badgeClassName?: string;
 }
 
 export function ModuleBadges({
@@ -124,6 +125,7 @@ export function ModuleBadges({
   maxVisible = 4,
   showIcon = true,
   variant = "default",
+  badgeClassName,
 }: ModuleBadgesProps) {
   if (!moduleSlugs || moduleSlugs.length === 0) {
     return null;
@@ -141,6 +143,7 @@ export function ModuleBadges({
           moduleName={moduleNames?.[slug]}
           showIcon={showIcon}
           variant={variant}
+          className={badgeClassName}
         />
       ))}
       {remainingCount > 0 && (
@@ -158,7 +161,7 @@ export function ModuleBadges({
               <div className="space-y-1">
                 <p className="font-medium">Módulos adicionais:</p>
                 {moduleSlugs.slice(maxVisible).map((slug) => (
-                  <p key={slug} className="text-xs text-muted-foreground">
+                  <p key={slug} className="text-xs text-[#CCCCCC]">
                     • {moduleNames?.[slug] || slug.toUpperCase()}
                   </p>
                 ))}

@@ -55,13 +55,13 @@ export function StatusBadge({
             </TooltipTrigger>
             <TooltipContent>
               <p className="font-medium">ISO completo e ativo</p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-[#CCCCCC] mt-1">
                 ✓ Nome configurado
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-[#CCCCCC]">
                 ✓ Subdomínio configurado
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-[#CCCCCC]">
                 ✓ Personalização configurada
               </p>
             </TooltipContent>
@@ -82,12 +82,12 @@ export function StatusBadge({
           <TooltipContent>
             <p className="font-medium">ISO ativo mas incompleto</p>
             {!hasCustomization && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-[#CCCCCC] mt-1">
                 ⚠ Falta configurar personalização
               </p>
             )}
             {!subdomain && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-[#CCCCCC]">
                 ⚠ Falta configurar subdomínio
               </p>
             )}
@@ -127,13 +127,13 @@ export function StatusBadge({
           </TooltipTrigger>
           <TooltipContent>
             <p className="font-medium">ISO configurado e ativo</p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-[#CCCCCC] mt-1">
               ✓ Personalização configurada
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-[#CCCCCC]">
               ✓ {hasUsers} usuário(s) cadastrado(s)
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-[#CCCCCC]">
               ✓ Subdomínio configurado
             </p>
           </TooltipContent>
@@ -154,17 +154,17 @@ export function StatusBadge({
         <TooltipContent>
           <p className="font-medium">ISO ativo mas incompleto</p>
           {!hasCustomization && (
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-[#CCCCCC] mt-1">
               ⚠ Falta configurar personalização
             </p>
           )}
           {hasUsers === 0 && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-[#CCCCCC]">
               ⚠ Falta cadastrar usuários
             </p>
           )}
           {!subdomain && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-[#CCCCCC]">
               ⚠ Falta configurar subdomínio
             </p>
           )}

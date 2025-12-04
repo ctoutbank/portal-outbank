@@ -94,7 +94,7 @@ export default function CustomersList({
                         rel="noopener noreferrer"
                         className="text-white hover:underline inline-flex items-center gap-1"
                       >
-                        <span className="font-mono truncate max-w-[200px] text-[11px] text-[#606060]">{customer.subdomain}.consolle.one</span>
+                        <span className="font-mono truncate max-w-[200px] text-[13px] text-white">{customer.subdomain}.consolle.one</span>
                         <ExternalLink className="h-3 w-3 opacity-60 flex-shrink-0" />
                       </a>
                     ) : (
@@ -111,6 +111,8 @@ export default function CustomersList({
                       moduleSlugs={["adq", ...(customer.moduleSlugs || [])].filter((slug, index, self) => self.indexOf(slug) === index)}
                       maxVisible={3}
                       showIcon={true}
+                      variant="outline"
+                      badgeClassName="text-[11px]"
                     />
                   </TableCell>
                   <TableCell className="p-4 text-[#b0b0b0] text-[13px] whitespace-nowrap">

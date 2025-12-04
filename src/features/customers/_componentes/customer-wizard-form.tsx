@@ -29,10 +29,9 @@ import Image from "next/image";
 import { Info, Palette, Building2, Users, Save, ChevronDown } from "lucide-react";
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
 } from "@radix-ui/react-tooltip";
-import { TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { generateSlug } from "@/lib/utils";
 import { insertCustomerFormAction } from "../_actions/customers-formActions";
 import { updateCustomer } from "../server/customers";
