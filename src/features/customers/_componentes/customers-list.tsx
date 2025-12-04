@@ -56,18 +56,18 @@ export default function CustomersList({
                   Nome
                 </TableHead>
 
-                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap">
+                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap text-center">
                   Subdomínio
                 </TableHead>
 
-                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap">
+                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap text-center">
                   Usuários
                 </TableHead>
 
-                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap">
+                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap text-center">
                   Módulos
                 </TableHead>
-                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap">
+                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap text-center">
                   Status
                 </TableHead>
               </TableRow>
@@ -86,13 +86,13 @@ export default function CustomersList({
                       {customer.name}
                     </Link>
                   </TableCell>
-                  <TableCell className="p-4 text-[#b0b0b0] text-[13px] whitespace-nowrap">
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px] whitespace-nowrap text-center">
                     {customer.subdomain ? (
                       <a
                         href={`https://${customer.subdomain}.consolle.one`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-white hover:underline inline-flex items-center gap-1"
+                        className="text-white hover:underline inline-flex items-center gap-1 justify-center"
                       >
                         <span className="font-mono truncate max-w-[200px] text-[13px] text-white">{customer.subdomain}.consolle.one</span>
                         <ExternalLink className="h-3 w-3 opacity-60 flex-shrink-0" />
@@ -101,28 +101,32 @@ export default function CustomersList({
                       <span className="text-[#808080]">--</span>
                     )}
                   </TableCell>
-                  <TableCell className="p-4 text-[#b0b0b0] text-[13px] whitespace-nowrap">
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px] whitespace-nowrap text-center">
                     <span className="text-white font-medium tabular-nums">
                       {customer.userCount || 0}
                     </span>
                   </TableCell>
-                  <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
-                    <ModuleBadges
-                      moduleSlugs={["adq", ...(customer.moduleSlugs || [])].filter((slug, index, self) => self.indexOf(slug) === index)}
-                      maxVisible={3}
-                      showIcon={true}
-                      variant="outline"
-                      badgeClassName="text-[11px]"
-                    />
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px] text-center">
+                    <div className="flex justify-center">
+                      <ModuleBadges
+                        moduleSlugs={["adq", ...(customer.moduleSlugs || [])].filter((slug, index, self) => self.indexOf(slug) === index)}
+                        maxVisible={3}
+                        showIcon={true}
+                        variant="outline"
+                        badgeClassName="text-[11px]"
+                      />
+                    </div>
                   </TableCell>
-                  <TableCell className="p-4 text-[#b0b0b0] text-[13px] whitespace-nowrap">
-                    <StatusBadge
-                      isActive={customer.isActive ?? true}
-                      hasCustomization={customer.hasCustomization}
-                      hasUsers={customer.userCount}
-                      subdomain={customer.subdomain}
-                      isoStatus={customer.isoStatus}
-                    />
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px] whitespace-nowrap text-center">
+                    <div className="flex justify-center">
+                      <StatusBadge
+                        isActive={customer.isActive ?? true}
+                        hasCustomization={customer.hasCustomization}
+                        hasUsers={customer.userCount}
+                        subdomain={customer.subdomain}
+                        isoStatus={customer.isoStatus}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
