@@ -152,6 +152,6 @@ export async function syncUserToOutbankOneClerk(input: SyncUserInput): Promise<S
 /**
  * Verifica se a sincronizacao com outbank-one esta configurada
  */
-export function isOutbankOneSyncEnabled(): boolean {
+export async function isOutbankOneSyncEnabled(): Promise<boolean> {
   return !!OUTBANK_ONE_CLERK_SECRET_KEY;
 }
