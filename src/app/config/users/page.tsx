@@ -3,7 +3,7 @@ import BaseHeader from "@/components/layout/base-header";
 import PageSizeSelector from "@/components/page-size-selector";
 import PaginationRecords from "@/components/pagination-Records";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/permissions/require-admin";
 import { getAllUsers, getAllProfiles, getAvailableCustomers } from "@/features/users/server/admin-users";
@@ -76,6 +76,14 @@ export default async function UsersPage({
 
       <BaseBody title="Usuários" subtitle="Gerenciamento de usuários do sistema">
         <div className="flex flex-col space-y-4">
+          <div className="mb-2">
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/config">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar para Configurações
+              </Link>
+            </Button>
+          </div>
           <div className="mb-1 flex items-center justify-between">
             <div className="flex-1">
               <AdminUsersFilter
@@ -96,7 +104,9 @@ export default async function UsersPage({
             </Button>
           </div>
 
-          <AdminUsersList users={usersData?.users || []} />
+          <div className="mt-4">
+            <AdminUsersList users={usersData?.users || []} />
+          </div>
 
           {totalCount > 0 && (
             <div className="flex items-center justify-between mt-4">

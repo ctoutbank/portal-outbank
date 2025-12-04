@@ -24,7 +24,7 @@ export default async function ConfigPage() {
 
         <BaseBody title="Configurações" subtitle="Gerenciamento de configurações do sistema">
           <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 max-w-4xl">
               <Link href="/config/users" className="block group">
                 <Card className="h-full transition-all duration-200 hover:bg-[#2E2E2E] border border-[rgba(255,255,255,0.1)] rounded-[6px] bg-[#1D1D1D] cursor-pointer">
                   <CardHeader className="pb-3">

@@ -11,11 +11,30 @@ import { generateSlug } from "@/lib/utils";
  * Lista todas as categorias (profiles) do sistema
  * Super Admin vê todas, Admin vê apenas as permitidas
  */
-export async function getAllCategories() {
+export async function getAllCategories(filters?: {
+  name?: string;
+  active?: boolean | string;
+}) {
   const userInfo = await getCurrentUserInfo();
   if (!userInfo?.isSuperAdmin) {
     throw new Error("Apenas Super Admin pode listar categorias");
   }
+
+  // Construir condições de filtro
+  const conditions = [];
+  
+  if (filters?.name && filters.name.trim()) {
+    conditions.push(ilike(profiles.name, `%${filters.name.trim()}%`));
+  }
+  
+  if (filters?.active !== undefined) {
+    const activeValue = typeof filters.active === 'string' 
+      ? filters.active === 'true' 
+      : filters.active;
+    conditions.push(eq(profiles.active, activeValue));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   const result = await db
     .select({
@@ -29,6 +48,7 @@ export async function getAllCategories() {
       dtupdate: profiles.dtupdate,
     })
     .from(profiles)
+    .where(whereClause)
     .orderBy(desc(profiles.id));
 
   // Contar usuários por categoria

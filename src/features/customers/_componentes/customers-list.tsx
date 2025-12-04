@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ModuleBadges } from "@/components/ui/module-badge";
-import { ChevronDown, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function CustomersList({
@@ -47,28 +47,27 @@ export default function CustomersList({
 
   return (
     <div className="w-full max-w-full overflow-x-hidden">
-      <div className="border rounded-lg shadow-sm bg-card overflow-hidden w-full">
+      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden w-full">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50 hover:bg-muted/50">
-                <TableHead className="font-semibold text-sm whitespace-nowrap">
+              <TableRow className="bg-[#1f1f1f] border-b border-[#2a2a2a] hover:bg-[#1f1f1f]">
+                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap">
                   Nome
-                  <ChevronDown className="ml-2 h-4 w-4 inline opacity-50" />
                 </TableHead>
 
-                <TableHead className="font-semibold text-sm whitespace-nowrap">
+                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap">
                   Subdomínio
                 </TableHead>
 
-                <TableHead className="font-semibold text-sm whitespace-nowrap">
+                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap">
                   Usuários
                 </TableHead>
 
-                <TableHead className="font-semibold text-sm whitespace-nowrap">
+                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap">
                   Módulos
                 </TableHead>
-                <TableHead className="font-semibold text-sm whitespace-nowrap">
+                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider whitespace-nowrap">
                   Status
                 </TableHead>
               </TableRow>
@@ -77,44 +76,44 @@ export default function CustomersList({
               {Customers?.customers.map((customer) => (
                 <TableRow 
                   key={customer.id}
-                  className="hover:bg-muted/30 transition-colors"
+                  className="border-b border-[#2a2a2a] hover:bg-[#1f1f1f] transition-colors"
                 >
-                  <TableCell className="py-3 whitespace-nowrap">
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px] whitespace-nowrap">
                     <Link
-                      className="text-primary hover:underline font-medium text-sm"
+                      className="text-white hover:underline font-medium"
                       href={"/customers/" + customer.id}
                     >
                       {customer.name}
                     </Link>
                   </TableCell>
-                  <TableCell className="py-3 whitespace-nowrap">
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px] whitespace-nowrap">
                     {customer.subdomain ? (
                       <a
                         href={`https://${customer.subdomain}.consolle.one`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary hover:underline inline-flex items-center gap-1 text-sm"
+                        className="text-white hover:underline inline-flex items-center gap-1"
                       >
-                        <span className="font-mono truncate max-w-[200px]">{customer.subdomain}.consolle.one</span>
+                        <span className="font-mono truncate max-w-[200px] text-[11px] text-[#606060]">{customer.subdomain}.consolle.one</span>
                         <ExternalLink className="h-3 w-3 opacity-60 flex-shrink-0" />
                       </a>
                     ) : (
-                      <span className="text-muted-foreground text-sm">--</span>
+                      <span className="text-[#808080]">--</span>
                     )}
                   </TableCell>
-                  <TableCell className="py-3 whitespace-nowrap">
-                    <span className="text-sm font-medium tabular-nums">
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px] whitespace-nowrap">
+                    <span className="text-white font-medium tabular-nums">
                       {customer.userCount || 0}
                     </span>
                   </TableCell>
-                  <TableCell className="py-3">
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                     <ModuleBadges
                       moduleSlugs={["adq", ...(customer.moduleSlugs || [])].filter((slug, index, self) => self.indexOf(slug) === index)}
                       maxVisible={3}
                       showIcon={true}
                     />
                   </TableCell>
-                  <TableCell className="py-3 whitespace-nowrap">
+                  <TableCell className="p-4 text-[#b0b0b0] text-[13px] whitespace-nowrap">
                     <StatusBadge
                       isActive={customer.isActive ?? true}
                       hasCustomization={customer.hasCustomization}
