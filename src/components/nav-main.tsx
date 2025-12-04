@@ -63,9 +63,9 @@ export function NavMain({ items }: Props) {
                       {item.url ? (
                         <a href={item.url} className="flex items-center w-full">
                           {item.icon && (
-                            <div className="relative flex items-center justify-center w-6 h-6 rounded-md bg-[#2a2a2a]/30 flex-shrink-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:inset-0 group-data-[collapsible=icon]:m-auto group-data-[collapsible=icon]:w-6 group-data-[collapsible=icon]:h-6">
+                            <div className="relative flex items-center justify-center w-5 h-5 rounded-md bg-[#2a2a2a]/30 flex-shrink-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:inset-0 group-data-[collapsible=icon]:m-auto group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5">
                               <item.icon
-                                className="size-5 text-white"
+                                className="size-4 text-white"
                                 strokeWidth={2}
                               />
                             </div>
@@ -78,9 +78,9 @@ export function NavMain({ items }: Props) {
                       ) : (
                         <>
                           {item.icon && (
-                            <div className="relative flex items-center justify-center w-6 h-6 rounded-md bg-[#2a2a2a]/30 flex-shrink-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:inset-0 group-data-[collapsible=icon]:m-auto group-data-[collapsible=icon]:w-6 group-data-[collapsible=icon]:h-6">
+                            <div className="relative flex items-center justify-center w-5 h-5 rounded-md bg-[#2a2a2a]/30 flex-shrink-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:inset-0 group-data-[collapsible=icon]:m-auto group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5">
                               <item.icon
-                                className="size-5 text-white"
+                                className="size-4 text-white"
                                 strokeWidth={2}
                               />
                             </div>
@@ -122,9 +122,9 @@ export function NavMain({ items }: Props) {
                 >
                   <a href={item.url}>
                     {item.icon && (
-                      <div className="relative flex items-center justify-center w-6 h-6 rounded-md bg-sidebar-accent/10 flex-shrink-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:inset-0 group-data-[collapsible=icon]:m-auto group-data-[collapsible=icon]:w-6 group-data-[collapsible=icon]:h-6">
+                      <div className="relative flex items-center justify-center w-5 h-5 rounded-md bg-sidebar-accent/10 flex-shrink-0 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:inset-0 group-data-[collapsible=icon]:m-auto group-data-[collapsible=icon]:w-5 group-data-[collapsible=icon]:h-5">
                         <item.icon
-                          className="size-5 text-white"
+                          className="size-4 text-white"
                           strokeWidth={2}
                         />
                       </div>
