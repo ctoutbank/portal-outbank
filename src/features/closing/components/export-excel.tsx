@@ -86,7 +86,7 @@ export default function TransactionsExport() {
       </Button>
       {isLoading && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-[#1f1f1f] border border-[#2a2a2a] p-4 rounded-md shadow-lg">
+          <div className="bg-black p-4 rounded-md shadow-lg border border-[#2a2a2a]">
             <span className="text-sm font-medium text-white">
               Exportando Excel...
             </span>

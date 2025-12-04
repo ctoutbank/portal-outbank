@@ -51,8 +51,8 @@ const PageSizeSelector: React.FC<PageSizeSelectorProps> = ({
       </Select>
       {isPending && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white p-4 rounded-md shadow-lg">
-            <span className="text-sm font-medium">Carregando...</span>
+          <div className="bg-black p-4 rounded-md shadow-lg border border-[#2a2a2a]">
+            <span className="text-sm font-medium text-white">Carregando...</span>
           </div>
         </div>
       )}
