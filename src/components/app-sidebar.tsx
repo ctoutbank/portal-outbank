@@ -108,9 +108,11 @@ export function AppSidebar({ tenantCustomization, isAdmin = false, hasMerchantsA
   
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="flex flex-col items-center min-h-20 py-4 pb-12">
-        <TeamSwitcher teams={teams} />
-        <Separator orientation="horizontal" className="bg-[#2a2a2a] mt-auto" />
+      <SidebarHeader className="flex flex-col items-center h-20 relative">
+        <div className="flex-1 flex items-center justify-center">
+          <TeamSwitcher teams={teams} />
+        </div>
+        <Separator orientation="horizontal" className="bg-[#2a2a2a] absolute bottom-0 left-0 right-0" />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={filteredNavItems} />
