@@ -8,6 +8,7 @@ import { generateRandomPassword } from "@/features/customers/users/server/users"
 import { sendWelcomePasswordEmail } from "@/lib/send-email";
 import { users, profiles, customers, customerCustomization, file } from "../../../../../drizzle/schema";
 import { eq, ilike, and, or, isNull } from "drizzle-orm";
+import { syncUserToOutbankOneClerk } from "@/lib/clerk-sync";
 
 interface TenantEmailData {
   customerName: string;
@@ -278,6 +279,23 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
           // Não bloquear criação do usuário se email falhar, mas logar detalhadamente
         }
 
+        // Sincronizar usuario com a instancia do Clerk do outbank-one (ISOs)
+        // Isso permite que o usuario faca login nos ISOs com as mesmas credenciais
+        if (idCustomer) {
+          console.log(`[InsertUser] Sincronizando usuario reutilizado com outbank-one Clerk...`);
+          const syncResult = await syncUserToOutbankOneClerk({
+            email: normalizedEmail,
+            firstName,
+            lastName,
+            password: finalPassword,
+          });
+          if (syncResult.success) {
+            console.log(`[InsertUser] Sincronizacao com outbank-one concluida: ${syncResult.action}`);
+          } else {
+            console.warn(`[InsertUser] Falha na sincronizacao com outbank-one: ${syncResult.error}`);
+          }
+        }
+
         return {
           ok: true,
           userId: created[0].id,
@@ -362,6 +380,23 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
       userId: created[0].id,
       email: normalizedEmail,
     });
+
+    // Sincronizar usuario com a instancia do Clerk do outbank-one (ISOs)
+    // Isso permite que o usuario faca login nos ISOs com as mesmas credenciais
+    if (idCustomer) {
+      console.log(`[InsertUser] Sincronizando novo usuario com outbank-one Clerk...`);
+      const syncResult = await syncUserToOutbankOneClerk({
+        email: normalizedEmail,
+        firstName,
+        lastName,
+        password: finalPassword,
+      });
+      if (syncResult.success) {
+        console.log(`[InsertUser] Sincronizacao com outbank-one concluida: ${syncResult.action}`);
+      } else {
+        console.warn(`[InsertUser] Falha na sincronizacao com outbank-one: ${syncResult.error}`);
+      }
+    }
 
     // ✅ Enviar email de boas-vindas usando função helper
     try {
