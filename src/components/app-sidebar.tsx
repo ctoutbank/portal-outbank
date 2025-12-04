@@ -110,7 +110,7 @@ export function AppSidebar({ tenantCustomization, isAdmin = false, hasMerchantsA
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="flex flex-col items-center">
         <TeamSwitcher teams={teams} />
-        <Separator orientation="horizontal" className="bg-[#d2d2d2]" />
+        <Separator orientation="horizontal" className="bg-[#2a2a2a]" />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={filteredNavItems} />
