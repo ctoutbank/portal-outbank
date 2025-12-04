@@ -3,7 +3,7 @@ import BaseHeader from "@/components/layout/base-header";
 import PageSizeSelector from "@/components/page-size-selector";
 import PaginationRecords from "@/components/pagination-Records";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/permissions/require-admin";
 import { getAllUsers, getAllProfiles, getAvailableCustomers } from "@/features/users/server/admin-users";
@@ -76,11 +76,10 @@ export default async function UsersPage({
 
       <BaseBody title="Usuários" subtitle="Gerenciamento de usuários do sistema">
         <div className="flex flex-col space-y-4">
-          <div className="mb-2">
+          <div className="mb-4">
             <Button variant="ghost" size="sm" asChild>
               <Link href="/config">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar para Configurações
+                Voltar
               </Link>
             </Button>
           </div>

@@ -6,7 +6,7 @@ import { UserCategoriesList } from "@/features/categories/_components/user-categ
 import { UserCategoriesFilter } from "@/features/categories/_components/user-categories-filter";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
@@ -52,11 +52,10 @@ export default async function CategoriesPage({
         subtitle="Gerenciamento de categorias e permissões do sistema"
       >
         <div className="flex flex-col space-y-4">
-          <div className="mb-2">
+          <div className="mb-4">
             <Button variant="ghost" size="sm" asChild>
               <Link href="/config">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar para Configurações
+                Voltar
               </Link>
             </Button>
           </div>
