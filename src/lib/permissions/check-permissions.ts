@@ -183,7 +183,7 @@ export async function getCurrentUserInfo() {
             id: customers.id,
           })
           .from(customers)
-          .where(eq(customers.active, true));
+          .where(eq(customers.isActive, true));
 
         allowedCustomers = allCustomersResult
           .map((r) => r.id)
