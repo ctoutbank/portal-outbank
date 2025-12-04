@@ -2,8 +2,8 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { users, profiles, profileFunctions, functions, adminCustomers, profileCustomers } from "../../../drizzle/schema";
-import { eq, and, ilike } from "drizzle-orm";
+import { users, profiles, profileFunctions, functions, adminCustomers, profileCustomers, customers } from "../../../drizzle/schema";
+import { eq, and } from "drizzle-orm";
 
 /**
  * Verifica se o usuário é Super Admin
@@ -172,60 +172,81 @@ export async function getCurrentUserInfo() {
     const isSuperAdminValue = profileName.includes("SUPER_ADMIN") || profileName.includes("SUPER");
     const isAdminValue = profileName.includes("ADMIN") && !isSuperAdminValue;
 
-    // Combinar ISOs: categoria (herdados) + individuais + principal
+    // Super Admin tem acesso a TODOS os ISOs
     let allowedCustomers: number[] = [];
     
-    // 1. ISOs da categoria (herdados automaticamente)
-    let profileISOs: number[] = [];
-    if (userData.idProfile) {
+    if (isSuperAdminValue) {
+      // Super Admin: buscar todos os customers ativos
       try {
-        const profileCustomersResult = await db
+        const allCustomersResult = await db
           .select({
-            idCustomer: profileCustomers.idCustomer,
+            id: customers.id,
           })
-          .from(profileCustomers)
-          .where(
-            and(
-              eq(profileCustomers.idProfile, userData.idProfile),
-              eq(profileCustomers.active, true)
-            )
-          );
+          .from(customers)
+          .where(eq(customers.active, true));
 
-        profileISOs = profileCustomersResult
-          .map((r) => r.idCustomer)
+        allowedCustomers = allCustomersResult
+          .map((r) => r.id)
           .filter((id): id is number => id !== null && typeof id === "number");
       } catch (error: any) {
-        // Se a tabela não existe, continuar sem erros (compatibilidade com versões antigas)
-        if (
-          error?.code !== "42P01" &&
-          !error?.message?.includes("does not exist") &&
-          !(error?.message?.includes("relation") && error?.message?.includes("profile_customers"))
-        ) {
-          console.error("Erro ao buscar ISOs da categoria:", error);
+        console.error("Erro ao buscar todos os ISOs para Super Admin:", error);
+        allowedCustomers = [];
+      }
+    } else {
+      // Usuários normais: combinar ISOs da categoria + individuais + principal
+      
+      // 1. ISOs da categoria (herdados automaticamente)
+      let profileISOs: number[] = [];
+      if (userData.idProfile) {
+        try {
+          const profileCustomersResult = await db
+            .select({
+              idCustomer: profileCustomers.idCustomer,
+            })
+            .from(profileCustomers)
+            .where(
+              and(
+                eq(profileCustomers.idProfile, userData.idProfile),
+                eq(profileCustomers.active, true)
+              )
+            );
+
+          profileISOs = profileCustomersResult
+            .map((r) => r.idCustomer)
+            .filter((id): id is number => id !== null && typeof id === "number");
+        } catch (error: any) {
+          // Se a tabela não existe, continuar sem erros (compatibilidade com versões antigas)
+          if (
+            error?.code !== "42P01" &&
+            !error?.message?.includes("does not exist") &&
+            !(error?.message?.includes("relation") && error?.message?.includes("profile_customers"))
+          ) {
+            console.error("Erro ao buscar ISOs da categoria:", error);
+          }
         }
       }
+
+      // 2. ISOs individuais (admin_customers)
+      let individualISOs: number[] = [];
+      if (isAdminValue && userData.id) {
+        individualISOs = await getAdminAllowedCustomers(userData.id);
+      }
+
+      // 3. ISO principal (idCustomer)
+      const mainISO: number[] = userData.idCustomer ? [userData.idCustomer] : [];
+
+      // 4. Combinar todos (remover duplicatas)
+      const allISOs = [...profileISOs, ...individualISOs, ...mainISO];
+      allowedCustomers = Array.from(new Set(allISOs)).filter(
+        (id): id is number => id !== null && typeof id === "number" && !isNaN(id)
+      );
     }
-
-    // 2. ISOs individuais (admin_customers)
-    let individualISOs: number[] = [];
-    if (isAdminValue && userData.id) {
-      individualISOs = await getAdminAllowedCustomers(userData.id);
-    }
-
-    // 3. ISO principal (idCustomer)
-    const mainISO: number[] = userData.idCustomer ? [userData.idCustomer] : [];
-
-    // 4. Combinar todos (remover duplicatas)
-    const allISOs = [...profileISOs, ...individualISOs, ...mainISO];
-    allowedCustomers = Array.from(new Set(allISOs)).filter(
-      (id): id is number => id !== null && typeof id === "number" && !isNaN(id)
-    );
 
     return {
       ...userData,
       isSuperAdmin: isSuperAdminValue,
       isAdmin: isAdminValue,
-      allowedCustomers, // Combinado: categoria + individual + principal
+      allowedCustomers, // Super Admin: todos os ISOs | Outros: categoria + individual + principal
     };
   } catch (error) {
     console.error("Error getting user info:", error);
