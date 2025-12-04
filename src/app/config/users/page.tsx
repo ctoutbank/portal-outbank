@@ -3,7 +3,8 @@ import BaseHeader from "@/components/layout/base-header";
 import PageSizeSelector from "@/components/page-size-selector";
 import PaginationRecords from "@/components/pagination-Records";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Building2, Users } from "lucide-react";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/permissions/require-admin";
 import { getAllUsers, getAllProfiles, getAvailableCustomers } from "@/features/users/server/admin-users";
@@ -21,6 +22,7 @@ type UsersPageProps = {
   customerId?: number | string;
   profileId?: number | string;
   active?: boolean | string;
+  tab?: string; // "portal" ou "iso"
 };
 
 export default async function UsersPage({
@@ -28,14 +30,15 @@ export default async function UsersPage({
 }: {
   searchParams: Promise<UsersPageProps>;
 }) {
-  // Verificar se usuário é Admin ou Super Admin
+  // Verificar se usuario e Admin ou Super Admin
   await requireAdmin();
 
   const params = await searchParams;
 
-  // Validar e parsear parâmetros
+  // Validar e parsear parametros
   const page = Math.max(1, parseInt(params.page?.toString() || "1") || 1);
   const perPage = Math.max(1, Math.min(100, parseInt(params.perPage?.toString() || "10") || 10));
+  const activeTab = params.tab === "iso" ? "iso" : "portal";
 
   // Parsear filtros
   const filters = {
@@ -51,24 +54,33 @@ export default async function UsersPage({
   };
 
   // Buscar dados com tratamento de erro
-  let usersData: Awaited<ReturnType<typeof getAllUsers>>;
+  // Buscar usuarios do portal e dos ISOs separadamente
+  let portalUsersData: Awaited<ReturnType<typeof getAllUsers>>;
+  let isoUsersData: Awaited<ReturnType<typeof getAllUsers>>;
   let profiles: Awaited<ReturnType<typeof getAllProfiles>>;
   let availableCustomers: Awaited<ReturnType<typeof getAvailableCustomers>>;
+  
   try {
-    [usersData, profiles, availableCustomers] = await Promise.all([
-      getAllUsers(page, perPage, filters),
+    [portalUsersData, isoUsersData, profiles, availableCustomers] = await Promise.all([
+      getAllUsers(activeTab === "portal" ? page : 1, activeTab === "portal" ? perPage : 10, filters, "portal"),
+      getAllUsers(activeTab === "iso" ? page : 1, activeTab === "iso" ? perPage : 10, filters, "iso"),
       getAllProfiles(),
       getAvailableCustomers(),
     ]);
   } catch (error) {
-    console.error('Erro ao carregar dados da página de usuários:', error);
+    console.error('Erro ao carregar dados da pagina de usuarios:', error);
     // Retornar dados vazios em caso de erro
-    usersData = { users: [], totalCount: 0 };
+    portalUsersData = { users: [], totalCount: 0 };
+    isoUsersData = { users: [], totalCount: 0 };
     profiles = [];
     availableCustomers = [];
   }
 
+  // Selecionar dados da aba ativa
+  const usersData = activeTab === "portal" ? portalUsersData : isoUsersData;
   const totalCount = usersData?.totalCount || 0;
+  const portalCount = portalUsersData?.totalCount || 0;
+  const isoCount = isoUsersData?.totalCount || 0;
 
   return (
     <>
@@ -83,8 +95,32 @@ export default async function UsersPage({
               </Link>
             </Button>
           </div>
-          <div className="mb-1 flex items-center justify-between">
-            <div className="flex-1">
+
+          <Tabs defaultValue={activeTab} className="w-full">
+            <div className="flex items-center justify-between mb-4">
+              <TabsList>
+                <TabsTrigger value="portal" asChild>
+                  <Link href="/config/users?tab=portal">
+                    <Users className="h-4 w-4 mr-2" />
+                    Usuários do Portal ({portalCount})
+                  </Link>
+                </TabsTrigger>
+                <TabsTrigger value="iso" asChild>
+                  <Link href="/config/users?tab=iso">
+                    <Building2 className="h-4 w-4 mr-2" />
+                    Usuários dos ISOs ({isoCount})
+                  </Link>
+                </TabsTrigger>
+              </TabsList>
+              <Button asChild className="ml-2">
+                <Link href="/config/users/new">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Novo Usuário
+                </Link>
+              </Button>
+            </div>
+
+            <div className="mb-4">
               <AdminUsersFilter
                 emailIn={filters.email || ""}
                 nameIn={filters.name || ""}
@@ -95,29 +131,37 @@ export default async function UsersPage({
                 customers={availableCustomers || []}
               />
             </div>
-            <Button asChild className="ml-2">
-              <Link href="/config/users/new">
-                <Plus className="h-4 w-4 mr-1" />
-                Novo Usuário
-              </Link>
-            </Button>
-          </div>
 
-          <div className="mt-4">
-            <AdminUsersList users={usersData?.users || []} />
-          </div>
+            <TabsContent value="portal">
+              <div className="rounded-md border p-4 bg-muted/20">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Usuários administradores do portal que gerenciam os ISOs. Super Admins têm acesso a todos os ISOs automaticamente.
+                </p>
+                <AdminUsersList users={portalUsersData?.users || []} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="iso">
+              <div className="rounded-md border p-4 bg-muted/20">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Usuários vinculados a ISOs específicos. Cada usuário pertence a um ISO e só tem acesso aos dados desse ISO.
+                </p>
+                <AdminUsersList users={isoUsersData?.users || []} />
+              </div>
+            </TabsContent>
+          </Tabs>
 
           {totalCount > 0 && (
             <div className="flex items-center justify-between mt-4">
               <PageSizeSelector
                 currentPageSize={perPage}
-                pageName="config/users"
+                pageName={`config/users?tab=${activeTab}`}
               />
               <PaginationRecords
                 totalRecords={totalCount}
                 currentPage={page}
                 pageSize={perPage}
-                pageName="config/users"
+                pageName={`config/users?tab=${activeTab}`}
               />
             </div>
           )}

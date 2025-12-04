@@ -316,6 +316,220 @@ export async function hasMerchantsAccess(): Promise<boolean> {
  * @param permission - Nome da permissão específica (ex: "Atualizar")
  * @returns Array de permissões do usuário
  */
+/**
+ * Obtem todos os ISOs vinculados a um usuario
+ * Combina: ISOs do perfil + ISOs individuais (admin_customers) + ISO principal
+ * Super Admin retorna todos os ISOs ativos
+ * @param userId - ID do usuario no banco de dados
+ * @returns Array de objetos com id e nome dos ISOs
+ */
+export async function getUserLinkedIsos(userId: number): Promise<{ id: number; name: string | null; slug: string }[]> {
+  try {
+    console.log(`[getUserLinkedIsos] Buscando ISOs para userId: ${userId}`);
+
+    // Buscar dados do usuario
+    const userData = await db
+      .select({
+        idCustomer: users.idCustomer,
+        idProfile: users.idProfile,
+        profileName: profiles.name,
+      })
+      .from(users)
+      .leftJoin(profiles, eq(users.idProfile, profiles.id))
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!userData || userData.length === 0) {
+      console.log(`[getUserLinkedIsos] Usuario nao encontrado`);
+      return [];
+    }
+
+    const user = userData[0];
+    const profileName = (user.profileName ?? "").toUpperCase();
+    const isSuperAdminValue = profileName.includes("SUPER_ADMIN") || profileName.includes("SUPER");
+
+    // Super Admin: retorna todos os ISOs ativos
+    if (isSuperAdminValue) {
+      console.log(`[getUserLinkedIsos] Super Admin detectado, retornando todos os ISOs`);
+      const allCustomers = await db
+        .select({
+          id: customers.id,
+          name: customers.name,
+          slug: customers.slug,
+        })
+        .from(customers)
+        .where(eq(customers.isActive, true));
+
+      return allCustomers.map(c => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+      }));
+    }
+
+    // Usuarios normais: combinar ISOs de diferentes fontes
+    const linkedIsoIds = new Set<number>();
+
+    // 1. ISO principal
+    if (user.idCustomer) {
+      linkedIsoIds.add(user.idCustomer);
+    }
+
+    // 2. ISOs do perfil (profile_customers)
+    if (user.idProfile) {
+      try {
+        const profileIsos = await db
+          .select({ idCustomer: profileCustomers.idCustomer })
+          .from(profileCustomers)
+          .where(and(eq(profileCustomers.idProfile, user.idProfile), eq(profileCustomers.active, true)));
+
+        profileIsos.forEach(p => {
+          if (p.idCustomer) linkedIsoIds.add(p.idCustomer);
+        });
+      } catch (error) {
+        console.log(`[getUserLinkedIsos] Tabela profile_customers nao existe ou erro:`, error);
+      }
+    }
+
+    // 3. ISOs individuais (admin_customers)
+    try {
+      const adminIsos = await db
+        .select({ idCustomer: adminCustomers.idCustomer })
+        .from(adminCustomers)
+        .where(and(eq(adminCustomers.idUser, userId), eq(adminCustomers.active, true)));
+
+      adminIsos.forEach(a => {
+        if (a.idCustomer) linkedIsoIds.add(a.idCustomer);
+      });
+    } catch (error) {
+      console.log(`[getUserLinkedIsos] Erro ao buscar admin_customers:`, error);
+    }
+
+    // Buscar detalhes dos ISOs
+    if (linkedIsoIds.size === 0) {
+      console.log(`[getUserLinkedIsos] Nenhum ISO vinculado encontrado`);
+      return [];
+    }
+
+    const isoDetails = await db
+      .select({
+        id: customers.id,
+        name: customers.name,
+        slug: customers.slug,
+      })
+      .from(customers)
+      .where(and(eq(customers.isActive, true)));
+
+    const result = isoDetails.filter(iso => linkedIsoIds.has(iso.id));
+    console.log(`[getUserLinkedIsos] Encontrados ${result.length} ISOs vinculados`);
+    return result;
+  } catch (error) {
+    console.error("[getUserLinkedIsos] Erro:", error);
+    return [];
+  }
+}
+
+/**
+ * Obtem todas as permissoes de um usuario para um grupo especifico
+ * Super Admin retorna todas as permissoes do grupo
+ * @param userId - ID do usuario no banco de dados
+ * @param group - Nome do grupo de permissoes (ex: "Estabelecimentos")
+ * @returns Array de nomes das permissoes
+ */
+export async function getUserPermissions(userId: number, group: string): Promise<string[]> {
+  try {
+    console.log(`[getUserPermissions] Buscando permissoes para userId: ${userId}, grupo: ${group}`);
+
+    // Buscar dados do usuario
+    const userData = await db
+      .select({
+        idProfile: users.idProfile,
+        profileName: profiles.name,
+      })
+      .from(users)
+      .leftJoin(profiles, eq(users.idProfile, profiles.id))
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!userData || userData.length === 0) {
+      console.log(`[getUserPermissions] Usuario nao encontrado`);
+      return [];
+    }
+
+    const user = userData[0];
+    const profileName = (user.profileName ?? "").toUpperCase();
+    const isSuperAdminValue = profileName.includes("SUPER_ADMIN") || profileName.includes("SUPER");
+
+    // Super Admin: retorna todas as permissoes do grupo
+    if (isSuperAdminValue) {
+      console.log(`[getUserPermissions] Super Admin detectado, retornando todas as permissoes do grupo`);
+      const allPermissions = await db
+        .select({ name: functions.name })
+        .from(functions)
+        .where(and(eq(functions.group, group), eq(functions.active, true)));
+
+      return allPermissions.map(p => p.name).filter((n): n is string => n !== null);
+    }
+
+    // Usuarios normais: buscar permissoes do perfil
+    if (!user.idProfile) {
+      console.log(`[getUserPermissions] Usuario sem perfil`);
+      return [];
+    }
+
+    const permissions = await db
+      .select({ name: functions.name })
+      .from(profileFunctions)
+      .innerJoin(functions, eq(profileFunctions.idFunctions, functions.id))
+      .where(
+        and(
+          eq(profileFunctions.idProfile, user.idProfile),
+          eq(profileFunctions.active, true),
+          eq(functions.group, group),
+          eq(functions.active, true)
+        )
+      );
+
+    const result = permissions.map(p => p.name).filter((n): n is string => n !== null);
+    console.log(`[getUserPermissions] Encontradas ${result.length} permissoes`);
+    return result;
+  } catch (error) {
+    console.error("[getUserPermissions] Erro:", error);
+    return [];
+  }
+}
+
+/**
+ * Verifica se um usuario e Super Admin pelo ID do banco de dados
+ * @param userId - ID do usuario no banco de dados
+ * @returns true se o usuario e Super Admin, false caso contrario
+ */
+export async function isSuperAdminById(userId: number): Promise<boolean> {
+  try {
+    console.log(`[isSuperAdminById] Verificando Super Admin para userId: ${userId}`);
+
+    const userData = await db
+      .select({ profileName: profiles.name })
+      .from(users)
+      .leftJoin(profiles, eq(users.idProfile, profiles.id))
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!userData || userData.length === 0) {
+      console.log(`[isSuperAdminById] Usuario nao encontrado`);
+      return false;
+    }
+
+    const profileName = (userData[0].profileName ?? "").toUpperCase();
+    const isSuperAdmin = profileName.includes("SUPER_ADMIN") || profileName.includes("SUPER");
+    console.log(`[isSuperAdminById] Perfil: ${profileName}, isSuperAdmin: ${isSuperAdmin}`);
+    return isSuperAdmin;
+  } catch (error) {
+    console.error("[isSuperAdminById] Erro:", error);
+    return false;
+  }
+}
+
 export async function checkPagePermission(
   group: string,
   permission: string = "Listar"
