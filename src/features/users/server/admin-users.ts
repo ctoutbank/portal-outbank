@@ -1771,7 +1771,7 @@ export async function getUserAllPermissions(userId: number) {
           eq(profileFunctions.idProfile, profileId),
           eq(profileFunctions.active, true)
         ));
-      categoryPermissions = catPerms;
+      categoryPermissions = catPerms.filter((p): p is { id: number; name: string | null; group: string | null } => p.id !== null);
     }
 
     // 2. Buscar permissões individuais (user_functions)
@@ -1787,7 +1787,7 @@ export async function getUserAllPermissions(userId: number) {
         eq(userFunctions.idUser, userId),
         eq(userFunctions.active, true)
       ));
-    const individualPermissions = indPerms;
+    const individualPermissions = indPerms.filter((p): p is { id: number; name: string | null; group: string | null } => p.id !== null);
 
     // 3. União (sem duplicatas)
     const allPermissionsMap = new Map<number, { id: number; name: string | null; group: string | null }>();
