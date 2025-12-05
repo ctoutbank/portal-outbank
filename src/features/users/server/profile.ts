@@ -7,7 +7,10 @@ import { currentUser } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { hashPassword } from "@/app/utils/password";
 import { revalidatePath } from "next/cache";
-import { PROTECTED_SUPER_ADMIN_EMAIL } from "./admin-users";
+/**
+ * Email do Super Admin protegido - definido localmente (não pode importar de "use server")
+ */
+const PROTECTED_SUPER_ADMIN_EMAIL = "cto@outbank.com.br";
 
 // =====================================================
 // SERVER ACTIONS PARA PERFIL DO USUÁRIO

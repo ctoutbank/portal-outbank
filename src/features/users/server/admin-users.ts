@@ -16,8 +16,9 @@ import { revalidatePath } from "next/cache";
 
 /**
  * Email do Super Admin protegido que JAMAIS pode ser deletado ou desativado
+ * Não pode ser exportado de arquivo "use server" - definido como constante local
  */
-export const PROTECTED_SUPER_ADMIN_EMAIL = "cto@outbank.com.br";
+const PROTECTED_SUPER_ADMIN_EMAIL = "cto@outbank.com.br";
 
 /**
  * Verifica se um usuário é o Super Admin protegido
