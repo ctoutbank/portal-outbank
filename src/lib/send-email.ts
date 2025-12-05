@@ -87,8 +87,8 @@ Equipe ${customerName}
             <meta name="format-detection" content="telephone=no">
             <title>Bem-vindo ao ${customerName}</title>
         </head>
-        <body style="margin: 0; padding: 0; background-color: #2c2c2c !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; min-height: 100vh;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #2c2c2c; min-height: 100vh; padding: 40px 0;">
+        <body style="margin: 0; padding: 0; background-color: #e5e5e5 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; min-height: 100vh;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e5e5e5; min-height: 100vh; padding: 40px 0;">
                 <tr>
                     <td align="center" style="padding: 20px;">
                         <div style="background-color: #ffffff; border-radius: 0; padding: 48px 40px; max-width: 500px; width: 100%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);">
@@ -251,8 +251,8 @@ Equipe Outbank
             <meta name="format-detection" content="telephone=no">
             <title>Bem-vindo ao ${PORTAL_NAME}</title>
         </head>
-        <body style="margin: 0; padding: 0; background-color: #1a1a1a !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; min-height: 100vh;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; min-height: 100vh; padding: 40px 0;">
+        <body style="margin: 0; padding: 0; background-color: #e5e5e5 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; min-height: 100vh;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e5e5e5; min-height: 100vh; padding: 40px 0;">
                 <tr>
                     <td align="center" style="padding: 20px;">
                         <div style="background-color: #ffffff; border-radius: 8px; padding: 48px 40px; max-width: 500px; width: 100%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);">
