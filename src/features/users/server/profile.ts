@@ -266,7 +266,7 @@ export async function getUserPermissionsSummary() {
           eq(profileFunctions.idProfile, profileId),
           eq(profileFunctions.active, true)
         ));
-      categoryPermissions = catPerms;
+      categoryPermissions = catPerms.filter((p): p is { id: number; name: string | null; group: string | null } => p.id !== null);
     }
 
     // Buscar permissões individuais
@@ -284,7 +284,7 @@ export async function getUserPermissionsSummary() {
           eq(userFunctions.idUser, userId),
           eq(userFunctions.active, true)
         ));
-      individualPermissions = indPerms;
+      individualPermissions = indPerms.filter((p): p is { id: number; name: string | null; group: string | null } => p.id !== null);
     } catch (error) {
       console.warn("[getUserPermissionsSummary] user_functions table may not exist");
     }
@@ -319,7 +319,7 @@ export async function getUserPermissionsSummary() {
             eq(profileCustomers.idProfile, profileId),
             eq(profileCustomers.active, true)
           ));
-        categoryISOs = catISOs;
+        categoryISOs = catISOs.filter((c): c is { id: number; name: string | null; slug: string | null } => c.id !== null);
       } catch (error) {
         console.warn("[getUserPermissionsSummary] profile_customers table may not exist");
       }
@@ -340,7 +340,7 @@ export async function getUserPermissionsSummary() {
           eq(adminCustomers.idUser, userId),
           eq(adminCustomers.active, true)
         ));
-      individualISOs = indISOs;
+      individualISOs = indISOs.filter((c): c is { id: number; name: string | null; slug: string | null } => c.id !== null);
     } catch (error) {
       console.warn("[getUserPermissionsSummary] admin_customers table may not exist");
     }
