@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -11,7 +13,17 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Shield, ShieldCheck } from "lucide-react";
+import { Pencil, Trash2, Shield, ShieldCheck, UserX, UserCheck, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DeleteUserModal } from "./delete-user-modal";
+import { deactivateUser, reactivateUser } from "@/features/users/server/admin-users";
+import { toast } from "sonner";
 
 type UserData = {
   id: number;
@@ -33,16 +45,9 @@ interface AdminUsersListProps {
 }
 
 export function AdminUsersList({ users }: AdminUsersListProps) {
-  // Debug: verificar se users têm o campo customers
-  if (users.length > 0) {
-    console.log('[AdminUsersList] Total de usuários:', users.length);
-    console.log('[AdminUsersList] Primeiro usuário:', {
-      id: users[0]?.id,
-      email: users[0]?.email,
-      customers: users[0]?.customers,
-      customersLength: users[0]?.customers?.length
-    });
-  }
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [deleteModalUser, setDeleteModalUser] = useState<UserData | null>(null);
 
   const getProfileBadgeVariant = (profileName: string | null) => {
     if (!profileName) return "secondary";
@@ -50,6 +55,42 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
     if (upper.includes("SUPER")) return "destructive";
     if (upper.includes("ADMIN")) return "default";
     return "secondary";
+  };
+
+  const handleDeactivate = async (user: UserData) => {
+    startTransition(async () => {
+      try {
+        const result = await deactivateUser(user.id);
+        if (result.success) {
+          toast.success("Usuário desativado com sucesso");
+          router.refresh();
+        } else {
+          toast.error(result.error || "Erro ao desativar usuário");
+        }
+      } catch (error: any) {
+        toast.error(error.message || "Erro ao desativar usuário");
+      }
+    });
+  };
+
+  const handleReactivate = async (user: UserData) => {
+    startTransition(async () => {
+      try {
+        const result = await reactivateUser(user.id);
+        if (result.success) {
+          toast.success("Usuário reativado com sucesso");
+          router.refresh();
+        } else {
+          toast.error(result.error || "Erro ao reativar usuário");
+        }
+      } catch (error: any) {
+        toast.error(error.message || "Erro ao reativar usuário");
+      }
+    });
+  };
+
+  const isSuperAdminProtected = (email: string | null) => {
+    return email?.toLowerCase() === "cto@outbank.com.br";
   };
 
   return (
@@ -166,7 +207,7 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
                       )}
                     </TableCell>
                     <TableCell className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -176,6 +217,48 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
                             <Pencil className="h-4 w-4" />
                           </Link>
                         </Button>
+
+                        {/* Menu de ações adicionais */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" disabled={isPending}>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {/* Ativar/Desativar */}
+                            {user.active ? (
+                              <DropdownMenuItem
+                                onClick={() => handleDeactivate(user)}
+                                disabled={isSuperAdminProtected(user.email)}
+                                className="text-orange-500"
+                              >
+                                <UserX className="h-4 w-4 mr-2" />
+                                Desativar
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => handleReactivate(user)}
+                                className="text-green-500"
+                              >
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Reativar
+                              </DropdownMenuItem>
+                            )}
+
+                            <DropdownMenuSeparator />
+
+                            {/* Deletar */}
+                            <DropdownMenuItem
+                              onClick={() => setDeleteModalUser(user)}
+                              disabled={isSuperAdminProtected(user.email)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Deletar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -185,6 +268,19 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
           </Table>
         </div>
       </div>
+
+      {/* Modal de deleção */}
+      {deleteModalUser && (
+        <DeleteUserModal
+          isOpen={!!deleteModalUser}
+          onClose={() => setDeleteModalUser(null)}
+          user={{
+            id: deleteModalUser.id,
+            email: deleteModalUser.email,
+            profileName: deleteModalUser.profileName,
+          }}
+        />
+      )}
     </div>
   );
 }

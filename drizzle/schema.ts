@@ -1892,3 +1892,43 @@ export type InsertMccGroup = typeof mccGroups.$inferInsert;
 export type SelectMccGroup = typeof mccGroups.$inferSelect;
 export type InsertMcc = typeof mcc.$inferInsert;
 export type SelectMcc = typeof mcc.$inferSelect;
+
+// =====================================================
+// Tabela user_functions para permissões individuais
+// =====================================================
+
+export const userFunctions = pgTable("user_functions", {
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
+		name: "user_functions_id_seq", 
+		startWith: 1, 
+		increment: 1, 
+		minValue: 1, 
+		maxValue: 9223372036854775807, 
+		cache: 1 
+	}),
+	slug: varchar({ length: 50 }),
+	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	dtupdate: timestamp({ mode: 'string' }),
+	active: boolean().default(true),
+	idUser: bigint("id_user", { mode: "number" }).notNull(),
+	idFunctions: bigint("id_functions", { mode: "number" }).notNull(),
+}, (table) => [
+	unique("user_functions_unique").on(table.idUser, table.idFunctions),
+	foreignKey({
+		columns: [table.idUser],
+		foreignColumns: [users.id],
+		name: "user_functions_id_user_fkey"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.idFunctions],
+		foreignColumns: [functions.id],
+		name: "user_functions_id_functions_fkey"
+	}).onDelete("cascade"),
+	index("user_functions_id_user_idx").on(table.idUser),
+	index("user_functions_id_functions_idx").on(table.idFunctions),
+	index("user_functions_active_idx").on(table.active),
+]);
+
+// Tipos para user_functions
+export type InsertUserFunction = typeof userFunctions.$inferInsert;
+export type SelectUserFunction = typeof userFunctions.$inferSelect;

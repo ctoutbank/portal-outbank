@@ -1,14 +1,275 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { users, profiles, customers, adminCustomers, functions, profileFunctions } from "../../../../drizzle/schema";
-import { eq, and, ilike, inArray, sql, count, desc, asc, isNull } from "drizzle-orm";
+import { users, profiles, customers, adminCustomers, functions, profileFunctions, userFunctions, profileCustomers } from "../../../../drizzle/schema";
+import { eq, and, ilike, inArray, sql, count, desc, asc, isNull, or } from "drizzle-orm";
 import { getCurrentUserInfo, isSuperAdmin } from "@/lib/permissions/check-permissions";
 import { nanoid } from "nanoid";
 import { clerkClient } from "@clerk/nextjs/server";
 import { hashPassword } from "@/app/utils/password";
 import { generateSlug } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
+
+// =====================================================
+// CONSTANTES E PROTEÇÕES
+// =====================================================
+
+/**
+ * Email do Super Admin protegido que JAMAIS pode ser deletado ou desativado
+ */
+export const PROTECTED_SUPER_ADMIN_EMAIL = "cto@outbank.com.br";
+
+/**
+ * Verifica se um usuário é o Super Admin protegido
+ * Esta verificação é usada para IMPEDIR deleção, desativação ou alteração de permissões
+ */
+export async function isProtectedSuperAdmin(
+  identifier: number | string
+): Promise<boolean> {
+  try {
+    let user;
+    
+    if (typeof identifier === "number") {
+      // Busca por ID do banco
+      user = await db
+        .select({ email: users.email, idClerk: users.idClerk })
+        .from(users)
+        .where(eq(users.id, identifier))
+        .limit(1);
+    } else if (identifier.includes("@")) {
+      // É um email
+      return identifier.toLowerCase() === PROTECTED_SUPER_ADMIN_EMAIL.toLowerCase();
+    } else {
+      // É um idClerk - buscar email
+      user = await db
+        .select({ email: users.email })
+        .from(users)
+        .where(eq(users.idClerk, identifier))
+        .limit(1);
+    }
+    
+    if (!user || user.length === 0) {
+      return false;
+    }
+    
+    return user[0].email?.toLowerCase() === PROTECTED_SUPER_ADMIN_EMAIL.toLowerCase();
+  } catch (error) {
+    console.error("[isProtectedSuperAdmin] Erro ao verificar proteção:", error);
+    return false;
+  }
+}
+
+// =====================================================
+// FUNÇÕES DE SINCRONIZAÇÃO CLERK
+// =====================================================
+
+/**
+ * Sincroniza dados do usuário no banco para o Clerk
+ * Atualiza metadata: isPortalUser, idCustomer, isFirstLogin
+ */
+export async function syncUserToClerk(userId: number): Promise<{ success: boolean; error?: string }> {
+  try {
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user || user.length === 0) {
+      return { success: false, error: "Usuário não encontrado no banco" };
+    }
+
+    const userData = user[0];
+    
+    if (!userData.idClerk) {
+      return { success: false, error: "Usuário não possui idClerk" };
+    }
+
+    const clerk = await clerkClient();
+    
+    // Determinar se é usuário do portal (idCustomer = null) ou de ISO (idCustomer != null)
+    const isPortalUser = userData.idCustomer === null;
+
+    await clerk.users.updateUser(userData.idClerk, {
+      publicMetadata: {
+        isPortalUser,
+        idCustomer: userData.idCustomer,
+        // Preservar isFirstLogin se existir
+        ...(await getClerkUserMetadata(userData.idClerk)),
+      },
+    });
+
+    console.log(`[syncUserToClerk] ✅ Sincronizado usuário ${userId} (${userData.email}) para Clerk`);
+    return { success: true };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : "Erro desconhecido";
+    console.error(`[syncUserToClerk] ❌ Erro ao sincronizar usuário ${userId}:`, error);
+    return { success: false, error: errorMsg };
+  }
+}
+
+/**
+ * Obtém a metadata atual do usuário no Clerk
+ */
+async function getClerkUserMetadata(idClerk: string): Promise<Record<string, unknown>> {
+  try {
+    const clerk = await clerkClient();
+    const clerkUser = await clerk.users.getUser(idClerk);
+    return clerkUser.publicMetadata || {};
+  } catch (error) {
+    console.error(`[getClerkUserMetadata] Erro ao obter metadata do Clerk:`, error);
+    return {};
+  }
+}
+
+/**
+ * Valida consistência entre banco e Clerk
+ * Retorna inconsistências encontradas
+ */
+export async function validateClerkSync(userId: number): Promise<{
+  isConsistent: boolean;
+  inconsistencies: string[];
+  bankData: Record<string, unknown> | null;
+  clerkData: Record<string, unknown> | null;
+}> {
+  try {
+    // Buscar dados do banco
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user || user.length === 0) {
+      return {
+        isConsistent: false,
+        inconsistencies: ["Usuário não encontrado no banco"],
+        bankData: null,
+        clerkData: null,
+      };
+    }
+
+    const userData = user[0];
+    
+    if (!userData.idClerk) {
+      return {
+        isConsistent: false,
+        inconsistencies: ["Usuário não possui idClerk - não existe no Clerk"],
+        bankData: { id: userData.id, email: userData.email, idCustomer: userData.idCustomer },
+        clerkData: null,
+      };
+    }
+
+    // Buscar dados do Clerk
+    const clerk = await clerkClient();
+    let clerkUser;
+    try {
+      clerkUser = await clerk.users.getUser(userData.idClerk);
+    } catch (clerkError) {
+      return {
+        isConsistent: false,
+        inconsistencies: [`Usuário não encontrado no Clerk: ${userData.idClerk}`],
+        bankData: { id: userData.id, email: userData.email, idCustomer: userData.idCustomer },
+        clerkData: null,
+      };
+    }
+
+    const inconsistencies: string[] = [];
+    const expectedIsPortalUser = userData.idCustomer === null;
+    const clerkIsPortalUser = clerkUser.publicMetadata?.isPortalUser;
+    const clerkIdCustomer = clerkUser.publicMetadata?.idCustomer;
+
+    // Verificar isPortalUser
+    if (clerkIsPortalUser !== expectedIsPortalUser) {
+      inconsistencies.push(
+        `isPortalUser inconsistente: Clerk=${clerkIsPortalUser}, Esperado=${expectedIsPortalUser}`
+      );
+    }
+
+    // Verificar idCustomer
+    if (clerkIdCustomer !== userData.idCustomer) {
+      inconsistencies.push(
+        `idCustomer inconsistente: Clerk=${clerkIdCustomer}, Banco=${userData.idCustomer}`
+      );
+    }
+
+    // Verificar email
+    const clerkEmail = clerkUser.emailAddresses[0]?.emailAddress;
+    if (clerkEmail?.toLowerCase() !== userData.email?.toLowerCase()) {
+      inconsistencies.push(
+        `Email inconsistente: Clerk=${clerkEmail}, Banco=${userData.email}`
+      );
+    }
+
+    return {
+      isConsistent: inconsistencies.length === 0,
+      inconsistencies,
+      bankData: {
+        id: userData.id,
+        email: userData.email,
+        idCustomer: userData.idCustomer,
+        idProfile: userData.idProfile,
+        active: userData.active,
+      },
+      clerkData: {
+        id: clerkUser.id,
+        email: clerkEmail,
+        isPortalUser: clerkIsPortalUser,
+        idCustomer: clerkIdCustomer,
+        isFirstLogin: clerkUser.publicMetadata?.isFirstLogin,
+      },
+    };
+  } catch (error) {
+    console.error(`[validateClerkSync] Erro ao validar sincronização:`, error);
+    return {
+      isConsistent: false,
+      inconsistencies: [`Erro ao validar: ${error instanceof Error ? error.message : "Erro desconhecido"}`],
+      bankData: null,
+      clerkData: null,
+    };
+  }
+}
+
+/**
+ * Corrige inconsistências entre banco e Clerk
+ * Sincroniza metadata do banco para o Clerk
+ */
+export async function fixClerkSyncIssues(userId: number): Promise<{
+  success: boolean;
+  fixed: string[];
+  errors: string[];
+}> {
+  const validation = await validateClerkSync(userId);
+  
+  if (validation.isConsistent) {
+    return {
+      success: true,
+      fixed: [],
+      errors: [],
+    };
+  }
+
+  const fixed: string[] = [];
+  const errors: string[] = [];
+
+  // Tentar corrigir sincronizando do banco para o Clerk
+  const syncResult = await syncUserToClerk(userId);
+  
+  if (syncResult.success) {
+    fixed.push("Metadata do Clerk atualizada com dados do banco");
+  } else {
+    errors.push(`Falha ao sincronizar: ${syncResult.error}`);
+  }
+
+  // Validar novamente
+  const revalidation = await validateClerkSync(userId);
+  
+  return {
+    success: revalidation.isConsistent,
+    fixed,
+    errors: revalidation.isConsistent ? errors : [...errors, ...revalidation.inconsistencies],
+  };
+}
 
 // Função helper para gerar senha aleatória
 async function generateRandomPassword(length = 8): Promise<string> {
@@ -576,7 +837,7 @@ export async function createAdminUser(data: {
 
   const idProfile = adminProfile[0].id;
 
-  // Criar no Clerk
+  // Criar no Clerk com metadata correta para usuário do portal
   const clerk = await clerkClient();
   let clerkUser;
   try {
@@ -587,8 +848,11 @@ export async function createAdminUser(data: {
       password: finalPassword,
       publicMetadata: {
         isFirstLogin: true,
+        isPortalUser: true,      // ← IMPORTANTE: Marca como usuário do portal-outbank
+        idCustomer: null,        // ← IMPORTANTE: Portal users não têm ISO específico
       },
     });
+    console.log(`[createAdminUser] ✅ Usuário criado no Clerk com metadata: isPortalUser=true, idCustomer=null`);
   } catch (error: any) {
     console.error("Erro ao criar usuário no Clerk:", error);
     if (error?.errors?.some((e: any) => e.code === "form_password_pwned")) {
@@ -624,6 +888,16 @@ export async function createAdminUser(data: {
     for (const customerId of customerIds) {
       await assignCustomerToAdmin(userId, customerId);
     }
+  }
+
+  // Enviar email de boas-vindas do portal
+  try {
+    const { sendWelcomePasswordEmailPortal } = await import("@/lib/send-email");
+    await sendWelcomePasswordEmailPortal(email, finalPassword, `${firstName} ${lastName}`);
+    console.log(`[createAdminUser] ✅ Email de boas-vindas enviado para ${email}`);
+  } catch (emailError) {
+    // Não bloquear criação do usuário se email falhar
+    console.error(`[createAdminUser] ⚠️ Falha ao enviar email de boas-vindas (não crítico):`, emailError);
   }
 
   revalidatePath("/config/users");
@@ -1072,6 +1346,115 @@ export async function getUserAttributions(userId: number) {
 }
 
 /**
+ * Desativa um usuário (soft delete)
+ * @param userId - ID do usuário a ser desativado
+ * @returns Objeto com resultado da operação
+ */
+export async function deactivateUser(userId: number): Promise<{ success: boolean; error?: string }> {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo?.isSuperAdmin) {
+    throw new Error("Apenas Super Admin pode desativar usuários");
+  }
+
+  // PROTEÇÃO ABSOLUTA: Verificar se é o Super Admin protegido
+  const isProtected = await isProtectedSuperAdmin(userId);
+  if (isProtected) {
+    console.error(`[deactivateUser] ❌ BLOQUEADO: Tentativa de desativar Super Admin protegido (${PROTECTED_SUPER_ADMIN_EMAIL})`);
+    throw new Error(`PROTEÇÃO ABSOLUTA: O usuário ${PROTECTED_SUPER_ADMIN_EMAIL} NÃO pode ser desativado`);
+  }
+
+  try {
+    // Verificar se o usuário existe
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user || user.length === 0) {
+      return { success: false, error: "Usuário não encontrado" };
+    }
+
+    // Verificar se já está desativado
+    if (!user[0].active) {
+      return { success: false, error: "Usuário já está desativado" };
+    }
+
+    // Desativar usuário (soft delete)
+    await db
+      .update(users)
+      .set({
+        active: false,
+        dtupdate: new Date().toISOString(),
+      })
+      .where(eq(users.id, userId));
+
+    console.log(`[deactivateUser] ✅ Usuário ${userId} (${user[0].email}) desativado com sucesso`);
+    
+    revalidatePath("/config/users");
+    
+    return { success: true };
+  } catch (error) {
+    console.error("[deactivateUser] Erro ao desativar usuário:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Erro desconhecido" 
+    };
+  }
+}
+
+/**
+ * Reativa um usuário desativado
+ * @param userId - ID do usuário a ser reativado
+ * @returns Objeto com resultado da operação
+ */
+export async function reactivateUser(userId: number): Promise<{ success: boolean; error?: string }> {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo?.isSuperAdmin) {
+    throw new Error("Apenas Super Admin pode reativar usuários");
+  }
+
+  try {
+    // Verificar se o usuário existe
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user || user.length === 0) {
+      return { success: false, error: "Usuário não encontrado" };
+    }
+
+    // Verificar se já está ativo
+    if (user[0].active) {
+      return { success: false, error: "Usuário já está ativo" };
+    }
+
+    // Reativar usuário
+    await db
+      .update(users)
+      .set({
+        active: true,
+        dtupdate: new Date().toISOString(),
+      })
+      .where(eq(users.id, userId));
+
+    console.log(`[reactivateUser] ✅ Usuário ${userId} (${user[0].email}) reativado com sucesso`);
+    
+    revalidatePath("/config/users");
+    
+    return { success: true };
+  } catch (error) {
+    console.error("[reactivateUser] Erro ao reativar usuário:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Erro desconhecido" 
+    };
+  }
+}
+
+/**
  * Deleta um usuário do portal e transfere suas atribuições para outro usuário
  * @param userIdToDelete - ID do usuário a ser deletado
  * @param transferToUserId - ID do usuário que receberá as atribuições (opcional, padrão: Super Admin logado)
@@ -1083,6 +1466,13 @@ export async function deleteUserWithTransfer(
   const userInfo = await getCurrentUserInfo();
   if (!userInfo?.isSuperAdmin) {
     throw new Error("Apenas Super Admin pode deletar usuários");
+  }
+
+  // PROTEÇÃO ABSOLUTA: Verificar se é o Super Admin protegido
+  const isProtected = await isProtectedSuperAdmin(userIdToDelete);
+  if (isProtected) {
+    console.error(`[deleteUserWithTransfer] ❌ BLOQUEADO: Tentativa de deletar Super Admin protegido (${PROTECTED_SUPER_ADMIN_EMAIL})`);
+    throw new Error(`PROTEÇÃO ABSOLUTA: O usuário ${PROTECTED_SUPER_ADMIN_EMAIL} NÃO pode ser deletado. Esta é uma proteção permanente do sistema.`);
   }
 
   // Se não foi especificado um usuário para transferir, usar o Super Admin logado
@@ -1222,5 +1612,315 @@ export async function getAvailableTransferTargets(excludeUserId: number) {
   } catch (error) {
     console.error("Erro ao buscar usuários disponíveis para transferência:", error);
     return [];
+  }
+}
+
+// =====================================================
+// PERMISSÕES INDIVIDUAIS (user_functions)
+// =====================================================
+
+/**
+ * Obtém permissões individuais de um usuário (da tabela user_functions)
+ * Essas são permissões adicionais às da categoria
+ */
+export async function getUserIndividualPermissions(userId: number) {
+  try {
+    const result = await db
+      .select({
+        id: userFunctions.id,
+        idFunction: userFunctions.idFunctions,
+        functionName: functions.name,
+        functionGroup: functions.group,
+        active: userFunctions.active,
+      })
+      .from(userFunctions)
+      .leftJoin(functions, eq(userFunctions.idFunctions, functions.id))
+      .where(and(
+        eq(userFunctions.idUser, userId),
+        eq(userFunctions.active, true)
+      ));
+
+    return result;
+  } catch (error) {
+    console.error("[getUserIndividualPermissions] Erro:", error);
+    return [];
+  }
+}
+
+/**
+ * Atualiza permissões individuais de um usuário
+ * Apenas Super Admin pode fazer isso
+ */
+export async function updateUserIndividualPermissions(
+  userId: number, 
+  functionIds: number[]
+): Promise<{ success: boolean; error?: string }> {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo?.isSuperAdmin) {
+    throw new Error("Apenas Super Admin pode atualizar permissões individuais");
+  }
+
+  // Proteção: não alterar permissões do CTO
+  const isProtected = await isProtectedSuperAdmin(userId);
+  if (isProtected) {
+    console.warn(`[updateUserIndividualPermissions] Tentativa de alterar permissões do Super Admin protegido bloqueada`);
+    throw new Error(`PROTEÇÃO: Não é permitido alterar permissões do usuário ${PROTECTED_SUPER_ADMIN_EMAIL}`);
+  }
+
+  try {
+    // Desativar todas as permissões individuais atuais (soft delete)
+    await db
+      .update(userFunctions)
+      .set({ active: false, dtupdate: new Date().toISOString() })
+      .where(eq(userFunctions.idUser, userId));
+
+    // Se não há novas permissões, retornar
+    if (functionIds.length === 0) {
+      console.log(`[updateUserIndividualPermissions] Permissões individuais removidas do usuário ${userId}`);
+      return { success: true };
+    }
+
+    // Verificar quais já existem (para reativar)
+    const existing = await db
+      .select()
+      .from(userFunctions)
+      .where(and(
+        eq(userFunctions.idUser, userId),
+        inArray(userFunctions.idFunctions, functionIds)
+      ));
+
+    const existingFunctionIds = existing.map(e => Number(e.idFunctions));
+    const newFunctionIds = functionIds.filter(id => !existingFunctionIds.includes(id));
+
+    // Reativar existentes
+    if (existingFunctionIds.length > 0) {
+      await db
+        .update(userFunctions)
+        .set({ active: true, dtupdate: new Date().toISOString() })
+        .where(and(
+          eq(userFunctions.idUser, userId),
+          inArray(userFunctions.idFunctions, existingFunctionIds)
+        ));
+    }
+
+    // Inserir novas
+    if (newFunctionIds.length > 0) {
+      const now = new Date().toISOString();
+      const values = newFunctionIds.map(idFunction => ({
+        slug: generateSlug(),
+        idUser: userId,
+        idFunctions: idFunction,
+        active: true,
+        dtinsert: now,
+        dtupdate: now,
+      }));
+
+      await db.insert(userFunctions).values(values);
+    }
+
+    console.log(`[updateUserIndividualPermissions] ✅ Permissões individuais atualizadas para usuário ${userId}: ${functionIds.length} permissões`);
+    
+    revalidatePath(`/config/users/${userId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("[updateUserIndividualPermissions] Erro:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Erro desconhecido" 
+    };
+  }
+}
+
+/**
+ * Obtém TODAS as permissões de um usuário (categoria + individuais)
+ * Retorna a união sem duplicatas
+ */
+export async function getUserAllPermissions(userId: number) {
+  try {
+    // Buscar usuário e sua categoria
+    const user = await db
+      .select({ idProfile: users.idProfile })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user || user.length === 0) {
+      return { 
+        categoryPermissions: [], 
+        individualPermissions: [], 
+        allPermissions: [],
+        grouped: {} as Record<string, Array<{ id: number; name: string | null; group: string | null }>>
+      };
+    }
+
+    const profileId = user[0].idProfile;
+
+    // 1. Buscar permissões da categoria (profile_functions)
+    let categoryPermissions: Array<{ id: number; name: string | null; group: string | null }> = [];
+    if (profileId) {
+      const catPerms = await db
+        .select({
+          id: functions.id,
+          name: functions.name,
+          group: functions.group,
+        })
+        .from(profileFunctions)
+        .leftJoin(functions, eq(profileFunctions.idFunctions, functions.id))
+        .where(and(
+          eq(profileFunctions.idProfile, profileId),
+          eq(profileFunctions.active, true)
+        ));
+      categoryPermissions = catPerms;
+    }
+
+    // 2. Buscar permissões individuais (user_functions)
+    const indPerms = await db
+      .select({
+        id: functions.id,
+        name: functions.name,
+        group: functions.group,
+      })
+      .from(userFunctions)
+      .leftJoin(functions, eq(userFunctions.idFunctions, functions.id))
+      .where(and(
+        eq(userFunctions.idUser, userId),
+        eq(userFunctions.active, true)
+      ));
+    const individualPermissions = indPerms;
+
+    // 3. União (sem duplicatas)
+    const allPermissionsMap = new Map<number, { id: number; name: string | null; group: string | null }>();
+    
+    categoryPermissions.forEach(p => {
+      if (p.id) allPermissionsMap.set(p.id, p);
+    });
+    
+    individualPermissions.forEach(p => {
+      if (p.id) allPermissionsMap.set(p.id, p);
+    });
+
+    const allPermissions = Array.from(allPermissionsMap.values());
+
+    // 4. Agrupar por grupo
+    const grouped = allPermissions.reduce((acc, perm) => {
+      const group = perm.group || "Outros";
+      if (!acc[group]) {
+        acc[group] = [];
+      }
+      acc[group].push(perm);
+      return acc;
+    }, {} as Record<string, typeof allPermissions>);
+
+    return {
+      categoryPermissions,
+      individualPermissions,
+      allPermissions,
+      grouped,
+    };
+  } catch (error) {
+    console.error("[getUserAllPermissions] Erro:", error);
+    return { 
+      categoryPermissions: [], 
+      individualPermissions: [], 
+      allPermissions: [],
+      grouped: {} as Record<string, Array<{ id: number; name: string | null; group: string | null }>>
+    };
+  }
+}
+
+// =====================================================
+// HERANÇA DE ISOs (categoria + individuais)
+// =====================================================
+
+/**
+ * Obtém TODOS os ISOs de um usuário (categoria + individuais)
+ * Retorna a união sem duplicatas
+ */
+export async function getUserAllCustomers(userId: number) {
+  try {
+    // Buscar usuário e sua categoria
+    const user = await db
+      .select({ idProfile: users.idProfile })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user || user.length === 0) {
+      return {
+        categoryCustomers: [],
+        individualCustomers: [],
+        allCustomers: [],
+      };
+    }
+
+    const profileId = user[0].idProfile;
+
+    // 1. Buscar ISOs da categoria (profile_customers)
+    let categoryCustomers: Array<{ id: number; name: string | null; slug: string | null }> = [];
+    if (profileId) {
+      try {
+        const catCustomers = await db
+          .select({
+            id: customers.id,
+            name: customers.name,
+            slug: customers.slug,
+          })
+          .from(profileCustomers)
+          .leftJoin(customers, eq(profileCustomers.idCustomer, customers.id))
+          .where(and(
+            eq(profileCustomers.idProfile, profileId),
+            eq(profileCustomers.active, true)
+          ));
+        categoryCustomers = catCustomers;
+      } catch (error) {
+        console.warn("[getUserAllCustomers] Tabela profile_customers pode não existir:", error);
+      }
+    }
+
+    // 2. Buscar ISOs individuais (admin_customers)
+    let individualCustomers: Array<{ id: number; name: string | null; slug: string | null }> = [];
+    try {
+      const indCustomers = await db
+        .select({
+          id: customers.id,
+          name: customers.name,
+          slug: customers.slug,
+        })
+        .from(adminCustomers)
+        .leftJoin(customers, eq(adminCustomers.idCustomer, customers.id))
+        .where(and(
+          eq(adminCustomers.idUser, userId),
+          eq(adminCustomers.active, true)
+        ));
+      individualCustomers = indCustomers;
+    } catch (error) {
+      console.warn("[getUserAllCustomers] Erro ao buscar admin_customers:", error);
+    }
+
+    // 3. União (sem duplicatas)
+    const allCustomersMap = new Map<number, { id: number; name: string | null; slug: string | null }>();
+    
+    categoryCustomers.forEach(c => {
+      if (c.id) allCustomersMap.set(c.id, c);
+    });
+    
+    individualCustomers.forEach(c => {
+      if (c.id) allCustomersMap.set(c.id, c);
+    });
+
+    const allCustomers = Array.from(allCustomersMap.values());
+
+    return {
+      categoryCustomers,
+      individualCustomers,
+      allCustomers,
+    };
+  } catch (error) {
+    console.error("[getUserAllCustomers] Erro:", error);
+    return {
+      categoryCustomers: [],
+      individualCustomers: [],
+      allCustomers: [],
+    };
   }
 }

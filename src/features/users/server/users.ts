@@ -248,10 +248,12 @@ export async function InsertUser(data: UserInsert) {
       password: password,
       publicMetadata: {
         isFirstLogin: true,
+        isPortalUser: false,       // ← IMPORTANTE: Marca como usuário de ISO (não do portal)
+        idCustomer: data.idCustomer || null,  // ← IMPORTANTE: ID do ISO do usuário
       },
     });
 
-    console.log(`[InsertUser] Created Clerk user ${clerkUser.id} for ${data.email}`);
+    console.log(`[InsertUser] ✅ Usuário criado no Clerk com metadata: isPortalUser=false, idCustomer=${data.idCustomer || null}`);
 
     const newUser = await db
       .insert(users)

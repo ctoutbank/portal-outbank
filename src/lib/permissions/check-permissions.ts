@@ -2,7 +2,7 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { users, profiles, profileFunctions, functions, adminCustomers, profileCustomers, customers } from "../../../drizzle/schema";
+import { users, profiles, profileFunctions, functions, adminCustomers, profileCustomers, customers, userFunctions } from "../../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 
 /**
@@ -80,6 +80,7 @@ export async function isAdminOrSuperAdmin(): Promise<boolean> {
 
 /**
  * Verifica se o usuário tem uma função/permissão específica
+ * Verifica AMBAS: permissões da categoria (profile_functions) + permissões individuais (user_functions)
  * @param functionName - Nome da função/permissão a verificar
  */
 export async function hasPermission(functionName: string): Promise<boolean> {
@@ -87,26 +88,72 @@ export async function hasPermission(functionName: string): Promise<boolean> {
     const clerkUser = await currentUser();
     if (!clerkUser) return false;
 
-    const result = await db
+    // Primeiro, buscar o usuário e seu perfil
+    const user = await db
       .select({
-        functionName: functions.name,
+        id: users.id,
+        idProfile: users.idProfile,
       })
       .from(users)
-      .innerJoin(profiles, eq(users.idProfile, profiles.id))
-      .innerJoin(profileFunctions, eq(profiles.id, profileFunctions.idProfile))
-      .innerJoin(functions, eq(profileFunctions.idFunctions, functions.id))
-      .where(
-        and(
-          eq(users.idClerk, clerkUser.id),
-          eq(functions.name, functionName),
-          eq(profiles.active, true),
-          eq(functions.active, true),
-          eq(profileFunctions.active, true)
-        )
-      )
+      .where(eq(users.idClerk, clerkUser.id))
       .limit(1);
 
-    return result.length > 0;
+    if (!user || user.length === 0) return false;
+
+    const userId = user[0].id;
+    const profileId = user[0].idProfile;
+
+    // Buscar ID da função pelo nome
+    const func = await db
+      .select({ id: functions.id })
+      .from(functions)
+      .where(and(
+        eq(functions.name, functionName),
+        eq(functions.active, true)
+      ))
+      .limit(1);
+
+    if (!func || func.length === 0) return false;
+
+    const functionId = func[0].id;
+
+    // 1. Verificar permissão na categoria (profile_functions)
+    let hasCategoryPermission = false;
+    if (profileId) {
+      const categoryResult = await db
+        .select({ id: profileFunctions.id })
+        .from(profileFunctions)
+        .where(and(
+          eq(profileFunctions.idProfile, profileId),
+          eq(profileFunctions.idFunctions, functionId),
+          eq(profileFunctions.active, true)
+        ))
+        .limit(1);
+
+      hasCategoryPermission = categoryResult.length > 0;
+    }
+
+    // 2. Verificar permissão individual (user_functions)
+    let hasIndividualPermission = false;
+    try {
+      const individualResult = await db
+        .select({ id: userFunctions.id })
+        .from(userFunctions)
+        .where(and(
+          eq(userFunctions.idUser, userId),
+          eq(userFunctions.idFunctions, functionId),
+          eq(userFunctions.active, true)
+        ))
+        .limit(1);
+
+      hasIndividualPermission = individualResult.length > 0;
+    } catch (error) {
+      // Se a tabela não existe, continuar sem erro
+      console.warn("[hasPermission] user_functions table may not exist:", error);
+    }
+
+    // Retorna true se tem permissão em QUALQUER um (categoria OU individual)
+    return hasCategoryPermission || hasIndividualPermission;
   } catch (error) {
     console.error("Error checking permission:", error);
     return false;
@@ -312,6 +359,7 @@ export async function hasMerchantsAccess(): Promise<boolean> {
 /**
  * Verifica permissões de página (adaptado do Outbank-One)
  * Retorna array de permissões do usuário para um grupo específico
+ * Verifica AMBAS: permissões da categoria (profile_functions) + permissões individuais (user_functions)
  * @param group - Nome do grupo (ex: "Estabelecimentos")
  * @param permission - Nome da permissão específica (ex: "Atualizar")
  * @returns Array de permissões do usuário
@@ -555,39 +603,241 @@ export async function checkPagePermission(
       ];
     }
 
-    // Buscar permissões do usuário para o grupo específico
-    const result = await db
+    // Buscar o usuário
+    const user = await db
       .select({
-        functionName: functions.name,
+        id: users.id,
+        idProfile: users.idProfile,
       })
       .from(users)
-      .innerJoin(profiles, eq(users.idProfile, profiles.id))
-      .innerJoin(profileFunctions, eq(profiles.id, profileFunctions.idProfile))
-      .innerJoin(functions, eq(profileFunctions.idFunctions, functions.id))
-      .where(
-        and(
-          eq(users.idClerk, clerkUser.id),
-          eq(functions.group, group),
-          eq(profiles.active, true),
-          eq(functions.active, true),
-          eq(profileFunctions.active, true)
-        )
-      );
+      .where(eq(users.idClerk, clerkUser.id))
+      .limit(1);
 
-    const permissions = result
-      .map((r) => r.functionName)
-      .filter((name): name is string => name !== null && typeof name === "string");
+    if (!user || user.length === 0) return [];
+
+    const userId = user[0].id;
+    const profileId = user[0].idProfile;
+
+    // 1. Buscar permissões da categoria para o grupo específico
+    let categoryPermissions: string[] = [];
+    if (profileId) {
+      const categoryResult = await db
+        .select({
+          functionName: functions.name,
+        })
+        .from(profileFunctions)
+        .innerJoin(functions, eq(profileFunctions.idFunctions, functions.id))
+        .where(
+          and(
+            eq(profileFunctions.idProfile, profileId),
+            eq(functions.group, group),
+            eq(functions.active, true),
+            eq(profileFunctions.active, true)
+          )
+        );
+
+      categoryPermissions = categoryResult
+        .map((r) => r.functionName)
+        .filter((name): name is string => name !== null && typeof name === "string");
+    }
+
+    // 2. Buscar permissões individuais para o grupo específico
+    let individualPermissions: string[] = [];
+    try {
+      const individualResult = await db
+        .select({
+          functionName: functions.name,
+        })
+        .from(userFunctions)
+        .innerJoin(functions, eq(userFunctions.idFunctions, functions.id))
+        .where(
+          and(
+            eq(userFunctions.idUser, userId),
+            eq(functions.group, group),
+            eq(functions.active, true),
+            eq(userFunctions.active, true)
+          )
+        );
+
+      individualPermissions = individualResult
+        .map((r) => r.functionName)
+        .filter((name): name is string => name !== null && typeof name === "string");
+    } catch (error) {
+      // Se a tabela não existe, continuar sem erro
+      console.warn("[checkPagePermission] user_functions table may not exist:", error);
+    }
+
+    // 3. Combinar permissões (remover duplicatas)
+    const allPermissions = [...new Set([...categoryPermissions, ...individualPermissions])];
 
     // Se a permissão específica foi solicitada e não está na lista, retornar array vazio
     // (isso fará com que componentes que verificam permissions.includes() retornem false)
-    if (permission && !permissions.includes(permission)) {
+    if (permission && !allPermissions.includes(permission)) {
       // Não redirecionar, apenas retornar permissões (deixar o componente decidir)
-      return permissions;
+      return allPermissions;
     }
 
-    return permissions;
+    return allPermissions;
   } catch (error) {
     console.error("Error checking page permission:", error);
     return [];
+  }
+}
+
+// =====================================================
+// VERIFICAÇÃO DE ACESSO A PÁGINAS
+// =====================================================
+
+/**
+ * Mapeamento de rotas para permissões necessárias
+ * Formato: { rota: { grupo: string, funcao: string } }
+ */
+export const PAGE_PERMISSION_MAP: Record<string, { group: string; function: string }> = {
+  "/": { group: "Dashboard", function: "Visualizar Dashboard" },
+  "/dashboard": { group: "Dashboard", function: "Visualizar Dashboard" },
+  "/customers": { group: "ISOs", function: "Listar ISOs" },
+  "/establishments": { group: "Estabelecimentos", function: "Listar Estabelecimentos" },
+  "/transactions": { group: "Vendas", function: "Listar Vendas" },
+  "/closing": { group: "Fechamento", function: "Acessar Fechamento" },
+  "/config": { group: "Configurações", function: "Acessar Configurações" },
+  "/config/users": { group: "Usuários", function: "Listar Usuários" },
+  "/config/categories": { group: "Categorias", function: "Listar Categorias" },
+  "/consent": { group: "Consentimento LGPD", function: "Acessar Consentimento" },
+  "/suppliers": { group: "Fornecedores", function: "Listar Fornecedores" },
+  "/cnae-mcc": { group: "CNAE/MCC", function: "Listar CNAE/MCC" },
+};
+
+/**
+ * Verifica se o usuário tem acesso a uma página específica
+ * Super Admin sempre tem acesso
+ * Outros usuários precisam ter a permissão específica (categoria OU individual)
+ * 
+ * @param pathname - Caminho da página (ex: "/customers", "/config/users")
+ * @returns true se tem acesso, false caso contrário
+ */
+export async function canAccessPage(pathname: string): Promise<boolean> {
+  try {
+    // Super Admin sempre tem acesso
+    const isSuper = await isSuperAdmin();
+    if (isSuper) return true;
+
+    // Buscar mapeamento de permissão para a rota
+    const permissionConfig = PAGE_PERMISSION_MAP[pathname];
+    
+    // Se a rota não está no mapeamento, permitir acesso (rotas públicas ou não mapeadas)
+    if (!permissionConfig) {
+      return true;
+    }
+
+    // Verificar se tem a permissão
+    return await hasPermission(permissionConfig.function);
+  } catch (error) {
+    console.error("[canAccessPage] Error checking page access:", error);
+    return false;
+  }
+}
+
+/**
+ * Obtém todas as páginas que o usuário pode acessar
+ * Útil para filtrar o menu
+ * 
+ * @returns Array de pathnames que o usuário pode acessar
+ */
+export async function getAccessiblePages(): Promise<string[]> {
+  try {
+    // Super Admin tem acesso a tudo
+    const isSuper = await isSuperAdmin();
+    if (isSuper) {
+      return Object.keys(PAGE_PERMISSION_MAP);
+    }
+
+    const accessiblePages: string[] = [];
+
+    // Verificar cada página
+    for (const [pathname, config] of Object.entries(PAGE_PERMISSION_MAP)) {
+      const hasAccess = await hasPermission(config.function);
+      if (hasAccess) {
+        accessiblePages.push(pathname);
+      }
+    }
+
+    return accessiblePages;
+  } catch (error) {
+    console.error("[getAccessiblePages] Error:", error);
+    return [];
+  }
+}
+
+/**
+ * Obtém as URLs de menu que o usuário pode ver
+ * Considera: Super Admin, Admin, e permissões específicas
+ * 
+ * @returns Objeto com flags de acesso e lista de URLs permitidas
+ */
+export async function getMenuAccessInfo(): Promise<{
+  isSuperAdmin: boolean;
+  isAdmin: boolean;
+  allowedUrls: string[];
+}> {
+  try {
+    const userInfo = await getCurrentUserInfo();
+    
+    if (!userInfo) {
+      return {
+        isSuperAdmin: false,
+        isAdmin: false,
+        allowedUrls: [],
+      };
+    }
+
+    // Super Admin tem acesso a tudo
+    if (userInfo.isSuperAdmin) {
+      return {
+        isSuperAdmin: true,
+        isAdmin: true,
+        allowedUrls: Object.keys(PAGE_PERMISSION_MAP),
+      };
+    }
+
+    // Admin tem acesso a quase tudo (exceto categorias que é Super Admin only)
+    if (userInfo.isAdmin) {
+      const adminUrls = Object.keys(PAGE_PERMISSION_MAP).filter(url => 
+        url !== "/config/categories" // Super Admin only
+      );
+      
+      return {
+        isSuperAdmin: false,
+        isAdmin: true,
+        allowedUrls: adminUrls,
+      };
+    }
+
+    // Usuário comum - verificar permissões específicas
+    const allowedUrls: string[] = [];
+    
+    for (const [pathname, config] of Object.entries(PAGE_PERMISSION_MAP)) {
+      // Pular URLs que são admin-only
+      if (["/customers", "/config", "/config/users", "/config/categories"].includes(pathname)) {
+        continue;
+      }
+      
+      const hasAccess = await hasPermission(config.function);
+      if (hasAccess) {
+        allowedUrls.push(pathname);
+      }
+    }
+
+    return {
+      isSuperAdmin: false,
+      isAdmin: false,
+      allowedUrls,
+    };
+  } catch (error) {
+    console.error("[getMenuAccessInfo] Error:", error);
+    return {
+      isSuperAdmin: false,
+      isAdmin: false,
+      allowedUrls: [],
+    };
   }
 }

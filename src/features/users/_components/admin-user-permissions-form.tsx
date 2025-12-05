@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Select,
   SelectContent,
@@ -417,7 +418,7 @@ export function AdminUserPermissionsForm({
               />
             </div>
 
-            {/* Senha (na criação e na edição) */}
+            {/* Senha (na criação e na edição) - com botão mostrar/ocultar */}
             <FormField
               control={form.control}
               name="password"
@@ -429,8 +430,7 @@ export function AdminUserPermissionsForm({
                     {isEditing && <span className="text-muted-foreground text-xs"> (opcional - deixe em branco para não alterar)</span>}
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
+                    <PasswordInput
                       placeholder={isEditing ? "Digite a nova senha (deixe em branco para não alterar)" : "Digite a senha"}
                       {...field}
                     />

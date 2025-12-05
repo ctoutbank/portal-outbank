@@ -4,7 +4,7 @@ import { neon } from "@neondatabase/serverless";
 import { config } from "dotenv";
 import * as schema from "../../drizzle/schema";
 
-config({ path: ".env" });
+config({ path: ".env.local" });
 
 const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.NEON_DATABASE_URL;
 
