@@ -99,7 +99,7 @@ Equipe ${customerName}
                             </div>
                             
                             <!-- Main Title - Left aligned -->
-                            <h1 style="color: #333333; font-size: 30px; font-weight: 600; margin: 0 0 24px 0; line-height: 1.2; text-align: left;">
+                            <h1 style="color: #333333; font-size: 29px; font-weight: 600; margin: 0 0 24px 0; line-height: 1.2; text-align: left;">
                                 Bem-vindo!
                             </h1>
                             
@@ -263,7 +263,7 @@ Equipe Outbank
                             </div>
                             
                             <!-- Main Title -->
-                            <h1 style="color: #333333; font-size: 32px; font-weight: 700; margin: 0 0 8px 0; line-height: 1.2; text-align: center;">
+                            <h1 style="color: #333333; font-size: 31px; font-weight: 700; margin: 0 0 8px 0; line-height: 1.2; text-align: center;">
                                 Bem-vindo!
                             </h1>
                             
