@@ -14,8 +14,9 @@ import { generateSlug } from "@/lib/utils";
 /**
  * Lista de funções/permissões do portal-outbank organizadas por grupo
  * Estas funções são usadas para controlar acesso às páginas e funcionalidades
+ * (não pode ser exportado de arquivo "use server")
  */
-export const PORTAL_FUNCTIONS = {
+const PORTAL_FUNCTIONS = {
   // Grupo: ISOs
   ISOs: [
     { name: "Listar ISOs", group: "ISOs" },
