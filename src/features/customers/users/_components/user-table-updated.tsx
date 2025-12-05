@@ -240,7 +240,9 @@ export default function UserTable({
                           </Button>
                         </div>
                       ) : (
-                        <span className="text-sm text-muted-foreground">Senha não gerada</span>
+                        <span className="text-sm text-green-600 font-medium">
+                          ✓ Senha alterada pelo usuário
+                        </span>
                       )}
                     </TableCell>
                     <TableCell>

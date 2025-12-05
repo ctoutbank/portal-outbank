@@ -457,7 +457,7 @@ export async function revealInitialPassword(userId: number): Promise<{
     if (!user.initialPassword) {
       return { 
         success: false, 
-        error: "Senha inicial ainda não foi gerada para este usuário." 
+        error: "O usuário já alterou sua senha. A senha inicial não está mais disponível." 
       };
     }
 
