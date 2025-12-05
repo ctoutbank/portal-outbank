@@ -1872,7 +1872,7 @@ export async function getUserAllCustomers(userId: number) {
             eq(profileCustomers.idProfile, profileId),
             eq(profileCustomers.active, true)
           ));
-        categoryCustomers = catCustomers;
+        categoryCustomers = catCustomers.filter((c): c is { id: number; name: string | null; slug: string | null } => c.id !== null);
       } catch (error) {
         console.warn("[getUserAllCustomers] Tabela profile_customers pode não existir:", error);
       }
@@ -1893,7 +1893,7 @@ export async function getUserAllCustomers(userId: number) {
           eq(adminCustomers.idUser, userId),
           eq(adminCustomers.active, true)
         ));
-      individualCustomers = indCustomers;
+      individualCustomers = indCustomers.filter((c): c is { id: number; name: string | null; slug: string | null } => c.id !== null);
     } catch (error) {
       console.warn("[getUserAllCustomers] Erro ao buscar admin_customers:", error);
     }
