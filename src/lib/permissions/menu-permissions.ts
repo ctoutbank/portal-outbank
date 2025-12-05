@@ -81,3 +81,23 @@ export function isSuperAdminOnlyUrl(url: string): boolean {
   return config?.superAdminOnly === true;
 }
 
+/**
+ * Mapeamento de rotas para permissões necessárias
+ * Formato: { rota: { grupo: string, funcao: string } }
+ * Usado por canAccessPage() e getAccessiblePages()
+ */
+export const PAGE_PERMISSION_MAP: Record<string, { group: string; function: string }> = {
+  "/": { group: "Dashboard", function: "Visualizar Dashboard" },
+  "/dashboard": { group: "Dashboard", function: "Visualizar Dashboard" },
+  "/customers": { group: "ISOs", function: "Listar ISOs" },
+  "/establishments": { group: "Estabelecimentos", function: "Listar Estabelecimentos" },
+  "/transactions": { group: "Vendas", function: "Listar Vendas" },
+  "/closing": { group: "Fechamento", function: "Acessar Fechamento" },
+  "/config": { group: "Configurações", function: "Acessar Configurações" },
+  "/config/users": { group: "Usuários", function: "Listar Usuários" },
+  "/config/categories": { group: "Categorias", function: "Listar Categorias" },
+  "/consent": { group: "Consentimento LGPD", function: "Acessar Consentimento" },
+  "/suppliers": { group: "Fornecedores", function: "Listar Fornecedores" },
+  "/cnae-mcc": { group: "CNAE/MCC", function: "Listar CNAE/MCC" },
+};
+
