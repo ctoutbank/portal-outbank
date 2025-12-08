@@ -255,6 +255,63 @@ export async function deleteCustomer(id: number): Promise<number> {
   return customerDelete[0].id;
 }
 
+export async function deleteCustomersWithRelations(ids: number[]): Promise<{ deleted: number; errors: string[] }> {
+  const errors: string[] = [];
+  let deleted = 0;
+
+  for (const id of ids) {
+    try {
+      // 1. Buscar usuários do ISO para deletar do Clerk
+      const isoUsers = await db
+        .select({ id: users.id, idClerk: users.idClerk })
+        .from(users)
+        .where(eq(users.idCustomer, id));
+
+      // 2. Deletar usuários do Clerk
+      for (const user of isoUsers) {
+        if (user.idClerk) {
+          try {
+            const clerk = await clerkClient();
+            await clerk.users.deleteUser(user.idClerk);
+            console.log(`[deleteCustomersWithRelations] Usuário ${user.idClerk} deletado do Clerk`);
+          } catch (clerkError: any) {
+            if (clerkError?.status !== 404) {
+              console.warn(`[deleteCustomersWithRelations] Erro ao deletar usuário ${user.idClerk} do Clerk:`, clerkError);
+            }
+          }
+        }
+      }
+
+      // 3. Deletar usuários do banco
+      await db.delete(users).where(eq(users.idCustomer, id));
+      console.log(`[deleteCustomersWithRelations] Usuários do ISO ${id} deletados`);
+
+      // 4. Deletar customizações
+      await db.delete(customerCustomization).where(eq(customerCustomization.customerId, id));
+      console.log(`[deleteCustomersWithRelations] Customização do ISO ${id} deletada`);
+
+      // 5. Deletar admin_customers
+      await db.delete(adminCustomers).where(eq(adminCustomers.idCustomer, id));
+      console.log(`[deleteCustomersWithRelations] admin_customers do ISO ${id} deletados`);
+
+      // 6. Deletar customer_modules
+      await db.delete(customerModules).where(eq(customerModules.idCustomer, id));
+      console.log(`[deleteCustomersWithRelations] customer_modules do ISO ${id} deletados`);
+
+      // 7. Finalmente, deletar o customer
+      await db.delete(customers).where(eq(customers.id, id));
+      console.log(`[deleteCustomersWithRelations] ISO ${id} deletado com sucesso`);
+
+      deleted++;
+    } catch (error: any) {
+      console.error(`[deleteCustomersWithRelations] Erro ao deletar ISO ${id}:`, error);
+      errors.push(`ISO ${id}: ${error.message}`);
+    }
+  }
+
+  return { deleted, errors };
+}
+
 export type CustomerFull = {
   id: number;
   name: string;

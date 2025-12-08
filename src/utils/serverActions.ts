@@ -333,6 +333,18 @@ export async function saveCustomization(formData: FormData) {
   const normalizedSubdomain = subdomain.toLowerCase().trim();
   console.log(`[saveCustomization] Using subdomain: "${normalizedSubdomain}" for customerId=${customerId}`);
 
+  // ✅ Verificar se o subdomínio já existe para outro customer
+  const existingSubdomain = await db
+    .select({ id: customerCustomization.id, customerId: customerCustomization.customerId })
+    .from(customerCustomization)
+    .where(eq(customerCustomization.slug, normalizedSubdomain))
+    .limit(1);
+
+  if (existingSubdomain.length > 0 && existingSubdomain[0].customerId !== customerId) {
+    console.error(`[saveCustomization] Subdomínio "${normalizedSubdomain}" já está em uso por outro ISO`);
+    throw new Error(`O subdomínio "${normalizedSubdomain}" já está em uso por outro ISO. Por favor, escolha outro nome.`);
+  }
+
   let imageUrl = "";
   let fileId: number | null = null;
   let loginImageUrl = "";
@@ -589,6 +601,18 @@ export async function updateCustomization(formData: FormData) {
 
   const normalizedSubdomain = subdomain.toLowerCase().trim();
   console.log(`[updateCustomization] Using subdomain: "${normalizedSubdomain}" for customerId=${validated.data.customerId}`);
+
+  // ✅ Verificar se o subdomínio já existe para outro customer (exceto o atual)
+  const existingSubdomain = await db
+    .select({ id: customerCustomization.id, customerId: customerCustomization.customerId })
+    .from(customerCustomization)
+    .where(eq(customerCustomization.slug, normalizedSubdomain))
+    .limit(1);
+
+  if (existingSubdomain.length > 0 && existingSubdomain[0].customerId !== validated.data.customerId) {
+    console.error(`[updateCustomization] Subdomínio "${normalizedSubdomain}" já está em uso por outro ISO`);
+    throw new Error(`O subdomínio "${normalizedSubdomain}" já está em uso por outro ISO. Por favor, escolha outro nome.`);
+  }
 
   let imageUrl = "";
   let fileId: number | null = null;
