@@ -374,28 +374,59 @@ export async function getCustomerStatistics(): Promise<{
   createdThisMonth: number;
   createdLastWeek: number;
 }> {
+  // Obter ISOs permitidos do usuário
+  const userInfo = await getCurrentUserInfo();
+  
+  let allowedIds: number[] | null = null; // null = todos (Super Admin)
+  
+  if (userInfo && !userInfo.isSuperAdmin) {
+    allowedIds = userInfo.allowedCustomers || [];
+    if (allowedIds.length === 0) {
+      // Usuário sem ISOs autorizados
+      return { totalActive: 0, totalInactive: 0, createdThisMonth: 0, createdLastWeek: 0 };
+    }
+  }
+
+  // Construir condições de filtro
+  const activeCondition = allowedIds 
+    ? and(eq(customers.isActive, true), inArray(customers.id, allowedIds))
+    : eq(customers.isActive, true);
+    
+  const inactiveCondition = allowedIds
+    ? and(eq(customers.isActive, false), inArray(customers.id, allowedIds))
+    : eq(customers.isActive, false);
+    
+  const baseCondition = allowedIds 
+    ? inArray(customers.id, allowedIds) 
+    : undefined;
+
   const activeResult = await db
     .select({ count: count() })
     .from(customers)
-    .where(eq(customers.isActive, true));
+    .where(activeCondition);
 
   const inactiveResult = await db
     .select({ count: count() })
     .from(customers)
-    .where(eq(customers.isActive, false));
+    .where(inactiveCondition);
 
   const thisMonthResult = await db
     .select({ count: count() })
-    .from(customers);
+    .from(customers)
+    .where(baseCondition);
 
   const lastWeekResult = await db
     .select({ count: count() })
-    .from(customers);
+    .from(customers)
+    .where(baseCondition);
+
+  // Calcular valores proporcionais (aproximação para criados este mês e última semana)
+  const total = thisMonthResult[0]?.count || 0;
 
   return {
     totalActive: activeResult[0]?.count || 0,
     totalInactive: inactiveResult[0]?.count || 0,
-    createdThisMonth: Math.floor((thisMonthResult[0]?.count || 0) * 0.3), // Approximation
-    createdLastWeek: Math.floor((lastWeekResult[0]?.count || 0) * 0.1), // Approximation
+    createdThisMonth: Math.floor(total * 0.3), // Aproximação: 30% do total
+    createdLastWeek: Math.floor(total * 0.1), // Aproximação: 10% do total
   };
 }
