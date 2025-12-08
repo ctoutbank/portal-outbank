@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useState } from "react";
-import {getUserDetailWithClerk, UserDetailForm, revealInitialPassword, deleteUser} from "../_actions/user-actions";
+import {getUserDetailWithClerk, UserDetailForm, deleteUser, resetUserPassword} from "../_actions/user-actions";
 import UserCustomerForm from "./user-form";
 import { toast } from "sonner";
 
@@ -58,9 +58,8 @@ export default function UserTable({
   const [selectedUser, setSelectedUser] = useState<UserDetailForm| null>(null);
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [revealedPassword, setRevealedPassword] = useState<{userId: number; password: string; email: string} | null>(null);
+  const [newPasswordData, setNewPasswordData] = useState<{password: string; email: string} | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [visiblePasswords, setVisiblePasswords] = useState<Set<number>>(new Set());
 
   const closeDialog = () => {
     setOpen(false);
@@ -116,25 +115,28 @@ export default function UserTable({
     }
   }
 
-  async function handleRevealPassword(userId: number) {
+  async function handleResetPassword(userId: number) {
+    if (!confirm("Tem certeza que deseja gerar uma nova senha? A senha atual será substituída e uma nova será enviada por email.")) {
+      return;
+    }
+    
     try {
       setIsLoading(true);
-      const result = await revealInitialPassword(userId);
+      const result = await resetUserPassword(userId);
       
       if (result.success && result.password && result.email) {
-        setRevealedPassword({
-          userId,
+        setNewPasswordData({
           password: result.password,
           email: result.email,
         });
         setShowPasswordDialog(true);
-        toast.success("Senha revelada com sucesso!");
+        toast.success("Nova senha gerada com sucesso!");
       } else {
-        toast.error(result.error || "Erro ao revelar senha");
+        toast.error(result.error || "Erro ao gerar nova senha");
       }
     } catch (error) {
-      console.error("Erro ao revelar senha:", error);
-      toast.error("Erro ao revelar senha");
+      console.error("Erro ao resetar senha:", error);
+      toast.error("Erro ao gerar nova senha");
     } finally {
       setIsLoading(false);
     }
@@ -143,22 +145,6 @@ export default function UserTable({
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text);
     toast.success("Copiado para a área de transferência!");
-  }
-
-  function togglePasswordVisibility(userId: number) {
-    setVisiblePasswords((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(userId)) {
-        newSet.delete(userId);
-      } else {
-        newSet.add(userId);
-      }
-      return newSet;
-    });
-  }
-
-  function maskPassword(password: string): string {
-    return "•".repeat(password.length);
   }
 
   return (
@@ -200,67 +186,40 @@ export default function UserTable({
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Senha</TableHead>
-                  <TableHead>Data de Inserção</TableHead>
-                  <TableHead>Data de Atualização</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell>{`${user.firstName} ${user.lastName}`.trim() || "-"}</TableCell>
+                    <TableCell>{`${user.firstName || ''} ${user.lastName || ''}`.trim() || "-"}</TableCell>
+                    <TableCell className="text-sm">{user.email || "-"}</TableCell>
                     <TableCell>
-                      {user.active ? "Ativo" : "Inativo"}
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${user.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {user.active ? "Ativo" : "Inativo"}
+                      </span>
                     </TableCell>
                     <TableCell>
-                      {user.initialPassword ? (
-                        <div className="flex items-center space-x-2">
-                          <code className="text-sm font-mono">
-                            {visiblePasswords.has(user.id) 
-                              ? user.initialPassword 
-                              : maskPassword(user.initialPassword)}
-                          </code>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => togglePasswordVisibility(user.id)}
-                            className="h-6 w-6 p-0"
-                          >
-                            {visiblePasswords.has(user.id) ? "👁️" : "👁️‍🗨️"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => copyToClipboard(user.initialPassword || "")}
-                            className="h-6 w-6 p-0"
-                          >
-                            📋
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-green-600 font-medium">
-                          ✓ Senha alterada pelo usuário
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {user.dtinsert
-                        ? new Date(user.dtinsert).toLocaleDateString()
-                        : "-"}
-                    </TableCell>
-                    <TableCell>
-                      {user.dtupdate
-                        ? new Date(user.dtupdate).toLocaleDateString()
-                        : "-"}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleResetPassword(user.id)}
+                        disabled={isLoading}
+                        className="cursor-pointer"
+                      >
+                        Gerar Nova Senha
+                      </Button>
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button onClick={() => handleEditUser(user.id)} disabled={isLoading} className="cursor-pointer">
+                        <Button size="sm" onClick={() => handleEditUser(user.id)} disabled={isLoading} className="cursor-pointer">
                           Editar
                         </Button>
                         <Button
+                          size="sm"
                           variant="destructive"
                           onClick={() => handleDeleteUser(user.id)}
                           disabled={isLoading}
@@ -281,23 +240,25 @@ export default function UserTable({
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Senha do Usuário</DialogTitle>
+            <DialogTitle>Nova Senha Gerada</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Esta é a senha que foi enviada para o email do usuário quando a conta foi criada.
-            </p>
+            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm text-green-800">
+                ✓ A senha foi enviada por email para o usuário.
+              </p>
+            </div>
             
             <div className="space-y-2">
               <label className="text-sm font-medium">Email:</label>
               <div className="flex items-center space-x-2">
                 <code className="flex-1 p-2 bg-muted rounded text-sm">
-                  {revealedPassword?.email}
+                  {newPasswordData?.email}
                 </code>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => copyToClipboard(revealedPassword?.email || "")}
+                  onClick={() => copyToClipboard(newPasswordData?.email || "")}
                 >
                   Copiar
                 </Button>
@@ -305,26 +266,33 @@ export default function UserTable({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Senha:</label>
+              <label className="text-sm font-medium">Nova Senha:</label>
               <div className="flex items-center space-x-2">
-                <code className="flex-1 p-2 bg-muted rounded text-sm font-bold">
-                  {revealedPassword?.password}
+                <code className="flex-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm font-bold text-yellow-900">
+                  {newPasswordData?.password}
                 </code>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => copyToClipboard(revealedPassword?.password || "")}
+                  onClick={() => copyToClipboard(newPasswordData?.password || "")}
                 >
                   Copiar
                 </Button>
               </div>
             </div>
 
+            <p className="text-xs text-muted-foreground">
+              Guarde esta senha se necessário. Ela não será exibida novamente.
+            </p>
+
             <Button
               className="w-full"
               onClick={() => {
                 setShowPasswordDialog(false);
-                setRevealedPassword(null);
+                setNewPasswordData(null);
+                if (onRefresh) {
+                  onRefresh();
+                }
               }}
             >
               Fechar

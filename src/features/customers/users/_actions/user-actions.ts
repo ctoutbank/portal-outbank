@@ -638,3 +638,142 @@ export async function deleteUser(id: number): Promise<boolean> {
     throw error;
   }
 }
+
+/**
+ * Reseta a senha de um usuário, atualizando no Clerk e no banco de dados
+ * @param userId - ID do usuário no banco de dados
+ * @returns Objeto com sucesso, nova senha e email do usuário
+ */
+export async function resetUserPassword(userId: number): Promise<{
+  success: boolean;
+  password?: string;
+  email?: string;
+  error?: string;
+}> {
+  try {
+    console.log(`[resetUserPassword] Iniciando reset de senha para usuário ID: ${userId}`);
+
+    // 1. Buscar usuário no banco de dados
+    const userResult = await db
+      .select({
+        id: users.id,
+        idClerk: users.idClerk,
+        email: users.email,
+        idCustomer: users.idCustomer,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (userResult.length === 0) {
+      console.error(`[resetUserPassword] Usuário não encontrado: ${userId}`);
+      return { success: false, error: "Usuário não encontrado" };
+    }
+
+    const user = userResult[0];
+
+    if (!user.idClerk) {
+      console.error(`[resetUserPassword] Usuário não possui idClerk: ${userId}`);
+      return { success: false, error: "Usuário não está vinculado ao Clerk" };
+    }
+
+    if (!user.email) {
+      console.error(`[resetUserPassword] Usuário não possui email: ${userId}`);
+      return { success: false, error: "Usuário não possui email cadastrado" };
+    }
+
+    // 2. Gerar nova senha aleatória (mínimo 8 caracteres)
+    const newPassword = await generateRandomPassword(10);
+    console.log(`[resetUserPassword] Nova senha gerada com ${newPassword.length} caracteres`);
+
+    // 3. Atualizar no Clerk PRIMEIRO (pode falhar se senha comprometida)
+    const clerk = await clerkClient();
+    try {
+      await clerk.users.updateUser(user.idClerk, {
+        password: newPassword,
+      });
+      console.log(`[resetUserPassword] ✅ Senha atualizada no Clerk para: ${user.idClerk}`);
+    } catch (clerkError: any) {
+      console.error(`[resetUserPassword] ❌ Erro ao atualizar senha no Clerk:`, clerkError);
+      
+      // Verificar erros específicos do Clerk
+      if (clerkError?.errors?.some((e: any) => e.code === "form_password_pwned" || e.message?.includes("pwned"))) {
+        return { success: false, error: "A senha gerada foi comprometida. Tente novamente." };
+      }
+      if (clerkError?.errors?.some((e: any) => e.message?.includes("email"))) {
+        return { success: false, error: "A senha não pode ser igual ao email." };
+      }
+      
+      return { success: false, error: clerkError?.errors?.[0]?.message || "Erro ao atualizar senha no Clerk" };
+    }
+
+    // 4. Atualizar no banco de dados (só se Clerk OK)
+    const hashedPwd = hashPassword(newPassword);
+    await db
+      .update(users)
+      .set({
+        initialPassword: newPassword,
+        hashedPassword: hashedPwd,
+        dtupdate: new Date().toISOString(),
+      })
+      .where(eq(users.id, userId));
+    console.log(`[resetUserPassword] ✅ Senha atualizada no banco de dados para usuário ID: ${userId}`);
+
+    // 5. Buscar dados do ISO para email
+    let logo = "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
+    let customerName = "Consolle";
+    let link: string | undefined;
+
+    if (user.idCustomer) {
+      const domain = await getCustomizationByCustomerId(user.idCustomer);
+      if (domain) {
+        logo = domain.emailImageUrl || domain.imageUrl || logo;
+        customerName = domain.name || domain.slug || customerName;
+        if (domain.slug) {
+          link = `https://${domain.slug}.consolle.one`;
+        }
+      }
+
+      // Buscar nome do customer
+      const customerData = await db
+        .select({ name: customers.name })
+        .from(customers)
+        .where(eq(customers.id, user.idCustomer))
+        .limit(1);
+
+      if (customerData.length > 0 && customerData[0].name) {
+        customerName = customerData[0].name;
+      }
+    }
+
+    // 6. Enviar email com nova senha
+    try {
+      await sendWelcomePasswordEmail(
+        user.email,
+        newPassword,
+        logo,
+        customerName,
+        link
+      );
+      console.log(`[resetUserPassword] ✅ Email enviado para: ${user.email}`);
+    } catch (emailError) {
+      console.error(`[resetUserPassword] ⚠️ Erro ao enviar email (senha já foi resetada):`, emailError);
+      // Não falhar se email falhar - senha já foi resetada com sucesso
+    }
+
+    // 7. Revalidar caminhos
+    revalidatePath("/customers");
+    
+    return {
+      success: true,
+      password: newPassword,
+      email: user.email,
+    };
+  } catch (error: any) {
+    console.error("[resetUserPassword] ❌ Erro ao resetar senha:", error);
+    return {
+      success: false,
+      error: error?.message || "Erro ao resetar senha do usuário",
+    };
+  }
+}
