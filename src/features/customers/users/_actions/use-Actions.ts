@@ -2,10 +2,10 @@
 
 import { db } from "@/db/drizzle";
 import { and, eq, ilike, sql } from "drizzle-orm";
-import { users } from "../../../../../drizzle/schema";
+import { users, profiles } from "../../../../../drizzle/schema";
 import { UserSchema } from "../schema/schema";
 import { generateSlug } from "@/lib/utils";
-import { clerkClient } from "@clerk/nextjs/server";
+import { hashPassword } from "@/app/utils/password";
 
 export type UserDetail = typeof users.$inferSelect;
 export type UserInsert = typeof users.$inferInsert;
@@ -134,63 +134,30 @@ export async function createUser(data: Userinsert) {
       }
     }
 
-    const clerkUser = await (
-      await clerkClient()
-    ).users.createUser({
-      firstName: data.firstName,
-      lastName: data.lastName,
-      emailAddress: [data.email],
-      password: data.password,
-    });
+    // Hash da senha
+    const hashedPwd = hashPassword(data.password);
 
     const userId = await db
       .insert(users)
       .values({
-        slug: generateSlug(),
+        slug: `${data.firstName} ${data.lastName}`,
         dtinsert: new Date().toISOString(),
         dtupdate: new Date().toISOString(),
         active: true,
-        idClerk: clerkUser.id,
+        email: data.email,
+        idClerk: null, // Não usa mais Clerk
         idCustomer: data.idCustomer,
         idProfile: data.idProfile,
         idAddress: data.idAddress,
         fullAccess: data.fullAccess,
+        hashedPassword: hashedPwd,
+        initialPassword: data.password,
       })
       .returning({ id: users.id });
 
     return userId[0].id;
   } catch (error: unknown) {
     console.error("Erro ao criar usuário:", error);
-
-    // Tratamento específico para erros do Clerk
-    if (error && typeof error === "object" && "errors" in error) {
-      const clerkError = error as {
-        errors: Array<{ code: string; message: string }>;
-      };
-
-      // Verificar se é erro de email duplicado no Clerk
-      const duplicateEmailError = clerkError.errors.find(
-        (err) =>
-          err.code === "email_address_already_exists" ||
-          err.message.includes("already exists") ||
-          err.message.includes("duplicate")
-      );
-
-      if (duplicateEmailError) {
-        throw new Error("Usuário já existe com este email");
-      }
-
-      // Verificar outros erros comuns do Clerk
-      const invalidEmailError = clerkError.errors.find(
-        (err) =>
-          err.code === "form_identifier_exists" ||
-          err.message.includes("identifier")
-      );
-
-      if (invalidEmailError) {
-        throw new Error("Email inválido ou já está em uso");
-      }
-    }
 
     // Se for um erro de string simples, verificar se contém informações sobre duplicação
     if (

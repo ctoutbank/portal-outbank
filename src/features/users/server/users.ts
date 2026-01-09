@@ -4,8 +4,13 @@ import { hashPassword } from "@/app/utils/password";
 import { sendWelcomePasswordEmail } from "@/lib/send-email";
 import { generateSlug } from "@/lib/utils";
 import { db } from "@/db/drizzle";
-import { clerkClient, currentUser } from "@clerk/nextjs/server";
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth";
+import { and, count, desc, eq, sql } from "drizzle-orm";
+
+const DEV_BYPASS_ENABLED = 
+  process.env.NODE_ENV === "development" && 
+  process.env.DEV_BYPASS_AUTH === "true" &&
+  !process.env.VERCEL;
 import { revalidatePath } from "next/cache";
 import {
   addresses,
@@ -19,25 +24,6 @@ import {
   file,
 } from "../../../../drizzle/schema";
 import { AddressSchema } from "../schema/schema";
-
-interface ClerkUserData {
-  id: string;
-  firstName?: string;
-  lastName?: string;
-  emailAddresses: Array<{
-    emailAddress: string;
-  }>;
-}
-
-interface ClerkError {
-  code: string;
-  message: string;
-}
-
-interface ClerkErrorResponse {
-  status: number;
-  errors: ClerkError[];
-}
 
 export type UserInsert = {
   firstName: string;
@@ -105,41 +91,21 @@ export async function getUsers(
 
   const offset = (page - 1) * pageSize;
 
-  const userListParams = {
-    limit: pageSize,
-    offset: offset,
-    emailAddress: email ? [email] : undefined,
-    query: firstName
-      ? lastName
-        ? firstName + " " + lastName
-        : firstName
-      : undefined,
-  };
-
-  const clerk = await clerkClient();
-  const clerkResult = (await clerk.users.getUserList(userListParams)).data;
-  console.log("clerkResult", clerkResult);
   const conditions = [
     customer ? eq(users.idCustomer, customer) : undefined,
     profile ? eq(users.idProfile, profile) : undefined,
   ].filter(Boolean);
 
-  if (clerkResult.length == 0) {
-    return {
-      userObject: null,
-      totalCount: 0,
-    };
-  }
-
-  if (email && email.trim() !== "" && clerkResult.length > 0) {
-    const clerkIds = (clerkResult as ClerkUserData[]).map((clerk) => clerk.id);
-    conditions.push(inArray(users.idClerk, clerkIds));
+  // Filtrar por email se fornecido
+  if (email && email.trim() !== "") {
+    conditions.push(sql`${users.email} ILIKE ${'%' + email + '%'}`);
   }
 
   // First, get all users that match the conditions
   const userResults = await db
     .select({
       id: users.id,
+      email: users.email,
       profileName: profiles.name,
       profileDescription: profiles.description,
       status: users.active,
@@ -149,7 +115,7 @@ export async function getUsers(
     .from(users)
     .leftJoin(customers, eq(users.idCustomer, customers.id))
     .leftJoin(profiles, eq(users.idProfile, profiles.id))
-    .where(and(...conditions))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(users.id))
     .limit(pageSize)
     .offset(offset);
@@ -157,11 +123,6 @@ export async function getUsers(
   // Then, for each user, get their merchants
   const userObject = await Promise.all(
     userResults.map(async (dbUser) => {
-      const clerkData = (clerkResult as ClerkUserData[]).find(
-        (clerk) => clerk.id === dbUser.idClerk
-      );
-      console.log("clerkData", clerkData);
-
       // Get user's merchants
       const userMerchantsList = await db
         .select({
@@ -179,9 +140,9 @@ export async function getUsers(
 
       return {
         id: dbUser.id,
-        firstName: clerkData?.firstName || "",
-        lastName: clerkData?.lastName || "",
-        email: clerkData?.emailAddresses[0].emailAddress || "",
+        firstName: "",
+        lastName: "",
+        email: dbUser.email || "",
         profileName: dbUser.profileName || "",
         profileDescription: dbUser.profileDescription || "",
         status: dbUser.status || true,
@@ -195,7 +156,7 @@ export async function getUsers(
   const totalCountResult = await db
     .select({ count: count() })
     .from(users)
-    .where(and(...conditions));
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
 
   const totalCount = totalCountResult[0]?.count || 0;
   return {
@@ -236,24 +197,8 @@ export async function InsertUser(data: UserInsert) {
   }
 
   try {
-    const password = await generateRandomPassword();
+    const password = data.password || await generateRandomPassword();
     const hashedPassword = hashPassword(password);
-
-    const clerkUser = await (
-      await clerkClient()
-    ).users.createUser({
-      firstName: data.firstName,
-      lastName: data.lastName,
-      emailAddress: [data.email],
-      password: password,
-      publicMetadata: {
-        isFirstLogin: true,
-        isPortalUser: false,       // ← IMPORTANTE: Marca como usuário de ISO (não do portal)
-        idCustomer: data.idCustomer || null,  // ← IMPORTANTE: ID do ISO do usuário
-      },
-    });
-
-    console.log(`[InsertUser] ✅ Usuário criado no Clerk com metadata: isPortalUser=false, idCustomer=${data.idCustomer || null}`);
 
     const newUser = await db
       .insert(users)
@@ -262,7 +207,7 @@ export async function InsertUser(data: UserInsert) {
         dtinsert: new Date().toISOString(),
         dtupdate: new Date().toISOString(),
         active: true,
-        idClerk: clerkUser.id,
+        idClerk: null,
         idCustomer: data.idCustomer,
         idProfile: data.idProfile,
         idAddress: data.idAddress,
@@ -271,7 +216,6 @@ export async function InsertUser(data: UserInsert) {
         initialPassword: password,
         email: data.email,
       })
-
       .returning({ id: users.id });
 
     // ✅ Buscar dados do tenant para email de boas-vindas
@@ -344,22 +288,6 @@ export async function InsertUser(data: UserInsert) {
     return newUser;
   } catch (error: unknown) {
     console.error("Erro ao criar usuário:", error);
-
-    // Verificar se é um erro de segurança de senha
-    if (error && typeof error === 'object' && 'status' in error && 'errors' in error) {
-      const clerkError = error as ClerkErrorResponse;
-      if (clerkError.status === 422 && clerkError.errors && clerkError.errors.length > 0) {
-        const passwordError = clerkError.errors.find(
-          (e: ClerkError) => e.code === "form_password_pwned"
-        );
-        if (passwordError) {
-          throw new Error(
-            "Senha comprometida: Essa senha foi encontrada em vazamentos de dados. Por favor, escolha uma senha mais segura."
-          );
-        }
-      }
-    }
-
     throw error;
   }
 }
@@ -395,23 +323,24 @@ export async function updateUser(id: number, data: UserInsert) {
       throw new Error("Usuário não encontrado");
     }
 
-    const clerk = await clerkClient();
+    // Preparar dados para atualização
+    const updateData: Record<string, unknown> = {
+      idProfile: data.idProfile,
+      idCustomer: data.idCustomer,
+      idAddress: data.idAddress,
+      dtupdate: new Date().toISOString(),
+      fullAccess: data.fullAccess,
+    };
 
-    await clerk.users.updateUser(existingUser[0].idClerk || "", {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      ...(data.password ? { password: data.password } : {}),
-    });
+    // Se senha foi fornecida, atualizar hash
+    if (data.password) {
+      updateData.hashedPassword = hashPassword(data.password);
+      updateData.initialPassword = data.password;
+    }
 
     await db
       .update(users)
-      .set({
-        idProfile: data.idProfile,
-        idCustomer: data.idCustomer,
-        idAddress: data.idAddress,
-        dtupdate: new Date().toISOString(),
-        fullAccess: data.fullAccess,
-      })
+      .set(updateData)
       .where(eq(users.id, id));
 
     // Update user-merchant relationships
@@ -451,10 +380,6 @@ export async function getUserById(
   if (userDb == undefined || userDb == null || userDb[0] == undefined) {
     return null;
   } else {
-    const clerkUser = await (
-      await clerkClient()
-    ).users.getUser(userDb[0].idClerk || "");
-
     const userMerchantsList = await db
       .select({
         idMerchant: userMerchants.idMerchant,
@@ -467,12 +392,12 @@ export async function getUserById(
       active: userDb[0].active,
       dtinsert: userDb[0].dtinsert,
       dtupdate: userDb[0].dtupdate,
-      email: clerkUser.emailAddresses[0].emailAddress || "",
-      firstName: clerkUser.firstName || "",
+      email: userDb[0].email || "",
+      firstName: "",
       idClerk: userDb[0].idClerk,
       idCustomer: userDb[0].idCustomer,
       idProfile: userDb[0].idProfile,
-      lastName: clerkUser.lastName || "",
+      lastName: "",
       hashedPassword: userDb[0].hashedPassword,
       password: "",
       slug: userDb[0].slug,
@@ -485,6 +410,7 @@ export async function getUserById(
       firstLogin: null,
       initialPassword: userDb[0].initialPassword,
       isInvisible: userDb[0].isInvisible,
+      userType: userDb[0].userType,
     };
   }
 }
@@ -502,13 +428,16 @@ export async function getDDMerchants(customerId?: number): Promise<DD[]> {
 
 
   if (customerId == undefined || customerId == null) {
-    const userClerk = await currentUser();
-    const userId = userClerk?.id;
+    const sessionUser = await getCurrentUser();
+    
+    if (!sessionUser) {
+      return [];
+    }
 
     const user = await db
       .select()
       .from(users)
-      .where(eq(users.idClerk, userId || ""));
+      .where(eq(users.id, sessionUser.id));
 
     if (user && user.length > 0) {
       customerId = user[0].idCustomer || 0;
@@ -571,14 +500,20 @@ export async function validateCurrentPassword(
   userId: string
 ): Promise<boolean> {
   try {
-    const clerk = await clerkClient();
+    const { comparePassword } = await import("@/app/utils/password");
+    
+    // Buscar usuário pelo id numérico ou idClerk
+    const userResult = await db
+      .select({ hashedPassword: users.hashedPassword })
+      .from(users)
+      .where(eq(users.id, parseInt(userId) || 0))
+      .limit(1);
 
-    const validation = await clerk.users.verifyPassword({
-      userId,
-      password: currentPassword,
-    });
+    if (!userResult || userResult.length === 0 || !userResult[0].hashedPassword) {
+      return false;
+    }
 
-    return validation.verified;
+    return comparePassword(currentPassword, userResult[0].hashedPassword);
   } catch (error) {
     console.error("Erro ao validar senha:", error);
     return false;
@@ -592,7 +527,7 @@ export async function UpdateMyProfile(data: {
   password?: string;
   idClerk: string;
 }) {
-  const fieldsToValidate = ["firstName", "lastName", "email"];
+  const fieldsToValidate = ["email"];
 
   const hasInvalidFields = fieldsToValidate.some((field) => {
     const value = data[field as keyof typeof data];
@@ -600,17 +535,35 @@ export async function UpdateMyProfile(data: {
   });
 
   if (hasInvalidFields) {
-    throw new Error("Nome, sobrenome e email são campos obrigatórios");
+    throw new Error("Email é campo obrigatório");
   }
 
   try {
-    const clerk = await clerkClient();
+    // Buscar usuário pelo idClerk
+    const userResult = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.idClerk, data.idClerk))
+      .limit(1);
 
-    await clerk.users.updateUser(data.idClerk, {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      ...(data.password ? { password: data.password } : {}),
-    });
+    if (!userResult || userResult.length === 0) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const updateData: Record<string, unknown> = {
+      dtupdate: new Date().toISOString(),
+    };
+
+    // Se senha foi fornecida, atualizar hash
+    if (data.password) {
+      updateData.hashedPassword = hashPassword(data.password);
+      updateData.initialPassword = data.password;
+    }
+
+    await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userResult[0].id));
 
     revalidatePath("/portal/myProfile");
     return true;
@@ -633,9 +586,17 @@ export interface UserMerchantSlugs {
 
 export async function getUserMerchantsAccess(): Promise<UserMerchantsAccess> {
   try {
-    const userClerk = await currentUser();
+    if (DEV_BYPASS_ENABLED) {
+      return {
+        fullAccess: true,
+        idMerchants: [],
+        idCustomer: null,
+      };
+    }
 
-    if (!userClerk) {
+    const sessionUser = await getCurrentUser();
+
+    if (!sessionUser) {
       throw new Error("User not authenticated");
     }
 
@@ -646,7 +607,7 @@ export async function getUserMerchantsAccess(): Promise<UserMerchantsAccess> {
         idCustomer: users.idCustomer,
       })
       .from(users)
-      .where(eq(users.idClerk, userClerk.id));
+      .where(eq(users.id, sessionUser.id));
 
     if (!user || user.length === 0) {
       throw new Error("User not found in database");
@@ -683,9 +644,16 @@ export async function getUserMerchantsAccess(): Promise<UserMerchantsAccess> {
 }
 
 export async function getUserMerchantSlugs(): Promise<UserMerchantSlugs> {
-  const userClerk = await currentUser();
+  if (DEV_BYPASS_ENABLED) {
+    return {
+      fullAccess: true,
+      slugMerchants: [],
+    };
+  }
 
-  if (!userClerk) {
+  const sessionUser = await getCurrentUser();
+
+  if (!sessionUser) {
     throw new Error("User not authenticated");
   }
 
@@ -695,7 +663,7 @@ export async function getUserMerchantSlugs(): Promise<UserMerchantSlugs> {
       fullAccess: users.fullAccess,
     })
     .from(users)
-    .where(eq(users.idClerk, userClerk.id));
+    .where(eq(users.id, sessionUser.id));
 
   if (!user || user.length === 0) {
     throw new Error("User not found in database");
@@ -839,5 +807,3 @@ export async function getMerchantsWithDDD(): Promise<
     })
     .from(merchants);
 }
-
-

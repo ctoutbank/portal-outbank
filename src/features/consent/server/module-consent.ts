@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { merchantModules, moduleConsents, modules, merchants, customers, userNotifications, users } from "@/lib/db";
 import { eq, and, desc } from "drizzle-orm";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { generateSlug } from "@/lib/utils";
@@ -22,14 +22,14 @@ interface ConsentData {
  */
 export async function grantModuleConsent(data: ConsentData) {
   try {
-    const user = await currentUser();
+    const sessionUser = await getCurrentUser();
     const headersList = await headers();
     
-    if (!user) {
+    if (!sessionUser) {
       throw new Error("Usuário não autenticado");
     }
 
-    const userEmail = user.emailAddresses[0]?.emailAddress;
+    const userEmail = sessionUser.email;
     const ipAddress = headersList.get("x-forwarded-for") || 
                      headersList.get("x-real-ip") || 
                      data.ipAddress || 
@@ -149,14 +149,14 @@ export async function grantModuleConsent(data: ConsentData) {
  */
 export async function revokeModuleConsent(merchantId: number, moduleId: number) {
   try {
-    const user = await currentUser();
+    const sessionUser = await getCurrentUser();
     const headersList = await headers();
 
-    if (!user) {
+    if (!sessionUser) {
       throw new Error("Usuário não autenticado");
     }
 
-    const userEmail = user.emailAddresses[0]?.emailAddress;
+    const userEmail = sessionUser.email;
     const ipAddress = headersList.get("x-forwarded-for") || 
                      headersList.get("x-real-ip") || 
                      "unknown";

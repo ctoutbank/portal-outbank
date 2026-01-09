@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clerkClient } from "@clerk/nextjs/server";
 import { isSuperAdmin } from "@/lib/permissions/check-permissions";
+import { db } from "@/db/drizzle";
+import { users } from "../../../../drizzle/schema";
+import { eq } from "drizzle-orm";
+import { hashPassword } from "@/app/utils/password";
 
 /**
  * API Route para resetar senha de usuário
@@ -47,55 +50,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const clerk = await clerkClient();
+    // Buscar usuário por email no banco
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
 
-    // Buscar usuário por email
-    const usersResponse = await clerk.users.getUserList({
-      emailAddress: [email],
-    });
-
-    const users = usersResponse.data || [];
-
-    if (users.length === 0) {
+    if (userResult.length === 0) {
       return NextResponse.json(
         { error: `Usuário com email ${email} não encontrado` },
         { status: 404 }
       );
     }
 
-    const user = users[0];
+    const user = userResult[0];
 
-    // Atualizar senha
-    try {
-      await clerk.users.updateUser(user.id, {
-        password: newPassword,
-        skipPasswordChecks: false, // Manter validações de segurança
-      });
+    // Atualizar senha no banco
+    const hashedPassword = hashPassword(newPassword);
+    
+    await db
+      .update(users)
+      .set({
+        hashedPassword: hashedPassword,
+        initialPassword: newPassword,
+        dtupdate: new Date().toISOString(),
+      })
+      .where(eq(users.id, user.id));
 
-      return NextResponse.json({
-        success: true,
-        message: `Senha resetada com sucesso para ${email}`,
-      });
-    } catch (clerkError: any) {
-      // Capturar erros específicos do Clerk
-      let errorMessage = "Erro ao atualizar senha no Clerk";
-      
-      if (clerkError.errors) {
-        const errors = clerkError.errors;
-        if (errors.some((e: any) => e.message?.includes("pwned"))) {
-          errorMessage = "Esta senha foi comprometida. Por favor, escolha outra senha.";
-        } else if (errors.some((e: any) => e.message?.includes("email"))) {
-          errorMessage = "A senha não pode ser igual ao email.";
-        } else {
-          errorMessage = errors[0]?.message || errorMessage;
-        }
-      }
-
-      return NextResponse.json(
-        { error: errorMessage },
-        { status: 400 }
-      );
-    }
+    return NextResponse.json({
+      success: true,
+      message: `Senha resetada com sucesso para ${email}`,
+    });
   } catch (error: any) {
     console.error("Erro ao resetar senha:", error);
     return NextResponse.json(
@@ -104,4 +90,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

@@ -1,11 +1,10 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { users, profiles, customers, adminCustomers, functions, profileFunctions, userFunctions, profileCustomers } from "../../../../drizzle/schema";
+import { users, profiles, customers, adminCustomers, functions, profileFunctions, userFunctions, profileCustomers, salesAgents, userCustomers, merchants } from "../../../../drizzle/schema";
 import { eq, and, ilike, inArray, sql, count, desc, asc, isNull, or } from "drizzle-orm";
 import { getCurrentUserInfo, isSuperAdmin } from "@/lib/permissions/check-permissions";
 import { nanoid } from "nanoid";
-import { clerkClient } from "@clerk/nextjs/server";
 import { hashPassword } from "@/app/utils/password";
 import { generateSlug } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
@@ -60,218 +59,6 @@ export async function isProtectedSuperAdmin(
   }
 }
 
-// =====================================================
-// FUNÇÕES DE SINCRONIZAÇÃO CLERK
-// =====================================================
-
-/**
- * Sincroniza dados do usuário no banco para o Clerk
- * Atualiza metadata: isPortalUser, idCustomer, isFirstLogin
- */
-export async function syncUserToClerk(userId: number): Promise<{ success: boolean; error?: string }> {
-  try {
-    const user = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-
-    if (!user || user.length === 0) {
-      return { success: false, error: "Usuário não encontrado no banco" };
-    }
-
-    const userData = user[0];
-    
-    if (!userData.idClerk) {
-      return { success: false, error: "Usuário não possui idClerk" };
-    }
-
-    const clerk = await clerkClient();
-    
-    // Determinar se é usuário do portal (idCustomer = null) ou de ISO (idCustomer != null)
-    const isPortalUser = userData.idCustomer === null;
-
-    await clerk.users.updateUser(userData.idClerk, {
-      publicMetadata: {
-        isPortalUser,
-        idCustomer: userData.idCustomer,
-        // Preservar isFirstLogin se existir
-        ...(await getClerkUserMetadata(userData.idClerk)),
-      },
-    });
-
-    console.log(`[syncUserToClerk] ✅ Sincronizado usuário ${userId} (${userData.email}) para Clerk`);
-    return { success: true };
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : "Erro desconhecido";
-    console.error(`[syncUserToClerk] ❌ Erro ao sincronizar usuário ${userId}:`, error);
-    return { success: false, error: errorMsg };
-  }
-}
-
-/**
- * Obtém a metadata atual do usuário no Clerk
- */
-async function getClerkUserMetadata(idClerk: string): Promise<Record<string, unknown>> {
-  try {
-    const clerk = await clerkClient();
-    const clerkUser = await clerk.users.getUser(idClerk);
-    return clerkUser.publicMetadata || {};
-  } catch (error) {
-    console.error(`[getClerkUserMetadata] Erro ao obter metadata do Clerk:`, error);
-    return {};
-  }
-}
-
-/**
- * Valida consistência entre banco e Clerk
- * Retorna inconsistências encontradas
- */
-export async function validateClerkSync(userId: number): Promise<{
-  isConsistent: boolean;
-  inconsistencies: string[];
-  bankData: Record<string, unknown> | null;
-  clerkData: Record<string, unknown> | null;
-}> {
-  try {
-    // Buscar dados do banco
-    const user = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-
-    if (!user || user.length === 0) {
-      return {
-        isConsistent: false,
-        inconsistencies: ["Usuário não encontrado no banco"],
-        bankData: null,
-        clerkData: null,
-      };
-    }
-
-    const userData = user[0];
-    
-    if (!userData.idClerk) {
-      return {
-        isConsistent: false,
-        inconsistencies: ["Usuário não possui idClerk - não existe no Clerk"],
-        bankData: { id: userData.id, email: userData.email, idCustomer: userData.idCustomer },
-        clerkData: null,
-      };
-    }
-
-    // Buscar dados do Clerk
-    const clerk = await clerkClient();
-    let clerkUser;
-    try {
-      clerkUser = await clerk.users.getUser(userData.idClerk);
-    } catch (clerkError) {
-      return {
-        isConsistent: false,
-        inconsistencies: [`Usuário não encontrado no Clerk: ${userData.idClerk}`],
-        bankData: { id: userData.id, email: userData.email, idCustomer: userData.idCustomer },
-        clerkData: null,
-      };
-    }
-
-    const inconsistencies: string[] = [];
-    const expectedIsPortalUser = userData.idCustomer === null;
-    const clerkIsPortalUser = clerkUser.publicMetadata?.isPortalUser;
-    const clerkIdCustomer = clerkUser.publicMetadata?.idCustomer;
-
-    // Verificar isPortalUser
-    if (clerkIsPortalUser !== expectedIsPortalUser) {
-      inconsistencies.push(
-        `isPortalUser inconsistente: Clerk=${clerkIsPortalUser}, Esperado=${expectedIsPortalUser}`
-      );
-    }
-
-    // Verificar idCustomer
-    if (clerkIdCustomer !== userData.idCustomer) {
-      inconsistencies.push(
-        `idCustomer inconsistente: Clerk=${clerkIdCustomer}, Banco=${userData.idCustomer}`
-      );
-    }
-
-    // Verificar email
-    const clerkEmail = clerkUser.emailAddresses[0]?.emailAddress;
-    if (clerkEmail?.toLowerCase() !== userData.email?.toLowerCase()) {
-      inconsistencies.push(
-        `Email inconsistente: Clerk=${clerkEmail}, Banco=${userData.email}`
-      );
-    }
-
-    return {
-      isConsistent: inconsistencies.length === 0,
-      inconsistencies,
-      bankData: {
-        id: userData.id,
-        email: userData.email,
-        idCustomer: userData.idCustomer,
-        idProfile: userData.idProfile,
-        active: userData.active,
-      },
-      clerkData: {
-        id: clerkUser.id,
-        email: clerkEmail,
-        isPortalUser: clerkIsPortalUser,
-        idCustomer: clerkIdCustomer,
-        isFirstLogin: clerkUser.publicMetadata?.isFirstLogin,
-      },
-    };
-  } catch (error) {
-    console.error(`[validateClerkSync] Erro ao validar sincronização:`, error);
-    return {
-      isConsistent: false,
-      inconsistencies: [`Erro ao validar: ${error instanceof Error ? error.message : "Erro desconhecido"}`],
-      bankData: null,
-      clerkData: null,
-    };
-  }
-}
-
-/**
- * Corrige inconsistências entre banco e Clerk
- * Sincroniza metadata do banco para o Clerk
- */
-export async function fixClerkSyncIssues(userId: number): Promise<{
-  success: boolean;
-  fixed: string[];
-  errors: string[];
-}> {
-  const validation = await validateClerkSync(userId);
-  
-  if (validation.isConsistent) {
-    return {
-      success: true,
-      fixed: [],
-      errors: [],
-    };
-  }
-
-  const fixed: string[] = [];
-  const errors: string[] = [];
-
-  // Tentar corrigir sincronizando do banco para o Clerk
-  const syncResult = await syncUserToClerk(userId);
-  
-  if (syncResult.success) {
-    fixed.push("Metadata do Clerk atualizada com dados do banco");
-  } else {
-    errors.push(`Falha ao sincronizar: ${syncResult.error}`);
-  }
-
-  // Validar novamente
-  const revalidation = await validateClerkSync(userId);
-  
-  return {
-    success: revalidation.isConsistent,
-    fixed,
-    errors: revalidation.isConsistent ? errors : [...errors, ...revalidation.inconsistencies],
-  };
-}
-
 // Função helper para gerar senha aleatória
 async function generateRandomPassword(length = 8): Promise<string> {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -288,7 +75,11 @@ async function generateRandomPassword(length = 8): Promise<string> {
  * @param page - Numero da pagina
  * @param pageSize - Quantidade de registros por pagina
  * @param filters - Filtros de busca
- * @param userType - Tipo de usuario: "portal" (sem idCustomer), "iso" (com idCustomer), ou undefined (todos)
+ * @param userType - Tipo de usuario:
+ *   - "portal": usuarios sem idCustomer (administradores do portal)
+ *   - "iso_admin": usuarios com idCustomer E categoryType = 'ISO_ADMIN' (administradores dos ISOs)
+ *   - "user_iso": usuarios com idCustomer E categoryType != 'ISO_ADMIN' (equipe dos ISOs)
+ *   - "iso": todos usuarios com idCustomer (compatibilidade)
  */
 export async function getAllUsers(
   page: number = 1,
@@ -300,7 +91,7 @@ export async function getAllUsers(
     profileId?: number;
     active?: boolean;
   },
-  userType?: "portal" | "iso"
+  userType?: "portal" | "iso" | "iso_admin" | "user_iso"
 ) {
   const userInfo = await getCurrentUserInfo();
   if (!userInfo) {
@@ -332,19 +123,23 @@ export async function getAllUsers(
     whereConditions.push(eq(users.active, filters.active));
   }
 
-  // Filtrar por tipo de usuario (portal vs ISO)
-  // userType = "portal": usuarios sem idCustomer (administradores do portal)
-  // userType = "iso": usuarios com idCustomer (usuarios de ISOs especificos)
-  // userType = undefined: comportamento padrao (apenas portal se nao houver filtro de customerId)
+  // Filtrar por tipo de usuario
   if (userType === "portal") {
     // Usuarios do portal: sem idCustomer
     whereConditions.push(isNull(users.idCustomer));
+  } else if (userType === "iso_admin") {
+    // ISO Admins: com idCustomer E categoryType = 'ISO_ADMIN'
+    whereConditions.push(sql`${users.idCustomer} IS NOT NULL`);
+    whereConditions.push(sql`${profiles.categoryType} = 'ISO_ADMIN'`);
+  } else if (userType === "user_iso") {
+    // Equipe dos ISOs: com idCustomer E categoryType != 'ISO_ADMIN' (ou null)
+    whereConditions.push(sql`${users.idCustomer} IS NOT NULL`);
+    whereConditions.push(sql`(${profiles.categoryType} IS NULL OR ${profiles.categoryType} != 'ISO_ADMIN')`);
   } else if (userType === "iso") {
-    // Usuarios de ISOs: com idCustomer
+    // Todos usuarios de ISOs: com idCustomer (compatibilidade)
     whereConditions.push(sql`${users.idCustomer} IS NOT NULL`);
   } else if (!filters?.customerId) {
     // Comportamento padrao: apenas usuarios do portal (sem id_customer)
-    // Exceto se um customerId especifico foi passado como filtro
     whereConditions.push(isNull(users.idCustomer));
   }
 
@@ -506,46 +301,140 @@ export async function getAllUsers(
 
   const usersWithISOs = processedUsers;
 
-  // Buscar últimos acessos do Clerk
-  let usersWithLastAccess: UserWithCustomers[] = [];
-  
-  try {
-    const clerk = await clerkClient();
-    usersWithLastAccess = await Promise.all(
-      usersWithISOs.map(async (user) => {
-        let lastAccess: string | null = null;
-        if (user.idClerk) {
-          try {
-            const clerkUser = await clerk.users.getUser(user.idClerk);
-            lastAccess = clerkUser.lastSignInAt ? new Date(clerkUser.lastSignInAt).toISOString() : null;
-          } catch (error) {
-            // Não logar erro se usuário não existir no Clerk (pode ser esperado)
-            if (error instanceof Error && !error.message.includes('not found')) {
-              console.error(`Erro ao buscar último acesso do usuário ${user.idClerk}:`, error);
-            }
-          }
-        }
-        // Garantir que o campo customers seja preservado
-        return {
-          ...user,
-          customers: user.customers || [], // Garantir que customers sempre exista
-          lastAccess,
-        };
-      })
-    );
-  } catch (error) {
-    console.error('Erro ao buscar últimos acessos do Clerk:', error);
-    // Retornar usuários sem últimos acessos se houver erro, preservando customers
-    usersWithLastAccess = usersWithISOs.map(user => ({ 
-      ...user, 
-      customers: user.customers || [], // Garantir que customers sempre exista
-      lastAccess: null 
-    }));
-  }
+  // Adicionar lastAccess como null (sem integração com Clerk)
+  const usersWithLastAccess = usersWithISOs.map(user => ({ 
+    ...user, 
+    customers: user.customers || [],
+    lastAccess: null 
+  }));
 
   return {
     users: usersWithLastAccess,
     totalCount,
+  };
+}
+
+/**
+ * Lista usuários do tenant (ISO) - APENAS usuários criados dentro do tenant
+ * Esta função é usada no ambiente tenant para mostrar apenas:
+ * - Usuários com idCustomer = ID do tenant atual
+ * - ISO Admin do tenant
+ * 
+ * EXCLUI automaticamente:
+ * - Super Admin (userType = 'SUPER_ADMIN')
+ * - Usuários CORE (categoryType = 'CORE')
+ * - Usuários EXECUTIVO (categoryType = 'EXECUTIVO')
+ * - Usuários do portal (sem idCustomer ou com idCustomer diferente)
+ * - Usuários marcados como invisíveis (isInvisible = true)
+ */
+export async function getTenantUsers(
+  tenantCustomerId: number,
+  page: number = 1,
+  pageSize: number = 10,
+  filters?: {
+    email?: string;
+    name?: string;
+    profileId?: number;
+    active?: boolean;
+  }
+) {
+  const offset = (page - 1) * pageSize;
+  const whereConditions = [];
+
+  // OBRIGATÓRIO: Usuário deve pertencer ao tenant (idCustomer = tenant ID)
+  whereConditions.push(eq(users.idCustomer, tenantCustomerId));
+
+  // Excluir Super Admin por userType
+  whereConditions.push(
+    or(
+      isNull(users.userType),
+      sql`${users.userType} != 'SUPER_ADMIN'`
+    )
+  );
+
+  // Excluir usuários marcados como invisíveis
+  whereConditions.push(
+    or(
+      isNull(users.isInvisible),
+      eq(users.isInvisible, false)
+    )
+  );
+
+  // Aplicar filtros opcionais
+  if (filters?.email) {
+    whereConditions.push(ilike(users.email, `%${filters.email}%`));
+  }
+
+  if (filters?.profileId) {
+    whereConditions.push(eq(users.idProfile, filters.profileId));
+  }
+
+  if (filters?.active !== undefined) {
+    whereConditions.push(eq(users.active, filters.active));
+  }
+
+  // Contar total
+  const totalCountResult = await db
+    .select({ count: count() })
+    .from(users)
+    .leftJoin(profiles, eq(users.idProfile, profiles.id))
+    .where(and(...whereConditions));
+
+  const totalCount = totalCountResult[0]?.count || 0;
+
+  // Buscar usuários com exclusão de CORE e EXECUTIVO por categoryType do perfil
+  const result = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      idCustomer: users.idCustomer,
+      idProfile: users.idProfile,
+      active: users.active,
+      fullAccess: users.fullAccess,
+      profileName: profiles.name,
+      profileDescription: profiles.description,
+      categoryType: profiles.categoryType,
+      userType: users.userType,
+      idClerk: users.idClerk,
+    })
+    .from(users)
+    .leftJoin(profiles, eq(users.idProfile, profiles.id))
+    .where(and(...whereConditions))
+    .orderBy(desc(users.id))
+    .limit(pageSize)
+    .offset(offset);
+
+  // Filtrar CORE e EXECUTIVO por categoryType ou nome do perfil (pós-query para fallback legado)
+  const filteredUsers = result.filter(user => {
+    const categoryType = user.categoryType?.toUpperCase() || "";
+    const profileName = user.profileName?.toUpperCase() || "";
+    
+    // Excluir CORE
+    if (categoryType === "CORE" || profileName.includes("CORE")) {
+      return false;
+    }
+    
+    // Excluir EXECUTIVO
+    if (categoryType === "EXECUTIVO" || profileName.includes("EXECUTIVO")) {
+      return false;
+    }
+    
+    // Excluir Super Admin por nome do perfil (fallback)
+    if (profileName.includes("SUPER_ADMIN") || profileName.includes("SUPER ADMIN")) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  return {
+    users: filteredUsers.map(user => ({
+      ...user,
+      customerName: null, // Não precisamos do nome do customer, já é o tenant atual
+      customers: [], // Não usado no contexto tenant
+      lastAccess: null,
+    })),
+    totalCount: filteredUsers.length, // Ajustar count após filtragem
   };
 }
 
@@ -696,7 +585,7 @@ export async function updateAdminCustomers(adminUserId: number, customerIds: num
 }
 
 /**
- * Lista todos os perfis disponíveis
+ * Lista todas as categorias disponíveis
  */
 export async function getAllProfiles() {
   try {
@@ -706,6 +595,7 @@ export async function getAllProfiles() {
         name: profiles.name,
         description: profiles.description,
         active: profiles.active,
+        categoryType: profiles.categoryType,
       })
       .from(profiles)
       .where(eq(profiles.active, true))
@@ -713,7 +603,7 @@ export async function getAllProfiles() {
 
     return result;
   } catch (error) {
-    console.error('Erro ao buscar perfis:', error);
+    console.error('Erro ao buscar categorias:', error);
     return [];
   }
 }
@@ -838,31 +728,7 @@ export async function createAdminUser(data: {
 
   const idProfile = adminProfile[0].id;
 
-  // Criar no Clerk com metadata correta para usuário do portal
-  const clerk = await clerkClient();
-  let clerkUser;
-  try {
-    clerkUser = await clerk.users.createUser({
-      firstName,
-      lastName,
-      emailAddress: [email],
-      password: finalPassword,
-      publicMetadata: {
-        isFirstLogin: true,
-        isPortalUser: true,      // ← IMPORTANTE: Marca como usuário do portal-outbank
-        idCustomer: null,        // ← IMPORTANTE: Portal users não têm ISO específico
-      },
-    });
-    console.log(`[createAdminUser] ✅ Usuário criado no Clerk com metadata: isPortalUser=true, idCustomer=null`);
-  } catch (error: any) {
-    console.error("Erro ao criar usuário no Clerk:", error);
-    if (error?.errors?.some((e: any) => e.code === "form_password_pwned")) {
-      throw new Error("Senha comprometida: Essa senha foi encontrada em vazamentos de dados.");
-    }
-    throw new Error(`Erro ao criar usuário no Clerk: ${error?.message || "Erro desconhecido"}`);
-  }
-
-  // Criar no banco
+  // Criar no banco (sem Clerk)
   const created = await db
     .insert(users)
     .values({
@@ -872,7 +738,7 @@ export async function createAdminUser(data: {
       active: true,
       email,
       idCustomer: null, // Admin não tem ISO específico, usa admin_customers
-      idClerk: clerkUser.id,
+      idClerk: null,
       idProfile,
       idAddress: null,
       fullAccess: false,
@@ -906,7 +772,7 @@ export async function createAdminUser(data: {
   return {
     id: userId,
     email,
-    clerkId: clerkUser.id,
+    clerkId: null,
   };
 }
 
@@ -920,8 +786,11 @@ export async function updateUserPermissions(
     idCustomer?: number | null;
     fullAccess?: boolean;
     customerIds?: number[]; // Para Admin, atualizar ISOs autorizados
+    isoCommissionLinks?: Array<{ customerId: number; commissionType: string }>; // Vínculos ISO com tipo de comissão
     password?: string; // Nova senha (opcional)
     hasMerchantsAccess?: boolean; // Acesso a estabelecimentos
+    canViewSensitiveData?: boolean; // Permissão para visualizar dados sensíveis
+    canValidateMdr?: boolean; // Permissão para aprovar tabelas de taxas MDR
   }
 ) {
   const userInfo = await getCurrentUserInfo();
@@ -971,7 +840,7 @@ export async function updateUserPermissions(
     }
   }
 
-  // Atualizar senha no Clerk se fornecida
+  // Atualizar senha localmente se fornecida
   if (data.password && data.password.trim().length > 0) {
     const newPassword = data.password.trim();
     
@@ -980,64 +849,26 @@ export async function updateUserPermissions(
       throw new Error("A senha deve ter pelo menos 8 caracteres");
     }
 
-    // Verificar se o usuário tem idClerk
-    if (!user.idClerk) {
-      throw new Error("Usuário não possui ID do Clerk. Não é possível atualizar a senha.");
-    }
-
-    // Verificar se a senha é igual ao email (não permitido pelo Clerk)
+    // Verificar se a senha é igual ao email
     const userEmail = user.email?.toLowerCase().trim() || "";
     const passwordLower = newPassword.toLowerCase().trim();
     if (passwordLower === userEmail) {
       throw new Error("A senha não pode ser igual ao email. Por favor, escolha uma senha diferente do endereço de email.");
     }
 
-    try {
-      const clerk = await clerkClient();
-      
-      // Atualizar senha no Clerk com verificações de segurança ativas
-      await clerk.users.updateUser(user.idClerk, {
-        password: newPassword,
-        skipPasswordChecks: false, // Não pular verificações de senha (pwned, senha igual ao email, etc)
-      });
+    // Atualizar hash da senha e senha inicial no banco de dados
+    const hashedPassword = hashPassword(newPassword);
+    
+    await db
+      .update(users)
+      .set({
+        hashedPassword: hashedPassword,
+        initialPassword: newPassword,
+        dtupdate: new Date().toISOString(),
+      })
+      .where(eq(users.id, userId));
 
-      // Atualizar hash da senha e senha inicial no banco de dados
-      const hashedPassword = hashPassword(newPassword);
-      
-      await db
-        .update(users)
-        .set({
-          hashedPassword: hashedPassword,
-          initialPassword: newPassword,
-          dtupdate: new Date().toISOString(),
-        })
-        .where(eq(users.id, userId));
-
-      console.log(`[updateUserPermissions] ✅ Senha atualizada com sucesso para usuário ID: ${userId}`);
-    } catch (error: any) {
-      console.error(`[updateUserPermissions] ❌ Erro ao atualizar senha no Clerk:`, error);
-      
-      // Tratar erros específicos do Clerk
-      if (error?.status === 422 && error?.errors) {
-        const passwordError = error.errors.find((e: any) => 
-          e.code === "form_password_pwned" || 
-          e.message?.toLowerCase().includes("password") ||
-          e.message?.toLowerCase().includes("senha")
-        );
-        
-        if (passwordError) {
-          if (passwordError.code === "form_password_pwned") {
-            throw new Error("Senha comprometida: Essa senha foi encontrada em vazamentos de dados. Por favor, escolha uma senha mais segura.");
-          } else if (passwordError.message?.toLowerCase().includes("email") || passwordError.message?.toLowerCase().includes("identifier")) {
-            throw new Error("A senha não pode ser igual ao email ou ao identificador do usuário. Por favor, escolha uma senha diferente.");
-          } else {
-            throw new Error(passwordError.message || "A senha não atende aos requisitos de segurança do Clerk. Verifique se a senha não é igual ao email e atende aos critérios de segurança.");
-          }
-        }
-      }
-      
-      throw new Error(`Erro ao atualizar senha: ${error?.message || "Erro desconhecido"}`);
-    }
+    console.log(`[updateUserPermissions] ✅ Senha atualizada com sucesso para usuário ID: ${userId}`);
   }
 
   // Atualizar usuário
@@ -1057,10 +888,112 @@ export async function updateUserPermissions(
     updateData.fullAccess = data.fullAccess;
   }
 
+  if (data.canViewSensitiveData !== undefined) {
+    updateData.canViewSensitiveData = data.canViewSensitiveData;
+  }
+
+  if (data.canValidateMdr !== undefined) {
+    updateData.canValidateMdr = data.canValidateMdr;
+  }
+
   await db
     .update(users)
     .set(updateData)
     .where(eq(users.id, userId));
+
+  // =====================================================
+  // DETECÇÃO DE MUDANÇA DE CATEGORIA (ISO Admin ↔ Portal)
+  // =====================================================
+  // Quando a categoria muda, atualiza commission_type em user_customers automaticamente
+  // e envia email se for promoção para Portal
+  if (data.idProfile !== undefined && data.idProfile !== user.idProfile) {
+    try {
+      // Buscar category_type do perfil antigo
+      const oldProfile = user.idProfile ? await db
+        .select({ categoryType: profiles.categoryType, name: profiles.name })
+        .from(profiles)
+        .where(eq(profiles.id, user.idProfile))
+        .limit(1) : [];
+      
+      // Buscar category_type do novo perfil
+      const newProfile = await db
+        .select({ categoryType: profiles.categoryType, name: profiles.name })
+        .from(profiles)
+        .where(eq(profiles.id, data.idProfile))
+        .limit(1);
+      
+      const oldCategoryType = oldProfile[0]?.categoryType?.toUpperCase() || '';
+      const newCategoryType = newProfile[0]?.categoryType?.toUpperCase() || '';
+      
+      console.log(`[updateUserPermissions] Detectada mudança de categoria: ${oldCategoryType} → ${newCategoryType}`);
+      
+      // Verificar se é uma promoção (ISO_ADMIN → CORE/EXECUTIVO)
+      const isPromotion = oldCategoryType === 'ISO_ADMIN' && 
+        (newCategoryType === 'CORE' || newCategoryType === 'EXECUTIVO');
+      
+      // Verificar se é um descredenciamento (CORE/EXECUTIVO → ISO_ADMIN)
+      const isDemotion = (oldCategoryType === 'CORE' || oldCategoryType === 'EXECUTIVO') && 
+        newCategoryType === 'ISO_ADMIN';
+      
+      // Verificar se é mudança entre CORE ↔ EXECUTIVO
+      const isPortalCategoryChange = 
+        (oldCategoryType === 'CORE' && newCategoryType === 'EXECUTIVO') ||
+        (oldCategoryType === 'EXECUTIVO' && newCategoryType === 'CORE');
+      
+      if (isPromotion || isDemotion || isPortalCategoryChange) {
+        // Buscar todos os vínculos do usuário em user_customers
+        const userLinks = await db
+          .select()
+          .from(userCustomers)
+          .where(eq(userCustomers.idUser, userId));
+        
+        if (userLinks.length > 0) {
+          if (isPromotion || isPortalCategoryChange) {
+            // Promoção ou mudança de categoria Portal: atualizar commission_type para a nova categoria
+            const newCommissionType = newCategoryType as 'CORE' | 'EXECUTIVO';
+            
+            await db
+              .update(userCustomers)
+              .set({ commissionType: newCommissionType })
+              .where(eq(userCustomers.idUser, userId));
+            
+            console.log(`[updateUserPermissions] ✅ commission_type atualizado para ${newCommissionType} em ${userLinks.length} vínculo(s)`);
+          } else if (isDemotion) {
+            // Descredenciamento: remover commission_type (margens cessadas)
+            await db
+              .update(userCustomers)
+              .set({ commissionType: null })
+              .where(eq(userCustomers.idUser, userId));
+            
+            console.log(`[updateUserPermissions] ✅ commission_type removido (NULL) de ${userLinks.length} vínculo(s) - margens cessadas`);
+          }
+        }
+        
+        // Enviar email de promoção se for ISO_ADMIN → CORE/EXECUTIVO
+        if (isPromotion) {
+          try {
+            const { sendPortalPromotionEmail } = await import("@/lib/send-email");
+            // Usar email como identificação do usuário
+            const userName = user.email?.split('@')[0] || 'Usuário';
+            
+            await sendPortalPromotionEmail(
+              user.email || '',
+              userName,
+              newCategoryType as 'CORE' | 'EXECUTIVO'
+            );
+            
+            console.log(`[updateUserPermissions] ✅ Email de promoção enviado para ${user.email}`);
+          } catch (emailError) {
+            // Não bloquear a operação se o email falhar
+            console.error(`[updateUserPermissions] ⚠️ Falha ao enviar email de promoção (não crítico):`, emailError);
+          }
+        }
+      }
+    } catch (categoryError) {
+      console.error(`[updateUserPermissions] ⚠️ Erro ao processar mudança de categoria (não crítico):`, categoryError);
+      // Não bloquear a operação principal
+    }
+  }
 
   // Se for Admin e tiver customerIds, atualizar admin_customers
   if (data.customerIds !== undefined && Array.isArray(data.customerIds) && userInfo.isSuperAdmin) {
@@ -1108,7 +1041,19 @@ export async function updateUserPermissions(
     }
   }
 
+  // Atualizar vínculos ISO com tipo de comissão se fornecido
+  if (data.isoCommissionLinks !== undefined && Array.isArray(data.isoCommissionLinks)) {
+    try {
+      const { saveUserIsoCommissionLinks } = await import("@/features/customers/users/_actions/user-actions");
+      await saveUserIsoCommissionLinks(userId, data.isoCommissionLinks);
+    } catch (error: any) {
+      console.error("Erro ao atualizar vínculos de comissão:", error);
+      throw error;
+    }
+  }
+
   revalidatePath("/config/users");
+  revalidatePath("/margens");
   
   return true;
 }
@@ -1476,6 +1421,45 @@ export async function deleteUserWithTransfer(
     throw new Error(`PROTEÇÃO ABSOLUTA: O usuário ${PROTECTED_SUPER_ADMIN_EMAIL} NÃO pode ser deletado. Esta é uma proteção permanente do sistema.`);
   }
 
+  // Verificar se o usuário é ISO Admin (tem idCustomer)
+  const userToCheck = await db
+    .select({ idCustomer: users.idCustomer })
+    .from(users)
+    .where(eq(users.id, userIdToDelete))
+    .limit(1);
+
+  if (userToCheck.length > 0 && userToCheck[0].idCustomer) {
+    const customerId = userToCheck[0].idCustomer;
+
+    // Verificar se o ISO tem estabelecimentos cadastrados
+    const merchantCount = await db
+      .select({ count: count() })
+      .from(merchants)
+      .where(eq(merchants.idCustomer, customerId));
+
+    if (merchantCount[0]?.count > 0) {
+      throw new Error(`Não é possível deletar este ISO Admin. O ISO possui ${merchantCount[0].count} estabelecimento(s) cadastrado(s). Remova os estabelecimentos primeiro.`);
+    }
+
+    // Verificar se o ISO tem consultores cadastrados (via slugCustomer)
+    const customerData = await db
+      .select({ slug: customers.slug })
+      .from(customers)
+      .where(eq(customers.id, customerId))
+      .limit(1);
+
+    if (customerData.length > 0 && customerData[0].slug) {
+      const salesAgentCount = await db
+        .select({ count: count() })
+        .from(salesAgents)
+        .where(eq(salesAgents.slugCustomer, customerData[0].slug));
+
+      if (salesAgentCount[0]?.count > 0) {
+        throw new Error(`Não é possível deletar este ISO Admin. O ISO possui ${salesAgentCount[0].count} consultor(es) cadastrado(s). Remova os consultores primeiro.`);
+      }
+    }
+  }
+
   // Se não foi especificado um usuário para transferir, usar o Super Admin logado
   const targetUserId = transferToUserId || userInfo.id;
 
@@ -1553,20 +1537,7 @@ export async function deleteUserWithTransfer(
       console.error("Erro ao transferir admin_customers:", error);
     }
 
-    // 4. Deletar do Clerk se tiver idClerk
-    if (userToDelete[0].idClerk) {
-      try {
-        const clerk = await clerkClient();
-        await clerk.users.deleteUser(userToDelete[0].idClerk);
-        console.log(`[deleteUserWithTransfer] Usuário deletado do Clerk: ${userToDelete[0].idClerk}`);
-      } catch (clerkError: any) {
-        if (clerkError?.status !== 404 && !clerkError?.message?.includes('not found')) {
-          console.error("Erro ao deletar usuário do Clerk:", clerkError);
-        }
-      }
-    }
-
-    // 5. Deletar o usuário do banco de dados
+    // 4. Deletar o usuário do banco de dados
     await db.delete(users).where(eq(users.id, userIdToDelete));
     console.log(`[deleteUserWithTransfer] Usuário ${userIdToDelete} deletado com sucesso`);
 
@@ -1924,4 +1895,124 @@ export async function getUserAllCustomers(userId: number) {
       allCustomers: [],
     };
   }
+}
+
+// =====================================================
+// CRIAR USUÁRIO PORTAL (NÃO-ISO)
+// =====================================================
+
+interface CreatePortalUserInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password?: string;
+  idProfile: number;
+  idCustomer?: number | null;
+  fullAccess?: boolean;
+  isoCommissionLinks?: Array<{ customerId: number; commissionType: string }>;
+}
+
+export async function createPortalUser(data: CreatePortalUserInput): Promise<{ userId: number }> {
+  const userInfo = await getCurrentUserInfo();
+  if (!userInfo?.isSuperAdmin) {
+    throw new Error("Apenas Super Admin pode criar usuários do portal");
+  }
+
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    idProfile,
+    idCustomer,
+    fullAccess = false,
+    isoCommissionLinks = [],
+  } = data;
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Validar email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(normalizedEmail)) {
+    throw new Error("E-mail inválido");
+  }
+
+  // Verificar se email já existe
+  const existingUser = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, normalizedEmail))
+    .limit(1);
+
+  if (existingUser.length > 0) {
+    throw new Error("Este e-mail já está cadastrado no sistema");
+  }
+
+  // Gerar senha se não fornecida
+  const finalPassword = password && password.trim() !== "" 
+    ? password.trim() 
+    : await generateRandomPassword();
+
+  if (finalPassword.length < 8) {
+    throw new Error("A senha deve ter pelo menos 8 caracteres");
+  }
+
+  const hashedPassword = hashPassword(finalPassword);
+  const slug = generateSlug();
+  const now = new Date().toISOString();
+
+  // Criar usuário
+  const created = await db
+    .insert(users)
+    .values({
+      slug,
+      dtinsert: now,
+      dtupdate: now,
+      active: true,
+      email: normalizedEmail,
+      idCustomer: idCustomer ?? null,
+      idClerk: null,
+      idProfile,
+      idAddress: null,
+      fullAccess,
+      hashedPassword,
+      initialPassword: finalPassword,
+      userType: "USER",
+    })
+    .returning({ id: users.id });
+
+  const userId = created[0].id;
+
+  // Salvar firstName e lastName na tabela sales_agents
+  try {
+    await db.insert(salesAgents).values({
+      slug: generateSlug(),
+      active: true,
+      dtinsert: now,
+      dtupdate: now,
+      firstName,
+      lastName,
+      email: normalizedEmail,
+      idUsers: userId,
+    });
+  } catch (salesAgentError) {
+    console.error("[createPortalUser] Erro ao salvar em sales_agents:", salesAgentError);
+  }
+
+  // Salvar vínculos ISO com tipo de comissão
+  if (isoCommissionLinks.length > 0) {
+    const { saveUserIsoCommissionLinks } = await import("@/features/customers/users/_actions/user-actions");
+    await saveUserIsoCommissionLinks(userId, isoCommissionLinks);
+  }
+
+  // Enviar email de boas-vindas
+  try {
+    const { sendWelcomePasswordEmailPortal } = await import("@/lib/send-email");
+    await sendWelcomePasswordEmailPortal(normalizedEmail, finalPassword, firstName);
+  } catch (emailError) {
+    console.error("[createPortalUser] Erro ao enviar email:", emailError);
+  }
+
+  revalidatePath("/config/users");
+  return { userId };
 }

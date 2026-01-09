@@ -1,28 +1,73 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 import { extractSubdomain, isTenantHost } from "@/lib/subdomain-auth/host";
-import { clerkClient } from "@clerk/nextjs/server";
 
-const isPublicRoute = createRouteMatcher([
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/auth/sign-in(.*)",
-  "/auth/sign-up(.*)",
-  "/auth/forgot-password(.*)",
-  "/forgot-password(.*)",
-  "/password-create(.*)",
-  "/api/public(.*)",
-  "/api/check-subdomain-auth(.*)",
-  "/unauthorized(.*)",
-]);
+const DEV_BYPASS_ENABLED = 
+  process.env.NODE_ENV === "development" && 
+  process.env.DEV_BYPASS_AUTH === "true" &&
+  !process.env.VERCEL;
 
-export default clerkMiddleware(async (auth, request: NextRequest) => {
+const DEV_FALLBACK_SECRET = 'dev-only-secret-do-not-use-in-production-32bytes';
+
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (DEV_BYPASS_ENABLED) {
+      return new TextEncoder().encode(DEV_FALLBACK_SECRET);
+    }
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return new TextEncoder().encode(secret);
+}
+
+const publicPaths = [
+  "/sign-in",
+  "/sign-up",
+  "/auth/sign-in",
+  "/auth/sign-up",
+  "/auth/forgot-password",
+  "/forgot-password",
+  "/password-create",
+  "/api/auth/login",
+  "/api/auth/logout",
+  "/api/auth/me",
+  "/api/public",
+  "/api/check-subdomain-auth",
+  "/unauthorized",
+  "/_next",
+  "/favicon.ico",
+];
+
+function isPublicRoute(pathname: string): boolean {
+  return publicPaths.some(path => pathname.startsWith(path));
+}
+
+async function verifyJwt(token: string): Promise<{ userId: number } | null> {
+  try {
+    const secret = getJwtSecret();
+    const { payload } = await jwtVerify(token, secret);
+    return { userId: payload.userId as number };
+  } catch (error) {
+    const secretAvailable = !!process.env.JWT_SECRET;
+    console.error('[middleware] JWT verification failed:', error instanceof Error ? error.message : 'Unknown error', '| JWT_SECRET available:', secretAvailable);
+    return null;
+  }
+}
+
+export default async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  if (DEV_BYPASS_ENABLED) {
+    return NextResponse.next();
+  }
+
   const hostname = request.headers.get("host") || "";
   const subdomain = extractSubdomain(hostname);
   const isTenant = isTenantHost(hostname);
-  const { userId } = await auth();
-  const pathname = request.nextUrl.pathname;
+  const token = request.cookies.get('auth_token')?.value;
+  const user = token ? await verifyJwt(token) : null;
+  const userId = user?.userId || null;
   
   if (isTenant && subdomain) {
     if (!userId && pathname === "/") {
@@ -30,29 +75,14 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
       return NextResponse.redirect(signInUrl);
     }
     
-    // Verificar se usuário precisa criar senha (primeiro login)
-    if (userId && pathname !== "/password-create" && !isPublicRoute(request)) {
-      try {
-        const clerk = await clerkClient();
-        const user = await clerk.users.getUser(userId);
-        const isFirstLogin = user.publicMetadata?.isFirstLogin === true;
-        
-        if (isFirstLogin) {
-          const passwordCreateUrl = new URL("/password-create", request.url);
-          return NextResponse.redirect(passwordCreateUrl);
-        }
-      } catch (error) {
-        console.error("Error checking user metadata:", error);
-      }
-    }
-    
     if (userId && pathname === "/") {
       const dashboardUrl = new URL("/dashboard", request.url);
       return NextResponse.redirect(dashboardUrl);
     }
     
-    if (!isPublicRoute(request)) {
-      await auth.protect();
+    if (!isPublicRoute(pathname) && !userId) {
+      const signInUrl = new URL("/auth/sign-in", request.url);
+      return NextResponse.redirect(signInUrl);
     }
     
     const tenantRouteMap: Record<string, string> = {
@@ -71,7 +101,6 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     
     if (targetPath) {
       const rewriteUrl = new URL(targetPath, request.url);
-      // Preservar query params explicitamente
       rewriteUrl.search = request.nextUrl.search;
       const response = NextResponse.rewrite(rewriteUrl);
       response.cookies.set("tenant", subdomain, {
@@ -90,18 +119,21 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     return response;
   }
   
-  if (!isPublicRoute(request)) {
-    await auth.protect();
+  if (!isPublicRoute(pathname) && !userId) {
+    const signInUrl = new URL("/auth/sign-in", request.url);
+    const response = NextResponse.redirect(signInUrl);
+    if (token) {
+      response.cookies.delete('auth_token');
+    }
+    return response;
   }
   
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
     "/(api|trpc)(.*)",
   ],
 };

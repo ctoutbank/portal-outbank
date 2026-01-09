@@ -2,7 +2,7 @@ import BaseHeader from "@/components/layout/base-header";
 import BaseBody from "@/components/layout/base-body";
 import ConsentHistoryList from "@/features/consent/components/consent-history-list";
 import { getUserConsentHistory } from "@/features/consent/server/consent-history";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db";
@@ -12,13 +12,13 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function ConsentHistoryPage() {
-  const user = await currentUser();
+  const sessionUser = await getCurrentUser();
   
-  if (!user) {
+  if (!sessionUser) {
     redirect("/sign-in");
   }
 
-  const userEmail = user.emailAddresses[0]?.emailAddress;
+  const userEmail = sessionUser.email;
   
   if (!userEmail) {
     redirect("/sign-in");
@@ -66,4 +66,3 @@ export default async function ConsentHistoryPage() {
     </>
   );
 }
-

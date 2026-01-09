@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { getCurrentUserInfo, isSuperAdmin, isAdminOrSuperAdmin } from "@/lib/permissions/check-permissions";
+import { getCurrentUser } from "@/lib/auth";
+import { isAdminOrSuperAdmin } from "@/lib/permissions/check-permissions";
 import { syncMerchant } from "@/features/pricingSolicitation/server/integrations/dock/sync-merchant/main";
 
-export async function POST(request: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function POST(_request: NextRequest) {
   try {
     // Verificar autenticação
-    const { userId } = await auth();
-    if (!userId) {
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) {
       return NextResponse.json(
         { error: "Não autenticado" },
         { status: 401 }
@@ -43,7 +44,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-
-
-

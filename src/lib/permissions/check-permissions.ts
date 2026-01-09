@@ -1,32 +1,63 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users, profiles, profileFunctions, functions, adminCustomers, profileCustomers, customers, userFunctions } from "../../../drizzle/schema";
-import { eq, and } from "drizzle-orm";
+import { users, profiles, profileFunctions, functions, adminCustomers, profileCustomers, customers, userFunctions, userCustomers } from "../../../drizzle/schema";
+import { eq, and, sql } from "drizzle-orm";
+import { USER_TYPES, type UserType } from "./types";
+import { cookies } from "next/headers";
+
+const DEV_BYPASS_ENABLED = 
+  process.env.NODE_ENV === "development" && 
+  process.env.DEV_BYPASS_AUTH === "true" &&
+  !process.env.VERCEL;
+
+const SIMULATED_USER_COOKIE = "dev_simulated_user_id";
+
+async function getSimulatedUserId(): Promise<number | null> {
+  try {
+    const cookieStore = await cookies();
+    const simulatedUserId = cookieStore.get(SIMULATED_USER_COOKIE)?.value;
+    if (simulatedUserId) {
+      return parseInt(simulatedUserId, 10);
+    }
+  } catch {
+    // Cookies may not be available in some contexts
+  }
+  return null;
+}
 
 /**
  * Verifica se o usuário é Super Admin
- * Um usuário é considerado Super Admin se o nome do seu perfil contém "SUPER_ADMIN" ou "SUPER" (case-insensitive)
+ * Usa o campo user_type = 'SUPER_ADMIN' para verificação
+ * Fallback: verifica nome do perfil para compatibilidade
  */
 export async function isSuperAdmin(): Promise<boolean> {
+  if (DEV_BYPASS_ENABLED) return true;
+  
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) return false;
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) return false;
 
     const user = await db
       .select({
         idProfile: users.idProfile,
         profileName: profiles.name,
+        userType: users.userType,
       })
       .from(users)
       .leftJoin(profiles, eq(users.idProfile, profiles.id))
-      .where(eq(users.idClerk, clerkUser.id))
+      .where(eq(users.id, sessionUser.id))
       .limit(1);
 
     if (!user || user.length === 0) return false;
 
-    // Verificar se o perfil contém "SUPER_ADMIN" ou "SUPER" no nome
+    // Primeiro: verificar user_type (novo sistema Multi-ISO)
+    if (user[0].userType === USER_TYPES.SUPER_ADMIN) {
+      return true;
+    }
+
+    // Fallback: verificar se o perfil contém "SUPER_ADMIN" ou "SUPER" no nome (compatibilidade)
     const profileName = user[0].profileName?.toUpperCase() || "";
     return profileName.includes("SUPER_ADMIN") || profileName.includes("SUPER");
   } catch (error) {
@@ -36,30 +67,39 @@ export async function isSuperAdmin(): Promise<boolean> {
 }
 
 /**
- * Verifica se o usuário é Admin (mas não Super Admin)
- * Um usuário é considerado Admin se o nome do seu perfil contém "ADMIN" mas não "SUPER"
+ * Verifica se o usuário é Admin ISO (mas não Super Admin)
+ * Usa user_type = 'ISO_PORTAL_ADMIN' para verificação
+ * Fallback: verifica nome do perfil para compatibilidade
  */
 export async function isAdminUser(): Promise<boolean> {
+  if (DEV_BYPASS_ENABLED) return true;
+  
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) return false;
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) return false;
 
     const user = await db
       .select({
         idProfile: users.idProfile,
         profileName: profiles.name,
+        userType: users.userType,
       })
       .from(users)
       .leftJoin(profiles, eq(users.idProfile, profiles.id))
-      .where(eq(users.idClerk, clerkUser.id))
+      .where(eq(users.id, sessionUser.id))
       .limit(1);
 
     if (!user || user.length === 0) return false;
 
-    // Verificar se o perfil contém "ADMIN" no nome
+    // Primeiro: verificar user_type (novo sistema Multi-ISO)
+    if (user[0].userType === USER_TYPES.ISO_PORTAL_ADMIN) {
+      return true;
+    }
+
+    // Fallback: verificar se o perfil contém "ADMIN" no nome (compatibilidade)
     const profileName = user[0].profileName?.toUpperCase() || "";
     const hasAdmin = profileName.includes("ADMIN");
-    const isSuper = profileName.includes("SUPER_ADMIN") || profileName.includes("SUPER");
+    const isSuper = profileName.includes("SUPER_ADMIN") || profileName.includes("SUPER") || user[0].userType === USER_TYPES.SUPER_ADMIN;
     
     // Admin é quem tem "ADMIN" mas não "SUPER"
     return hasAdmin && !isSuper;
@@ -67,6 +107,94 @@ export async function isAdminUser(): Promise<boolean> {
     console.error("Error checking admin permissions:", error);
     return false;
   }
+}
+
+/**
+ * Obtém todos os ISOs (customers) que o usuário tem acesso via tabela user_customers
+ * @param userId - ID do usuário no banco de dados
+ * @returns Array de IDs de customers
+ */
+export async function getUserMultiIsoAccess(userId: number): Promise<number[]> {
+  try {
+    const result = await db
+      .select({
+        idCustomer: userCustomers.idCustomer,
+      })
+      .from(userCustomers)
+      .where(and(
+        eq(userCustomers.idUser, userId),
+        eq(userCustomers.active, true)
+      ));
+
+    return result
+      .map((r) => r.idCustomer)
+      .filter((id): id is number => id !== null && typeof id === "number");
+  } catch (error) {
+    console.error("[getUserMultiIsoAccess] Error:", error);
+    return [];
+  }
+}
+
+/**
+ * Valida se o usuário tem permissão de delete
+ * Apenas Super Admin pode deletar
+ */
+export async function validateDeletePermission(): Promise<boolean> {
+  return await isSuperAdmin();
+}
+
+/**
+ * Verifica se o usuário deve ver dados sensíveis mascarados
+ * Super Admin: nunca mascara
+ * Executivo/Core (user_type = 'USER'): mascara por padrão
+ * Se can_view_sensitive_data = true: não mascara
+ * @returns true se deve mascarar, false se pode ver dados completos
+ */
+export async function shouldMaskSensitiveData(): Promise<boolean> {
+  if (DEV_BYPASS_ENABLED) return false;
+  
+  try {
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) return true;
+
+    // Super Admin sempre vê tudo
+    const isSuper = await isSuperAdmin();
+    if (isSuper) return false;
+
+    // Buscar configuração do usuário
+    const user = await db
+      .select({
+        userType: users.userType,
+        canViewSensitiveData: users.canViewSensitiveData,
+      })
+      .from(users)
+      .where(eq(users.id, sessionUser.id))
+      .limit(1);
+
+    if (!user || user.length === 0) return true;
+
+    // Se tem permissão explícita, não mascara
+    if (user[0].canViewSensitiveData === true) return false;
+
+    // Executivo/Core (tipo USER) mascara por padrão
+    // Admin também não mascara
+    if (user[0].userType === USER_TYPES.ISO_PORTAL_ADMIN) return false;
+
+    // Qualquer outro tipo de usuário mascara
+    return true;
+  } catch (error) {
+    console.error("Error checking sensitive data permission:", error);
+    return true;
+  }
+}
+
+/**
+ * Verifica se o usuário pode visualizar dados sensíveis (inverso de shouldMaskSensitiveData)
+ * @returns true se pode ver dados completos, false se deve mascarar
+ */
+export async function canViewSensitiveData(): Promise<boolean> {
+  const shouldMask = await shouldMaskSensitiveData();
+  return !shouldMask;
 }
 
 /**
@@ -79,14 +207,104 @@ export async function isAdminOrSuperAdmin(): Promise<boolean> {
 }
 
 /**
+ * Verifica se o usuário tem categoria CORE
+ * Categoria CORE é identificada pelo campo categoryType do profile = "CORE"
+ * Suporta View Mode: verifica usuário simulado primeiro (se existir)
+ * @returns true se o usuário tem categoria CORE
+ */
+export async function isCoreProfile(): Promise<boolean> {
+  if (DEV_BYPASS_ENABLED) return false;
+  
+  try {
+    const simulatedUserId = await getSimulatedUserId();
+    let targetUserId: number;
+    
+    if (simulatedUserId) {
+      targetUserId = simulatedUserId;
+    } else {
+      const sessionUser = await getCurrentUser();
+      if (!sessionUser) return false;
+      targetUserId = sessionUser.id;
+    }
+
+    const user = await db
+      .select({
+        categoryType: profiles.categoryType,
+        profileName: profiles.name,
+      })
+      .from(users)
+      .leftJoin(profiles, eq(users.idProfile, profiles.id))
+      .where(eq(users.id, targetUserId))
+      .limit(1);
+
+    if (!user || user.length === 0) return false;
+
+    const categoryType = user[0].categoryType?.toUpperCase() || "";
+    if (categoryType === "CORE") return true;
+    
+    const profileName = user[0].profileName?.toUpperCase() || "";
+    return profileName.includes("CORE");
+  } catch (error) {
+    console.error("Error checking CORE profile:", error);
+    return false;
+  }
+}
+
+/**
+ * Verifica se o usuário tem categoria EXECUTIVO
+ * Categoria EXECUTIVO é identificada pelo campo categoryType do profile = "EXECUTIVO"
+ * Suporta View Mode: verifica usuário simulado primeiro (se existir)
+ * @returns true se o usuário tem categoria EXECUTIVO
+ */
+export async function isExecutivoProfile(): Promise<boolean> {
+  if (DEV_BYPASS_ENABLED) return false;
+  
+  try {
+    const simulatedUserId = await getSimulatedUserId();
+    let targetUserId: number;
+    
+    if (simulatedUserId) {
+      targetUserId = simulatedUserId;
+    } else {
+      const sessionUser = await getCurrentUser();
+      if (!sessionUser) return false;
+      targetUserId = sessionUser.id;
+    }
+
+    const user = await db
+      .select({
+        categoryType: profiles.categoryType,
+        profileName: profiles.name,
+      })
+      .from(users)
+      .leftJoin(profiles, eq(users.idProfile, profiles.id))
+      .where(eq(users.id, targetUserId))
+      .limit(1);
+
+    if (!user || user.length === 0) return false;
+
+    const categoryType = user[0].categoryType?.toUpperCase() || "";
+    if (categoryType === "EXECUTIVO") return true;
+    
+    const profileName = user[0].profileName?.toUpperCase() || "";
+    return profileName.includes("EXECUTIVO");
+  } catch (error) {
+    console.error("Error checking EXECUTIVO profile:", error);
+    return false;
+  }
+}
+
+/**
  * Verifica se o usuário tem uma função/permissão específica
  * Verifica AMBAS: permissões da categoria (profile_functions) + permissões individuais (user_functions)
  * @param functionName - Nome da função/permissão a verificar
  */
 export async function hasPermission(functionName: string): Promise<boolean> {
+  if (DEV_BYPASS_ENABLED) return true;
+  
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) return false;
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) return false;
 
     // Primeiro, buscar o usuário e seu perfil
     const user = await db
@@ -95,7 +313,7 @@ export async function hasPermission(functionName: string): Promise<boolean> {
         idProfile: users.idProfile,
       })
       .from(users)
-      .where(eq(users.idClerk, clerkUser.id))
+      .where(eq(users.id, sessionUser.id))
       .limit(1);
 
     if (!user || user.length === 0) return false;
@@ -189,12 +407,48 @@ export async function getAdminAllowedCustomers(adminUserId: number): Promise<num
 
 /**
  * Obtém informações completas do usuário logado
- * @returns Informações do usuário incluindo isSuperAdmin, isAdmin, idCustomer, profileName, allowedCustomers, etc.
+ * @returns Informações do usuário incluindo isSuperAdmin, isAdmin, idCustomer, profileName, allowedCustomers, userType, etc.
  */
 export async function getCurrentUserInfo() {
+  if (DEV_BYPASS_ENABLED) {
+    // No modo DEV_BYPASS, buscar todos os customers ativos para simular Super Admin
+    let allCustomerIds: number[] = [];
+    try {
+      const allCustomersResult = await db
+        .select({ id: customers.id })
+        .from(customers)
+        .where(eq(customers.isActive, true));
+      
+      allCustomerIds = allCustomersResult
+        .map((r) => r.id)
+        .filter((id): id is number => id !== null && typeof id === "number");
+    } catch (error) {
+      console.error("[DEV_BYPASS] Erro ao buscar customers:", error);
+    }
+
+    return {
+      id: 0,
+      email: "dev@localhost",
+      idCustomer: null,
+      fullAccess: true,
+      idProfile: null,
+      active: true,
+      profileName: "SUPER_ADMIN",
+      profileDescription: "Development Bypass",
+      isSuperAdmin: true,
+      isAdmin: false,
+      allowedCustomers: allCustomerIds,
+      userType: USER_TYPES.SUPER_ADMIN,
+    };
+  }
+
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) return null;
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) return null;
+    
+    const simulatedUserId = await getSimulatedUserId();
+    const targetUserId = simulatedUserId || sessionUser.id;
+    const isSimulating = !!simulatedUserId;
 
     const user = await db
       .select({
@@ -206,18 +460,28 @@ export async function getCurrentUserInfo() {
         active: users.active,
         profileName: profiles.name,
         profileDescription: profiles.description,
+        userType: users.userType,
       })
       .from(users)
       .leftJoin(profiles, eq(users.idProfile, profiles.id))
-      .where(eq(users.idClerk, clerkUser.id))
+      .where(eq(users.id, targetUserId))
       .limit(1);
 
     if (!user || user.length === 0) return null;
 
     const userData = user[0];
+    const userType = userData.userType || null;
     const profileName = userData.profileName?.toUpperCase() || "";
-    const isSuperAdminValue = profileName.includes("SUPER_ADMIN") || profileName.includes("SUPER");
-    const isAdminValue = profileName.includes("ADMIN") && !isSuperAdminValue;
+    
+    if (isSimulating) {
+      console.log(`[View Mode] Simulating user ${targetUserId} (${userData.email})`);
+    }
+    
+    // Determinar tipo de usuário usando user_type (novo) com fallback para nome do perfil (legado)
+    const isSuperAdminValue = userType === USER_TYPES.SUPER_ADMIN || 
+      profileName.includes("SUPER_ADMIN") || profileName.includes("SUPER");
+    const isAdminValue = userType === USER_TYPES.ISO_PORTAL_ADMIN || 
+      (profileName.includes("ADMIN") && !isSuperAdminValue);
 
     // Super Admin tem acesso a TODOS os ISOs
     let allowedCustomers: number[] = [];
@@ -235,65 +499,106 @@ export async function getCurrentUserInfo() {
         allowedCustomers = allCustomersResult
           .map((r) => r.id)
           .filter((id): id is number => id !== null && typeof id === "number");
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Erro ao buscar todos os ISOs para Super Admin:", error);
         allowedCustomers = [];
       }
     } else {
-      // Usuários normais: combinar ISOs da categoria + individuais + principal
+      // Verificar categoria do perfil para determinar lógica de acesso
+      // Usa categoryType (novo) com fallback para profileName (legado)
+      let isCoreOrExecutivo = false;
       
-      // 1. ISOs da categoria (herdados automaticamente)
-      let profileISOs: number[] = [];
       if (userData.idProfile) {
-        try {
-          const profileCustomersResult = await db
-            .select({
-              idCustomer: profileCustomers.idCustomer,
-            })
-            .from(profileCustomers)
-            .where(
-              and(
-                eq(profileCustomers.idProfile, userData.idProfile),
-                eq(profileCustomers.active, true)
-              )
-            );
+        const profileData = await db
+          .select({ categoryType: profiles.categoryType, name: profiles.name })
+          .from(profiles)
+          .where(eq(profiles.id, userData.idProfile))
+          .limit(1);
+        
+        const userCategory = profileData[0]?.categoryType?.toUpperCase() || "";
+        const profileNameUpper = profileData[0]?.name?.toUpperCase() || "";
+        
+        // Verificar por categoryType OU por nome do perfil (fallback legado)
+        isCoreOrExecutivo = 
+          userCategory === "CORE" || 
+          userCategory === "EXECUTIVO" ||
+          profileNameUpper.includes("CORE") ||
+          profileNameUpper.includes("EXECUTIVO");
+      }
+      
+      if (isCoreOrExecutivo) {
+        // CORE e EXECUTIVO: usar APENAS user_customers (segregação estrita de dados)
+        if (userData.id) {
+          allowedCustomers = await getUserMultiIsoAccess(userData.id);
+        }
+        
+        if (isSimulating) {
+          console.log(`[View Mode] CORE/EXECUTIVO user ${targetUserId}: allowed customers = [${allowedCustomers.join(', ')}]`);
+        }
+      } else {
+        // Admin e outros: combinar ISOs de múltiplas fontes (comportamento legado)
+        
+        // 1. ISOs da tabela user_customers (sistema Multi-ISO)
+        let multiIsoCustomers: number[] = [];
+        if (userData.id) {
+          multiIsoCustomers = await getUserMultiIsoAccess(userData.id);
+        }
 
-          profileISOs = profileCustomersResult
-            .map((r) => r.idCustomer)
-            .filter((id): id is number => id !== null && typeof id === "number");
-        } catch (error: any) {
-          // Se a tabela não existe, continuar sem erros (compatibilidade com versões antigas)
-          if (
-            error?.code !== "42P01" &&
-            !error?.message?.includes("does not exist") &&
-            !(error?.message?.includes("relation") && error?.message?.includes("profile_customers"))
-          ) {
-            console.error("Erro ao buscar ISOs da categoria:", error);
+        // 2. ISOs da categoria do perfil (profile_customers - sistema legado)
+        let profileISOs: number[] = [];
+        if (userData.idProfile) {
+          try {
+            const profileCustomersResult = await db
+              .select({
+                idCustomer: profileCustomers.idCustomer,
+              })
+              .from(profileCustomers)
+              .where(
+                and(
+                  eq(profileCustomers.idProfile, userData.idProfile),
+                  eq(profileCustomers.active, true)
+                )
+              );
+
+            profileISOs = profileCustomersResult
+              .map((r) => r.idCustomer)
+              .filter((id): id is number => id !== null && typeof id === "number");
+          } catch (error: unknown) {
+            // Se a tabela não existe, continuar sem erros (compatibilidade)
+            const err = error as { code?: string; message?: string };
+            if (
+              err?.code !== "42P01" &&
+              !err?.message?.includes("does not exist") &&
+              !(err?.message?.includes("relation") && err?.message?.includes("profile_customers"))
+            ) {
+              console.error("Erro ao buscar ISOs da categoria:", error);
+            }
           }
         }
+
+        // 3. ISOs individuais do admin (admin_customers - sistema legado)
+        let individualISOs: number[] = [];
+        if (isAdminValue && userData.id) {
+          individualISOs = await getAdminAllowedCustomers(userData.id);
+        }
+
+        // 4. ISO principal (idCustomer)
+        const mainISO: number[] = userData.idCustomer ? [userData.idCustomer] : [];
+
+        // 5. Combinar todos (remover duplicatas)
+        const allISOs = [...multiIsoCustomers, ...profileISOs, ...individualISOs, ...mainISO];
+        allowedCustomers = Array.from(new Set(allISOs)).filter(
+          (id): id is number => id !== null && typeof id === "number" && !isNaN(id)
+        );
       }
-
-      // 2. ISOs individuais (admin_customers)
-      let individualISOs: number[] = [];
-      if (isAdminValue && userData.id) {
-        individualISOs = await getAdminAllowedCustomers(userData.id);
-      }
-
-      // 3. ISO principal (idCustomer)
-      const mainISO: number[] = userData.idCustomer ? [userData.idCustomer] : [];
-
-      // 4. Combinar todos (remover duplicatas)
-      const allISOs = [...profileISOs, ...individualISOs, ...mainISO];
-      allowedCustomers = Array.from(new Set(allISOs)).filter(
-        (id): id is number => id !== null && typeof id === "number" && !isNaN(id)
-      );
     }
 
     return {
       ...userData,
       isSuperAdmin: isSuperAdminValue,
       isAdmin: isAdminValue,
-      allowedCustomers, // Super Admin: todos os ISOs | Outros: categoria + individual + principal
+      allowedCustomers,
+      userType: userType as UserType | null,
     };
   } catch (error) {
     console.error("Error getting user info:", error);
@@ -309,8 +614,8 @@ export async function getCurrentUserInfo() {
  */
 export async function hasRestrictedDataAccess(): Promise<boolean> {
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) return false;
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) return false;
 
     // Super Admin sempre vê tudo
     const isSuper = await isSuperAdmin();
@@ -324,7 +629,7 @@ export async function hasRestrictedDataAccess(): Promise<boolean> {
       })
       .from(users)
       .leftJoin(profiles, eq(users.idProfile, profiles.id))
-      .where(eq(users.idClerk, clerkUser.id))
+      .where(eq(users.id, sessionUser.id))
       .limit(1);
 
     if (!user || user.length === 0) return false;
@@ -357,13 +662,125 @@ export async function hasMerchantsAccess(): Promise<boolean> {
 }
 
 /**
- * Verifica permissões de página (adaptado do Outbank-One)
- * Retorna array de permissões do usuário para um grupo específico
- * Verifica AMBAS: permissões da categoria (profile_functions) + permissões individuais (user_functions)
- * @param group - Nome do grupo (ex: "Estabelecimentos")
- * @param permission - Nome da permissão específica (ex: "Atualizar")
- * @returns Array de permissões do usuário
+ * Obtém os menus autorizados para o perfil do usuário logado
+ * Super Admin sempre retorna array vazio (significa todos autorizados)
+ * @returns Array de IDs de menus autorizados
  */
+export async function getUserAuthorizedMenus(): Promise<string[]> {
+  try {
+    // Dev bypass retorna vazio (todos autorizados)
+    if (DEV_BYPASS_ENABLED) {
+      return [];
+    }
+
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) return [];
+
+    // Super Admin sempre vê todos os menus
+    const isSuper = await isSuperAdmin();
+    if (isSuper) return [];
+
+    // Buscar menus autorizados do perfil do usuário
+    const userData = await db
+      .select({
+        idProfile: users.idProfile,
+      })
+      .from(users)
+      .where(eq(users.id, sessionUser.id))
+      .limit(1);
+
+    if (!userData || userData.length === 0 || !userData[0].idProfile) {
+      return [];
+    }
+
+    const profileId = userData[0].idProfile;
+
+    // Buscar menus autorizados usando SQL raw (campo não está no schema drizzle)
+    const result = await db.execute(sql`
+      SELECT authorized_menus FROM profiles WHERE id = ${profileId}
+    `);
+
+    if (!result.rows || result.rows.length === 0) {
+      return [];
+    }
+
+    const authorizedMenusJson = (result.rows[0] as Record<string, unknown>).authorized_menus;
+    if (!authorizedMenusJson) {
+      return [];
+    }
+
+    return JSON.parse(authorizedMenusJson as string);
+  } catch (error) {
+    console.error("Error getting user authorized menus:", error);
+    return [];
+  }
+}
+
+/**
+ * Retorna o label da categoria do usuário para exibição na sidebar
+ * @returns String com o nome da categoria: Super Admin, Admin, Executivo, Core
+ */
+export async function getUserCategoryLabel(): Promise<string> {
+  try {
+    if (DEV_BYPASS_ENABLED) {
+      return "Super Admin";
+    }
+
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) return "Usuário";
+
+    // Verificar se é Super Admin pelo user_type
+    const userData = await db
+      .select({
+        userType: users.userType,
+        idProfile: users.idProfile,
+      })
+      .from(users)
+      .where(eq(users.id, sessionUser.id))
+      .limit(1);
+
+    if (!userData || userData.length === 0) {
+      return "Usuário";
+    }
+
+    const { userType, idProfile } = userData[0];
+
+    // Super Admin pelo user_type
+    if (userType === "SUPER_ADMIN") {
+      return "Super Admin";
+    }
+
+    // Buscar categoryType do perfil
+    if (idProfile) {
+      const profileData = await db.execute(sql`
+        SELECT name, category_type FROM profiles WHERE id = ${idProfile}
+      `);
+
+      if (profileData.rows && profileData.rows.length > 0) {
+        const profile = profileData.rows[0] as { name: string; category_type: string | null };
+        const categoryType = profile.category_type?.toUpperCase();
+        const profileName = profile.name?.toUpperCase() || "";
+
+        // Priorizar categoryType, depois fallback para nome do perfil
+        if (categoryType === "ADMIN" || profileName.includes("ADMIN")) {
+          return "Admin";
+        }
+        if (categoryType === "EXECUTIVO" || profileName.includes("EXECUTIVO")) {
+          return "Executivo";
+        }
+        if (categoryType === "CORE" || profileName.includes("CORE")) {
+          return "Core";
+        }
+      }
+    }
+
+    return "Usuário";
+  } catch (error) {
+    console.error("Error getting user category label:", error);
+    return "Usuário";
+  }
+}
+
 /**
  * Obtem todos os ISOs vinculados a um usuario
  * Combina: ISOs do perfil + ISOs individuais (admin_customers) + ISO principal
@@ -554,24 +971,26 @@ export async function getUserPermissions(userId: number, group: string): Promise
  */
 export async function isSuperAdminById(userId: number): Promise<boolean> {
   try {
-    console.log(`[isSuperAdminById] Verificando Super Admin para userId: ${userId}`);
-
     const userData = await db
-      .select({ profileName: profiles.name })
+      .select({ 
+        userType: users.userType,
+        profileName: profiles.name 
+      })
       .from(users)
       .leftJoin(profiles, eq(users.idProfile, profiles.id))
       .where(eq(users.id, userId))
       .limit(1);
 
     if (!userData || userData.length === 0) {
-      console.log(`[isSuperAdminById] Usuario nao encontrado`);
       return false;
     }
 
+    if (userData[0].userType === USER_TYPES.SUPER_ADMIN) {
+      return true;
+    }
+
     const profileName = (userData[0].profileName ?? "").toUpperCase();
-    const isSuperAdmin = profileName.includes("SUPER_ADMIN") || profileName.includes("SUPER");
-    console.log(`[isSuperAdminById] Perfil: ${profileName}, isSuperAdmin: ${isSuperAdmin}`);
-    return isSuperAdmin;
+    return profileName.includes("SUPER_ADMIN") || profileName.includes("SUPER");
   } catch (error) {
     console.error("[isSuperAdminById] Erro:", error);
     return false;
@@ -583,8 +1002,8 @@ export async function checkPagePermission(
   permission: string = "Listar"
 ): Promise<string[]> {
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) {
       return [];
     }
 
@@ -610,7 +1029,7 @@ export async function checkPagePermission(
         idProfile: users.idProfile,
       })
       .from(users)
-      .where(eq(users.idClerk, clerkUser.id))
+      .where(eq(users.id, sessionUser.id))
       .limit(1);
 
     if (!user || user.length === 0) return [];

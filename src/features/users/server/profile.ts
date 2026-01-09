@@ -1,14 +1,14 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { users, profiles, customers, adminCustomers, profileFunctions, functions, userFunctions, profileCustomers } from "../../../../drizzle/schema";
-import { eq, and, inArray } from "drizzle-orm";
-import { currentUser } from "@clerk/nextjs/server";
-import { clerkClient } from "@clerk/nextjs/server";
-import { hashPassword } from "@/app/utils/password";
+import { db } from "@/db/drizzle";
+import { users, profiles, customers, adminCustomers, profileFunctions, functions, userFunctions, profileCustomers, salesAgents } from "../../../../drizzle/schema";
+import { eq, and } from "drizzle-orm";
+import { getCurrentUser } from "@/lib/auth";
+import { hashPassword, matchPassword } from "@/app/utils/password";
 import { revalidatePath } from "next/cache";
+
 /**
- * Email do Super Admin protegido - definido localmente (não pode importar de "use server")
+ * Email do Super Admin protegido - definido localmente
  */
 const PROTECTED_SUPER_ADMIN_EMAIL = "cto@outbank.com.br";
 
@@ -18,16 +18,16 @@ const PROTECTED_SUPER_ADMIN_EMAIL = "cto@outbank.com.br";
 
 /**
  * Obtém o perfil completo do usuário logado
- * Inclui dados do Clerk (nome, email) e do banco (categoria, ISOs, permissões)
+ * Inclui dados do banco (nome, email, categoria, ISOs, permissões)
  */
 export async function getUserProfile() {
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
+    const currentUserSession = await getCurrentUser();
+    if (!currentUserSession) {
       return null;
     }
 
-    // Buscar usuário no banco
+    // Buscar usuário no banco com dados de sales_agents para nome
     const user = await db
       .select({
         id: users.id,
@@ -38,10 +38,13 @@ export async function getUserProfile() {
         active: users.active,
         profileName: profiles.name,
         profileDescription: profiles.description,
+        firstName: salesAgents.firstName,
+        lastName: salesAgents.lastName,
       })
       .from(users)
       .leftJoin(profiles, eq(users.idProfile, profiles.id))
-      .where(eq(users.idClerk, clerkUser.id))
+      .leftJoin(salesAgents, eq(salesAgents.idUsers, users.id))
+      .where(eq(users.id, currentUserSession.id))
       .limit(1);
 
     if (!user || user.length === 0) {
@@ -51,13 +54,11 @@ export async function getUserProfile() {
     const userData = user[0];
 
     return {
-      // Dados do Clerk
+      // Dados do usuário
       id: userData.id,
-      clerkId: clerkUser.id,
-      firstName: clerkUser.firstName || "",
-      lastName: clerkUser.lastName || "",
-      email: clerkUser.emailAddresses[0]?.emailAddress || userData.email || "",
-      imageUrl: clerkUser.imageUrl,
+      firstName: userData.firstName || "",
+      lastName: userData.lastName || "",
+      email: userData.email || "",
       
       // Dados do banco
       idCustomer: userData.idCustomer,
@@ -87,8 +88,8 @@ export async function updateUserProfile(data: {
   lastName?: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
+    const currentUserSession = await getCurrentUser();
+    if (!currentUserSession) {
       return { success: false, error: "Usuário não autenticado" };
     }
 
@@ -101,14 +102,46 @@ export async function updateUserProfile(data: {
       return { success: false, error: "Último nome não pode ser vazio" };
     }
 
-    // Atualizar no Clerk
-    const clerk = await clerkClient();
-    await clerk.users.updateUser(clerkUser.id, {
-      firstName: data.firstName?.trim(),
-      lastName: data.lastName?.trim(),
-    });
+    // Verificar se existe registro em sales_agents
+    const existingAgent = await db
+      .select({ id: salesAgents.id })
+      .from(salesAgents)
+      .where(eq(salesAgents.idUsers, currentUserSession.id))
+      .limit(1);
 
-    console.log(`[updateUserProfile] ✅ Perfil atualizado: ${clerkUser.id}`);
+    if (existingAgent.length > 0) {
+      // Atualizar sales_agents existente
+      await db
+        .update(salesAgents)
+        .set({
+          firstName: data.firstName?.trim(),
+          lastName: data.lastName?.trim(),
+          dtupdate: new Date().toISOString(),
+        })
+        .where(eq(salesAgents.idUsers, currentUserSession.id));
+    } else {
+      // Criar novo registro em sales_agents
+      const userDb = await db
+        .select({ email: users.email })
+        .from(users)
+        .where(eq(users.id, currentUserSession.id))
+        .limit(1);
+
+      if (userDb.length > 0) {
+        await db.insert(salesAgents).values({
+          slug: `agent-${currentUserSession.id}`,
+          firstName: data.firstName?.trim() || "",
+          lastName: data.lastName?.trim() || "",
+          email: userDb[0].email || "",
+          idUsers: currentUserSession.id,
+          active: true,
+          dtinsert: new Date().toISOString(),
+          dtupdate: new Date().toISOString(),
+        });
+      }
+    }
+
+    console.log(`[updateUserProfile] ✅ Perfil atualizado: ${currentUserSession.id}`);
     
     revalidatePath("/account");
     return { success: true };
@@ -130,8 +163,8 @@ export async function changePassword(data: {
   newPassword: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
+    const currentUserSession = await getCurrentUser();
+    if (!currentUserSession) {
       return { success: false, error: "Usuário não autenticado" };
     }
 
@@ -140,23 +173,21 @@ export async function changePassword(data: {
       return { success: false, error: "Nova senha deve ter pelo menos 8 caracteres" };
     }
 
-    // Validar senha atual no Clerk
-    const clerk = await clerkClient();
-    
-    try {
-      const validation = await clerk.users.verifyPassword({
-        userId: clerkUser.id,
-        password: data.currentPassword,
-      });
+    // Buscar hash da senha atual do usuário
+    const userDb = await db
+      .select({ id: users.id, hashedPassword: users.hashedPassword })
+      .from(users)
+      .where(eq(users.id, currentUserSession.id))
+      .limit(1);
 
-      if (!validation.verified) {
-        return { success: false, error: "Senha atual incorreta" };
-      }
-    } catch (verifyError: any) {
-      if (verifyError?.status === 400 || verifyError?.message?.includes("password")) {
-        return { success: false, error: "Senha atual incorreta" };
-      }
-      throw verifyError;
+    if (!userDb || userDb.length === 0 || !userDb[0].hashedPassword) {
+      return { success: false, error: "Usuário não encontrado" };
+    }
+
+    // Validar senha atual
+    const isValid = matchPassword(data.currentPassword, userDb[0].hashedPassword);
+    if (!isValid) {
+      return { success: false, error: "Senha atual incorreta" };
     }
 
     // Verificar se nova senha é igual à atual
@@ -164,50 +195,21 @@ export async function changePassword(data: {
       return { success: false, error: "Nova senha deve ser diferente da atual" };
     }
 
-    // Atualizar senha no Clerk
-    await clerk.users.updateUser(clerkUser.id, {
-      password: data.newPassword,
-      skipPasswordChecks: false,
-    });
+    // Atualizar senha no banco
+    const newHashedPassword = hashPassword(data.newPassword);
+    await db
+      .update(users)
+      .set({
+        hashedPassword: newHashedPassword,
+        initialPassword: data.newPassword,
+        dtupdate: new Date().toISOString(),
+      })
+      .where(eq(users.id, currentUserSession.id));
 
-    // Atualizar hash no banco também (para backup/compatibilidade)
-    const hashedPassword = hashPassword(data.newPassword);
-    const userDb = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.idClerk, clerkUser.id))
-      .limit(1);
-
-    if (userDb && userDb.length > 0) {
-      await db
-        .update(users)
-        .set({
-          hashedPassword,
-          dtupdate: new Date().toISOString(),
-        })
-        .where(eq(users.id, userDb[0].id));
-    }
-
-    console.log(`[changePassword] ✅ Senha alterada: ${clerkUser.id}`);
+    console.log(`[changePassword] ✅ Senha alterada: ${currentUserSession.id}`);
     return { success: true };
   } catch (error: any) {
     console.error("[changePassword] Error:", error);
-    
-    // Tratar erros específicos do Clerk
-    if (error?.status === 422 && error?.errors) {
-      const passwordError = error.errors.find((e: any) => 
-        e.code === "form_password_pwned" || 
-        e.message?.toLowerCase().includes("password")
-      );
-      
-      if (passwordError) {
-        if (passwordError.code === "form_password_pwned") {
-          return { success: false, error: "Senha comprometida: Essa senha foi encontrada em vazamentos de dados." };
-        }
-        return { success: false, error: passwordError.message || "Senha não atende aos requisitos de segurança" };
-      }
-    }
-    
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Erro ao alterar senha" 
@@ -221,8 +223,8 @@ export async function changePassword(data: {
  */
 export async function getUserPermissionsSummary() {
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
+    const currentUserSession = await getCurrentUser();
+    if (!currentUserSession) {
       return null;
     }
 
@@ -237,7 +239,7 @@ export async function getUserPermissionsSummary() {
       })
       .from(users)
       .leftJoin(profiles, eq(users.idProfile, profiles.id))
-      .where(eq(users.idClerk, clerkUser.id))
+      .where(eq(users.id, currentUserSession.id))
       .limit(1);
 
     if (!user || user.length === 0) {
@@ -404,12 +406,11 @@ export async function getUserPermissionsSummary() {
 
 /**
  * Verifica se o usuário logado pode alterar sua própria senha
- * O Super Admin protegido (cto@outbank.com.br) só pode ter a senha alterada por ele mesmo
  */
 export async function canChangeOwnPassword(): Promise<boolean> {
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
+    const currentUserSession = await getCurrentUser();
+    if (!currentUserSession) {
       return false;
     }
 
@@ -420,4 +421,3 @@ export async function canChangeOwnPassword(): Promise<boolean> {
     return false;
   }
 }
-

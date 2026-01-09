@@ -1,28 +1,23 @@
 "use client";
 
-import { useSignIn } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-type Step = "email" | "code" | "password" | "success";
+type Step = "email" | "success";
 
 export default function TenantForgotPasswordPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const { signIn, isLoaded, setActive } = useSignIn();
   const router = useRouter();
   
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -95,87 +90,30 @@ export default function TenantForgotPasswordPage() {
   const primaryColor = getPrimaryColor();
   const lightColor = isLightColor(primaryColor);
 
-  const handleSendCode = async (e: React.FormEvent) => {
+  const handleSendResetRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isLoaded || !signIn) return;
-
     setIsSubmitting(true);
     try {
-      await signIn.create({
-        strategy: "reset_password_email_code",
-        identifier: email,
-      });
-      
-      setStep("code");
-      toast.success("Código enviado! Verifique sua caixa de entrada.");
-    } catch (error: any) {
-      console.error("Error sending reset code:", error);
-      toast.error(error?.errors?.[0]?.message || "Erro ao enviar código de recuperação");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleVerifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!isLoaded || !signIn) return;
-
-    setIsSubmitting(true);
-    try {
-      const result = await signIn.attemptFirstFactor({
-        strategy: "reset_password_email_code",
-        code,
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
       });
 
-      if (result.status === "complete") {
-        setStep("password");
-      } else {
-        toast.error("Código inválido. Tente novamente.");
-      }
-    } catch (error: any) {
-      console.error("Error verifying code:", error);
-      toast.error(error?.errors?.[0]?.message || "Código inválido");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      const data = await response.json();
 
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      toast.error("As senhas não coincidem");
-      return;
-    }
-
-    if (password.length < 8) {
-      toast.error("A senha deve ter pelo menos 8 caracteres");
-      return;
-    }
-
-    if (!isLoaded || !signIn) return;
-
-    setIsSubmitting(true);
-    try {
-      const result = await signIn.resetPassword({
-        password,
-      });
-
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
+      if (response.ok) {
         setStep("success");
-        toast.success("Senha redefinida com sucesso!");
-        
-        // Redirecionar para dashboard após 2 segundos
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 2000);
+        toast.success("Se o email estiver cadastrado, você receberá as instruções de recuperação.");
+      } else {
+        toast.error(data.error || "Erro ao solicitar recuperação de senha");
       }
     } catch (error: any) {
-      console.error("Error resetting password:", error);
-      toast.error(error?.errors?.[0]?.message || "Erro ao redefinir senha");
+      console.error("Error sending reset request:", error);
+      toast.error("Erro ao solicitar recuperação de senha");
     } finally {
       setIsSubmitting(false);
     }
@@ -200,16 +138,14 @@ export default function TenantForgotPasswordPage() {
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold mb-2">Esqueceu sua senha?</h1>
             <p className="text-gray-600 text-sm">
-              {step === "email" && "Digite seu e-mail e enviaremos um código para redefinir sua senha"}
-              {step === "code" && "Digite o código enviado para seu e-mail"}
-              {step === "password" && "Digite sua nova senha"}
-              {step === "success" && "Senha redefinida com sucesso!"}
+              {step === "email" && "Digite seu e-mail e enviaremos instruções para redefinir sua senha"}
+              {step === "success" && "Verifique seu e-mail!"}
             </p>
           </div>
 
           {/* Step 1: Email */}
           {step === "email" && (
-            <form onSubmit={handleSendCode} className="space-y-4">
+            <form onSubmit={handleSendResetRequest} className="space-y-4">
               <div>
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -219,142 +155,48 @@ export default function TenantForgotPasswordPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu@email.com"
                   required
-                  disabled={isSubmitting || !isLoaded}
-                  className="mt-1"
-                />
-              </div>
-              
-              <Button
-                type="submit"
-                disabled={isSubmitting || !isLoaded}
-                className="w-full"
-                style={{ 
-                  backgroundColor: 'var(--tenant-primary)', 
-                  color: lightColor ? '#000' : '#fff' 
-                }}
-              >
-                {isSubmitting ? "Enviando..." : "Enviar código"}
-              </Button>
-            </form>
-          )}
-
-          {/* Step 2: Code */}
-          {step === "code" && (
-            <form onSubmit={handleVerifyCode} className="space-y-4">
-              <div>
-                <Label htmlFor="code">Código de verificação</Label>
-                <Input
-                  id="code"
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="000000"
-                  required
-                  disabled={isSubmitting || !isLoaded}
-                  className="mt-1 text-center text-2xl tracking-widest"
-                  maxLength={6}
-                />
-                <p className="text-xs text-gray-500 mt-1">Digite o código de 6 dígitos enviado para {email}</p>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setStep("email");
-                    setCode("");
-                  }}
-                  className="flex-1"
                   disabled={isSubmitting}
-                >
-                  Voltar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || !isLoaded || code.length !== 6}
-                  className="flex-1"
-                  style={{ 
-                    backgroundColor: 'var(--tenant-primary)', 
-                    color: lightColor ? '#000' : '#fff' 
-                  }}
-                >
-                  {isSubmitting ? "Verificando..." : "Verificar código"}
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {/* Step 3: New Password */}
-          {step === "password" && (
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div>
-                <Label htmlFor="password">Nova senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 8 caracteres"
-                  required
-                  disabled={isSubmitting || !isLoaded}
                   className="mt-1"
-                  minLength={8}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="confirmPassword">Confirmar senha</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Digite a senha novamente"
-                  required
-                  disabled={isSubmitting || !isLoaded}
-                  className="mt-1"
-                  minLength={8}
                 />
               </div>
               
               <Button
                 type="submit"
-                disabled={isSubmitting || !isLoaded || password !== confirmPassword || password.length < 8}
+                disabled={isSubmitting}
                 className="w-full"
                 style={{ 
                   backgroundColor: 'var(--tenant-primary)', 
                   color: lightColor ? '#000' : '#fff' 
                 }}
               >
-                {isSubmitting ? "Redefinindo..." : "Redefinir senha"}
+                {isSubmitting ? "Enviando..." : "Enviar instruções"}
               </Button>
             </form>
           )}
 
-          {/* Step 4: Success */}
+          {/* Step 2: Success */}
           {step === "success" && (
             <div className="text-center py-8">
               <div className="mb-4">
                 <CheckCircle className="h-16 w-16 mx-auto" style={{ color: 'var(--tenant-primary)' }} />
               </div>
-              <h2 className="text-xl font-bold mb-2">Senha redefinida!</h2>
+              <h2 className="text-xl font-bold mb-2">Email enviado!</h2>
               <p className="text-gray-600 mb-6">
-                Redirecionando para o dashboard...
+                Se o email estiver cadastrado em nosso sistema, você receberá as instruções para redefinir sua senha.
               </p>
               <Link href="/auth/sign-in">
                 <Button
                   variant="outline"
                   className="w-full"
                 >
-                  Ir para login
+                  Voltar para login
                 </Button>
               </Link>
             </div>
           )}
 
-          {/* Link voltar para login (apenas nos primeiros steps) */}
-          {step !== "success" && (
+          {/* Link voltar para login (apenas no primeiro step) */}
+          {step === "email" && (
             <div className="mt-6 text-center">
               <Link 
                 href="/auth/sign-in" 

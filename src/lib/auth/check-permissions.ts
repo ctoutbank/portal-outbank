@@ -1,4 +1,4 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 /**
@@ -11,7 +11,7 @@ export async function checkPagePermission(
   group: string,
   permission: string = "Listar"
 ) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/auth/sign-in");
@@ -23,4 +23,3 @@ export async function checkPagePermission(
 
   return true;
 }
-

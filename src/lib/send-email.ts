@@ -1,6 +1,6 @@
 import { getResend } from "./resend";
 
-const EMAIL_FROM = process.env.EMAIL_FROM || "noreply@consolle.one";
+const EMAIL_FROM = "Consolle <noreply@consolle.one>";
 const PORTAL_LOGO = "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
 const PORTAL_NAME = "Admin Consolle";
 const PORTAL_URL = process.env.NEXT_PUBLIC_APP_URL || "https://app.consolle.one";
@@ -168,22 +168,42 @@ Equipe ${customerName}
     
     console.log(`[sendWelcomePasswordEmail] 📤 Enviando email via Resend...`);
     const result = await getResend().emails.send(emailData);
-    // O resultado do Resend pode ter estrutura diferente dependendo da versão
-    // Usar type assertion para evitar erros de tipo
+    
+    // Log detalhado da resposta do Resend
+    console.log(`[sendWelcomePasswordEmail] 📦 Resposta completa do Resend:`, JSON.stringify(result, null, 2));
+    
+    // Verificar se houve erro na resposta
     const resultAny = result as any;
+    if (resultAny?.error) {
+      console.error(`[sendWelcomePasswordEmail] ❌ Erro retornado pelo Resend:`, {
+        error: resultAny.error,
+        message: resultAny.error?.message,
+        name: resultAny.error?.name,
+      });
+      throw new Error(`Resend error: ${resultAny.error?.message || JSON.stringify(resultAny.error)}`);
+    }
+    
     const emailId = resultAny?.id || resultAny?.data?.id || null;
-    console.log(`[sendWelcomePasswordEmail] ✅ Email sent successfully to ${to}`, {
-      emailId: emailId || 'sent',
+    
+    if (!emailId) {
+      console.warn(`[sendWelcomePasswordEmail] ⚠️ Email enviado mas sem ID retornado. Resposta:`, result);
+    }
+    
+    console.log(`[sendWelcomePasswordEmail] ✅ Email enviado com sucesso para ${to}`, {
+      emailId: emailId || 'sem-id',
       from: EMAIL_FROM,
       to,
+      subject: emailData.subject,
     });
+    
+    return { success: true, emailId };
   } catch (error: any) {
-    console.error(`[sendWelcomePasswordEmail] ❌ Failed to send email to ${to}:`, {
+    console.error(`[sendWelcomePasswordEmail] ❌ Falha ao enviar email para ${to}:`, {
       message: error?.message || error,
       code: error?.code,
       statusCode: error?.statusCode,
       response: error?.response,
-      stack: error?.stack,
+      name: error?.name,
     });
     throw error;
   }
@@ -361,6 +381,261 @@ Equipe Outbank
       statusCode: error?.statusCode,
       response: error?.response,
       stack: error?.stack,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Envia email informativo quando ISO Admin é promovido para acesso ao Portal (CORE ou EXECUTIVO)
+ * Não envia credenciais - apenas informa sobre o novo acesso
+ */
+export async function sendPortalPromotionEmail(
+  to: string,
+  userName: string,
+  newCategory: 'CORE' | 'EXECUTIVO'
+) {
+  try {
+    if (!to || !to.includes('@')) {
+      throw new Error(`Email inválido: ${to}`);
+    }
+    
+    console.log(`[sendPortalPromotionEmail] 📧 Enviando email de promoção`, {
+      to,
+      userName,
+      newCategory,
+    });
+    
+    const categoryLabel = newCategory === 'CORE' ? 'Core' : 'Executivo';
+    const categoryDescription = newCategory === 'CORE' 
+      ? 'Você agora pode visualizar e configurar suas margens de comissão no Portal.'
+      : 'Você agora pode visualizar suas margens de comissão no Portal.';
+    
+    const textVersion = `
+Olá ${userName},
+
+Boa notícia! Você agora tem acesso ao ${PORTAL_NAME}.
+
+Sua categoria foi atualizada para: ${categoryLabel}
+
+${categoryDescription}
+
+Acesse o Portal em: ${PORTAL_URL}/sign-in
+Use as mesmas credenciais que você já utiliza para acessar o Tenant do ISO.
+
+Se tiver dúvidas, entre em contato com o administrador.
+
+Atenciosamente,
+Equipe Outbank
+
+© Todos os direitos reservados.
+    `.trim();
+    
+    const emailData = {
+      from: EMAIL_FROM,
+      to,
+      subject: `${PORTAL_NAME} - Novo acesso liberado`,
+      text: textVersion,
+      headers: {
+        'X-Entity-Ref-ID': `portal-promotion-${Date.now()}`,
+      },
+      html: `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+            <title>Novo acesso ao ${PORTAL_NAME}</title>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #e5e5e5 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; min-height: 100vh;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e5e5e5; min-height: 100vh; padding: 40px 0;">
+                <tr>
+                    <td align="center" style="padding: 20px;">
+                        <div style="background-color: #ffffff; border-radius: 0; padding: 48px 40px; max-width: 500px; width: 100%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);">
+                            
+                            <div style="margin-bottom: 32px;">
+                                <img src="${PORTAL_LOGO}" alt="${PORTAL_NAME} Logo" width="120" height="120" style="display: block; max-width: 120px; height: auto; border: 0;" />
+                            </div>
+                            
+                            <h1 style="color: #333333; font-size: 26px; font-weight: 600; margin: 0 0 24px 0; line-height: 1.2; text-align: left;">
+                                Novo acesso liberado!
+                            </h1>
+                            
+                            <p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 16px 0; text-align: left;">
+                                Olá <strong>${userName}</strong>,
+                            </p>
+                            
+                            <p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 24px 0; text-align: left;">
+                                Boa notícia! Você agora tem acesso ao <strong>${PORTAL_NAME}</strong>.
+                            </p>
+                            
+                            <div style="background-color: #f5f5f5; border-left: 4px solid #0066cc; padding: 16px; margin: 24px 0;">
+                                <p style="color: #333333; font-size: 14px; margin: 0 0 8px 0; text-align: left;">
+                                    <strong>Sua nova categoria:</strong>
+                                </p>
+                                <p style="color: #0066cc; font-size: 20px; font-weight: 600; margin: 0; text-align: left;">
+                                    ${categoryLabel}
+                                </p>
+                            </div>
+                            
+                            <p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 24px 0; text-align: left;">
+                                ${categoryDescription}
+                            </p>
+                            
+                            <div style="margin: 32px 0; text-align: center;">
+                                <a href="${PORTAL_URL}/sign-in" style="display: inline-block; background-color: #0066cc; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 16px;">
+                                    Acessar o Portal
+                                </a>
+                            </div>
+                            
+                            <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 24px 0 0 0; text-align: left; border-top: 1px solid #eee; padding-top: 24px;">
+                                Use as mesmas credenciais que você já utiliza para acessar o Tenant do ISO.
+                            </p>
+                            
+                            <p style="color: #999999; font-size: 12px; margin: 32px 0 0 0; text-align: center;">
+                                © Outbank - Todos os direitos reservados.
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+      `,
+    };
+    
+    console.log(`[sendPortalPromotionEmail] 📤 Enviando email via Resend...`);
+    const result = await getResend().emails.send(emailData);
+    const resultAny = result as any;
+    const emailId = resultAny?.id || resultAny?.data?.id || null;
+    console.log(`[sendPortalPromotionEmail] ✅ Email enviado com sucesso para ${to}`, {
+      emailId: emailId || 'sent',
+    });
+    
+    return { success: true, emailId };
+  } catch (error: any) {
+    console.error(`[sendPortalPromotionEmail] ❌ Falha ao enviar email para ${to}:`, {
+      message: error?.message || error,
+      code: error?.code,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Envia email de redefinição de senha
+ */
+export async function sendPasswordResetEmail(
+  to: string,
+  resetUrl: string,
+  customerName: string = "Consolle"
+) {
+  try {
+    if (!to || !to.includes('@')) {
+      throw new Error(`Email inválido: ${to}`);
+    }
+    
+    console.log(`[sendPasswordResetEmail] 📧 Iniciando envio de email de reset`, {
+      to,
+      from: EMAIL_FROM,
+      customerName,
+    });
+    
+    const textVersion = `
+Redefinição de Senha
+
+Você solicitou a redefinição de sua senha.
+
+Clique no link abaixo para criar uma nova senha:
+${resetUrl}
+
+Este link expira em 1 hora.
+
+Se você não solicitou essa redefinição, ignore este e-mail.
+
+Atenciosamente,
+Equipe ${customerName}
+
+© Todos os direitos reservados.
+    `.trim();
+    
+    const emailData = {
+      from: EMAIL_FROM,
+      to,
+      subject: `Redefinição de senha - ${customerName}`,
+      text: textVersion,
+      headers: {
+        'X-Entity-Ref-ID': `password-reset-${Date.now()}`,
+      },
+      html: `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Redefinição de Senha</title>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #e5e5e5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e5e5e5; padding: 40px 0;">
+                <tr>
+                    <td align="center" style="padding: 20px;">
+                        <div style="background-color: #ffffff; border-radius: 8px; padding: 48px 40px; max-width: 500px; width: 100%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);">
+                            
+                            <h1 style="color: #333333; font-size: 24px; font-weight: 600; margin: 0 0 24px 0; text-align: center;">
+                                Redefinição de Senha
+                            </h1>
+                            
+                            <p style="color: #333333; font-size: 16px; line-height: 1.5; margin: 0 0 24px 0; text-align: left;">
+                                Você solicitou a redefinição de sua senha.
+                            </p>
+                            
+                            <div style="text-align: center; margin: 32px 0;">
+                                <a href="${resetUrl}" 
+                                   style="display: inline-block; background-color: #0066cc; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">
+                                    Redefinir Senha
+                                </a>
+                            </div>
+                            
+                            <p style="color: #666666; font-size: 14px; margin: 24px 0 0 0; text-align: center;">
+                                Este link expira em 1 hora.
+                            </p>
+                            
+                            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 16px; margin: 24px 0;">
+                                <p style="color: #856404; font-size: 14px; margin: 0; text-align: left;">
+                                    Se você não solicitou essa redefinição, ignore este e-mail.
+                                </p>
+                            </div>
+                            
+                            <div style="margin-top: 40px; text-align: left; border-top: 1px solid #e9ecef; padding-top: 24px;">
+                                <p style="color: #333333; font-size: 16px; margin: 0;">
+                                    Atenciosamente,
+                                </p>
+                                <p style="color: #333333; font-size: 16px; font-weight: 600; margin: 4px 0 0 0;">
+                                    Equipe ${customerName}
+                                </p>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+      `,
+    };
+    
+    const result = await getResend().emails.send(emailData);
+    const resultAny = result as any;
+    const emailId = resultAny?.id || resultAny?.data?.id || null;
+    
+    console.log(`[sendPasswordResetEmail] ✅ Email enviado com sucesso para ${to}`, {
+      emailId: emailId || 'sent',
+    });
+    
+    return { success: true, emailId };
+  } catch (error: any) {
+    console.error(`[sendPasswordResetEmail] ❌ Falha ao enviar email para ${to}:`, {
+      message: error?.message || error,
     });
     throw error;
   }

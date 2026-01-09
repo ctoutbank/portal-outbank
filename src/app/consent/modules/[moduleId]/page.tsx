@@ -2,7 +2,7 @@ import BaseHeader from "@/components/layout/base-header";
 import BaseBody from "@/components/layout/base-body";
 import ModuleConsentForm from "@/features/consent/components/module-consent-form";
 import { getModuleConsentDetails } from "@/features/consent/server/module-consent-details";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db";
@@ -24,13 +24,13 @@ async function ConsentModuleContent({
   moduleId: number;
   merchantId?: number;
 }) {
-  const user = await currentUser();
+  const sessionUser = await getCurrentUser();
   
-  if (!user) {
+  if (!sessionUser) {
     redirect("/sign-in");
   }
 
-  const userEmail = user.emailAddresses[0]?.emailAddress;
+  const userEmail = sessionUser.email;
   
   if (!userEmail) {
     redirect("/sign-in");
@@ -119,4 +119,3 @@ export default async function ConsentModulePage({ params, searchParams }: PagePr
     </>
   );
 }
-

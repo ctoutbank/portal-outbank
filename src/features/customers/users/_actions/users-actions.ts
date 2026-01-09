@@ -1,13 +1,12 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { clerkClient } from "@clerk/nextjs/server";
 import { generateSlug } from "@/lib/utils";
 import { hashPassword } from "@/app/utils/password";
 import { generateRandomPassword } from "@/features/customers/users/server/users";
 import { sendWelcomePasswordEmail } from "@/lib/send-email";
-import { users, profiles, customers, customerCustomization, file } from "../../../../../drizzle/schema";
-import { eq, ilike, and, or, isNull } from "drizzle-orm";
+import { users, profiles, customers, customerCustomization, file, userCustomers, salesAgents } from "../../../../../drizzle/schema";
+import { eq, ilike, and, or, isNull, sql } from "drizzle-orm";
 import { syncUserToOutbankOneClerk } from "@/lib/clerk-sync";
 
 interface TenantEmailData {
@@ -75,6 +74,7 @@ interface InsertUserInput {
   password?: string;
   idCustomer: number | null;
   active?: boolean;
+  canViewSensitiveData?: boolean;
 }
 
 type InsertUserResult = 
@@ -89,6 +89,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
     password,
     idCustomer,
     active = true,
+    canViewSensitiveData,
   } = data;
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -115,7 +116,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
     ultimos3Chars: '***' + finalPassword.substring(finalPassword.length - 3),
   });
 
-  // ✅ Validar que a senha tenha pelo menos 8 caracteres (requisito do Clerk)
+  // ✅ Validar que a senha tenha pelo menos 8 caracteres
   if (finalPassword.length < 8) {
     console.error(`[InsertUser] ❌ Senha muito curta: ${finalPassword.length} caracteres`);
     return {
@@ -128,23 +129,62 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
   const hashedPassword = hashPassword(finalPassword);
   console.log(`[InsertUser] 🔐 Hash da senha gerado: ${hashedPassword.substring(0, 20)}...`);
 
-  // Buscar o profile ADMIN dinamicamente
-  const adminProfile = await db
-    .select()
-    .from(profiles)
-    .where(ilike(profiles.name, "%ADMIN%"))
-    .limit(1)
-    .execute();
+  // Buscar o profile ISO Admin para usuários de ISO, ou ADMIN para outros
+  let idProfile: number;
+  let isIsoAdmin = false;
+  
+  if (idCustomer) {
+    // Usuário de ISO - usar categoria ISO Admin (categoryType = 'ISO_ADMIN')
+    const isoAdminProfile = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.categoryType, "ISO_ADMIN"))
+      .limit(1)
+      .execute();
 
-  if (!adminProfile || adminProfile.length === 0) {
-    return {
-      ok: false,
-      code: 'unknown',
-      message: 'Erro de configuração: Profile ADMIN não encontrado.'
-    };
+    if (!isoAdminProfile || isoAdminProfile.length === 0) {
+      // Fallback: buscar por nome exato "ISO Admin"
+      const isoAdminByName = await db
+        .select()
+        .from(profiles)
+        .where(ilike(profiles.name, "ISO Admin"))
+        .limit(1)
+        .execute();
+
+      if (!isoAdminByName || isoAdminByName.length === 0) {
+        return {
+          ok: false,
+          code: 'unknown',
+          message: 'Erro de configuração: Profile ISO Admin não encontrado.'
+        };
+      }
+      idProfile = isoAdminByName[0].id;
+      isIsoAdmin = true;
+    } else {
+      idProfile = isoAdminProfile[0].id;
+      isIsoAdmin = true;
+    }
+  } else {
+    // Usuário sem ISO - usar categoria ADMIN padrão (excluindo ISO Admin)
+    const adminProfile = await db
+      .select()
+      .from(profiles)
+      .where(and(
+        ilike(profiles.name, "%ADMIN%"),
+        sql`COALESCE(${profiles.categoryType}, '') != 'ISO_ADMIN'`
+      ))
+      .limit(1)
+      .execute();
+
+    if (!adminProfile || adminProfile.length === 0) {
+      return {
+        ok: false,
+        code: 'unknown',
+        message: 'Erro de configuração: Profile ADMIN não encontrado.'
+      };
+    }
+    idProfile = adminProfile[0].id;
   }
-
-  const idProfile = adminProfile[0].id;
 
   try {
     // ✅ Verificar se o usuário já existe no banco de dados PARA ESTE ISO (permite mesmo email em ISOs diferentes)
@@ -185,180 +225,21 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
       }
     }
 
-    // Verificar se o usuário existe no Clerk mas não no banco
-    const clerk = await clerkClient();
-    let clerkUser;
-    
-    try {
-      const clerkUsers = await clerk.users.getUserList({
-        emailAddress: [normalizedEmail]
-      });
-      
-      if (clerkUsers.data.length > 0) {
-        clerkUser = clerkUsers.data[0];
-        
-        // ✅ SEMPRE atualizar a senha no Clerk quando reutilizamos um usuário existente
-        // Isso garante que a senha exibida no painel admin funcione para login
-        console.log(`[InsertUser] Reutilizando usuário Clerk existente: ${clerkUser.id} para email: ${normalizedEmail}`);
-        console.log(`[InsertUser] Atualizando senha no Clerk para usuário reutilizado`);
-        
-        try {
-          console.log(`[InsertUser] 🔐 Atualizando senha no Clerk:`, {
-            clerkUserId: clerkUser.id,
-            senhaTamanho: finalPassword.length,
-            senhaPreview: finalPassword.substring(0, 2) + '***' + finalPassword.substring(finalPassword.length - 2),
-          });
-          await clerk.users.updateUser(clerkUser.id, {
-            password: finalPassword,
-            skipPasswordChecks: false, // Não pular verificações de senha
-          });
-          console.log(`[InsertUser] ✅ Senha atualizada com sucesso no Clerk para usuário: ${clerkUser.id}`);
-        } catch (updateError: any) {
-          console.error(`[InsertUser] ❌ Erro ao atualizar senha no Clerk:`, updateError?.message || updateError);
-          // Não continuar se falhar ao atualizar senha - é crítico para login
-          return {
-            ok: false,
-            code: 'clerk_update_error',
-            message: `Erro ao atualizar senha no Clerk: ${updateError?.message || 'Erro desconhecido'}`
-          };
-        }
-        
-        // Usuário existe no Clerk mas não no banco - criar registro no banco
-        const created = await db
-          .insert(users)
-          .values({
-            slug: generateSlug(),
-            dtinsert: new Date().toISOString(),
-            dtupdate: new Date().toISOString(),
-            active,
-            email: normalizedEmail,
-            idCustomer: idCustomer ?? null,
-            idClerk: clerkUser.id,
-            idProfile,
-            idAddress: null,
-            fullAccess: false,
-            hashedPassword,
-            initialPassword: finalPassword, // Store initial password for viewing
-          })
-          .returning({ id: users.id });
-
-        // ✅ Enviar email de boas-vindas quando reutiliza usuário
-        try {
-          const tenantData = await getTenantEmailData(idCustomer);
-          console.log("[InsertUser] 📧 Preparando envio de email para usuário reutilizado", {
-            email: normalizedEmail,
-            customerName: tenantData.customerName,
-            hasLogo: !!tenantData.logo,
-            hasLink: !!tenantData.link,
-          });
-          console.log(`[InsertUser] 📧 Enviando email com senha (usuário reutilizado):`, {
-            email: normalizedEmail,
-            senhaTamanho: finalPassword.length,
-            senhaPreview: finalPassword.substring(0, 2) + '***' + finalPassword.substring(finalPassword.length - 2),
-            customerName: tenantData.customerName,
-          });
-          await sendWelcomePasswordEmail(
-            normalizedEmail,
-            finalPassword,
-            tenantData.logo,
-            tenantData.customerName,
-            tenantData.link
-          );
-          console.log("[InsertUser] ✅ Email de boas-vindas enviado com sucesso para usuário reutilizado", {
-            email: normalizedEmail,
-            customerName: tenantData.customerName,
-          });
-        } catch (emailError: any) {
-          console.error("[InsertUser] ❌ ERRO CRÍTICO ao enviar email de boas-vindas:", {
-            email: normalizedEmail,
-            error: emailError?.message || emailError,
-            stack: emailError?.stack,
-            code: emailError?.code,
-            statusCode: emailError?.statusCode,
-          });
-          // Não bloquear criação do usuário se email falhar, mas logar detalhadamente
-        }
-
-        // Sincronizar usuario com a instancia do Clerk do outbank-one (ISOs)
-        // Isso permite que o usuario faca login nos ISOs com as mesmas credenciais
-        if (idCustomer) {
-          console.log(`[InsertUser] Sincronizando usuario reutilizado com outbank-one Clerk...`);
-          const syncResult = await syncUserToOutbankOneClerk({
-            email: normalizedEmail,
-            firstName,
-            lastName,
-            password: finalPassword,
-          });
-          if (syncResult.success) {
-            console.log(`[InsertUser] Sincronizacao com outbank-one concluida: ${syncResult.action}`);
-          } else {
-            console.warn(`[InsertUser] Falha na sincronizacao com outbank-one: ${syncResult.error}`);
-          }
-        }
-
-        return {
-          ok: true,
-          userId: created[0].id,
-          reused: true
-        };
-      }
-    } catch (clerkError) {
-      console.log("Erro ao buscar usuário no Clerk, continuando com criação:", clerkError);
-    }
-
-    // Criação no Clerk (usuário não existe em nenhum lugar)
-    if (!clerkUser) {
-      console.log(`[InsertUser] Criando novo usuário no Clerk para email: ${normalizedEmail}`);
-      console.log(`[InsertUser] Senha gerada/fornecida: ${finalPassword.length} caracteres`);
-      
-      try {
-        console.log(`[InsertUser] 🔐 Criando usuário no Clerk com senha:`, {
-          email: normalizedEmail,
-          senhaTamanho: finalPassword.length,
-          senhaPreview: finalPassword.substring(0, 2) + '***' + finalPassword.substring(finalPassword.length - 2),
-        });
-        clerkUser = await clerk.users.createUser({
-          firstName,
-          lastName,
-          emailAddress: [normalizedEmail],
-          password: finalPassword, // Define a senha no Clerk para permitir login
-          skipPasswordChecks: false, // Não pular verificações de senha (pwned, etc)
-          publicMetadata: {
-            isFirstLogin: true,
-          },
-        });
-        console.log(`[InsertUser] ✅ Usuário criado com sucesso no Clerk:`, {
-          clerkUserId: clerkUser.id,
-          email: normalizedEmail,
-          senhaDefinida: true,
-        });
-      } catch (createError: any) {
-        console.error(`[InsertUser] ❌ Erro ao criar usuário no Clerk:`, createError?.message || createError);
-        // Verificar se é erro de senha comprometida
-        if (createError?.errors?.some((e: any) => e.code === "form_password_pwned")) {
-          return {
-            ok: false,
-            code: 'password_pwned',
-            message: 'Senha comprometida: Essa senha foi encontrada em vazamentos de dados. Por favor, escolha uma senha mais segura.'
-          };
-        }
-        return {
-          ok: false,
-          code: 'clerk_create_error',
-          message: `Erro ao criar usuário no Clerk: ${createError?.message || 'Erro desconhecido'}`
-        };
-      }
-    }
-
-    // Criação no banco
+    // Criação no banco (sem Clerk)
     console.log(`[InsertUser] 💾 Salvando usuário no banco de dados:`, {
       email: normalizedEmail,
-      idClerk: clerkUser.id,
       idCustomer: idCustomer ?? null,
       temHashedPassword: !!hashedPassword,
       temInitialPassword: !!finalPassword,
       initialPasswordTamanho: finalPassword.length,
     });
+    // ISO Admin deve ter fullAccess=true para poderes totais dentro do ISO
+    // Apenas usuários com categoria ISO_ADMIN recebem fullAccess, não todos com idCustomer
+    const shouldHaveFullAccess = isIsoAdmin;
+    
+    // Respeitar o valor do formulário para canViewSensitiveData, com fallback para true se for ISO Admin
+    const shouldViewSensitiveData = canViewSensitiveData !== undefined ? canViewSensitiveData : isIsoAdmin;
+    
     const created = await db
       .insert(users)
       .values({
@@ -368,73 +249,117 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         active,
         email: normalizedEmail,
         idCustomer: idCustomer ?? null,
-        idClerk: clerkUser.id,
+        idClerk: null,
         idProfile,
         idAddress: null,
-        fullAccess: false,
+        fullAccess: shouldHaveFullAccess,
+        canViewSensitiveData: shouldViewSensitiveData,
         hashedPassword,
-        initialPassword: finalPassword, // Store initial password for viewing
+        initialPassword: finalPassword,
       })
       .returning({ id: users.id });
     console.log(`[InsertUser] ✅ Usuário salvo no banco:`, {
       userId: created[0].id,
       email: normalizedEmail,
+      fullAccess: shouldHaveFullAccess,
+      isIsoAdmin,
     });
-
-    // Sincronizar usuario com a instancia do Clerk do outbank-one (ISOs)
-    // Isso permite que o usuario faca login nos ISOs com as mesmas credenciais
-    if (idCustomer) {
-      console.log(`[InsertUser] Sincronizando novo usuario com outbank-one Clerk...`);
-      const syncResult = await syncUserToOutbankOneClerk({
+    
+    // ✅ Salvar firstName e lastName na tabela sales_agents para exibição
+    try {
+      await db.insert(salesAgents).values({
+        slug: generateSlug(),
+        active: true,
+        dtinsert: new Date().toISOString(),
+        dtupdate: new Date().toISOString(),
+        firstName: firstName,
+        lastName: lastName,
         email: normalizedEmail,
+        idUsers: created[0].id,
+      });
+      console.log(`[InsertUser] ✅ Dados de nome salvos em sales_agents:`, {
+        userId: created[0].id,
         firstName,
         lastName,
-        password: finalPassword,
       });
-      if (syncResult.success) {
-        console.log(`[InsertUser] Sincronizacao com outbank-one concluida: ${syncResult.action}`);
-      } else {
-        console.warn(`[InsertUser] Falha na sincronizacao com outbank-one: ${syncResult.error}`);
+    } catch (salesAgentError: any) {
+      console.error(`[InsertUser] ⚠️ Erro ao salvar em sales_agents:`, salesAgentError);
+    }
+    
+    // ✅ Criar vínculo user_customers para usuários de ISO Admin
+    if (idCustomer && isIsoAdmin) {
+      try {
+        // Verificar se já existe um vínculo para evitar erros de chave duplicada em retries
+        const existingLink = await db
+          .select()
+          .from(userCustomers)
+          .where(and(
+            eq(userCustomers.idUser, created[0].id),
+            eq(userCustomers.idCustomer, idCustomer)
+          ))
+          .limit(1);
+        
+        if (existingLink.length === 0) {
+          await db.insert(userCustomers).values({
+            idUser: created[0].id,
+            idCustomer: idCustomer,
+            active: true,
+            isPrimary: true,
+          });
+          console.log(`[InsertUser] ✅ Vínculo user_customers criado:`, {
+            userId: created[0].id,
+            customerId: idCustomer,
+          });
+        } else {
+          console.log(`[InsertUser] ℹ️ Vínculo user_customers já existe:`, {
+            userId: created[0].id,
+            customerId: idCustomer,
+          });
+        }
+      } catch (linkError: any) {
+        console.error(`[InsertUser] ⚠️ Erro ao criar vínculo user_customers:`, linkError);
+        // Não bloquear criação do usuário se falhar o vínculo
       }
     }
 
-    // ✅ Enviar email de boas-vindas usando função helper
-    try {
-      const tenantData = await getTenantEmailData(idCustomer);
-      console.log("[InsertUser] 📧 Preparando envio de email para novo usuário", {
-        email: normalizedEmail,
-        customerName: tenantData.customerName,
-        hasLogo: !!tenantData.logo,
-        hasLink: !!tenantData.link,
-      });
-      console.log(`[InsertUser] 📧 Enviando email com senha:`, {
-        email: normalizedEmail,
-        senhaTamanho: finalPassword.length,
-        senhaPreview: finalPassword.substring(0, 2) + '***' + finalPassword.substring(finalPassword.length - 2),
-        customerName: tenantData.customerName,
-      });
-      await sendWelcomePasswordEmail(
-        normalizedEmail,
-        finalPassword,
-        tenantData.logo,
-        tenantData.customerName,
-        tenantData.link
-      );
-      console.log("[InsertUser] ✅ Email de boas-vindas enviado com sucesso para novo usuário", {
-        email: normalizedEmail,
-        customerName: tenantData.customerName,
-      });
-    } catch (emailError: any) {
-      console.error("[InsertUser] ❌ ERRO CRÍTICO ao enviar email de boas-vindas:", {
-        email: normalizedEmail,
-        error: emailError?.message || emailError,
-        stack: emailError?.stack,
-        code: emailError?.code,
-        statusCode: emailError?.statusCode,
-        response: emailError?.response,
-      });
-      // Não bloquear criação do usuário se email falhar, mas logar detalhadamente
-    }
+    // Sincronizar usuario com outbank-one e enviar email em background (não-bloqueante)
+    // Fire-and-forget com wrapper try/catch para evitar unhandled rejections
+    void (async () => {
+      try {
+        // Sincronizar com outbank-one
+        if (idCustomer) {
+          try {
+            const syncResult = await syncUserToOutbankOneClerk({
+              email: normalizedEmail,
+              firstName,
+              lastName,
+              password: finalPassword,
+            });
+            if (!syncResult.success) {
+              console.warn(`[InsertUser] Falha na sincronizacao com outbank-one: ${syncResult.error}`);
+            }
+          } catch (syncError) {
+            console.error("[InsertUser] Erro na sincronizacao:", syncError);
+          }
+        }
+
+        // Enviar email de boas-vindas
+        try {
+          const tenantData = await getTenantEmailData(idCustomer);
+          await sendWelcomePasswordEmail(
+            normalizedEmail,
+            finalPassword,
+            tenantData.logo,
+            tenantData.customerName,
+            tenantData.link
+          );
+        } catch (emailError: any) {
+          console.error("[InsertUser] Erro ao enviar email:", emailError?.message || emailError);
+        }
+      } catch (backgroundError) {
+        console.error("[InsertUser] Erro inesperado em background task:", backgroundError);
+      }
+    })();
 
     return {
       ok: true,
@@ -443,44 +368,6 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
     };
   } catch (error: unknown) {
     console.error("Erro ao criar usuário:", error);
-
-    // Tratamento específico para erros do Clerk
-    if (error && typeof error === "object" && "errors" in error) {
-      const clerkError = error as {
-        errors: Array<{ code: string; message: string }>;
-      };
-
-      // Verificar se é erro de email duplicado no Clerk
-      const duplicateEmailError = clerkError.errors.find(
-        (err) =>
-          err.code === "email_address_already_exists" ||
-          err.message.includes("already exists") ||
-          err.message.includes("duplicate")
-      );
-
-      if (duplicateEmailError) {
-        return {
-          ok: false,
-          code: 'email_in_use',
-          message: 'Este e-mail já está cadastrado no sistema. Por favor, utilize outro e-mail.'
-        };
-      }
-
-      // Verificar outros erros comuns do Clerk
-      const invalidEmailError = clerkError.errors.find(
-        (err) =>
-          err.code === "form_identifier_exists" ||
-          err.message.includes("identifier")
-      );
-
-      if (invalidEmailError) {
-        return {
-          ok: false,
-          code: 'invalid_email',
-          message: 'E-mail inválido ou já está em uso. Por favor, verifique o e-mail informado.'
-        };
-      }
-    }
 
     // Se for um erro de string simples, verificar se contém informações sobre duplicação
     if (
@@ -524,46 +411,49 @@ export async function getUsersByCustomer(customerId: number) {
   return db.select().from(users).where(
     and(
       eq(users.idCustomer, customerId),
-      or(eq(users.isInvisible, false), isNull(users.isInvisible))
+      or(eq(users.isInvisible, false), isNull(users.isInvisible)),
+      eq(users.active, true)
     )
   );
 }
 
-export async function getUsersWithClerk(customerId: number) {
+export async function getUsersByCustomerId(customerId: number) {
   const dbUsers = await db
-    .select()
+    .select({
+      id: users.id,
+      slug: users.slug,
+      dtinsert: users.dtinsert,
+      dtupdate: users.dtupdate,
+      active: users.active,
+      idClerk: users.idClerk,
+      idCustomer: users.idCustomer,
+      idProfile: users.idProfile,
+      fullAccess: users.fullAccess,
+      idAddress: users.idAddress,
+      hashedPassword: users.hashedPassword,
+      email: users.email,
+      initialPassword: users.initialPassword,
+      isInvisible: users.isInvisible,
+      userType: users.userType,
+      canViewSensitiveData: users.canViewSensitiveData,
+      firstName: salesAgents.firstName,
+      lastName: salesAgents.lastName,
+    })
     .from(users)
+    .leftJoin(salesAgents, eq(salesAgents.idUsers, users.id))
     .where(
       and(
         eq(users.idCustomer, customerId),
-        or(eq(users.isInvisible, false), isNull(users.isInvisible))
+        or(eq(users.isInvisible, false), isNull(users.isInvisible)),
+        eq(users.active, true)
       )
     );
 
-  const result = await Promise.all(
-    dbUsers.map(async (user) => {
-      let firstName = "";
-      let lastName = "";
-
-      if (user.idClerk) {
-        try {
-          const clerkUser = await (
-            await clerkClient()
-          ).users.getUser(user.idClerk);
-          firstName = clerkUser.firstName ?? "";
-          lastName = clerkUser.lastName ?? "";
-        } catch (error) {
-          console.error("Erro ao buscar usuário no Clerk:", error);
-        }
-      }
-
-      return {
-        ...user,
-        firstName,
-        lastName,
-      };
-    })
-  );
+  const result = dbUsers.map((user) => ({
+    ...user,
+    firstName: user.firstName || "",
+    lastName: user.lastName || "",
+  }));
 
   return result;
 }

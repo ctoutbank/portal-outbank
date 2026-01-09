@@ -1,11 +1,10 @@
 "use server";
 import { db } from "@/db/drizzle";
-import { customers, customerCustomization, adminCustomers, customerModules, modules, users } from "../../../../drizzle/schema";
+import { customers, customerCustomization, adminCustomers, customerModules, users, salesAgents } from "../../../../drizzle/schema";
 import { and, asc, count, desc, eq, ilike, or, sql, inArray } from "drizzle-orm";
 import { CustomerSchema } from "../schema/schema";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
 import { getCustomerModuleSlugs } from "@/lib/modules/customer-modules";
-import { clerkClient } from "@clerk/nextjs/server";
 
 export type CustomersInsert = typeof customers.$inferInsert;
 export type CustomersDetail = typeof customers.$inferSelect;
@@ -44,40 +43,34 @@ export async function getCustomers(
     whereConditions.push(ilike(customers.customerId, `%${customerId}%`));
   }
 
-  // Filtro por usuário: buscar usuários no Clerk e filtrar ISOs pelos idCustomer
+  // Filtro por usuário: buscar no banco local (sem Clerk)
   if (userName && userName.trim() !== "") {
     try {
-      const clerk = await clerkClient();
-      const clerkUsers = await clerk.users.getUserList({
-        query: userName.trim(),
-        limit: 100, // Limite razoável para busca
-      });
+      // Buscar usuários pelo nome em sales_agents
+      const dbUsers = await db
+        .select({ idCustomer: users.idCustomer })
+        .from(users)
+        .leftJoin(salesAgents, eq(salesAgents.idUsers, users.id))
+        .where(
+          or(
+            ilike(salesAgents.firstName, `%${userName.trim()}%`),
+            ilike(salesAgents.lastName, `%${userName.trim()}%`),
+            ilike(users.email, `%${userName.trim()}%`)
+          )
+        );
 
-      if (clerkUsers.data && clerkUsers.data.length > 0) {
-        const clerkIds = clerkUsers.data.map((user) => user.id);
-        
-        // Buscar idCustomer dos usuários encontrados
-        const dbUsers = await db
-          .select({ idCustomer: users.idCustomer })
-          .from(users)
-          .where(inArray(users.idClerk, clerkIds));
+      const customerIds = dbUsers
+        .map((u) => u.idCustomer)
+        .filter((id): id is number => id !== null && id !== undefined);
 
-        const customerIds = dbUsers
-          .map((u) => u.idCustomer)
-          .filter((id): id is number => id !== null && id !== undefined);
-
-        if (customerIds.length > 0) {
-          whereConditions.push(inArray(customers.id, customerIds));
-        } else {
-          // Se não encontrou nenhum usuário com idCustomer, retornar lista vazia
-          whereConditions.push(sql`1 = 0`);
-        }
+      if (customerIds.length > 0) {
+        whereConditions.push(inArray(customers.id, customerIds));
       } else {
-        // Se não encontrou usuários no Clerk, retornar lista vazia
+        // Se não encontrou nenhum usuário com idCustomer, retornar lista vazia
         whereConditions.push(sql`1 = 0`);
       }
     } catch (error) {
-      console.error("Erro ao buscar usuários no Clerk:", error);
+      console.error("Erro ao buscar usuários:", error);
       // Em caso de erro, não aplicar filtro de usuário
     }
   }
@@ -104,8 +97,6 @@ export async function getCustomers(
       whereConditions.push(eq(customers.id, userInfo.idCustomer));
     }
   }
-
-  // whereConditions.push(eq(customers.isActive, true));
 
   const orderByClauses = [desc(customers.isActive)];
   
@@ -261,44 +252,23 @@ export async function deleteCustomersWithRelations(ids: number[]): Promise<{ del
 
   for (const id of ids) {
     try {
-      // 1. Buscar usuários do ISO para deletar do Clerk
-      const isoUsers = await db
-        .select({ id: users.id, idClerk: users.idClerk })
-        .from(users)
-        .where(eq(users.idCustomer, id));
-
-      // 2. Deletar usuários do Clerk
-      for (const user of isoUsers) {
-        if (user.idClerk) {
-          try {
-            const clerk = await clerkClient();
-            await clerk.users.deleteUser(user.idClerk);
-            console.log(`[deleteCustomersWithRelations] Usuário ${user.idClerk} deletado do Clerk`);
-          } catch (clerkError: any) {
-            if (clerkError?.status !== 404) {
-              console.warn(`[deleteCustomersWithRelations] Erro ao deletar usuário ${user.idClerk} do Clerk:`, clerkError);
-            }
-          }
-        }
-      }
-
-      // 3. Deletar usuários do banco
+      // 1. Deletar usuários do banco
       await db.delete(users).where(eq(users.idCustomer, id));
       console.log(`[deleteCustomersWithRelations] Usuários do ISO ${id} deletados`);
 
-      // 4. Deletar customizações
+      // 2. Deletar customizações
       await db.delete(customerCustomization).where(eq(customerCustomization.customerId, id));
       console.log(`[deleteCustomersWithRelations] Customização do ISO ${id} deletada`);
 
-      // 5. Deletar admin_customers
+      // 3. Deletar admin_customers
       await db.delete(adminCustomers).where(eq(adminCustomers.idCustomer, id));
       console.log(`[deleteCustomersWithRelations] admin_customers do ISO ${id} deletados`);
 
-      // 6. Deletar customer_modules
+      // 4. Deletar customer_modules
       await db.delete(customerModules).where(eq(customerModules.idCustomer, id));
       console.log(`[deleteCustomersWithRelations] customer_modules do ISO ${id} deletados`);
 
-      // 7. Finalmente, deletar o customer
+      // 5. Finalmente, deletar o customer
       await db.delete(customers).where(eq(customers.id, id));
       console.log(`[deleteCustomersWithRelations] ISO ${id} deletado com sucesso`);
 

@@ -1,6 +1,6 @@
 "use server";
 
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db/drizzle";
 import { users } from "../../../../drizzle/schema";
 import { eq } from "drizzle-orm";
@@ -8,9 +8,9 @@ import { hashPassword } from "@/app/utils/password";
 
 export async function updatePasswordAction(newPassword: string) {
   try {
-    const { userId } = await auth();
+    const sessionUser = await getCurrentUser();
     
-    if (!userId) {
+    if (!sessionUser) {
       return { success: false, error: "Usuário não autenticado" };
     }
 
@@ -18,29 +18,17 @@ export async function updatePasswordAction(newPassword: string) {
       return { success: false, error: "A senha deve ter pelo menos 8 caracteres" };
     }
 
-    const clerk = await clerkClient();
-    
-    // Atualizar senha e metadata no Clerk
-    await clerk.users.updateUser(userId, {
-      password: newPassword,
-      publicMetadata: {
-        isFirstLogin: false,
-      },
-    });
-
-    // ✅ Atualizar senha no banco de dados também
-    // Atualiza TODOS os registros do usuário (pode ter múltiplos ISOs)
+    // Atualizar senha no banco de dados
     const hashedPassword = hashPassword(newPassword);
     
-    // Buscar todos os registros do usuário pelo idClerk e atualizar senha
     await db
       .update(users)
       .set({
         hashedPassword: hashedPassword,
-        initialPassword: newPassword, // Atualizar senha inicial também
+        initialPassword: newPassword,
         dtupdate: new Date().toISOString(),
       })
-      .where(eq(users.idClerk, userId));
+      .where(eq(users.id, sessionUser.id));
 
     return { success: true };
   } catch (error: any) {
@@ -51,4 +39,3 @@ export async function updatePasswordAction(newPassword: string) {
     };
   }
 }
-

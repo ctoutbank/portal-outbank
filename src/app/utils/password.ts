@@ -19,3 +19,8 @@ export const matchPassword = (password: string, hash: string): boolean => {
     const testHash = scryptSync(password, salt, 32).toString("hex");
     return testHash === originalHash;
 };
+
+/**
+ * Alias para matchPassword - para compatibilidade com código existente
+ */
+export const comparePassword = matchPassword;

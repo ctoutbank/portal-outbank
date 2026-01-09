@@ -1560,12 +1560,19 @@ export const customerCustomization = pgTable("customer_customization", {
 	name: varchar({ length: 100 }).notNull(),
 	primaryColor: varchar("primary_color", { length: 100 }),
 	secondaryColor: varchar("secondary_color", { length: 100 }),
+	// Cores de personalização do login
+	loginButtonColor: varchar("login_button_color", { length: 100 }),
+	loginButtonTextColor: varchar("login_button_text_color", { length: 100 }),
+	loginTitleColor: varchar("login_title_color", { length: 100 }),
+	loginTextColor: varchar("login_text_color", { length: 100 }),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 	imageUrl: varchar("image_url", { length: 100 }),
 	loginImageUrl: varchar("login_image_url", { length: 100 }),
 	faviconUrl: varchar("favicon_url", { length: 100 }),
 	emailImageUrl: varchar("email_image_url", { length: 100 }),
+	// Ícone do menu/sidebar (36x36px)
+	menuIconUrl: varchar("menu_icon_url", { length: 100 }),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	customerId: bigint("customer_id", { mode: "number" }),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
@@ -1575,6 +1582,7 @@ export const customerCustomization = pgTable("customer_customization", {
 	loginImageFileId: bigint("login_image_file_id", { mode: "number" }),
 	faviconFileId: bigint("favicon_file_id", { mode: "number" }),
 	emailImageFileId: bigint("email_image_file_id", { mode: "number" }),
+	menuIconFileId: bigint("menu_icon_file_id", { mode: "number" }),
 }, (table) => [
 	unique("tenants_slug_key").on(table.slug),
 ]);

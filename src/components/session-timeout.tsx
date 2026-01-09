@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
+import { useUserCache } from "@/hooks/use-user-cache";
 import { useIdleTimer } from "react-idle-timer";
 import { useEffect } from "react";
 
@@ -9,19 +9,19 @@ interface SessionTimeoutProps {
 }
 
 export default function SessionTimeout({ children }: SessionTimeoutProps) {
-  const { signOut, isSignedIn } = useAuth();
+  const { user, logout } = useUserCache();
+  const isSignedIn = !!user;
 
   const handleOnIdle = () => {
     if (isSignedIn) {
-      signOut();
+      logout();
     }
   };
 
   const { getRemainingTime } = useIdleTimer({
-    timeout: 1000 * 60 * 2, // 2 minutes in milliseconds
+    timeout: 1000 * 60 * 20, // 20 minutes in milliseconds
     onIdle: handleOnIdle,
     debounce: 500,
-    //throttle: 500,
   });
 
   useEffect(() => {

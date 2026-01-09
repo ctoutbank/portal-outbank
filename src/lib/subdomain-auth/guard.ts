@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { validateUserAccessBySubdomain } from "./domain";
 import { extractSubdomain } from "./index";
@@ -10,14 +10,13 @@ import { extractSubdomain } from "./index";
  * @throws Redirects to /unauthorized if user doesn't have access
  */
 export async function requireTenantAccess(hostname: string) {
-  const { userId } = await auth();
+  const sessionUser = await getCurrentUser();
   
-  if (!userId) {
+  if (!sessionUser) {
     redirect("/auth/sign-in");
   }
 
-  const user = await currentUser();
-  const email = user?.emailAddresses[0]?.emailAddress;
+  const email = sessionUser.email;
 
   if (!email) {
     redirect("/unauthorized");

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUserCache } from "@/lib/user-cache";
 import {
   Dialog,
   DialogContent,
@@ -68,7 +68,7 @@ function isLightColor(hex: string): boolean {
 }
 
 export default function PasswordCreatePage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoading: userLoading } = useUserCache();
   const router = useRouter();
   const [customization, setCustomization] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,10 +94,10 @@ export default function PasswordCreatePage() {
       }
     };
 
-    if (isLoaded) {
+    if (!userLoading) {
       loadCustomization();
     }
-  }, [isLoaded]);
+  }, [userLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,7 +131,7 @@ export default function PasswordCreatePage() {
     }
   };
 
-  if (!isLoaded || isLoading) {
+  if (userLoading || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -222,4 +222,3 @@ export default function PasswordCreatePage() {
     </div>
   );
 }
-

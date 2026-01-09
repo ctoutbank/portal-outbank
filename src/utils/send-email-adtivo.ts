@@ -1,18 +1,18 @@
 "use server";
 import { getResend } from "@/lib/resend";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth";
 import fs from "fs/promises";
 import path from "path";
 
 const EMAIL_FROM = process.env.EMAIL_FROM || "noreply@consolle.one";
 
 export async function getUserEmail() {
-  const user = await currentUser();
-  console.log("user", user);
-  if (!user) {
+  const sessionUser = await getCurrentUser();
+  console.log("sessionUser", sessionUser);
+  if (!sessionUser || !sessionUser.email) {
     throw new Error("User not found");
   }
-  return user.emailAddresses[0].emailAddress;
+  return sessionUser.email;
 }
 
 export async function sendPricingSolicitationEmail(to: string) {

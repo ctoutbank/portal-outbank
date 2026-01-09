@@ -5,7 +5,7 @@ import {
 } from "@/utils/send-email-adtivo";
 import { generateSlug } from "@/lib/utils";
 import { db } from "@/db/drizzle";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth";
 import { and, count, desc, eq, ne, sql } from "drizzle-orm";
 import {
   customers,
@@ -74,7 +74,7 @@ export async function getPricingSolicitations(
   const offset = (page - 1) * pageSize;
   const limit = pageSize;
   const conditions = [];
-  const user = await currentUser();
+  const sessionUser = await getCurrentUser();
 
   if (cnae) {
     conditions.push(eq(solicitationFee.cnae, cnae));
@@ -86,7 +86,7 @@ export async function getPricingSolicitations(
   const userDB = await db
     .select({ customersId: users.idCustomer })
     .from(users)
-    .where(eq(users.idClerk, user?.id || ""));
+    .where(eq(users.id, sessionUser?.id || 0));
 
   conditions.push(eq(solicitationFee.idCustomers, userDB[0].customersId || 0));
   conditions.push(ne(solicitationFee.status, "SEND_DOCUMENTS"));
@@ -210,12 +210,12 @@ export async function getPricingSolicitationById(
 export async function insertPricingSolicitation(
   pricingSolicitation: PricingSolicitationForm
 ) {
-  const user = await currentUser();
+  const sessionUser = await getCurrentUser();
 
   const userDB = await db
     .select({ customersId: users.idCustomer })
     .from(users)
-    .where(eq(users.idClerk, user?.id || ""));
+    .where(eq(users.id, sessionUser?.id || 0));
 
   const customerId = await db
     .select({ id: customers.id })

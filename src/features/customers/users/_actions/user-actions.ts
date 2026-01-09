@@ -3,14 +3,12 @@
 import { hashPassword } from "@/app/utils/password";
 import { db } from "@/db/drizzle";
 import { generateSlug } from "@/lib/utils";
-import { clerkClient } from "@clerk/nextjs/server";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import {
   adminCustomers,
   customerCustomization,
   customers,
-  file,
   profiles,
   reportExecution,
   userMerchants,
@@ -99,13 +97,6 @@ export async function updateUserWithClerk(id: number, data: UserInsert) {
       throw new Error("Usuário não encontrado");
     }
 
-    const clerk = await clerkClient();
-
-    await clerk.users.updateUser(existingUser[0].idClerk || "", {
-      firstName: data.firstName,
-      lastName: data.lastName,
-    });
-
     const profile = await db
       .select()
       .from(profiles)
@@ -138,16 +129,7 @@ export async function getUserDetailWithClerk(
       .where(eq(users.id, userId))
       .limit(1);
 
-    if (!user || user.length === 0 || !user[0].idClerk) {
-      return null;
-    }
-
-    const clerk = await clerkClient();
-
-    // Obter detalhes do usuário do Clerk
-    const clerkUser = await clerk.users.getUser(user[0].idClerk);
-
-    if (!clerkUser) {
+    if (!user || user.length === 0) {
       return null;
     }
 
@@ -161,19 +143,19 @@ export async function getUserDetailWithClerk(
       .filter((relation) => relation.idMerchant !== null)
       .map((relation) => relation.idMerchant!.toString());
 
-    // Compor o objeto UserDetailForm
+    // Compor o objeto UserDetailForm usando dados do banco
     const userDetailForm: UserDetailForm = {
       ...user[0],
-      firstName: clerkUser.firstName || "",
-      lastName: clerkUser.lastName || "",
-      email: clerkUser.emailAddresses[0]?.emailAddress || "",
+      firstName: user[0].slug?.split(" ")[0] || "",
+      lastName: user[0].slug?.split(" ").slice(1).join(" ") || "",
+      email: user[0].email || "",
       selectedMerchants,
       fullAccess: user[0].fullAccess || false,
     };
 
     return userDetailForm;
   } catch (error) {
-    console.error("Erro ao buscar detalhes do usuário com Clerk:", error);
+    console.error("Erro ao buscar detalhes do usuário:", error);
     return null;
   }
 }
@@ -207,12 +189,12 @@ export async function InsertUser(data: InsertUserInput) {
         ? password
         : await generateRandomPassword();
 
-    // ✅ Validar que a senha tenha pelo menos 8 caracteres (requisito do Clerk)
+    // ✅ Validar que a senha tenha pelo menos 8 caracteres
     if (finalPassword.length < 8) {
       throw new Error("A senha deve ter pelo menos 8 caracteres.");
     }
 
-    const hashedPassword = hashPassword(finalPassword);
+    const hashedPwd = hashPassword(finalPassword);
 
     // Buscar perfil: se fornecido, usar; senão, buscar ADMIN como padrão
     let idProfile = providedIdProfile;
@@ -234,50 +216,53 @@ export async function InsertUser(data: InsertUserInput) {
       idProfile = adminProfile[0].id;
     }
 
-    // Criação no Clerk
-    const clerk = await clerkClient(); // chamar a função e obter o cliente
-    console.log(`[InsertUser] Criando novo usuário no Clerk para email: ${email}`);
-    console.log(`[InsertUser] Senha gerada/fornecida: ${finalPassword.length} caracteres`);
-    
-    let clerkUser;
-    try {
-      clerkUser = await clerk.users.createUser({
-        firstName,
-        lastName,
-        emailAddress: [email],
-        password: finalPassword, // ✅ Define a senha no Clerk para permitir login
-        publicMetadata: {
-          isFirstLogin: true,
-        },
-      });
-      console.log(`[InsertUser] ✅ Usuário criado com sucesso no Clerk: ${clerkUser.id}`);
-    } catch (createError: any) {
-      console.error(`[InsertUser] ❌ Erro ao criar usuário no Clerk:`, createError?.message || createError);
-      // Verificar se é erro de senha comprometida
-      if (createError?.errors?.some((e: any) => e.code === "form_password_pwned")) {
-        throw new Error("Senha comprometida: Essa senha foi encontrada em vazamentos de dados. Por favor, escolha uma senha mais segura.");
+    // Verificar se o email já existe para este ISO
+    if (idCustomer) {
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(
+          and(
+            eq(users.email, email),
+            eq(users.idCustomer, idCustomer)
+          )
+        )
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        throw new Error("Usuário já existe com este email para este ISO");
       }
-      throw new Error(`Erro ao criar usuário no Clerk: ${createError?.message || 'Erro desconhecido'}`);
+    } else {
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        throw new Error("Usuário já existe com este email");
+      }
     }
 
     // Criação no banco
     const created = await db
       .insert(users)
       .values({
-        slug: generateSlug(),
+        slug: `${firstName} ${lastName}`,
         dtinsert: new Date().toISOString(),
         dtupdate: new Date().toISOString(),
         active,
         email,
         idCustomer: idCustomer ?? null,
-        idClerk: clerkUser.id,
-        idProfile, // usa o perfil fornecido ou ADMIN padrão
+        idClerk: null, // Não usa mais Clerk
+        idProfile,
         idAddress: null,
-        fullAccess, // usa o fullAccess fornecido ou false padrão
-        hashedPassword,
-        initialPassword: finalPassword, // Store initial password for viewing
+        fullAccess,
+        hashedPassword: hashedPwd,
+        initialPassword: finalPassword,
       })
       .returning({ id: users.id });
+
     const domain = await getCustomizationByCustomerId(idCustomer ?? 0);
 
     // ✅ Buscar logo de email (emailImageUrl) ou logo padrão
@@ -324,36 +309,6 @@ export async function InsertUser(data: InsertUserInput) {
     return created[0].id;
   } catch (error: unknown) {
     console.error("Erro ao criar usuário:", error);
-
-    // Tratamento específico para erros do Clerk
-    if (error && typeof error === "object" && "errors" in error) {
-      const clerkError = error as {
-        errors: Array<{ code: string; message: string }>;
-      };
-
-      // Verificar se é erro de email duplicado no Clerk
-      const duplicateEmailError = clerkError.errors.find(
-        (err) =>
-          err.code === "email_address_already_exists" ||
-          err.message.includes("already exists") ||
-          err.message.includes("duplicate")
-      );
-
-      if (duplicateEmailError) {
-        throw new Error("Usuário já existe com este email");
-      }
-
-      // Verificar outros erros comuns do Clerk
-      const invalidEmailError = clerkError.errors.find(
-        (err) =>
-          err.code === "form_identifier_exists" ||
-          err.message.includes("identifier")
-      );
-
-      if (invalidEmailError) {
-        throw new Error("Email inválido ou já está em uso");
-      }
-    }
 
     // Se for um erro de string simples, verificar se contém informações sobre duplicação
     if (
@@ -407,30 +362,18 @@ export async function getUsersWithClerk(customerId: number) {
       )
     );
 
-  const result = await Promise.all(
-    dbUsers.map(async (user) => {
-      let firstName = "";
-      let lastName = "";
+  const result = dbUsers.map((user) => {
+    // Extrair firstName e lastName do slug
+    const nameParts = (user.slug || "").split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
 
-      if (user.idClerk) {
-        try {
-          const clerkUser = await (
-            await clerkClient()
-          ).users.getUser(user.idClerk);
-          firstName = clerkUser.firstName ?? "";
-          lastName = clerkUser.lastName ?? "";
-        } catch (error) {
-          console.error("Erro ao buscar usuário no Clerk:", error);
-        }
-      }
-
-      return {
-        ...user,
-        firstName,
-        lastName,
-      };
-    })
-  );
+    return {
+      ...user,
+      firstName,
+      lastName,
+    };
+  });
 
   return result;
 }
@@ -553,15 +496,12 @@ export async function deleteUser(id: number): Promise<boolean> {
       throw new Error("Usuário não encontrado");
     }
 
-    const userToDelete = existingUser[0];
-
     // 1. Deletar relacionamentos primeiro (para evitar erro de foreign key)
     // 1.1. Deletar user_merchants
     try {
       await db.delete(userMerchants).where(eq(userMerchants.idUser, id));
       console.log(`[deleteUser] ✅ Relacionamentos user_merchants deletados para usuário ID: ${id}`);
     } catch (merchantError: any) {
-      // Se a tabela não existir ou não houver relacionamentos, continuar
       if (merchantError?.code !== '42P01' && !merchantError?.message?.includes('does not exist')) {
         console.warn(`[deleteUser] ⚠️ Aviso ao deletar relacionamentos user_merchants:`, merchantError);
       }
@@ -572,7 +512,6 @@ export async function deleteUser(id: number): Promise<boolean> {
       await db.delete(userNotifications).where(eq(userNotifications.idUser, id));
       console.log(`[deleteUser] ✅ Notificações do usuário deletadas para usuário ID: ${id}`);
     } catch (notificationError: any) {
-      // Se a tabela não existir ou não houver relacionamentos, continuar
       if (notificationError?.code !== '42P01' && !notificationError?.message?.includes('does not exist')) {
         console.warn(`[deleteUser] ⚠️ Aviso ao deletar notificações do usuário:`, notificationError);
       }
@@ -583,7 +522,6 @@ export async function deleteUser(id: number): Promise<boolean> {
       await db.delete(adminCustomers).where(eq(adminCustomers.idUser, id));
       console.log(`[deleteUser] ✅ Relacionamentos admin_customers deletados para usuário ID: ${id}`);
     } catch (adminCustomerError: any) {
-      // Se a tabela não existir ou não houver relacionamentos, continuar
       if (adminCustomerError?.code !== '42P01' && !adminCustomerError?.message?.includes('does not exist')) {
         console.warn(`[deleteUser] ⚠️ Aviso ao deletar relacionamentos admin_customers:`, adminCustomerError);
       }
@@ -594,34 +532,16 @@ export async function deleteUser(id: number): Promise<boolean> {
       await db.delete(reportExecution).where(eq(reportExecution.idUser, id));
       console.log(`[deleteUser] ✅ Execuções de relatório deletadas para usuário ID: ${id}`);
     } catch (reportError: any) {
-      // Se a tabela não existir ou não houver relacionamentos, continuar
       if (reportError?.code !== '42P01' && !reportError?.message?.includes('does not exist')) {
         console.warn(`[deleteUser] ⚠️ Aviso ao deletar execuções de relatório:`, reportError);
       }
     }
 
-    // 2. Deletar do Clerk se tiver idClerk
-    if (userToDelete.idClerk) {
-      try {
-        const clerk = await clerkClient();
-        await clerk.users.deleteUser(userToDelete.idClerk);
-        console.log(`[deleteUser] ✅ Usuário deletado do Clerk: ${userToDelete.idClerk}`);
-      } catch (clerkError: any) {
-        // Se o usuário não existir no Clerk, continuar com a deleção do banco
-        if (clerkError?.status === 404 || clerkError?.message?.includes('not found')) {
-          console.warn(`[deleteUser] ⚠️ Usuário não encontrado no Clerk (pode já ter sido deletado): ${userToDelete.idClerk}`);
-        } else {
-          console.error(`[deleteUser] ❌ Erro ao excluir usuário do Clerk:`, clerkError);
-          // Não bloquear deleção do banco se falhar no Clerk
-        }
-      }
-    }
-
-    // 3. Deletar do banco de dados
+    // 2. Deletar do banco de dados
     await db.delete(users).where(eq(users.id, id));
     console.log(`[deleteUser] ✅ Usuário deletado do banco de dados: ID ${id}`);
 
-    // 4. Revalidar caminhos relacionados
+    // 3. Revalidar caminhos relacionados
     revalidatePath("/customers");
     revalidatePath("/portal/users");
 
@@ -640,7 +560,7 @@ export async function deleteUser(id: number): Promise<boolean> {
 }
 
 /**
- * Reseta a senha de um usuário, atualizando no Clerk e no banco de dados
+ * Reseta a senha de um usuário, atualizando no banco de dados
  * @param userId - ID do usuário no banco de dados
  * @returns Objeto com sucesso, nova senha e email do usuário
  */
@@ -657,7 +577,6 @@ export async function resetUserPassword(userId: number): Promise<{
     const userResult = await db
       .select({
         id: users.id,
-        idClerk: users.idClerk,
         email: users.email,
         idCustomer: users.idCustomer,
       })
@@ -672,11 +591,6 @@ export async function resetUserPassword(userId: number): Promise<{
 
     const user = userResult[0];
 
-    if (!user.idClerk) {
-      console.error(`[resetUserPassword] Usuário não possui idClerk: ${userId}`);
-      return { success: false, error: "Usuário não está vinculado ao Clerk" };
-    }
-
     if (!user.email) {
       console.error(`[resetUserPassword] Usuário não possui email: ${userId}`);
       return { success: false, error: "Usuário não possui email cadastrado" };
@@ -686,28 +600,7 @@ export async function resetUserPassword(userId: number): Promise<{
     const newPassword = await generateRandomPassword(10);
     console.log(`[resetUserPassword] Nova senha gerada com ${newPassword.length} caracteres`);
 
-    // 3. Atualizar no Clerk PRIMEIRO (pode falhar se senha comprometida)
-    const clerk = await clerkClient();
-    try {
-      await clerk.users.updateUser(user.idClerk, {
-        password: newPassword,
-      });
-      console.log(`[resetUserPassword] ✅ Senha atualizada no Clerk para: ${user.idClerk}`);
-    } catch (clerkError: any) {
-      console.error(`[resetUserPassword] ❌ Erro ao atualizar senha no Clerk:`, clerkError);
-      
-      // Verificar erros específicos do Clerk
-      if (clerkError?.errors?.some((e: any) => e.code === "form_password_pwned" || e.message?.includes("pwned"))) {
-        return { success: false, error: "A senha gerada foi comprometida. Tente novamente." };
-      }
-      if (clerkError?.errors?.some((e: any) => e.message?.includes("email"))) {
-        return { success: false, error: "A senha não pode ser igual ao email." };
-      }
-      
-      return { success: false, error: clerkError?.errors?.[0]?.message || "Erro ao atualizar senha no Clerk" };
-    }
-
-    // 4. Atualizar no banco de dados (só se Clerk OK)
+    // 3. Atualizar no banco de dados
     const hashedPwd = hashPassword(newPassword);
     await db
       .update(users)
@@ -719,7 +612,7 @@ export async function resetUserPassword(userId: number): Promise<{
       .where(eq(users.id, userId));
     console.log(`[resetUserPassword] ✅ Senha atualizada no banco de dados para usuário ID: ${userId}`);
 
-    // 5. Buscar dados do ISO para email
+    // 4. Buscar dados do ISO para email
     let logo = "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
     let customerName = "Consolle";
     let link: string | undefined;
@@ -746,7 +639,7 @@ export async function resetUserPassword(userId: number): Promise<{
       }
     }
 
-    // 6. Enviar email com nova senha
+    // 5. Enviar email com nova senha
     try {
       await sendWelcomePasswordEmail(
         user.email,
@@ -761,7 +654,7 @@ export async function resetUserPassword(userId: number): Promise<{
       // Não falhar se email falhar - senha já foi resetada com sucesso
     }
 
-    // 7. Revalidar caminhos
+    // 6. Revalidar caminhos
     revalidatePath("/customers");
     
     return {

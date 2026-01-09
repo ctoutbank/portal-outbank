@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, ChartPie, Settings, Table, Truck, Users, Shield, Store, DollarSign, BarChart, Calendar, type LucideIcon } from "lucide-react";
+import { Briefcase, ChartPie, Settings, Truck, Users, Shield, Store, DollarSign, Calendar, Percent, Receipt, BarChart3, type LucideIcon } from "lucide-react";
 import * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
@@ -16,42 +16,65 @@ import {
 import { UserMenu } from "./user-menu";
 import type { CustomerCustomization } from "@/utils/serverActions";
 
-const navMainItems: Array<{
+const URL_TO_MENU_ID: Record<string, string> = {
+  "/": "dashboard",
+  "/bi": "bi",
+  "/customers": "isos",
+  "/categories": "cnae_mcc",
+  "/merchants": "estabelecimentos",
+  "/transactions": "vendas",
+  "/fechamento": "fechamento",
+  "/admin/repasses": "repasses",
+  "/supplier": "fornecedores",
+  "/margens": "margens",
+  "/consent/modules": "lgpd",
+  "/config": "config",
+};
+
+type NavItem = {
   title: string;
   url: string;
   icon: LucideIcon;
   isActive?: boolean;
-  children?: Array<{
-    title: string;
-    url: string;
-    icon?: LucideIcon;
-    isActive?: boolean;
-  }>;
-}> = [
-  { title: "Dashboard", url: "/", icon: ChartPie, isActive: false },
+};
+
+type NavSection = {
+  section: string;
+  items: NavItem[];
+};
+
+const navSections: NavSection[] = [
   {
-    title: "ISOs",
-    url: "/customers",
-    icon: Users,
-    isActive: false,
-  },
-  { title: "CNAE/MCC", url: "/categories", icon: Briefcase, isActive: false },
-  { title: "Estabelecimentos", url: "/merchants", icon: Store, isActive: false },
-  { title: "Vendas", url: "/transactions", icon: DollarSign, isActive: false },
-  { title: "Analytics", url: "/analytics", icon: BarChart, isActive: false },
-  { title: "Fechamento", url: "/portal/closing", icon: Calendar, isActive: false },
-  {title: "Fornecedores", url: "/supplier", icon: Truck, isActive: false},
-  {
-    title: "Consentimento LGPD",
-    url: "/consent/modules",
-    icon: Shield,
-    isActive: false,
+    section: "Visão Geral",
+    items: [
+      { title: "Dashboard", url: "/", icon: ChartPie, isActive: false },
+      { title: "BI", url: "/bi", icon: BarChart3, isActive: false },
+    ],
   },
   {
-    title: "Configurações",
-    url: "/config",
-    icon: Settings,
-    isActive: false,
+    section: "Cadastros",
+    items: [
+      { title: "ISOs", url: "/customers", icon: Users, isActive: false },
+      { title: "Estabelecimentos", url: "/merchants", icon: Store, isActive: false },
+    ],
+  },
+  {
+    section: "Operações",
+    items: [
+      { title: "Vendas", url: "/transactions", icon: DollarSign, isActive: false },
+      { title: "Fechamento", url: "/fechamento", icon: Calendar, isActive: false },
+      { title: "Repasses", url: "/admin/repasses", icon: Receipt, isActive: false },
+    ],
+  },
+  {
+    section: "Administração",
+    items: [
+      { title: "Fornecedores", url: "/supplier", icon: Truck, isActive: false },
+      { title: "Margens", url: "/margens", icon: Percent, isActive: false },
+      { title: "CNAE/MCC", url: "/categories", icon: Briefcase, isActive: false },
+      { title: "LGPD", url: "/consent/modules", icon: Shield, isActive: false },
+      { title: "Configurações", url: "/config", icon: Settings, isActive: false },
+    ],
   },
 ];
 
@@ -59,63 +82,75 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   tenantCustomization?: CustomerCustomization | null;
   isAdmin?: boolean;
   hasMerchantsAccess?: boolean;
+  isCore?: boolean;
+  authorizedMenus?: string[];
+  userCategoryLabel?: string;
+  isSuperAdmin?: boolean;
 }
 
-export function AppSidebar({ tenantCustomization, isAdmin = false, hasMerchantsAccess = false, ...props }: AppSidebarProps) {
+export function AppSidebar({ 
+  tenantCustomization, 
+  isAdmin = false, 
+  hasMerchantsAccess = false, 
+  isCore = false, 
+  authorizedMenus = [], 
+  userCategoryLabel = "Usuário",
+  isSuperAdmin = false,
+  ...sidebarProps 
+}: AppSidebarProps) {
   const { state } = useSidebar();
   
   const teams = [
     {
-      name: tenantCustomization?.name || "Outbank",
+      name: tenantCustomization?.name || "Consolle",
       logo: tenantCustomization?.imageUrl || "/outbank-logo.png",
-      plan: "Empresarial",
+      plan: userCategoryLabel,
     },
   ];
 
-  // Filtrar itens do menu baseado em permissões
-  const filteredNavItems = navMainItems
-    .filter((item) => {
-      // Item "ISOS" só aparece para admins
-      if (item.url === "/customers") {
-        return isAdmin;
-      }
-      // Item "Estabelecimentos" só aparece para quem tem acesso
-      if (item.url === "/merchants") {
-        return hasMerchantsAccess;
-      }
-      // Item "Configurações" só aparece para admins
-      if (item.url === "/config") {
-        return isAdmin;
-      }
-      return true;
-    })
-    .map((item) => {
-      // Se tiver children, converter para items (para manter compatibilidade)
-      if (item.children) {
-        return {
-          ...item,
-          items: item.children.filter((child) => {
-            // Subitem "Usuários" só aparece para admins
-            if (child.url === "/config/users") {
-              return isAdmin;
-            }
-            return true;
-          }),
-        };
-      }
-      return item;
-    });
+  const isMenuAuthorized = (url: string): boolean => {
+    if (isSuperAdmin || isAdmin) return true;
+    
+    const menuId = URL_TO_MENU_ID[url];
+    if (!menuId) return true;
+    
+    if (!authorizedMenus || authorizedMenus.length === 0) {
+      return menuId === "dashboard";
+    }
+    
+    return authorizedMenus.includes(menuId);
+  };
+
+  const isItemVisible = (url: string): boolean => {
+    if (!isMenuAuthorized(url)) return false;
+    
+    switch (url) {
+      case "/config":
+      case "/categories":
+      case "/supplier":
+      case "/consent/modules":
+      case "/bi":
+        return isAdmin || isSuperAdmin;
+      default:
+        return true;
+    }
+  };
+
+  const filteredSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => isItemVisible(item.url)),
+    }))
+    .filter((section) => section.items.length > 0);
   
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader className="flex flex-col items-center h-20 relative">
-        <div className="flex-1 flex items-center justify-center">
-          <TeamSwitcher teams={teams} />
-        </div>
-        <Separator orientation="horizontal" className="bg-[#2a2a2a] absolute bottom-0 left-0 right-0" />
+    <Sidebar collapsible="icon" {...sidebarProps}>
+      <SidebarHeader className="h-16">
+        <TeamSwitcher teams={teams} />
       </SidebarHeader>
-      <SidebarContent className="pt-6">
-        <NavMain items={filteredNavItems} />
+      <Separator className="bg-[#2a2a2a]" />
+      <SidebarContent className="pt-4">
+        <NavMain sections={filteredSections} />
       </SidebarContent>
       <SidebarFooter>{state !== "collapsed" && <UserMenu />}</SidebarFooter>
     </Sidebar>

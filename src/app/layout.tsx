@@ -1,7 +1,6 @@
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { ClerkProvider } from "@clerk/nextjs";
-import { ptBR } from "@clerk/localizations";
+import { SidebarWithViewMode } from "@/components/sidebar-with-view-mode";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { ConditionalLayout } from "@/components/conditional-layout";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
@@ -11,13 +10,18 @@ import ThemeInitializer from "@/components/themeInitializer";
 import { getCurrentTenantCustomization } from "@/lib/tenant-detection";
 import SessionTimeout from "@/components/session-timeout";
 import { ConditionalSidebar } from "@/components/conditional-sidebar";
-import { isAdminOrSuperAdmin, hasMerchantsAccess } from "@/lib/permissions/check-permissions";
+import { isAdminOrSuperAdmin, hasMerchantsAccess, isCoreProfile, getUserAuthorizedMenus, getUserCategoryLabel, isSuperAdmin } from "@/lib/permissions/check-permissions";
+import { ViewModeProvider } from "@/contexts/ViewModeContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Portal OutBank",
   description: "OutBank - Plataforma de Gestão de Clientes",
+  icons: {
+    icon: "/outbank-logo.png",
+    apple: "/outbank-logo.png",
+  },
 };
 
 export default async function RootLayout({
@@ -28,62 +32,47 @@ export default async function RootLayout({
   const tenantCustomization = await getCurrentTenantCustomization();
   const isAdmin = await isAdminOrSuperAdmin();
   const hasMerchants = await hasMerchantsAccess();
-  
-  const loginBackgroundImage = tenantCustomization?.loginImageUrl || tenantCustomization?.imageUrl || '/bg_login.jpg';
+  const isCore = await isCoreProfile();
+  const authorizedMenus = await getUserAuthorizedMenus();
+  const userCategoryLabel = await getUserCategoryLabel();
+  const superAdmin = await isSuperAdmin();
   
   return (
-    <ClerkProvider
-      localization={ptBR}
-      appearance={{
-        signIn: {
-          elements: {
-            rootBox: {
-              background: "#111827",
-              backgroundImage: `linear-gradient(rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0.8)), url('${loginBackgroundImage}')`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat'
-            },
-            card: "bg-gray-900/95 backdrop-blur-sm",
-            formButtonPrimary: "bg-white hover:bg-gray-200 text-gray-900",
-            footerActionLink: "text-white hover:text-gray-300"
-          },
-          variables: {
-            colorText: "#f9fafb",
-            colorInputText: "#e5e7eb",
-            colorPrimary: "#ffffff",
-            colorBackground: "#111827",
-            colorInputBackground: "#1f2937",
-          }
-        }
-      }}
-    >
-      <html lang="pt-BR" suppressHydrationWarning className="dark">
-        <head>
-        </head>
-        <body className={inter.className}>
-          <ThemeInitializer />
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            forcedTheme="dark"
-            enableSystem={false}
-            disableTransitionOnChange
-          >
-            <SessionTimeout>
+    <html lang="pt-BR" suppressHydrationWarning className="dark">
+      <head>
+      </head>
+      <body className={inter.className}>
+        <ThemeInitializer />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          forcedTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <SessionTimeout>
+            <ViewModeProvider isSuperAdmin={superAdmin}>
               <SidebarProvider>
                 <ConditionalSidebar>
-                  <AppSidebar variant="inset" tenantCustomization={tenantCustomization} isAdmin={isAdmin} hasMerchantsAccess={hasMerchants} />
+                  <SidebarWithViewMode 
+                    tenantCustomization={tenantCustomization} 
+                    isAdmin={isAdmin} 
+                    hasMerchantsAccess={hasMerchants} 
+                    isCore={isCore} 
+                    authorizedMenus={authorizedMenus} 
+                    userCategoryLabel={userCategoryLabel}
+                    isSuperAdmin={superAdmin}
+                  />
                 </ConditionalSidebar>
-                <SidebarInset className="bg-card rounded-lg shadow">
+                <ConditionalLayout>
                   {children}
                   <Toaster richColors position="top-right" />
-                </SidebarInset>
+                </ConditionalLayout>
               </SidebarProvider>
-            </SessionTimeout>
-          </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+            </ViewModeProvider>
+          </SessionTimeout>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }

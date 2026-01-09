@@ -68,9 +68,16 @@ export default function CustomerWizardForm({
     subdomain?: string;
     primaryColor?: string;
     secondaryColor?: string;
+    // Novas cores do login
+    loginButtonColor?: string;
+    loginButtonTextColor?: string;
+    loginTitleColor?: string;
+    loginTextColor?: string;
     loginImageUrl?: string;
     faviconUrl?: string;
     emailImageUrl?: string;
+    // Ícone do menu
+    menuIconUrl?: string;
   } | null>(
     customizationInitial ? {
       imageUrl: customizationInitial.imageUrl ?? undefined,
@@ -78,9 +85,16 @@ export default function CustomerWizardForm({
       subdomain: customizationInitial.slug ?? undefined,
       primaryColor: customizationInitial.primaryColor ?? undefined,
       secondaryColor: customizationInitial.secondaryColor ?? undefined,
+      // Novas cores do login
+      loginButtonColor: customizationInitial.loginButtonColor ?? undefined,
+      loginButtonTextColor: customizationInitial.loginButtonTextColor ?? undefined,
+      loginTitleColor: customizationInitial.loginTitleColor ?? undefined,
+      loginTextColor: customizationInitial.loginTextColor ?? undefined,
       loginImageUrl: customizationInitial.loginImageUrl ?? undefined,
       faviconUrl: customizationInitial.faviconUrl ?? undefined,
       emailImageUrl: customizationInitial.emailImageUrl ?? undefined,
+      // Ícone do menu
+      menuIconUrl: customizationInitial.menuIconUrl ?? undefined,
     } : null
   );
 
@@ -386,6 +400,11 @@ export default function CustomerWizardForm({
             formData.set("customerId", String(customerId));
             formData.set("primaryColor", primaryColorHex);
             formData.set("secondaryColor", secondaryColorHex);
+            // Novas cores do login
+            formData.set("loginButtonColor", loginButtonColorHex);
+            formData.set("loginButtonTextColor", loginButtonTextColorHex);
+            formData.set("loginTitleColor", loginTitleColorHex);
+            formData.set("loginTextColor", loginTextColorHex);
             if (customizationData?.id) {
               formData.set("id", String(customizationData.id));
             }
@@ -395,6 +414,7 @@ export default function CustomerWizardForm({
             const loginImageInput = document.getElementById('loginImage') as HTMLInputElement;
             const faviconInput = document.getElementById('favicon') as HTMLInputElement;
             const emailImageInput = document.getElementById('emailImage') as HTMLInputElement;
+            const menuIconInput = document.getElementById('menuIcon') as HTMLInputElement;
 
             if (imageInput?.files?.[0]) {
               formData.append("image", imageInput.files[0]);
@@ -407,6 +427,9 @@ export default function CustomerWizardForm({
             }
             if (emailImageInput?.files?.[0]) {
               formData.append("emailImage", emailImageInput.files[0]);
+            }
+            if (menuIconInput?.files?.[0]) {
+              formData.append("menuIcon", menuIconInput.files[0]);
             }
 
             const validationData = {
@@ -431,9 +454,16 @@ export default function CustomerWizardForm({
                   subdomain: result.customization.slug ?? undefined,
                   primaryColor: result.customization.primaryColor ?? undefined,
                   secondaryColor: result.customization.secondaryColor ?? undefined,
+                  // Novas cores do login
+                  loginButtonColor: result.customization.loginButtonColor ?? undefined,
+                  loginButtonTextColor: result.customization.loginButtonTextColor ?? undefined,
+                  loginTitleColor: result.customization.loginTitleColor ?? undefined,
+                  loginTextColor: result.customization.loginTextColor ?? undefined,
                   loginImageUrl: result.customization.loginImageUrl ?? undefined,
                   faviconUrl: result.customization.faviconUrl ?? undefined,
                   emailImageUrl: result.customization.emailImageUrl ?? undefined,
+                  // Ícone do menu
+                  menuIconUrl: result.customization.menuIconUrl ?? undefined,
                 });
 
                 if (result.customization.primaryColor) {
@@ -441,6 +471,19 @@ export default function CustomerWizardForm({
                 }
                 if (result.customization.secondaryColor) {
                   setSecondaryColorHex(hslToHex(result.customization.secondaryColor));
+                }
+                // Sincronizar novas cores do login
+                if (result.customization.loginButtonColor) {
+                  setLoginButtonColorHex(hslToHex(result.customization.loginButtonColor));
+                }
+                if (result.customization.loginButtonTextColor) {
+                  setLoginButtonTextColorHex(hslToHex(result.customization.loginButtonTextColor));
+                }
+                if (result.customization.loginTitleColor) {
+                  setLoginTitleColorHex(hslToHex(result.customization.loginTitleColor));
+                }
+                if (result.customization.loginTextColor) {
+                  setLoginTextColorHex(hslToHex(result.customization.loginTextColor));
                 }
 
                 // ✅ ATUALIZAÇÃO INSTANTÂNEA: Atualizar DOM imediatamente
@@ -520,6 +563,10 @@ export default function CustomerWizardForm({
   const [emailImagePreview, setEmailImagePreview] = useState<string | null>(null);
   const [emailImageError, setEmailImageError] = useState<string | null>(null);
   const [emailImageFileName, setEmailImageFileName] = useState<string>("");
+  // Estados para ícone do menu (36x36px)
+  const [menuIconPreview, setMenuIconPreview] = useState<string | null>(null);
+  const [menuIconError, setMenuIconError] = useState<string | null>(null);
+  const [menuIconFileName, setMenuIconFileName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingCustomization, setIsSavingCustomization] = useState(false);
   const [isRemovingImage, setIsRemovingImage] = useState(false);
@@ -535,6 +582,28 @@ export default function CustomerWizardForm({
       ? hslToHex(customizationData.secondaryColor) 
       : "#ffffff"
   );
+  
+  // Estados para novas cores do login
+  const [loginButtonColorHex, setLoginButtonColorHex] = useState<string>(
+    customizationData?.loginButtonColor 
+      ? hslToHex(customizationData.loginButtonColor) 
+      : "#ffffff"
+  );
+  const [loginButtonTextColorHex, setLoginButtonTextColorHex] = useState<string>(
+    customizationData?.loginButtonTextColor 
+      ? hslToHex(customizationData.loginButtonTextColor) 
+      : "#000000"
+  );
+  const [loginTitleColorHex, setLoginTitleColorHex] = useState<string>(
+    customizationData?.loginTitleColor 
+      ? hslToHex(customizationData.loginTitleColor) 
+      : "#ffffff"
+  );
+  const [loginTextColorHex, setLoginTextColorHex] = useState<string>(
+    customizationData?.loginTextColor 
+      ? hslToHex(customizationData.loginTextColor) 
+      : "#9ca3af"
+  );
 
   // ✅ Sincronizar cores hex quando customizationData mudar
   useEffect(() => {
@@ -544,7 +613,20 @@ export default function CustomerWizardForm({
     if (customizationData?.secondaryColor) {
       setSecondaryColorHex(hslToHex(customizationData.secondaryColor));
     }
-  }, [customizationData?.primaryColor, customizationData?.secondaryColor]);
+    // Sincronizar novas cores do login
+    if (customizationData?.loginButtonColor) {
+      setLoginButtonColorHex(hslToHex(customizationData.loginButtonColor));
+    }
+    if (customizationData?.loginButtonTextColor) {
+      setLoginButtonTextColorHex(hslToHex(customizationData.loginButtonTextColor));
+    }
+    if (customizationData?.loginTitleColor) {
+      setLoginTitleColorHex(hslToHex(customizationData.loginTitleColor));
+    }
+    if (customizationData?.loginTextColor) {
+      setLoginTextColorHex(hslToHex(customizationData.loginTextColor));
+    }
+  }, [customizationData?.primaryColor, customizationData?.secondaryColor, customizationData?.loginButtonColor, customizationData?.loginButtonTextColor, customizationData?.loginTitleColor, customizationData?.loginTextColor]);
 
   // Função helper para converter HEX para HSL (reutilizável)
   const hexToHslForUpdate = (hex: string): string => {
@@ -800,6 +882,57 @@ export default function CustomerWizardForm({
     } else {
       setEmailImagePreview(null);
       setEmailImageFileName("");
+    }
+  };
+
+  // Handler para ícone do menu (36x36px)
+  const handleMenuIconChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setMenuIconError(null);
+
+    if (file) {
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        setMenuIconError('❌ Por favor, selecione uma imagem válida');
+        e.target.value = "";
+        return;
+      }
+
+      setMenuIconFileName(file.name);
+      
+      const MAX_SIZE = 1 * 1024 * 1024; // 1MB máximo para ícone
+      if (file.size > MAX_SIZE) {
+        setMenuIconError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 1MB`);
+        setMenuIconPreview(null);
+        e.target.value = "";
+        setMenuIconFileName("");
+        return;
+      }
+
+      try {
+        // ✅ Comprimir imagem se necessário (máximo 0.2MB para ícone)
+        const compressedFile = await compressImage(file, 0.2);
+        
+        // Atualizar o input com o arquivo comprimido
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(compressedFile);
+        e.target.files = dataTransfer.files;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          setMenuIconPreview(result);
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        console.error('Erro ao processar ícone do menu:', error);
+        setMenuIconError('❌ Erro ao processar imagem. Tente novamente.');
+        e.target.value = "";
+        setMenuIconFileName("");
+      }
+    } else {
+      setMenuIconPreview(null);
+      setMenuIconFileName("");
     }
   };
 
@@ -1485,8 +1618,141 @@ export default function CustomerWizardForm({
                       </div>
                     </div>
 
-                    {/* LINHA 2: 3 CARDS DE IMAGENS */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    {/* LINHA 1.5: CORES DO LOGIN */}
+                    <div className="mb-10">
+                      <h4 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+                        <Palette className="w-4 h-4" />
+                        Cores da Tela de Login
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Cor do Botão */}
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
+                          <label className="block text-sm font-medium text-white mb-3">
+                            Cor do Botão
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <div className="relative w-[50px] h-10">
+                              <input
+                                type="color"
+                                name="loginButtonColor"
+                                value={loginButtonColorHex}
+                                onChange={(e) => {
+                                  const hexColor = e.target.value;
+                                  setLoginButtonColorHex(hexColor);
+                                }}
+                                className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                              />
+                            </div>
+                            <input
+                              type="text"
+                              value={loginButtonColorHex}
+                              onChange={(e) => {
+                                const hexColor = e.target.value;
+                                setLoginButtonColorHex(hexColor);
+                              }}
+                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-xs text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                              placeholder="#ffffff"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Cor do Texto do Botão */}
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
+                          <label className="block text-sm font-medium text-white mb-3">
+                            Texto do Botão
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <div className="relative w-[50px] h-10">
+                              <input
+                                type="color"
+                                name="loginButtonTextColor"
+                                value={loginButtonTextColorHex}
+                                onChange={(e) => {
+                                  const hexColor = e.target.value;
+                                  setLoginButtonTextColorHex(hexColor);
+                                }}
+                                className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                              />
+                            </div>
+                            <input
+                              type="text"
+                              value={loginButtonTextColorHex}
+                              onChange={(e) => {
+                                const hexColor = e.target.value;
+                                setLoginButtonTextColorHex(hexColor);
+                              }}
+                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-xs text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                              placeholder="#000000"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Cor do Título */}
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
+                          <label className="block text-sm font-medium text-white mb-3">
+                            Cor do Título
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <div className="relative w-[50px] h-10">
+                              <input
+                                type="color"
+                                name="loginTitleColor"
+                                value={loginTitleColorHex}
+                                onChange={(e) => {
+                                  const hexColor = e.target.value;
+                                  setLoginTitleColorHex(hexColor);
+                                }}
+                                className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                              />
+                            </div>
+                            <input
+                              type="text"
+                              value={loginTitleColorHex}
+                              onChange={(e) => {
+                                const hexColor = e.target.value;
+                                setLoginTitleColorHex(hexColor);
+                              }}
+                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-xs text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                              placeholder="#ffffff"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Cor do Texto */}
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
+                          <label className="block text-sm font-medium text-white mb-3">
+                            Cor do Texto
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <div className="relative w-[50px] h-10">
+                              <input
+                                type="color"
+                                name="loginTextColor"
+                                value={loginTextColorHex}
+                                onChange={(e) => {
+                                  const hexColor = e.target.value;
+                                  setLoginTextColorHex(hexColor);
+                                }}
+                                className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                              />
+                            </div>
+                            <input
+                              type="text"
+                              value={loginTextColorHex}
+                              onChange={(e) => {
+                                const hexColor = e.target.value;
+                                setLoginTextColorHex(hexColor);
+                              }}
+                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-xs text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                              placeholder="#9ca3af"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* LINHA 2: 4 CARDS DE IMAGENS */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                       {/* Card 1: Logotipo Principal */}
                       <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
                         <label className="text-sm font-medium text-white mb-1">
@@ -1691,6 +1957,87 @@ export default function CustomerWizardForm({
                         >
                           <span>🗑️</span>
                           <span>{isRemovingImage ? "Removendo..." : "Remover favicon"}</span>
+                        </button>
+                      </div>
+
+                      {/* Card 4: Ícone do Menu */}
+                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                        <label className="text-sm font-medium text-white mb-1">
+                          Ícone do Menu
+                        </label>
+                        <p className="text-xs text-gray-400 mb-4">
+                          PNG ou SVG • 36×36px • Quadrado • Versão ícone/símbolo da marca • Máx. 100KB
+                        </p>
+                        
+                        <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[120px] flex items-center justify-center mb-4 transition-colors ${(menuIconPreview || customizationData?.menuIconUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                          {menuIconPreview ? (
+                            <div className="flex gap-4 items-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <img src={menuIconPreview} alt="Menu Icon 36x36" width={36} height={36} className="border border-[#2a2a2a] rounded-md" />
+                                <span className="text-xs text-gray-400">36×36</span>
+                              </div>
+                              <div className="flex flex-col items-center gap-1">
+                                <img src={menuIconPreview} alt="Menu Icon 48x48" width={48} height={48} className="border border-[#2a2a2a] rounded-md" />
+                                <span className="text-xs text-gray-400">48×48</span>
+                              </div>
+                            </div>
+                          ) : customizationData?.menuIconUrl ? (
+                            <div className="flex gap-4 items-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <img src={addCacheBustingToUrl(customizationData.menuIconUrl)} alt="Menu Icon 36x36" width={36} height={36} className="border border-[#2a2a2a] rounded-md" key={`${customizationData.menuIconUrl}-36`} />
+                                <span className="text-xs text-gray-400">36×36</span>
+                              </div>
+                              <div className="flex flex-col items-center gap-1">
+                                <img src={addCacheBustingToUrl(customizationData.menuIconUrl)} alt="Menu Icon 48x48" width={48} height={48} className="border border-[#2a2a2a] rounded-md" key={`${customizationData.menuIconUrl}-48`} />
+                                <span className="text-xs text-gray-400">48×48</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center text-[#606060]">
+                              <div className="text-5xl mb-2 opacity-50">🔲</div>
+                              <div className="text-xs">Nenhum ícone selecionado</div>
+                            </div>
+                          )}
+                        </div>
+
+                        {menuIconError && (
+                          <p className="text-xs text-orange-600 font-medium mb-2">
+                            {menuIconError}
+                          </p>
+                        )}
+
+                        <div className="relative mb-3">
+                          <input
+                            type="file"
+                            accept="image/png,image/svg+xml"
+                            name="menuIcon"
+                            id="menuIcon"
+                            onChange={handleMenuIconChange}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor="menuIcon"
+                            className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                          >
+                            <span>📁</span>
+                            <span>Selecionar arquivo</span>
+                          </label>
+                        </div>
+
+                        {menuIconFileName && (
+                          <p className="text-xs text-green-600 font-medium mb-3">
+                            ✓ Arquivo selecionado: {menuIconFileName}
+                          </p>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage('menuIcon')}
+                          disabled={isRemovingImage || (!menuIconPreview && !customizationData?.menuIconUrl)}
+                          className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                        >
+                          <span>🗑️</span>
+                          <span>{isRemovingImage ? "Removendo..." : "Remover ícone do menu"}</span>
                         </button>
                       </div>
                     </div>

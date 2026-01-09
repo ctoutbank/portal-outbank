@@ -1,8 +1,12 @@
-import { SignOutButton } from "@clerk/nextjs";
+"use client";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useUserCache } from "@/hooks/use-user-cache";
 
 export default function UnauthorizedPage() {
+  const { logout } = useUserCache();
+  
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="w-full max-w-md space-y-8 text-center">
@@ -38,11 +42,9 @@ export default function UnauthorizedPage() {
             </Link>
           </Button>
           
-          <SignOutButton>
-            <Button variant="outline" className="w-full">
-              Fazer Logout
-            </Button>
-          </SignOutButton>
+          <Button variant="outline" className="w-full" onClick={() => logout()}>
+            Fazer Logout
+          </Button>
           
           <p className="text-sm text-muted-foreground">
             Se você acredita que isso é um erro, entre em contato com o administrador do sistema.

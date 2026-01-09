@@ -10,7 +10,7 @@ import { ReactNode } from "react";
 export function ConditionalSidebar({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   
-  const shouldHide = pathname?.startsWith("/sign-in") || pathname?.startsWith("/sign-up");
+  const shouldHide = pathname?.startsWith("/sign-in") || pathname?.startsWith("/sign-up") || pathname?.startsWith("/auth");
   
   if (shouldHide) {
     return null;

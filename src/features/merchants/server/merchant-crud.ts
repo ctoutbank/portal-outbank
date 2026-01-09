@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { merchants, addresses, categories, legalNatures, configurations, customers, users } from "../../../../drizzle/schema";
-import { currentUser } from "@clerk/nextjs/server";
+import { getCurrentUser } from "@/lib/auth";
 import { generateSlug } from "@/lib/utils";
 
 // Types
@@ -34,10 +34,11 @@ export async function getSlugById(
 // Get current user customer slug
 export async function getCurrentUserCustomerSlug(): Promise<string | null> {
   try {
-    const userClerk = await currentUser();
+    const sessionUser = await getCurrentUser();
 
-    if (!userClerk) {
-      throw new Error("Usuário não autenticado");
+    if (!sessionUser) {
+      // Retornar null em vez de lançar erro para permitir fallback
+      return null;
     }
 
     const result = await db
@@ -46,23 +47,24 @@ export async function getCurrentUserCustomerSlug(): Promise<string | null> {
       })
       .from(users)
       .innerJoin(customers, eq(users.idCustomer, customers.id))
-      .where(eq(users.idClerk, userClerk.id))
+      .where(eq(users.id, sessionUser.id))
       .limit(1);
 
     return result.length > 0 ? result[0].customerSlug : null;
   } catch (error) {
     console.error("Erro ao buscar slug do customer:", error);
-    throw error;
+    return null;
   }
 }
 
 // Get current user customer ID
 export async function getCurrentUserCustomerId(): Promise<number | null> {
   try {
-    const userClerk = await currentUser();
+    const sessionUser = await getCurrentUser();
 
-    if (!userClerk) {
-      throw new Error("Usuário não autenticado");
+    if (!sessionUser) {
+      // Retornar null em vez de lançar erro para permitir fallback
+      return null;
     }
 
     const result = await db
@@ -71,13 +73,13 @@ export async function getCurrentUserCustomerId(): Promise<number | null> {
       })
       .from(users)
       .innerJoin(customers, eq(users.idCustomer, customers.id))
-      .where(eq(users.idClerk, userClerk.id))
+      .where(eq(users.id, sessionUser.id))
       .limit(1);
 
     return result.length > 0 ? result[0].customerId : null;
   } catch (error) {
     console.error("Erro ao buscar id do customer:", error);
-    throw error;
+    return null;
   }
 }
 
@@ -222,5 +224,3 @@ export async function updateAddress(address: AddressDetail): Promise<void> {
     .set(address)
     .where(eq(addresses.id, address.id));
 }
-
-
