@@ -264,3 +264,50 @@ export async function toggleMccStatus(id: number): Promise<{ success: boolean; d
     return { success: false, error: "Erro ao alterar status" };
   }
 }
+
+// Funções para sincronização com Dock
+
+export interface InsertMccDockInput {
+  code: string;
+  description: string;
+  mccGroupId?: number | null;
+  availabilityDate?: string | null;
+  databaseOperation?: string;
+  isActive?: boolean;
+}
+
+/**
+ * Insere um MCC (usado na sincronização com Dock)
+ */
+export async function insertMcc(data: InsertMccDockInput): Promise<SelectMcc> {
+  const result = await db
+    .insert(mcc)
+    .values({
+      code: data.code,
+      description: data.description,
+      categoria: "Dock Sync", // Categoria padrão para MCCs sincronizados
+      nivelRisco: "baixo",
+      tipoLiquidacao: "D2",
+      isActive: data.isActive ?? true,
+      exigeAnaliseManual: false,
+    })
+    .returning();
+
+  return result[0];
+}
+
+/**
+ * Desativa um MCC por código (soft delete - usado na sincronização com Dock)
+ */
+export async function deactivateMcc(code: string): Promise<SelectMcc | null> {
+  const result = await db
+    .update(mcc)
+    .set({
+      isActive: false,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(mcc.code, code))
+    .returning();
+
+  return result[0] || null;
+}

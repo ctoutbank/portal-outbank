@@ -1897,6 +1897,27 @@ export const mcc = pgTable("mcc", {
 export type InsertMcc = typeof mcc.$inferInsert;
 export type SelectMcc = typeof mcc.$inferSelect;
 
+// Tabela MCC Groups (para sincronização com Dock)
+export const mccGroups = pgTable("mcc_groups", {
+  id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
+    name: "mcc_groups_id_seq", 
+    startWith: 1, 
+    increment: 1, 
+    minValue: 1, 
+    maxValue: 9223372036854775807, 
+    cache: 1 
+  }),
+  code: varchar({ length: 10 }).notNull().unique(),
+  description: varchar({ length: 255 }).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+// Tipos para MCC Groups
+export type InsertMccGroup = typeof mccGroups.$inferInsert;
+export type SelectMccGroup = typeof mccGroups.$inferSelect;
+
 // =====================================================
 // Tabela user_functions para permissões individuais
 // =====================================================
