@@ -19,8 +19,6 @@ export default async function Page() {
         breadcrumbItems={[
           { title: 'Margens', subtitle: '' }
         ]}
-        showBackButton={true}
-        backHref="/"
       />
       <BaseBody
         title="Margens dos ISOs"

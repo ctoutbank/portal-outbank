@@ -43,8 +43,6 @@ export default async function ConsentModulesPage() {
         breadcrumbItems={[
           { title: "Consentimento LGPD", subtitle: "" },
         ]}
-        showBackButton={true}
-        backHref="/"
       />
       <BaseBody
         title="Consentimento LGPD - Módulos Pendentes"
