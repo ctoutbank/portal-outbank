@@ -457,6 +457,7 @@ export default function CustomerWizardForm({
                   loginImageUrl: result.customization.loginImageUrl ?? undefined,
                   faviconUrl: result.customization.faviconUrl ?? undefined,
                   emailImageUrl: result.customization.emailImageUrl ?? undefined,
+                  menuIconUrl: result.customization.menuIconUrl ?? undefined,
                 });
 
                 if (result.customization.primaryColor) {
@@ -1062,19 +1063,28 @@ export default function CustomerWizardForm({
           menuIconUrl: result.customization.menuIconUrl ?? undefined,
         });
 
+        // Limpar todos os previews e inputs
         setImagePreview(null);
         setImageFileName("");
         setLoginImagePreview(null);
         setLoginImageFileName("");
         setFaviconPreview(null);
         setFaviconFileName("");
+        setEmailImagePreview(null);
+        setEmailImageFileName("");
+        setMenuIconPreview(null);
+        setMenuIconFileName("");
 
         const imageInput = document.getElementById('image') as HTMLInputElement;
         const loginImageInput = document.getElementById('loginImage') as HTMLInputElement;
         const faviconInput = document.getElementById('favicon') as HTMLInputElement;
+        const emailImageInput = document.getElementById('emailImage') as HTMLInputElement;
+        const menuIconInput = document.getElementById('menuIcon') as HTMLInputElement;
         if (imageInput) imageInput.value = "";
         if (loginImageInput) loginImageInput.value = "";
         if (faviconInput) faviconInput.value = "";
+        if (emailImageInput) emailImageInput.value = "";
+        if (menuIconInput) menuIconInput.value = "";
 
         toast.success("Todas as imagens foram removidas com sucesso!");
       }
@@ -1407,6 +1417,7 @@ export default function CustomerWizardForm({
                         loginImageUrl: result.customization.loginImageUrl ?? undefined,
                         faviconUrl: result.customization.faviconUrl ?? undefined,
                         emailImageUrl: result.customization.emailImageUrl ?? undefined,
+                        menuIconUrl: result.customization.menuIconUrl ?? undefined,
                       });
 
                       // ✅ Atualizar estados de cores hex

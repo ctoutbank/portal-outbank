@@ -599,6 +599,7 @@ export async function saveCustomization(formData: FormData) {
     loginImageUrl: savedCustomization?.loginImageUrl,
     faviconUrl: savedCustomization?.faviconUrl,
     emailImageUrl: savedCustomization?.emailImageUrl,
+    menuIconUrl: savedCustomization?.menuIconUrl,
   });
 
   if (normalizedSubdomain) {
@@ -984,6 +985,7 @@ export async function updateCustomization(formData: FormData) {
     loginImageUrl: updatedCustomization?.loginImageUrl,
     faviconUrl: updatedCustomization?.faviconUrl,
     emailImageUrl: updatedCustomization?.emailImageUrl,
+    menuIconUrl: updatedCustomization?.menuIconUrl,
   });
   console.log(`[updateCustomization] Final colors after update:`, {
     primaryColor: updatedCustomization?.primaryColor,
@@ -1139,6 +1141,7 @@ export async function removeAllImages(data: { customerId: number }) {
     existingCustomization.loginImageUrl,
     existingCustomization.faviconUrl,
     existingCustomization.emailImageUrl,
+    existingCustomization.menuIconUrl,
   ].filter(Boolean) as string[];
 
   for (const url of urlsToDelete) {
@@ -1185,6 +1188,8 @@ export async function removeAllImages(data: { customerId: number }) {
       faviconFileId: null,
       emailImageUrl: null,
       emailImageFileId: null,
+      menuIconUrl: null,
+      menuIconFileId: null,
     })
     .where(eq(customerCustomization.customerId, customerId));
 
