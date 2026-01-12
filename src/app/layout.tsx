@@ -13,6 +13,8 @@ import { ConditionalSidebar } from "@/components/conditional-sidebar";
 import { isAdminOrSuperAdmin, hasMerchantsAccess, isCoreProfile, getUserAuthorizedMenus, getUserCategoryLabel, isSuperAdmin } from "@/lib/permissions/check-permissions";
 import { ViewModeProvider } from "@/contexts/ViewModeContext";
 
+export const dynamic = 'force-dynamic';
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -36,7 +38,7 @@ export default async function RootLayout({
   const authorizedMenus = await getUserAuthorizedMenus();
   const userCategoryLabel = await getUserCategoryLabel();
   const superAdmin = await isSuperAdmin();
-  
+
   return (
     <html lang="pt-BR" suppressHydrationWarning className="dark">
       <head>
@@ -54,12 +56,12 @@ export default async function RootLayout({
             <ViewModeProvider isSuperAdmin={superAdmin}>
               <SidebarProvider>
                 <ConditionalSidebar>
-                  <SidebarWithViewMode 
-                    tenantCustomization={tenantCustomization} 
-                    isAdmin={isAdmin} 
-                    hasMerchantsAccess={hasMerchants} 
-                    isCore={isCore} 
-                    authorizedMenus={authorizedMenus} 
+                  <SidebarWithViewMode
+                    tenantCustomization={tenantCustomization}
+                    isAdmin={isAdmin}
+                    hasMerchantsAccess={hasMerchants}
+                    isCore={isCore}
+                    authorizedMenus={authorizedMenus}
                     userCategoryLabel={userCategoryLabel}
                     isSuperAdmin={superAdmin}
                   />
