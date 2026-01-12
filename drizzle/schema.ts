@@ -1940,3 +1940,43 @@ export const userFunctions = pgTable("user_functions", {
 // Tipos para user_functions
 export type InsertUserFunction = typeof userFunctions.$inferInsert;
 export type SelectUserFunction = typeof userFunctions.$inferSelect;
+
+// =====================================================
+// Tabelas Multi-ISO / Permissões por Categoria
+// =====================================================
+
+export const userCustomers = pgTable("user_customers", {
+	id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
+		name: "user_customers_id_seq", 
+		startWith: 1, 
+		increment: 1, 
+		minValue: 1, 
+		maxValue: 9223372036854775807, 
+		cache: 1 
+	}),
+	idUser: bigint("id_user", { mode: "number" }).notNull(),
+	idCustomer: bigint("id_customer", { mode: "number" }).notNull(),
+	commissionType: varchar("commission_type", { length: 20 }),
+	isPrimary: boolean("is_primary").default(false),
+	active: boolean().default(true),
+	dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+	dtupdate: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+	foreignKey({
+		columns: [table.idUser],
+		foreignColumns: [users.id],
+		name: "user_customers_id_user_fkey"
+	}).onDelete("cascade"),
+	foreignKey({
+		columns: [table.idCustomer],
+		foreignColumns: [customers.id],
+		name: "user_customers_id_customer_fkey"
+	}).onDelete("cascade"),
+	unique("user_customers_user_customer_unique").on(table.idUser, table.idCustomer),
+	index("user_customers_id_user_idx").on(table.idUser),
+	index("user_customers_id_customer_idx").on(table.idCustomer),
+]);
+
+// Tipos para user_customers
+export type InsertUserCustomer = typeof userCustomers.$inferInsert;
+export type SelectUserCustomer = typeof userCustomers.$inferSelect;

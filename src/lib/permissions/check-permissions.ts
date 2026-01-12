@@ -997,6 +997,189 @@ export async function isSuperAdminById(userId: number): Promise<boolean> {
   }
 }
 
+/**
+ * Obtém os menus autorizados para um usuário por ID
+ * Usado para simulação de View Mode
+ * @param userId - ID do usuário
+ * @returns Array de IDs de menus autorizados
+ */
+export async function getUserAuthorizedMenusById(userId: number): Promise<string[]> {
+  try {
+    const userData = await db
+      .select({
+        idProfile: users.idProfile,
+        userType: users.userType,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!userData || userData.length === 0) {
+      return [];
+    }
+
+    if (userData[0].userType === "SUPER_ADMIN") {
+      return [];
+    }
+
+    const profileId = userData[0].idProfile;
+    if (!profileId) {
+      return [];
+    }
+
+    const result = await db.execute(sql`
+      SELECT authorized_menus FROM profiles WHERE id = ${profileId}
+    `);
+
+    if (!result.rows || result.rows.length === 0) {
+      return [];
+    }
+
+    const authorizedMenusJson = (result.rows[0] as Record<string, unknown>).authorized_menus;
+    if (!authorizedMenusJson) {
+      return [];
+    }
+
+    return JSON.parse(authorizedMenusJson as string);
+  } catch (error) {
+    console.error("Error getting user authorized menus by id:", error);
+    return [];
+  }
+}
+
+/**
+ * Obtém a categoria do usuário por ID (CORE, EXECUTIVO, ADMIN, etc)
+ * Usado para simulação de View Mode
+ * @param userId - ID do usuário
+ * @returns String com a categoria ou null
+ */
+export async function getUserCategoryById(userId: number): Promise<string | null> {
+  try {
+    const userData = await db
+      .select({
+        userType: users.userType,
+        idProfile: users.idProfile,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!userData || userData.length === 0) {
+      return null;
+    }
+
+    const { userType, idProfile } = userData[0];
+
+    if (userType === "SUPER_ADMIN") {
+      return "SUPER_ADMIN";
+    }
+
+    if (idProfile) {
+      const profileData = await db.execute(sql`
+        SELECT name, category_type FROM profiles WHERE id = ${idProfile}
+      `);
+
+      if (profileData.rows && profileData.rows.length > 0) {
+        const profile = profileData.rows[0] as { name: string; category_type: string | null };
+        const categoryType = profile.category_type?.toUpperCase();
+        const profileName = profile.name?.toUpperCase() || "";
+
+        if (categoryType === "ADMIN" || profileName.includes("ADMIN")) {
+          return "ADMIN";
+        }
+        if (categoryType === "EXECUTIVO" || profileName.includes("EXECUTIVO")) {
+          return "EXECUTIVO";
+        }
+        if (categoryType === "CORE" || profileName.includes("CORE")) {
+          return "CORE";
+        }
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error getting user category by id:", error);
+    return null;
+  }
+}
+
+/**
+ * Obtém o role do usuário por ID
+ * Usado para View Mode - retorna o role do usuário simulado
+ * @param userId - ID do usuário
+ * @returns 'super_admin' | 'admin' | 'executivo' | 'core' | null
+ */
+export async function getUserRoleById(userId: number): Promise<'super_admin' | 'admin' | 'executivo' | 'core' | null> {
+  try {
+    const isSuperAdminValue = await isSuperAdminById(userId);
+    if (isSuperAdminValue) {
+      return 'super_admin';
+    }
+
+    const user = await db
+      .select({
+        categoryType: profiles.categoryType,
+        profileName: profiles.name,
+      })
+      .from(users)
+      .leftJoin(profiles, eq(users.idProfile, profiles.id))
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user || user.length === 0) {
+      console.log(`[getUserRoleById] User ${userId} not found`);
+      return null;
+    }
+
+    const categoryType = user[0].categoryType?.toUpperCase() || "";
+    const profileName = user[0].profileName?.toUpperCase() || "";
+
+    if (categoryType === "ADMIN" || profileName.includes("ADMIN")) {
+      return 'admin';
+    }
+    if (categoryType === "EXECUTIVO" || profileName.includes("EXECUTIVO")) {
+      return 'executivo';
+    }
+    if (categoryType === "CORE" || profileName.includes("CORE")) {
+      return 'core';
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`[getUserRoleById] Error getting role for user ${userId}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Verifica se um usuário específico existe e está ativo
+ * Usado para validar simulatedUserId antes de processar
+ * @param userId - ID do usuário a verificar
+ * @returns true se o usuário existe e está ativo
+ */
+export async function isUserActiveById(userId: number): Promise<boolean> {
+  try {
+    const user = await db
+      .select({
+        id: users.id,
+        active: users.active,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user || user.length === 0) {
+      console.log(`[isUserActiveById] User ${userId} not found`);
+      return false;
+    }
+
+    return user[0].active === true;
+  } catch (error) {
+    console.error(`[isUserActiveById] Error checking user ${userId}:`, error);
+    return false;
+  }
+}
+
 export async function checkPagePermission(
   group: string,
   permission: string = "Listar"
