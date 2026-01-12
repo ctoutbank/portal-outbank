@@ -17,7 +17,7 @@ export default async function Page() {
     <>
       <BaseHeader 
         breadcrumbItems={[
-          { title: 'Margens' }
+          { title: 'Margens', subtitle: '' }
         ]}
         showBackButton={true}
         backHref="/"
