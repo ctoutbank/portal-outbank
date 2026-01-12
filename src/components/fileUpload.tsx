@@ -364,8 +364,8 @@ export default function FileUpload({
             );
         } else if (file.type.startsWith("video/")) {
             return (
-                <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center relative">
-                    <Video className="h-5 w-5 text-gray-500" />
+                <div className="h-10 w-10 bg-[#2a2a2a] rounded-lg flex items-center justify-center relative">
+                    <Video className="h-5 w-5 text-[#808080]" />
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -381,24 +381,24 @@ export default function FileUpload({
             );
         } else {
             return (
-                <div className="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-gray-500" />
+                <div className="h-10 w-10 bg-[#2a2a2a] rounded-lg flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-[#808080]" />
                 </div>
             );
         }
     };
 
     return (
-        <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="w-full bg-[#1a1a1a] rounded-xl shadow-sm border border-[#2a2a2a] p-6">
             <div className="mb-4 h-[72px]">
                 <h3
-                    className="text-lg font-semibold text-gray-900 line-clamp-1 hover:cursor-help"
+                    className="text-lg font-semibold text-white line-clamp-1 hover:cursor-help"
                     title={title}
                 >
                     {title}
                 </h3>
                 <p
-                    className="text-sm text-gray-500 mt-1 line-clamp-2 hover:cursor-help"
+                    className="text-sm text-[#808080] mt-1 line-clamp-2 hover:cursor-help"
                     title={description}
                 >
                     {description}
@@ -415,7 +415,7 @@ export default function FileUpload({
                         className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all ${
                             isDragging
                                 ? "border-primary bg-primary/5"
-                                : "border-gray-300 hover:border-primary hover:bg-gray-50"
+                                : "border-[#3a3a3a] hover:border-primary hover:bg-[#2a2a2a]"
                         } ${isUploading ? "pointer-events-none opacity-50" : ""}`}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
@@ -425,20 +425,20 @@ export default function FileUpload({
                         {isUploading ? (
                             <>
                                 <div className="w-12 h-12 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mb-4"></div>
-                                <p className="text-sm font-medium text-gray-700">
+                                <p className="text-sm font-medium text-white">
                                     ENVIANDO ARQUIVOS...
                                 </p>
                             </>
                         ) : (
                             <>
-                                <Upload className="h-12 w-12 text-gray-400 mb-4" />
-                                <p className="text-sm font-medium text-gray-700">
+                                <Upload className="h-12 w-12 text-[#808080] mb-4" />
+                                <p className="text-sm font-medium text-white">
                                     ARRASTE UM ARQUIVO
                                 </p>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-[#808080] mt-1">
                                     ou clique para fazer o upload
                                 </p>
-                                <p className="text-xs text-gray-400 mt-4">
+                                <p className="text-xs text-[#606060] mt-4">
                                     {acceptedFileTypes
                                         .replace(/application\/|image\/|video\//g, "")
                                         .toUpperCase()}
@@ -450,7 +450,7 @@ export default function FileUpload({
                     </div>
 
                     {error && (
-                        <div className="mt-4 flex items-center text-red-500 text-sm bg-red-50 p-3 rounded-lg">
+                        <div className="mt-4 flex items-center text-red-400 text-sm bg-red-500/10 border border-red-500/30 p-3 rounded-lg">
                             <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
                             <span>{error}</span>
                         </div>
@@ -462,50 +462,47 @@ export default function FileUpload({
                                 {files.map((file, index) => (
                                     <div
                                         key={index}
-                                        className="flex items-center justify-between bg-gray-50 p-3 rounded-lg hover:bg-gray-100"
+                                        className="flex items-center justify-between bg-[#2a2a2a] p-3 rounded-lg hover:bg-[#333333]"
                                     >
                                         <div className="flex items-center space-x-3">
                                             {renderFilePreview(file)}
                                             <div>
-                                                <p className="text-sm font-medium text-gray-700">
+                                                <p className="text-sm font-medium text-white">
                                                     {getTruncatedFileName(file.customName)}
                                                 </p>
                                                 {file.size > 0 && (
-                                                    <p className="text-xs text-gray-500">
+                                                    <p className="text-xs text-[#808080]">
                                                         {(file.size / 1024 / 1024).toFixed(2)}MB
                                                     </p>
                                                 )}
                                             </div>
                                         </div>
                                         <div className="flex items-center space-x-2">
-                                            {/* Botão de Visualizar */}
                                             <button
                                                 type="button"
                                                 onClick={() => openFile(file)}
-                                                className="text-blue-500 hover:text-blue-700 transition-colors"
+                                                className="text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
                                                 title="Visualizar"
                                             >
                                                 <Eye className="h-5 w-5" />
                                             </button>
 
-                                            {/* Botão de Download */}
                                             <a
                                                 href={file.fileURL}
                                                 download={file.name}
-                                                className="text-green-500 hover:text-green-700 transition-colors"
+                                                className="text-emerald-400 hover:text-emerald-300 transition-colors"
                                                 title="Download"
                                             >
                                                 <Download className="h-5 w-5" />
                                             </a>
 
-                                            {/* Botão de Remover */}
                                             <button
                                                 type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     removeFile(index);
                                                 }}
-                                                className="text-red-500 hover:text-red-700 transition-colors"
+                                                className="text-red-400 hover:text-red-300 transition-colors cursor-pointer"
                                                 title="Remover"
                                             >
                                                 <X className="h-5 w-5" />
@@ -529,15 +526,15 @@ export default function FileUpload({
             />
 
             {viewingImage && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl max-w-4xl w-full mx-4">
-                        <div className="flex justify-between items-center p-4 border-b">
-                            <h3 className="text-lg font-semibold text-gray-900">
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+                    <div className="bg-[#1a1a1a] rounded-xl max-w-4xl w-full mx-4 border border-[#2a2a2a]">
+                        <div className="flex justify-between items-center p-4 border-b border-[#2a2a2a]">
+                            <h3 className="text-lg font-semibold text-white">
                                 Visualização da Imagem
                             </h3>
                             <button
                                 onClick={() => setViewingImage(null)}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="text-[#808080] hover:text-white"
                             >
                                 <X className="h-6 w-6" />
                             </button>
@@ -560,15 +557,15 @@ export default function FileUpload({
             )}
 
             {playingVideo && (
-                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl max-w-4xl w-full mx-4">
-                        <div className="flex justify-between items-center p-4 border-b">
-                            <h3 className="text-lg font-semibold text-gray-900">
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+                    <div className="bg-[#1a1a1a] rounded-xl max-w-4xl w-full mx-4 border border-[#2a2a2a]">
+                        <div className="flex justify-between items-center p-4 border-b border-[#2a2a2a]">
+                            <h3 className="text-lg font-semibold text-white">
                                 Visualização do Vídeo
                             </h3>
                             <button
                                 onClick={() => setPlayingVideo(null)}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="text-[#808080] hover:text-white"
                             >
                                 <X className="h-6 w-6" />
                             </button>

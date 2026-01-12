@@ -67,6 +67,10 @@ export default async function TenantLayout({
 
   const primaryColor = hslToHexForLayout(customization?.primaryColor) || "#000000";
   const secondaryColor = hslToHexForLayout(customization?.secondaryColor) || "#666666";
+  const loginButtonColor = hslToHexForLayout(customization?.loginButtonColor) || "#3b82f6";
+  const loginButtonTextColor = hslToHexForLayout(customization?.loginButtonTextColor) || "#ffffff";
+  const loginTitleColor = hslToHexForLayout(customization?.loginTitleColor) || "#ffffff";
+  const loginTextColor = hslToHexForLayout(customization?.loginTextColor) || "#d1d5db";
   const loginImageUrl = customization?.loginImageUrl || null;
 
   return (
@@ -78,6 +82,10 @@ export default async function TenantLayout({
               :root {
                 --tenant-primary: ${primaryColor};
                 --tenant-secondary: ${secondaryColor};
+                --tenant-login-button: ${loginButtonColor};
+                --tenant-login-button-text: ${loginButtonTextColor};
+                --tenant-login-title: ${loginTitleColor};
+                --tenant-login-text: ${loginTextColor};
               }
               ${loginImageUrl ? `
               body {

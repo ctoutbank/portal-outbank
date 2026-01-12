@@ -51,6 +51,8 @@ export async function GET(
         name: category.name,
         cnae: category.cnae,
         mcc: category.mcc,
+        suporta_pos: category.suporta_pos ?? true,
+        suporta_online: category.suporta_online ?? true,
       },
       mdr: mdr
     });
@@ -91,6 +93,63 @@ export async function POST(
     console.error('❌ Erro ao salvar MDR:', error);
     return NextResponse.json({ 
       error: 'Erro ao salvar MDR',
+      details: error.message 
+    }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; cnaeId: string }> }
+) {
+  try {
+    const { id: fornecedorId, cnaeId } = await params;
+
+    console.log('🗑️ DELETE MDR - Fornecedor:', fornecedorId, 'CNAE:', cnaeId);
+
+    const fornecedor = await fornecedoresRepository.findById(fornecedorId);
+
+    if (!fornecedor) {
+      console.log('❌ Fornecedor não encontrado');
+      return NextResponse.json({ error: 'Fornecedor não encontrado' }, { status: 404 });
+    }
+
+    const category = fornecedor.categories?.find((c: Category) => String(c.id) === cnaeId);
+
+    if (!category) {
+      console.log('❌ CNAE não encontrado');
+      return NextResponse.json({ 
+        error: 'CNAE não encontrado para este fornecedor'
+      }, { status: 404 });
+    }
+
+    const categoryIdNumber = typeof category.id === 'string' 
+      ? parseInt(category.id) 
+      : category.id;
+
+    const mdr = await mdrRepository.findByFornecedorAndCategory(fornecedorId, categoryIdNumber);
+
+    if (!mdr) {
+      console.log('⚠️ MDR não encontrado para deletar');
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Não havia taxas para limpar' 
+      });
+    }
+
+    await mdrRepository.delete(mdr.id);
+
+    console.log('✅ MDR deletado:', mdr.id);
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Taxas limpas com sucesso' 
+    });
+
+  } catch (error: any) {
+    console.error('❌ Erro ao deletar MDR:', error);
+    return NextResponse.json({ 
+      error: 'Erro ao limpar taxas',
       details: error.message 
     }, { status: 500 });
   }

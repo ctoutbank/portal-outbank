@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { merchantAuthorizers } from "../../../../drizzle/schema";
 import { generateSlug } from "@/lib/utils";
+import { validateDeletePermission } from "@/lib/permissions/check-permissions";
 
 export interface AuthorizerData {
   id: number;
@@ -113,6 +114,11 @@ export async function updateAuthorizer(
 
 // Deletar autorizador (soft delete)
 export async function deleteAuthorizer(id: number): Promise<boolean> {
+  const canDelete = await validateDeletePermission();
+  if (!canDelete) {
+    throw new Error("Apenas Super Admin pode realizar esta operação");
+  }
+
   try {
     const now = new Date().toISOString();
 
@@ -135,6 +141,11 @@ export async function deleteAuthorizer(id: number): Promise<boolean> {
 export async function deleteAllAuthorizersByMerchantId(
   idMerchant: number
 ): Promise<boolean> {
+  const canDelete = await validateDeletePermission();
+  if (!canDelete) {
+    throw new Error("Apenas Super Admin pode realizar esta operação");
+  }
+
   try {
     const now = new Date().toISOString();
 

@@ -9,10 +9,6 @@ import {
   getAllFunctions,
   getCategoryPermissions,
 } from "@/features/categories/server/permissions";
-import {
-  getCategoryCustomers,
-} from "@/features/categories/server/category-customers";
-import { getAvailableCustomers } from "@/features/users/server/admin-users";
 import { notFound } from "next/navigation";
 
 export const revalidate = 0;
@@ -33,13 +29,11 @@ export default async function EditCategoryPage({ params }: PageProps) {
     notFound();
   }
 
-  // Buscar categoria, permissões, ISOs e todos os ISOs disponíveis
-  const [category, categoryPermissions, allFunctions, categoryCustomers, availableCustomers] = await Promise.all([
+  // Buscar categoria e permissões
+  const [category, categoryPermissions, allFunctions] = await Promise.all([
     getCategoryById(categoryId).catch(() => null),
     getCategoryPermissions(categoryId).catch(() => []),
     getAllFunctions(),
-    getCategoryCustomers(categoryId).catch(() => []),
-    getAvailableCustomers().catch(() => []),
   ]);
 
   if (!category) {
@@ -48,21 +42,20 @@ export default async function EditCategoryPage({ params }: PageProps) {
 
   // Mapear permissões atribuídas para array de IDs
   const assignedFunctionIds = categoryPermissions.map((pf) => Number(pf.idFunction));
-  
-  // Mapear ISOs atribuídos para array de IDs
-  const assignedCustomerIds = categoryCustomers.map((pc) => Number(pc.idCustomer)).filter((id): id is number => id !== null && !isNaN(id));
+
+  // Obter menus autorizados da categoria
+  const assignedMenuIds = category.authorizedMenus || [];
 
   return (
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Configurações", subtitle: "Categorias", url: "/config/categories" },
-          {
-            title: category.name || "Editar Categoria",
-            subtitle: "",
-            url: `/config/categories/${categoryId}`,
-          },
+          { title: "Configurações", url: "/config" },
+          { title: "Categorias", url: "/config/categories" },
+          { title: category.name || "Editar Categoria" },
         ]}
+        showBackButton={true}
+        backHref="/config/categories"
       />
 
       <BaseBody
@@ -73,8 +66,8 @@ export default async function EditCategoryPage({ params }: PageProps) {
           category={category}
           functions={allFunctions}
           assignedFunctionIds={assignedFunctionIds}
-          customers={availableCustomers}
-          assignedCustomerIds={assignedCustomerIds}
+          assignedMenuIds={assignedMenuIds}
+          isLocked={category.locked || false}
         />
       </BaseBody>
     </>

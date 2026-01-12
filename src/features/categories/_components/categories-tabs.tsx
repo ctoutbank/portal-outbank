@@ -24,7 +24,7 @@ import MccList from "@/features/mcc/_components/mcc-list";
 import PageSizeSelector from "@/components/page-size-selector";
 import PaginationRecords from "@/components/pagination-Records";
 import type { CategoryList } from "../server/category";
-import type { MccWithGroup } from "@/features/mcc/server/types";
+import type { MccData } from "@/features/mcc/server/types";
 
 function MccPageSizeSelector({ currentPageSize }: { currentPageSize: number }) {
   const router = useRouter();
@@ -144,7 +144,7 @@ function MccPaginationRecords({
 
 interface CategoriesTabsProps {
   categories: CategoryList;
-  mccs: MccWithGroup[];
+  mccs: MccData[];
   mccTotalCount: number;
   categorySortField: string;
   categorySortOrder: "asc" | "desc";
@@ -154,6 +154,8 @@ interface CategoriesTabsProps {
   categoryPerPage: number;
   mccPage: number;
   mccPerPage: number;
+  mccCategorias: string[];
+  isSuperAdmin: boolean;
 }
 
 export default function CategoriesTabs({
@@ -168,13 +170,15 @@ export default function CategoriesTabs({
   categoryPerPage,
   mccPage,
   mccPerPage,
+  mccCategorias,
+  isSuperAdmin,
 }: CategoriesTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState("categories");
+  const [activeTab, setActiveTab] = useState("mccs");
 
   useEffect(() => {
-    const tab = searchParams?.get("tab") || "categories";
+    const tab = searchParams?.get("tab") || "mccs";
     setActiveTab(tab);
   }, [searchParams]);
 
@@ -184,12 +188,39 @@ export default function CategoriesTabs({
     router.push(`/categories?${params.toString()}`);
   };
 
+  const tabsComponent = (
+    <TabsList className="bg-[#212121] border border-[#2E2E2E]">
+      <TabsTrigger value="mccs" className="data-[state=active]:bg-[#2a2a2a] data-[state=active]:text-white">MCCs</TabsTrigger>
+      <TabsTrigger value="categories" className="data-[state=active]:bg-[#2a2a2a] data-[state=active]:text-white">CNAEs</TabsTrigger>
+    </TabsList>
+  );
+
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="mb-6">
-        <TabsTrigger value="categories">CNAEs</TabsTrigger>
-        <TabsTrigger value="mccs">MCCs da Dock</TabsTrigger>
-      </TabsList>
+      <TabsContent value="mccs">
+        <div className="flex flex-col space-y-4">
+          <MccList
+            mccs={mccs}
+            totalCount={mccTotalCount}
+            sortField={mccSortField}
+            sortOrder={mccSortOrder}
+            categorias={mccCategorias}
+            isSuperAdmin={isSuperAdmin}
+            headerActions={tabsComponent}
+          />
+
+          {mccTotalCount > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4 pt-4 border-t border-border">
+              <MccPageSizeSelector currentPageSize={mccPerPage} />
+              <MccPaginationRecords
+                totalRecords={mccTotalCount}
+                currentPage={mccPage}
+                pageSize={mccPerPage}
+              />
+            </div>
+          )}
+        </div>
+      </TabsContent>
 
       <TabsContent value="categories">
         <div className="flex flex-col space-y-4">
@@ -197,6 +228,7 @@ export default function CategoriesTabs({
             Categories={categories}
             sortField={categorySortField}
             sortOrder={categorySortOrder}
+            headerActions={tabsComponent}
           />
 
           {categories.totalCount > 0 && (
@@ -215,29 +247,6 @@ export default function CategoriesTabs({
           )}
         </div>
       </TabsContent>
-
-      <TabsContent value="mccs">
-        <div className="flex flex-col space-y-4">
-          <MccList
-            mccs={mccs}
-            totalCount={mccTotalCount}
-            sortField={mccSortField}
-            sortOrder={mccSortOrder}
-          />
-
-          {mccTotalCount > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4 pt-4 border-t border-border">
-              <MccPageSizeSelector currentPageSize={mccPerPage} />
-              <MccPaginationRecords
-                totalRecords={mccTotalCount}
-                currentPage={mccPage}
-                pageSize={mccPerPage}
-              />
-            </div>
-          )}
-        </div>
-      </TabsContent>
     </Tabs>
   );
 }
-

@@ -1,0 +1,189 @@
+{
+  "theme": "dark",
+  "colors": {
+    "background": {
+      "page": "#0a0a0a",
+      "card": "#0a0a0a",
+      "table": "#121212",
+      "tableHeader": "#0a0a0a",
+      "input": "#1a1a1a",
+      "inputSection": "#0f0f0f",
+      "hover": "#2E2E2E"
+    },
+    "border": {
+      "card": "#1a1a1a",
+      "table": "#2a2a2a",
+      "tableRow": "#1f1f1f",
+      "input": "#2a2a2a",
+      "inputFocus": "#ff9800"
+    },
+    "text": {
+      "primary": "#FFFFFF",
+      "secondary": "#5C5C5C",
+      "placeholder": "#555555",
+      "highlight": "#ff9800",
+      "suffix": "#555555"
+    },
+    "button": {
+      "primary": {
+        "background": "#ff9800",
+        "text": "#000000",
+        "hover": "#ffb74d"
+      },
+      "secondary": {
+        "background": "#1a1a1a",
+        "border": "#2a2a2a",
+        "text": "#E0E0E0",
+        "hover": "#252525"
+      },
+      "danger": {
+        "background": "#1a1a1a",
+        "border": "rgba(127, 29, 29, 0.5)",
+        "text": "#f87171",
+        "hover": "rgba(127, 29, 29, 0.3)"
+      }
+    }
+  },
+  "spacing": {
+    "card": {
+      "padding": "32px"
+    },
+    "table": {
+      "cellPadding": "8px",
+      "headerPadding": "16px"
+    },
+    "section": {
+      "gap": "40px",
+      "padding": "24px"
+    },
+    "input": {
+      "height": "48px",
+      "paddingX": "16px"
+    }
+  },
+  "borderRadius": {
+    "card": "12px",
+    "input": "6px",
+    "button": "8px",
+    "section": "8px"
+  },
+  "typography": {
+    "sectionTitle": {
+      "fontSize": "20px",
+      "fontWeight": "600",
+      "color": "#FFFFFF"
+    },
+    "subsectionTitle": {
+      "fontSize": "18px",
+      "fontWeight": "500",
+      "color": "#FFFFFF"
+    },
+    "tableHeader": {
+      "fontSize": "14px",
+      "fontWeight": "500",
+      "color": "#FFFFFF"
+    },
+    "tableCell": {
+      "fontSize": "14px",
+      "fontWeight": "400"
+    },
+    "label": {
+      "fontSize": "13px",
+      "fontWeight": "400",
+      "colorDefault": "#5C5C5C",
+      "colorActive": "#ff9800"
+    },
+    "inputText": {
+      "fontSize": "14px",
+      "colorDefault": "#FFFFFF",
+      "colorActive": "#ff9800"
+    }
+  },
+  "components": {
+    "card": {
+      "className": "bg-[#0a0a0a] border border-[#1a1a1a] rounded-[12px]"
+    },
+    "table": {
+      "wrapper": "w-full min-w-[900px] border-collapse border-spacing-0",
+      "header": {
+        "row": "h-[52px]",
+        "cell": "text-center min-w-[120px] text-sm font-medium text-[#FFFFFF] bg-transparent p-4 border-b border-[#2a2a2a] border-l border-[#2a2a2a]",
+        "stickyCell": "sticky left-0 z-10 bg-[#0a0a0a] text-sm font-medium text-[#FFFFFF] p-4 text-left border-b border-[#2a2a2a] min-w-[100px]"
+      },
+      "body": {
+        "row": "border-b border-[#1f1f1f]",
+        "cell": "text-center bg-[#121212] border-l border-[#1f1f1f] p-2 text-sm",
+        "stickyCell": "font-medium sticky left-0 z-10 bg-[#0a0a0a] text-[#FFFFFF] px-4 py-3 text-left border-r border-[#1f1f1f]"
+      }
+    },
+    "input": {
+      "rate": {
+        "className": "w-full text-center border border-[#2a2a2a] rounded bg-[#1a1a1a] placeholder:text-[#555] focus-visible:outline-none text-sm pl-2 pr-6 py-2 text-[#ff9800]",
+        "suffix": "absolute right-2 top-1/2 -translate-y-1/2 text-[#555] text-sm pointer-events-none"
+      },
+      "pix": {
+        "className": "w-full h-[48px] px-4 pr-10 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] placeholder:text-[#555] focus:border-[#ff9800] focus:outline-none",
+        "suffix": "absolute right-3 top-1/2 -translate-y-1/2 text-[#555] text-sm pointer-events-none"
+      }
+    },
+    "section": {
+      "pixContainer": "grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#0f0f0f] rounded-[8px] p-6 border border-[#1a1a1a]"
+    },
+    "button": {
+      "primary": "h-[48px] px-8 text-sm font-medium bg-[#ff9800] text-black rounded-[8px] hover:bg-[#ffb74d] transition-colors cursor-pointer disabled:opacity-50",
+      "secondary": "h-[48px] px-6 text-sm font-medium text-[#a0a0a0] bg-[#1a1a1a] border border-[#2a2a2a] rounded-[8px] hover:bg-[#252525] transition-colors cursor-pointer",
+      "danger": "h-[48px] px-6 text-sm font-medium text-red-400 bg-[#1a1a1a] border border-red-900/50 rounded-[8px] hover:bg-red-950/30 hover:border-red-800 transition-colors cursor-pointer"
+    }
+  },
+  "layout": {
+    "structure": [
+      {
+        "section": "Transações POS",
+        "components": [
+          {
+            "type": "table",
+            "rows": "brandList (Visa, Mastercard, Elo, Hipercard, Amex, Cabal, Banescard)",
+            "columns": "SolicitationFeeProductTypeList (Débito, Crédito, Crédito 2-6x, Crédito 7-12x, Voucher, Pré-pago)"
+          },
+          {
+            "type": "pixSection",
+            "fields": ["Custo PIX (R$)", "Antecipação (%)"]
+          }
+        ]
+      },
+      {
+        "section": "Transações Online",
+        "components": [
+          {
+            "type": "table",
+            "rows": "brandList",
+            "columns": "SolicitationFeeProductTypeList"
+          },
+          {
+            "type": "pixSection",
+            "fields": ["Custo PIX (R$)", "Antecipação (%)"]
+          }
+        ]
+      }
+    ]
+  },
+  "dataLists": {
+    "brandList": [
+      { "value": "visa", "label": "Visa" },
+      { "value": "mastercard", "label": "Mastercard" },
+      { "value": "elo", "label": "Elo" },
+      { "value": "hipercard", "label": "Hipercard" },
+      { "value": "amex", "label": "Amex" },
+      { "value": "cabal", "label": "Cabal" },
+      { "value": "banescard", "label": "Banescard" }
+    ],
+    "productTypeList": [
+      { "value": "DEBIT", "label": "Débito" },
+      { "value": "CREDIT", "label": "Crédito" },
+      { "value": "CREDIT_INSTALLMENTS_2_TO_6", "label": "Crédito 2-6x" },
+      { "value": "CREDIT_INSTALLMENTS_7_TO_12", "label": "Crédito 7-12x" },
+      { "value": "VOUCHER", "label": "Voucher" },
+      { "value": "PREPAID_CREDIT", "label": "Pré-pago" }
+    ]
+  }
+}

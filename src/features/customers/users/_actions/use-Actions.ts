@@ -2,10 +2,10 @@
 
 import { db } from "@/db/drizzle";
 import { and, eq, ilike, sql } from "drizzle-orm";
-import { users, profiles } from "../../../../../drizzle/schema";
+import { users } from "../../../../../drizzle/schema";
 import { UserSchema } from "../schema/schema";
 import { generateSlug } from "@/lib/utils";
-import { hashPassword } from "@/app/utils/password";
+import { validateDeletePermission } from "@/lib/permissions/check-permissions";
 
 export type UserDetail = typeof users.$inferSelect;
 export type UserInsert = typeof users.$inferInsert;
@@ -34,7 +34,7 @@ export async function getUsersByCustomerId(
   name?: string
 ): Promise<{ data: UserDetail[]; totalCount: number }> {
   try {
-    const conditions = [eq(users.idCustomer, customerId)];
+    const conditions = [eq(users.idCustomer, customerId), eq(users.active, true)];
 
     if (name && name.trim() !== "") {
       conditions.push(ilike(users.slug, `%${name}%`));
@@ -134,23 +134,24 @@ export async function createUser(data: Userinsert) {
       }
     }
 
-    // Hash da senha
-    const hashedPwd = hashPassword(data.password);
+    // Criar usuário localmente (sem Clerk)
+    const { hashPassword } = await import("@/app/utils/password");
+    const hashedPassword = hashPassword(data.password);
 
     const userId = await db
       .insert(users)
       .values({
-        slug: `${data.firstName} ${data.lastName}`,
+        slug: generateSlug(),
         dtinsert: new Date().toISOString(),
         dtupdate: new Date().toISOString(),
         active: true,
-        email: data.email,
-        idClerk: null, // Não usa mais Clerk
+        idClerk: null,
         idCustomer: data.idCustomer,
         idProfile: data.idProfile,
         idAddress: data.idAddress,
         fullAccess: data.fullAccess,
-        hashedPassword: hashedPwd,
+        hashedPassword,
+        email: data.email,
         initialPassword: data.password,
       })
       .returning({ id: users.id });
@@ -214,6 +215,11 @@ export async function updateUser(
 }
 
 export async function deleteUser(id: number): Promise<boolean> {
+  const canDelete = await validateDeletePermission();
+  if (!canDelete) {
+    throw new Error("Apenas Super Admin pode realizar esta operação");
+  }
+
   try {
     await db.delete(users).where(eq(users.id, id));
 

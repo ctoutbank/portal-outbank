@@ -1,20 +1,21 @@
 "use server";
 
 import { db } from "@/db/drizzle";
-import { and, count, eq, sql, inArray, or, not, isNull } from "drizzle-orm";
+import { and, count, sql, inArray, or, not, isNull } from "drizzle-orm";
 import { merchants, payout, transactions, customers } from "../../../drizzle/schema";
 import { revalidatePath } from "next/cache";
 import { getMerchantModuleBadges } from "@/lib/modules/merchant-modules";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
 
-// Interface para os dados do merchant
 export interface MerchantData {
   id: number;
   name: string;
   bruto: number;
   lucro: number;
-  crescimento: number; // Percentual de crescimento em relação ao período anterior
-  moduleSlugs?: string[]; // Módulos autorizados do merchant
+  crescimento: number;
+  moduleSlugs?: string[];
+  customerId?: number | null;
+  customerName?: string | null;
 }
 
 // Interface para os dados do cliente

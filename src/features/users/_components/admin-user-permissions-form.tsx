@@ -34,7 +34,14 @@ import {
   profileHasMerchantsAccess,
 } from "@/features/users/server/admin-users";
 import { AdminCustomerAssignment } from "./admin-customer-assignment";
+import { IsoCommissionAssignment, type IsoCommissionLink } from "./iso-commission-assignment";
 import type { UserDetailForm } from "@/features/customers/users/_actions/user-actions";
+
+const isoCommissionLinkSchema = z.object({
+  customerId: z.number(),
+  customerName: z.string(),
+  commissionType: z.string(),
+});
 
 const userPermissionsSchema = z.object({
   firstName: z.string().min(1, "O primeiro nome é obrigatório"),
@@ -44,8 +51,11 @@ const userPermissionsSchema = z.object({
   idCustomer: z.number().nullable(),
   fullAccess: z.boolean(),
   customerIds: z.array(z.number()).optional(),
+  isoCommissionLinks: z.array(isoCommissionLinkSchema).optional(),
   hasMerchantsAccess: z.boolean().optional(),
   isInvisible: z.boolean().optional(),
+  canViewSensitiveData: z.boolean().optional(),
+  canValidateMdr: z.boolean().optional(),
   password: z
     .union([
       z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
@@ -58,9 +68,10 @@ type UserPermissionsFormValues = z.infer<typeof userPermissionsSchema>;
 
 interface AdminUserPermissionsFormProps {
   user?: UserDetailForm;
-  profiles: Array<{ id: number; name: string | null; description?: string | null }>;
+  profiles: Array<{ id: number; name: string | null; description?: string | null; categoryType?: string | null }>;
   customers: Array<{ id: number; name: string | null; slug?: string | null }>;
   adminCustomers?: number[]; // ISOs autorizados para o Admin
+  isoCommissionLinks?: IsoCommissionLink[]; // Vínculos ISO com tipo de comissão
   isSuperAdmin?: boolean; // Se o usuário logado é Super Admin
 }
 
@@ -69,6 +80,7 @@ export function AdminUserPermissionsForm({
   profiles,
   customers,
   adminCustomers = [],
+  isoCommissionLinks: initialIsoCommissionLinks = [],
   isSuperAdmin: isSuperAdminProp = false,
 }: AdminUserPermissionsFormProps) {
   const router = useRouter();
@@ -79,6 +91,7 @@ export function AdminUserPermissionsForm({
   const [isAdminProfile, setIsAdminProfile] = useState(false);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>(adminCustomers);
   const [hasMerchantsAccess, setHasMerchantsAccess] = useState(false);
+  const [isoCommissionLinks, setIsoCommissionLinks] = useState<IsoCommissionLink[]>(initialIsoCommissionLinks);
 
   const isEditing = !!(user && 'id' in user && user.id);
   const isSuperAdmin = isSuperAdminProp;
@@ -93,9 +106,12 @@ export function AdminUserPermissionsForm({
       idCustomer: ((user && 'idCustomer' in user) ? user.idCustomer : null) as number | null,
       fullAccess: user?.fullAccess || false,
       customerIds: adminCustomers,
+      isoCommissionLinks: initialIsoCommissionLinks,
       hasMerchantsAccess: false,
-      isInvisible: false,
-      password: undefined,
+      isInvisible: (user && 'isInvisible' in user) ? Boolean(user.isInvisible) : false,
+      canViewSensitiveData: (user && 'canViewSensitiveData' in user) ? Boolean(user.canViewSensitiveData) : false,
+      canValidateMdr: (user && 'canValidateMdr' in user) ? Boolean(user.canValidateMdr) : false,
+      password: "",
     },
   });
 
@@ -113,6 +129,9 @@ export function AdminUserPermissionsForm({
         idCustomer: idCustomer,
         fullAccess: user.fullAccess || false,
         customerIds: adminCustomers,
+        isInvisible: ('isInvisible' in user) ? Boolean(user.isInvisible) : false,
+        canViewSensitiveData: ('canViewSensitiveData' in user) ? Boolean(user.canViewSensitiveData) : false,
+        canValidateMdr: ('canValidateMdr' in user) ? Boolean(user.canValidateMdr) : false,
       });
       setSelectedProfile(idProfile);
       setSelectedCustomerIds(adminCustomers);
@@ -120,28 +139,60 @@ export function AdminUserPermissionsForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user && 'id' in user ? user.id : null]); // Apenas reagir a mudanças no ID do usuário
 
+  const [isCoreProfileSelected, setIsCoreProfileSelected] = useState(false);
+  const [previousWasCore, setPreviousWasCore] = useState(false);
+
   useEffect(() => {
-    // Verificar se o perfil selecionado é Admin
+    // Verificar se a categoria selecionada é Admin ou CORE usando categoryType
     const profile = profiles.find((p) => p.id === selectedProfile);
-    if (profile && profile.name) {
-      const profileName = profile.name.toUpperCase();
-      const isAdmin = profileName.includes("ADMIN") && !profileName.includes("SUPER");
+    if (profile) {
+      const categoryType = profile.categoryType?.toUpperCase() || "";
+      const profileName = profile.name?.toUpperCase() || "";
+      
+      // Usar categoryType (preferencial) ou fallback para nome
+      const isCore = categoryType === "CORE" || profileName.includes("CORE");
+      const isAdmin = categoryType === "ADMIN" || (profileName.includes("ADMIN") && !profileName.includes("SUPER"));
+      
       setIsAdminProfile(isAdmin);
+      setIsCoreProfileSelected(isCore);
+      
+      // Se for CORE, marcar automaticamente fullAccess e hasMerchantsAccess
+      if (isCore) {
+        form.setValue("fullAccess", true);
+        form.setValue("hasMerchantsAccess", true);
+        setHasMerchantsAccess(true);
+        setPreviousWasCore(true);
+      } else if (previousWasCore) {
+        // Se estava CORE e mudou para outra categoria, resetar para valores padrão
+        form.setValue("fullAccess", false);
+        setPreviousWasCore(false);
+      }
     } else {
       setIsAdminProfile(false);
+      setIsCoreProfileSelected(false);
+      if (previousWasCore) {
+        form.setValue("fullAccess", false);
+        setPreviousWasCore(false);
+      }
     }
 
-    // Verificar acesso a estabelecimentos do perfil
+    // Verificar acesso a estabelecimentos da categoria
     if (selectedProfile) {
       profileHasMerchantsAccess(selectedProfile).then((hasAccess) => {
-        setHasMerchantsAccess(hasAccess);
-        form.setValue("hasMerchantsAccess", hasAccess);
+        // CORE sempre tem acesso a estabelecimentos
+        const profile = profiles.find((p) => p.id === selectedProfile);
+        const categoryType = profile?.categoryType?.toUpperCase() || "";
+        const profileName = profile?.name?.toUpperCase() || "";
+        const isCore = categoryType === "CORE" || profileName.includes("CORE");
+        const finalAccess = hasAccess || isCore;
+        setHasMerchantsAccess(finalAccess);
+        form.setValue("hasMerchantsAccess", finalAccess);
       });
     } else {
       setHasMerchantsAccess(false);
       form.setValue("hasMerchantsAccess", false);
     }
-  }, [selectedProfile, profiles, form]);
+  }, [selectedProfile, profiles, form, previousWasCore]);
 
   const onSubmit = async (data: UserPermissionsFormValues) => {
     setIsLoading(true);
@@ -166,6 +217,39 @@ export function AdminUserPermissionsForm({
         return;
       }
 
+      // Validação: Categoria Executivo requer mínimo 1 ISO como EXECUTIVO
+      // Validação: Categoria Core requer mínimo 1 ISO como CORE
+      if (!isAdminProfile && data.idProfile) {
+        const profile = profiles.find((p) => p.id === data.idProfile);
+        if (profile) {
+          const categoryType = profile.categoryType?.toUpperCase() || "";
+          const profileName = profile.name?.toUpperCase() || "";
+          
+          const isExecutivo = categoryType === "EXECUTIVO" || profileName.includes("EXECUTIVO");
+          const isCore = categoryType === "CORE" || profileName.includes("CORE");
+          
+          const links = data.isoCommissionLinks || isoCommissionLinks || [];
+          
+          if (isExecutivo) {
+            const hasExecutivoLink = links.some(l => l.commissionType === "EXECUTIVO");
+            if (!hasExecutivoLink) {
+              toast.error("Usuários da categoria Executivo precisam ter pelo menos 1 ISO vinculado como EXECUTIVO");
+              setIsLoading(false);
+              return;
+            }
+          }
+          
+          if (isCore) {
+            const hasCoreLink = links.some(l => l.commissionType === "CORE");
+            if (!hasCoreLink) {
+              toast.error("Usuários da categoria Core precisam ter pelo menos 1 ISO vinculado como CORE");
+              setIsLoading(false);
+              return;
+            }
+          }
+        }
+      }
+
       if (isEditing && user && 'id' in user && user.id) {
         // Atualizar usuário existente
         try {
@@ -174,8 +258,10 @@ export function AdminUserPermissionsForm({
             idCustomer?: number | null;
             fullAccess?: boolean;
             customerIds?: number[];
+            isoCommissionLinks?: Array<{ customerId: number; commissionType: string }>;
             password?: string;
             hasMerchantsAccess?: boolean;
+            canViewSensitiveData?: boolean;
           } = {
             fullAccess: data.fullAccess,
           };
@@ -192,6 +278,13 @@ export function AdminUserPermissionsForm({
             updateData.customerIds = data.customerIds;
           }
 
+          if (!isAdminProfile && data.isoCommissionLinks) {
+            updateData.isoCommissionLinks = data.isoCommissionLinks.map(l => ({
+              customerId: l.customerId,
+              commissionType: l.commissionType,
+            }));
+          }
+
           // Adicionar senha se fornecida (apenas se não estiver vazia ou apenas espaços)
           if (data.password && data.password.trim().length >= 8) {
             updateData.password = data.password.trim();
@@ -204,6 +297,16 @@ export function AdminUserPermissionsForm({
           // Adicionar acesso a estabelecimentos se fornecido
           if (data.hasMerchantsAccess !== undefined) {
             updateData.hasMerchantsAccess = data.hasMerchantsAccess;
+          }
+
+          // Adicionar permissão para visualizar dados sensíveis se fornecido
+          if (data.canViewSensitiveData !== undefined) {
+            updateData.canViewSensitiveData = data.canViewSensitiveData;
+          }
+
+          // Adicionar permissão para aprovar tabelas de taxas
+          if (data.canValidateMdr !== undefined) {
+            (updateData as any).canValidateMdr = data.canValidateMdr;
           }
 
           const userId = ('id' in user && user.id) ? (user.id as number) : null;
@@ -232,7 +335,7 @@ export function AdminUserPermissionsForm({
         }
 
         if (!data.idProfile) {
-          toast.error("Perfil é obrigatório");
+          toast.error("Categoria é obrigatória");
           setIsLoading(false);
           return;
         }
@@ -268,33 +371,30 @@ export function AdminUserPermissionsForm({
             return;
           }
         } else {
-          // Criar usuário normal usando função existente
+          // Criar usuário portal (não-ISO) usando server action
           try {
-            const { InsertUser } = await import("@/features/customers/users/_actions/user-actions");
+            const { createPortalUser } = await import("@/features/users/server/admin-users");
             
-            // Se houver múltiplos ISOs selecionados via customerIds, usar o primeiro como idCustomer principal
-            // Caso contrário, usar o idCustomer do campo
-            const primaryCustomerId = (data.customerIds && data.customerIds.length > 0) 
-              ? data.customerIds[0] 
+            // Se houver isoCommissionLinks, usar o primeiro como idCustomer principal
+            const primaryCustomerId = (data.isoCommissionLinks && data.isoCommissionLinks.length > 0) 
+              ? data.isoCommissionLinks[0].customerId 
               : (data.idCustomer || null);
             
-            const userId = await InsertUser({
+            const result = await createPortalUser({
               firstName: data.firstName.trim(),
               lastName: data.lastName.trim(),
               email: data.email.trim().toLowerCase(),
               password: data.password?.trim() || undefined,
-              idCustomer: primaryCustomerId,
-              active: true,
               idProfile: data.idProfile,
+              idCustomer: primaryCustomerId,
               fullAccess: data.fullAccess || false,
+              isoCommissionLinks: data.isoCommissionLinks?.map(l => ({
+                customerId: l.customerId,
+                commissionType: l.commissionType,
+              })),
             });
             
-            // Se houver múltiplos ISOs selecionados, atribuir os demais após criar o usuário
-            if (data.customerIds && data.customerIds.length > 1 && userId) {
-              // TODO: Implementar lógica para atribuir ISOs adicionais ao usuário criado
-              // Por enquanto, apenas o primeiro ISO será atribuído como idCustomer principal
-              console.log("ISOs adicionais selecionados:", data.customerIds.slice(1));
-            }
+            const userId = result?.userId;
 
             if (userId && typeof userId === 'number' && userId > 0) {
               toast.success("Usuário criado com sucesso");
@@ -418,110 +518,87 @@ export function AdminUserPermissionsForm({
               />
             </div>
 
-            {/* Senha (na criação e na edição) - com botão mostrar/ocultar */}
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {isEditing ? "Alterar Senha" : "Senha"}
-                    {!isEditing && <span className="text-muted-foreground text-xs"> (opcional - será gerada automaticamente se não informada)</span>}
-                    {isEditing && <span className="text-muted-foreground text-xs"> (opcional - deixe em branco para não alterar)</span>}
-                  </FormLabel>
-                  <FormControl>
-                    <PasswordInput
-                      placeholder={isEditing ? "Digite a nova senha (deixe em branco para não alterar)" : "Digite a senha"}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {isEditing 
-                      ? "Mínimo de 8 caracteres. Deixe em branco para manter a senha atual."
-                      : "Mínimo de 8 caracteres. Se não informada, será gerada automaticamente."
-                    }
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Perfil */}
-            <FormField
-              control={form.control}
-              name="idProfile"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Perfil <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <Select
-                    value={field.value?.toString() || ""}
-                    onValueChange={(value) => {
-                      const idProfile = value ? Number(value) : null;
-                      field.onChange(idProfile);
-                      setSelectedProfile(idProfile);
-                    }}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o perfil" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {profileOptions.map((profile) => (
-                        <SelectItem key={profile.id} value={profile.id.toString()}>
-                          {profile.name || "Sem nome"}
-                          {profile.description && (
-                            <span className="text-muted-foreground text-xs ml-2">
-                              - {profile.description}
-                            </span>
-                          )}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* ISO (apenas para usuários normais, não para Admin) */}
-            {!isAdminProfile && (
+            {/* Senha e Categoria - na mesma linha */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="idCustomer"
-                render={({ field }) => {
-                  // Converter idCustomer (número ou null) para array de IDs para o componente de seleção múltipla
-                  const selectedIds = field.value ? [field.value] : [];
-                  
-                  return (
-                    <FormItem>
-                      <FormLabel>ISOs</FormLabel>
-                      <FormControl>
-                        <AdminCustomerAssignment
-                          customers={customerOptions}
-                          selectedCustomerIds={selectedIds}
-                          onSelectionChange={(customerIds) => {
-                            // Armazenar todos os ISOs selecionados em customerIds
-                            form.setValue("customerIds", customerIds);
-                            // Usar o primeiro ISO como idCustomer principal (para compatibilidade com schema)
-                            if (customerIds.length > 0) {
-                              field.onChange(customerIds[0]);
-                            } else {
-                              field.onChange(null);
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Selecione os ISOs aos quais o usuário pertence. Você pode selecionar múltiplos ISOs.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {isEditing ? "Alterar Senha" : "Senha"}
+                      {!isEditing && <span className="text-muted-foreground text-xs"> (opcional)</span>}
+                      {isEditing && <span className="text-muted-foreground text-xs"> (opcional)</span>}
+                    </FormLabel>
+                    <FormControl>
+                      <PasswordInput
+                        placeholder={isEditing ? "Nova senha (mín. 8 caracteres)" : "Senha (mín. 8 caracteres)"}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
+
+              <FormField
+                control={form.control}
+                name="idProfile"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Categoria <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <Select
+                      value={field.value?.toString() || ""}
+                      onValueChange={(value) => {
+                        const idProfile = value ? Number(value) : null;
+                        field.onChange(idProfile);
+                        setSelectedProfile(idProfile);
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a categoria" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {profileOptions.map((profile) => (
+                          <SelectItem key={profile.id} value={profile.id.toString()}>
+                            {profile.name || "Sem nome"}
+                            {profile.description && (
+                              <span className="text-muted-foreground text-xs ml-2">
+                                - {profile.description}
+                              </span>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Estrutura de Comissões - ISO com tipo (apenas para Executivo, oculto para Admin e CORE) */}
+            {!isAdminProfile && !isCoreProfileSelected && (
+              <div className="space-y-2">
+                <IsoCommissionAssignment
+                  customers={customerOptions}
+                  initialLinks={isoCommissionLinks}
+                  onChange={(links) => {
+                    setIsoCommissionLinks(links);
+                    form.setValue("isoCommissionLinks", links);
+                    form.setValue("customerIds", links.map(l => l.customerId));
+                    if (links.length > 0) {
+                      form.setValue("idCustomer", links[0].customerId);
+                    } else {
+                      form.setValue("idCustomer", null);
+                    }
+                  }}
+                />
+              </div>
             )}
 
             {/* ISOs Autorizados (apenas para Admin e Super Admin pode editar) */}
@@ -542,78 +619,137 @@ export function AdminUserPermissionsForm({
               </div>
             )}
 
-            {/* Full Access */}
-            <FormField
-              control={form.control}
-              name="fullAccess"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>Acesso Total</FormLabel>
-                    <FormDescription>
-                      Quando marcado, o usuário terá acesso a todos os merchants do ISO, sem necessidade de atribuição específica.
-                    </FormDescription>
-                  </div>
-                </FormItem>
+            {/* Permissões - Grid 2 colunas para otimizar espaço */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Visualizar Todos os Estabelecimentos */}
+              <FormField
+                control={form.control}
+                name="fullAccess"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-lg">
+                    <FormControl>
+                      <Checkbox
+                        checked={isCoreProfileSelected ? true : field.value}
+                        onCheckedChange={isCoreProfileSelected ? undefined : field.onChange}
+                        disabled={isCoreProfileSelected}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-sm">
+                        Visualizar Todos os Estabelecimentos
+                        {isCoreProfileSelected && <span className="ml-1 text-xs text-muted-foreground">(auto)</span>}
+                      </FormLabel>
+                      <FormDescription className="text-xs">
+                        Visualiza todos os estabelecimentos dos ISOs vinculados.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {/* Acesso à Página de Estabelecimentos (apenas para Super Admin) */}
+              {isSuperAdmin && (
+                <FormField
+                  control={form.control}
+                  name="hasMerchantsAccess"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-lg">
+                      <FormControl>
+                        <Checkbox
+                          checked={isCoreProfileSelected ? true : (field.value || false)}
+                          onCheckedChange={isCoreProfileSelected ? undefined : (checked) => {
+                            field.onChange(checked);
+                            setHasMerchantsAccess(checked as boolean);
+                          }}
+                          disabled={isCoreProfileSelected}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm">
+                          Acesso à Página de Estabelecimentos
+                          {isCoreProfileSelected && <span className="ml-1 text-xs text-muted-foreground">(auto)</span>}
+                        </FormLabel>
+                        <FormDescription className="text-xs">
+                          Habilita o menu "Estabelecimentos" no portal.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
               )}
-            />
 
-            {/* Acesso a Estabelecimentos (apenas para Super Admin) */}
-            {isSuperAdmin && (
-              <FormField
-                control={form.control}
-                name="hasMerchantsAccess"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value || false}
-                        onCheckedChange={(checked) => {
-                          field.onChange(checked);
-                          setHasMerchantsAccess(checked as boolean);
-                        }}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Acesso a Estabelecimentos</FormLabel>
-                      <FormDescription>
-                        Quando marcado, o usuário poderá visualizar estabelecimentos de todos os ISOs aos quais tem vínculo na página de Estabelecimentos do Portal-Outbank.
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            )}
+              {/* Invisibilidade nos ISOs (apenas para Super Admin) */}
+              {isSuperAdmin && (
+                <FormField
+                  control={form.control}
+                  name="isInvisible"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-lg">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value || false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm">Invisível nos ISOs</FormLabel>
+                        <FormDescription className="text-xs">
+                          Não aparece na área de gerenciamento de usuários dos ISOs.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              )}
 
-            {/* Invisibilidade nos ISOs (apenas para Super Admin) */}
-            {isSuperAdmin && (
-              <FormField
-                control={form.control}
-                name="isInvisible"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value || false}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Invisível nos ISOs</FormLabel>
-                      <FormDescription>
-                        Quando marcado, este usuário não aparecerá na área de gerenciamento de usuários dos ISOs. Útil para administradores do sistema que não devem ser visíveis para os gestores dos ISOs.
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            )}
+              {/* Visualizar Dados Sensíveis (apenas para Super Admin) */}
+              {isSuperAdmin && (
+                <FormField
+                  control={form.control}
+                  name="canViewSensitiveData"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-lg">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value || false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm">Visualizar Dados Sensíveis</FormLabel>
+                        <FormDescription className="text-xs">
+                          Visualiza CNPJ, CPF, telefone, endereço dos clientes.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Pode Aprovar Tabelas de Taxas (apenas para Super Admin) */}
+              {isSuperAdmin && (
+                <FormField
+                  control={form.control}
+                  name="canValidateMdr"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-3 border rounded-lg">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value || false}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm">Pode Aprovar Tabelas de Taxas</FormLabel>
+                        <FormDescription className="text-xs">
+                          Permite aprovar, desativar e reativar tabelas MDR nos ISOs.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
           </CardContent>
           <div className="flex justify-end space-x-2 p-6 border-t">
             <Button

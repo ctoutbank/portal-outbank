@@ -34,7 +34,7 @@ export default function RefreshButton() {
       <button
         onClick={handleRefresh}
         disabled={isRefreshing}
-        className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 cursor-pointer"
+        className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-[#3a3a3a] disabled:text-[#808080] cursor-pointer"
       >
         <ArrowPathIcon 
           className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} 

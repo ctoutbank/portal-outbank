@@ -2,11 +2,13 @@ import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
 import CategoriesTabs from "@/features/categories/_components/categories-tabs";
 import { getCategories } from "@/features/categories/server/category";
-import { getMccs } from "@/features/mcc/server/mcc";
+import { getMccs, getCategorias } from "@/features/mcc/server/mcc";
+import type { NivelRisco, TipoLiquidacao } from "@/features/mcc/server/types";
+import { isSuperAdmin } from "@/lib/permissions/check-permissions";
 
 export default async function CategoriesPage({
-                                                 searchParams,
-                                             }: {
+    searchParams,
+}: {
     searchParams: Promise<{
         page?: string;
         perPage?: string;
@@ -21,10 +23,13 @@ export default async function CategoriesPage({
         mccSearch?: string;
         mccSortField?: string;
         mccSortOrder?: "asc" | "desc";
+        mccCategoria?: string;
+        mccNivelRisco?: string;
+        mccTipoLiquidacao?: string;
+        mccStatus?: string;
         tab?: string;
     }>;
 }) {
-    // Aguarda searchParams antes de acessar suas propriedades
     const params = await searchParams;
     
     const page = typeof params.page === "string" ? parseInt(params.page, 10) : 1;
@@ -35,47 +40,55 @@ export default async function CategoriesPage({
     const mcc = typeof params.mcc === "string" ? params.mcc : undefined;
     const cnae = typeof params.cnae === "string" ? params.cnae : undefined;
     const status = typeof params.status === "string" ? params.status : undefined;
-    const activeTab = typeof params.tab === "string" ? params.tab : "categories";
     
-    // Parâmetros para MCCs
     const mccPage = typeof params.mccPage === "string" ? parseInt(params.mccPage, 10) : 1;
     const mccPerPage = typeof params.mccPerPage === "string" ? parseInt(params.mccPerPage, 10) : 10;
     const mccSearch = typeof params.mccSearch === "string" ? params.mccSearch : "";
     const mccSortField = typeof params.mccSortField === "string" ? params.mccSortField : "code";
     const mccSortOrder = params.mccSortOrder === "desc" ? "desc" : "asc";
+    const mccCategoria = typeof params.mccCategoria === "string" ? params.mccCategoria : undefined;
+    const mccNivelRisco = typeof params.mccNivelRisco === "string" ? params.mccNivelRisco as NivelRisco : undefined;
+    const mccTipoLiquidacao = typeof params.mccTipoLiquidacao === "string" ? params.mccTipoLiquidacao as TipoLiquidacao : undefined;
+    const mccStatusFilter = params.mccStatus === "active" ? true : params.mccStatus === "inactive" ? false : undefined;
 
-    const categories = await getCategories(
-        search,
-        page,
-        perPage,
-        sortField,
-        sortOrder,
-        undefined,
-        status,
-        mcc,
-        cnae
-    );
-
-    const totalCount = categories.totalCount;
-
-    // Buscar MCCs da Dock
-    const mccsData = await getMccs(
-        mccPage,
-        mccPerPage,
-        mccSearch || undefined,
-        undefined
-    );
+    const [categories, mccsData, mccCategorias, userIsSuperAdmin] = await Promise.all([
+        getCategories(
+            search,
+            page,
+            perPage,
+            sortField,
+            sortOrder,
+            undefined,
+            status,
+            mcc,
+            cnae
+        ),
+        getMccs(
+            mccPage,
+            mccPerPage,
+            mccSearch || undefined,
+            mccCategoria,
+            mccNivelRisco,
+            mccTipoLiquidacao,
+            mccStatusFilter,
+            mccSortField,
+            mccSortOrder
+        ),
+        getCategorias(),
+        isSuperAdmin(),
+    ]);
 
     return (
         <>
             <BaseHeader
-                breadcrumbItems={[{ title: "CNAE/MCC", subtitle: "", url: "/categories" }]}
+                breadcrumbItems={[{ title: "CNAE/MCC" }]}
+                showBackButton={true}
+                backHref="/"
             />
 
             <BaseBody
-                title="CNAE/MCC"
-                subtitle="Visualização de CNAEs e MCCs cadastrados"
-                className="overflow-x-hidden bg-[#161616] [&_h1]:text-[#FFFFFF] [&_h1]:text-[22px] [&_h1]:font-semibold [&_p]:text-[#5C5C5C] [&_p]:text-sm [&_p]:font-normal"
+                title="Catálogo MCC"
+                subtitle="Gestão de códigos de categoria de estabelecimentos comerciais (ISO 18245)"
             >
                 <CategoriesTabs
                     categories={categories}
@@ -89,6 +102,8 @@ export default async function CategoriesPage({
                     categoryPerPage={perPage}
                     mccPage={mccPage}
                     mccPerPage={mccPerPage}
+                    mccCategorias={mccCategorias}
+                    isSuperAdmin={userIsSuperAdmin}
                 />
             </BaseBody>
         </>

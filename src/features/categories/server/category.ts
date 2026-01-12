@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { asc, count, desc, eq, ilike, or, and } from "drizzle-orm";
 import { categories, solicitationBrandProductType, solicitationFee, solicitationFeeBrand } from "../../../../drizzle/schema";
 import {insertSolicitationFee} from "@/features/solicitationfee/server/solicitationfee";
+import { validateDeletePermission } from "@/lib/permissions/check-permissions";
 
 
 export interface CategoryList {
@@ -203,6 +204,11 @@ export async function updateCategoryWithSolicitationFeeId(categoryId: number, so
 }
 
 export async function deleteCategory(id: number): Promise<void> {
+  const canDelete = await validateDeletePermission();
+  if (!canDelete) {
+    throw new Error("Apenas Super Admin pode realizar esta operação");
+  }
+
   await db.delete(categories).where(eq(categories.id, id));
 }
 

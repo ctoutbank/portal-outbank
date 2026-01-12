@@ -17,8 +17,10 @@ export default async function Page() {
     <>
       <BaseHeader 
         breadcrumbItems={[
-          { title: 'Margens', subtitle: '' }
+          { title: 'Margens' }
         ]}
+        showBackButton={true}
+        backHref="/"
       />
       <BaseBody
         title="Margens dos ISOs"

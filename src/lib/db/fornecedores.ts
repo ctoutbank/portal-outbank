@@ -32,36 +32,49 @@ export class FornecedoresRepository {
     const offsetIndex = paramIndex + 1;
     params.push(limit, offset);
 
-    // Query principal
     const { rows } = await sql.query(
-      `SELECT f.*
+      `SELECT 
+        f.id, f.nome, f.cnpj, f.email, f.telefone, f.endereco, f.cidade, f.estado,
+        f.cep, f.contato_principal, f.observacoes, f.documentos, f.cnae_codigo,
+        f.ativo, f.created_at, f.updated_at, f.created_by,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', c.id,
+              'slug', c.slug,
+              'name', c.name,
+              'mcc', c.mcc,
+              'cnae', c.cnae,
+              'active', c.active,
+              'has_mdr', CASE WHEN fc.mdr_id IS NOT NULL THEN true ELSE false END,
+              'suporta_pos', COALESCE(fc.suporta_pos, true),
+              'suporta_online', COALESCE(fc.suporta_online, true)
+            )
+          ) FILTER (WHERE c.id IS NOT NULL AND c.active = true),
+          '[]'
+        ) as categories
        FROM fornecedores f
+       LEFT JOIN fornecedor_categories fc ON f.id = fc.fornecedor_id
+       LEFT JOIN categories c ON fc.category_id = c.id AND c.active = true
        WHERE ${whereClause}
+       GROUP BY f.id, f.nome, f.cnpj, f.email, f.telefone, f.endereco, f.cidade, f.estado,
+                f.cep, f.contato_principal, f.observacoes, f.documentos, f.cnae_codigo,
+                f.ativo, f.created_at, f.updated_at, f.created_by
        ORDER BY f.created_at DESC
        LIMIT $${limitIndex} OFFSET $${offsetIndex}`,
       params
     );
 
-    // Buscar Categories para cada fornecedor
-    const fornecedoresComCategories = await Promise.all(
-      rows.map(async (fornecedor: Fornecedor) => {
-        const { rows: categories } = await sql.query(
-          `SELECT c.id, c.slug, c.name, c.mcc, c.cnae, c.active
-           FROM categories c
-           INNER JOIN fornecedor_categories fc ON c.id = fc.category_id
-           WHERE fc.fornecedor_id = $1 AND c.active = true`,
-          [fornecedor.id]
-        );
-
-        return {
-          ...fornecedor,
-          categories: categories,
-          total_categories: categories.length,
-          mccs: categories.map(c => String(c.id)),  // ✅ CORRIGIDO - retorna IDs
-          cnaes: categories.map(c => c.cnae).filter(Boolean)
-        };
-      })
-    );
+    const fornecedoresComCategories = rows.map((fornecedor: Fornecedor & { categories: unknown[] }) => {
+      const categories = Array.isArray(fornecedor.categories) ? fornecedor.categories : [];
+      return {
+        ...fornecedor,
+        categories: categories,
+        total_categories: categories.length,
+        mccs: categories.map((c: { id: number }) => String(c.id)),
+        cnaes: categories.map((c: { cnae: string | null }) => c.cnae).filter(Boolean)
+      };
+    });
 
     const countParams = params.slice(0, -2);
     const { rows: countRows } = await sql.query(
@@ -80,10 +93,74 @@ export class FornecedoresRepository {
     };
   }
 
-  // Buscar por ID com Categories
   async findById(id: string) {
     const { rows } = await sql.query(
-      `SELECT * FROM fornecedores WHERE id = $1`,
+      `SELECT 
+        f.id, f.nome, f.cnpj, f.email, f.telefone, f.endereco, f.cidade, f.estado,
+        f.cep, f.contato_principal, f.observacoes, f.documentos, f.cnae_codigo,
+        f.ativo, f.created_at, f.updated_at, f.created_by,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', c.id,
+              'slug', c.slug,
+              'name', c.name,
+              'mcc', c.mcc,
+              'cnae', c.cnae,
+              'active', c.active,
+              'has_mdr', CASE WHEN fc.mdr_id IS NOT NULL THEN true ELSE false END,
+              'mdr_id', fc.mdr_id,
+              'suporta_pos', COALESCE(fc.suporta_pos, true),
+              'suporta_online', COALESCE(fc.suporta_online, true),
+              'mdr_data', CASE WHEN m.id IS NOT NULL THEN json_build_object(
+                'debitopos', m.debitopos,
+                'creditopos', m.creditopos,
+                'credito2xpos', m.credito2xpos,
+                'credito7xpos', m.credito7xpos,
+                'voucherpos', m.voucherpos,
+                'prepos', m.prepos,
+                'mdrpos', m.mdrpos,
+                'cminpos', m.cminpos,
+                'cmaxpos', m.cmaxpos,
+                'antecipacao', m.antecipacao,
+                'custo_pix_pos', m.custo_pix_pos,
+                'debitoonline', m.debitoonline,
+                'creditoonline', m.creditoonline,
+                'credito2xonline', m.credito2xonline,
+                'credito7xonline', m.credito7xonline,
+                'voucheronline', m.voucheronline,
+                'preonline', m.preonline,
+                'mdronline', m.mdronline,
+                'cminonline', m.cminonline,
+                'cmaxonline', m.cmaxonline,
+                'antecipacaoonline', m.antecipacaoonline,
+                'custo_pix_online', m.custo_pix_online
+              ) ELSE NULL END
+            )
+          ) FILTER (WHERE c.id IS NOT NULL AND c.active = true),
+          '[]'
+        ) as categories,
+        COALESCE(
+          (SELECT json_agg(
+            json_build_object(
+              'id', fd.id,
+              'nome', fd.nome,
+              'tipo', fd.tipo,
+              'url', fd.url,
+              'size', fd.size,
+              'uploaded_at', fd.uploaded_at
+            )
+          ) FROM fornecedor_documents fd WHERE fd.fornecedor_id = f.id),
+          '[]'
+        ) as documentos
+       FROM fornecedores f
+       LEFT JOIN fornecedor_categories fc ON f.id = fc.fornecedor_id
+       LEFT JOIN categories c ON fc.category_id = c.id AND c.active = true
+       LEFT JOIN mdr m ON fc.mdr_id = m.id
+       WHERE f.id = $1
+       GROUP BY f.id, f.nome, f.cnpj, f.email, f.telefone, f.endereco, f.cidade, f.estado,
+                f.cep, f.contato_principal, f.observacoes, f.documentos, f.cnae_codigo,
+                f.ativo, f.created_at, f.updated_at, f.created_by`,
       [id]
     );
 
@@ -91,28 +168,17 @@ export class FornecedoresRepository {
       return null;
     }
 
-    // Buscar Categories
-    const { rows: categories } = await sql.query(
-      `SELECT c.id, c.slug, c.name, c.mcc, c.cnae, c.active
-       FROM categories c
-       INNER JOIN fornecedor_categories fc ON c.id = fc.category_id
-       WHERE fc.fornecedor_id = $1 AND c.active = true`,
-      [id]
-    );
-
-    // Buscar documentos
-    const { rows: docs } = await sql.query(
-      'SELECT * FROM fornecedor_documents WHERE fornecedor_id = $1 ORDER BY uploaded_at DESC',
-      [id]
-    );
+    const fornecedor = rows[0];
+    const categories = Array.isArray(fornecedor.categories) ? fornecedor.categories : [];
+    const docs = Array.isArray(fornecedor.documentos) ? fornecedor.documentos : [];
 
     return {
-      ...rows[0],
+      ...fornecedor,
       categories: categories,
       total_categories: categories.length,
-      mcc: categories.map(c => String(c.id)),  // Para edição (envia de volta os IDs)
-      mccs: categories.map(c => String(c.id)),  // ✅ CORRIGIDO - retorna IDs
-      cnaes: categories.map(c => c.cnae).filter(Boolean),
+      mcc: categories.map((c: { id: number }) => String(c.id)),
+      mccs: categories.map((c: { id: number }) => String(c.id)),
+      cnaes: categories.map((c: { cnae: string | null }) => c.cnae).filter(Boolean),
       documentos: docs
     };
   }

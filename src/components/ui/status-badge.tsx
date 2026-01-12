@@ -30,7 +30,7 @@ export function StatusBadge({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="secondary" className="gap-1">
+              <Badge variant="inactive" className="gap-1">
                 <XCircle className="h-3 w-3" />
                 Inativo
               </Badge>
@@ -48,7 +48,7 @@ export function StatusBadge({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge className="gap-1 bg-green-600 hover:bg-green-700">
+              <Badge variant="success" className="gap-1">
                 <CheckCircle className="h-3 w-3" />
                 Completo
               </Badge>
@@ -74,7 +74,7 @@ export function StatusBadge({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Badge className="gap-1 bg-amber-500 hover:bg-amber-600">
+            <Badge variant="warning" className="gap-1">
               <AlertCircle className="h-3 w-3" />
               Incompleto
             </Badge>
@@ -102,7 +102,7 @@ export function StatusBadge({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Badge variant="secondary" className="gap-1">
+            <Badge variant="inactive" className="gap-1">
               <XCircle className="h-3 w-3" />
               Inativo
             </Badge>
@@ -120,7 +120,7 @@ export function StatusBadge({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Badge className="gap-1 bg-green-600 hover:bg-green-700">
+            <Badge variant="success" className="gap-1">
               <CheckCircle className="h-3 w-3" />
               Ativo
             </Badge>
@@ -146,7 +146,7 @@ export function StatusBadge({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge className="gap-1 bg-amber-500 hover:bg-amber-600">
+          <Badge variant="warning" className="gap-1">
             <AlertCircle className="h-3 w-3" />
             Incompleto
           </Badge>

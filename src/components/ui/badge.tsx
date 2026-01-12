@@ -4,19 +4,23 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex w-[90px] text-center justify-center  items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex text-center justify-center items-center rounded-md border px-3 py-0.5 text-xs font-semibold whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+          "border-white/50 text-white bg-white/10",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "border-gray-500/50 text-gray-400 bg-gray-500/10",
         destructive:
-          "border-transparent bg-[#C74545] text-destructive-foreground shadow hover:bg-destructive/80",
+          "border-red-500/50 text-red-400 bg-red-500/10",
         outline: "text-foreground",
-        success: "border-transparent bg-[#00B28E] hover:bg-[#00B28E]/80 text-white",
-        pending: "border-transparent bg-[#f87117] text-white",
+        success: "border-emerald-500/50 text-emerald-400 bg-emerald-500/10",
+        pending: "border-orange-500/50 text-orange-400 bg-orange-500/10",
+        warning: "border-orange-500/50 text-orange-400 bg-orange-500/10",
+        inactive: "border-gray-500/50 text-gray-400 bg-gray-500/10",
+        info: "border-blue-500/50 text-blue-400 bg-blue-500/10",
+        draft: "border-yellow-500/50 text-yellow-400 bg-yellow-500/10",
       },
     },
     defaultVariants: {

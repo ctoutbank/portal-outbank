@@ -1,18 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useUserCache } from "@/lib/user-cache";
-import { useRouter } from "next/navigation";
+import { useUserCache } from "@/hooks/use-user-cache";
 
 export default function UnauthorizedPage() {
   const { logout } = useUserCache();
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    await logout();
-    router.push("/auth/sign-in");
-  };
-
+  
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="w-full max-w-md space-y-8 text-center">
@@ -41,7 +34,7 @@ export default function UnauthorizedPage() {
         </div>
 
         <div className="space-y-4">
-          <Button variant="outline" className="w-full" onClick={handleLogout}>
+          <Button variant="outline" className="w-full" onClick={() => logout()}>
             Fazer Logout
           </Button>
           

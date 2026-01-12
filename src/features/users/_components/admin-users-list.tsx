@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Shield, ShieldCheck, UserX, UserCheck, MoreHorizontal } from "lucide-react";
+import { Pencil, Trash2, Shield, ShieldCheck, UserX, UserCheck, MoreHorizontal, Building2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,9 +42,10 @@ type UserData = {
 
 interface AdminUsersListProps {
   users: UserData[];
+  showIsoBadge?: boolean;
 }
 
-export function AdminUsersList({ users }: AdminUsersListProps) {
+export function AdminUsersList({ users, showIsoBadge = false }: AdminUsersListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [deleteModalUser, setDeleteModalUser] = useState<UserData | null>(null);
@@ -53,6 +54,7 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
     if (!profileName) return "secondary";
     const upper = profileName.toUpperCase();
     if (upper.includes("SUPER")) return "destructive";
+    if (upper === "ISO ADMIN") return "outline";
     if (upper.includes("ADMIN")) return "default";
     return "secondary";
   };
@@ -102,7 +104,7 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
               <TableRow className="bg-[#1f1f1f] border-b border-[#2a2a2a] hover:bg-[#1f1f1f]">
                 <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider">Email</TableHead>
                 <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider">ISO</TableHead>
-                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider">Perfil</TableHead>
+                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider">Categoria</TableHead>
                 <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider">Status</TableHead>
                 <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider">Acesso</TableHead>
                 <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider text-right">Ações</TableHead>
@@ -125,7 +127,15 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
                       <span className="text-white">{user.email || "--"}</span>
                     </TableCell>
                     <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
-                      {user.customers && Array.isArray(user.customers) && user.customers.length > 0 ? (
+                      {showIsoBadge && user.customerName ? (
+                        <Badge 
+                          variant="info" 
+                          className="text-[11px] font-normal"
+                        >
+                          <Building2 className="h-3 w-3 mr-1" />
+                          {user.customerName}
+                        </Badge>
+                      ) : user.customers && Array.isArray(user.customers) && user.customers.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {user.customers
                             .filter((c): c is { idCustomer: number; customerName: string | null } => 
@@ -157,14 +167,19 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
                     </TableCell>
                     <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                       {user.profileName?.toUpperCase().includes("SUPER") ? (
-                        <Badge className="bg-black text-white text-[11px] tracking-wider font-medium">
+                        <Badge variant="default" className="text-[11px] tracking-wider font-medium">
                           {user.profileName?.includes("SUPER") && (
                             <ShieldCheck className="h-3 w-3 mr-1" />
                           )}
                           SUPER ADMIN
                         </Badge>
+                      ) : user.profileName?.toUpperCase() === "ISO ADMIN" ? (
+                        <Badge variant="info" className="text-[11px]">
+                          <Building2 className="h-3 w-3 mr-1" />
+                          ISO Admin
+                        </Badge>
                       ) : (
-                        <Badge variant={getProfileBadgeVariant(user.profileName)} className="text-[11px]">
+                        <Badge variant="secondary" className="text-[11px]">
                           {user.profileName?.includes("ADMIN") && !user.profileName?.includes("SUPER") && (
                             <Shield className="h-3 w-3 mr-1" />
                           )}
@@ -174,11 +189,11 @@ export function AdminUsersList({ users }: AdminUsersListProps) {
                     </TableCell>
                     <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                       {user.active ? (
-                        <Badge className="bg-green-600 hover:bg-green-700 text-white text-[11px]">
+                        <Badge variant="success" className="text-[11px] whitespace-nowrap">
                           Ativo
                         </Badge>
                       ) : (
-                        <Badge variant="secondary" className="text-[11px]">Inativo</Badge>
+                        <Badge variant="inactive" className="text-[11px]">Inativo</Badge>
                       )}
                     </TableCell>
                     <TableCell className="p-4 text-[#b0b0b0] text-[13px]">

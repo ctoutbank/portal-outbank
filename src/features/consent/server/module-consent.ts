@@ -149,14 +149,14 @@ export async function grantModuleConsent(data: ConsentData) {
  */
 export async function revokeModuleConsent(merchantId: number, moduleId: number) {
   try {
-    const sessionUser = await getCurrentUser();
+    const user = await currentUser();
     const headersList = await headers();
 
-    if (!sessionUser) {
+    if (!user) {
       throw new Error("Usuário não autenticado");
     }
 
-    const userEmail = sessionUser.email;
+    const userEmail = user.emailAddresses[0]?.emailAddress;
     const ipAddress = headersList.get("x-forwarded-for") || 
                      headersList.get("x-real-ip") || 
                      "unknown";

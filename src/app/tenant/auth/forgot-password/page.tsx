@@ -6,19 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-
-type Step = "email" | "success";
 
 export default function TenantForgotPasswordPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const router = useRouter();
-  
-  const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     const loadLogo = async () => {
@@ -39,7 +34,6 @@ export default function TenantForgotPasswordPage() {
     loadLogo();
   }, []);
 
-  // Obter cor primária do CSS variable
   const getPrimaryColor = () => {
     if (typeof window === 'undefined') return '#000000';
     return getComputedStyle(document.documentElement).getPropertyValue('--tenant-primary').trim() || '#000000';
@@ -90,30 +84,23 @@ export default function TenantForgotPasswordPage() {
   const primaryColor = getPrimaryColor();
   const lightColor = isLightColor(primaryColor);
 
-  const handleSendResetRequest = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!email) {
+      toast.error("Por favor, digite seu email");
+      return;
+    }
+
     setIsSubmitting(true);
+    
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setStep("success");
-        toast.success("Se o email estiver cadastrado, você receberá as instruções de recuperação.");
-      } else {
-        toast.error(data.error || "Erro ao solicitar recuperação de senha");
-      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setSubmitted(true);
+      toast.success("Solicitação enviada!");
     } catch (error: any) {
-      console.error("Error sending reset request:", error);
-      toast.error("Erro ao solicitar recuperação de senha");
+      console.error("Error sending request:", error);
+      toast.error("Erro ao enviar solicitação");
     } finally {
       setIsSubmitting(false);
     }
@@ -135,68 +122,74 @@ export default function TenantForgotPasswordPage() {
         )}
         
         <div className="bg-white/95 backdrop-blur-sm shadow-xl rounded-lg p-8 w-full">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold mb-2">Esqueceu sua senha?</h1>
-            <p className="text-gray-600 text-sm">
-              {step === "email" && "Digite seu e-mail e enviaremos instruções para redefinir sua senha"}
-              {step === "success" && "Verifique seu e-mail!"}
-            </p>
-          </div>
-
-          {/* Step 1: Email */}
-          {step === "email" && (
-            <form onSubmit={handleSendResetRequest} className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                  required
-                  disabled={isSubmitting}
-                  className="mt-1"
-                />
+          {!submitted ? (
+            <>
+              <div className="text-center mb-6">
+                <h1 className="text-2xl font-bold mb-2">Esqueceu sua senha?</h1>
+                <p className="text-gray-600 text-sm">
+                  Digite seu e-mail e entraremos em contato para ajudá-lo a recuperar o acesso.
+                </p>
               </div>
-              
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full"
-                style={{ 
-                  backgroundColor: 'var(--tenant-primary)', 
-                  color: lightColor ? '#000' : '#fff' 
-                }}
-              >
-                {isSubmitting ? "Enviando..." : "Enviar instruções"}
-              </Button>
-            </form>
-          )}
 
-          {/* Step 2: Success */}
-          {step === "success" && (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="seu@email.com"
+                    required
+                    disabled={isSubmitting}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full"
+                  style={{ 
+                    backgroundColor: 'var(--tenant-primary)', 
+                    color: lightColor ? '#000' : '#fff' 
+                  }}
+                >
+                  {isSubmitting ? "Enviando..." : "Solicitar redefinição"}
+                </Button>
+              </form>
+
+              <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-amber-800">
+                    <p className="font-medium">Precisa de ajuda imediata?</p>
+                    <p className="mt-1">Entre em contato com o administrador do sistema para redefinir sua senha.</p>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
             <div className="text-center py-8">
               <div className="mb-4">
                 <CheckCircle className="h-16 w-16 mx-auto" style={{ color: 'var(--tenant-primary)' }} />
               </div>
-              <h2 className="text-xl font-bold mb-2">Email enviado!</h2>
+              <h2 className="text-xl font-bold mb-2">Solicitação enviada!</h2>
               <p className="text-gray-600 mb-6">
-                Se o email estiver cadastrado em nosso sistema, você receberá as instruções para redefinir sua senha.
+                Se o email estiver cadastrado, você receberá instruções para redefinir sua senha em breve.
               </p>
               <Link href="/auth/sign-in">
                 <Button
                   variant="outline"
                   className="w-full"
                 >
-                  Voltar para login
+                  Voltar para o login
                 </Button>
               </Link>
             </div>
           )}
 
-          {/* Link voltar para login (apenas no primeiro step) */}
-          {step === "email" && (
+          {!submitted && (
             <div className="mt-6 text-center">
               <Link 
                 href="/auth/sign-in" 

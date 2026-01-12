@@ -12,7 +12,6 @@ export const CustomizationSchema = z.object({
     .transform((val) => val.toLowerCase().trim()),
   primaryColor: z.string().optional(),
   secondaryColor: z.string().optional(),
-  // Cores de personalização do login
   loginButtonColor: z.string().optional(),
   loginButtonTextColor: z.string().optional(),
   loginTitleColor: z.string().optional(),

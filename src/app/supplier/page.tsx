@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { FornecedoresList } from '@/components/supplier/FornecedoresList';
-import { Fornecedor, FornecedorFormData, FornecedorMDRForm } from '@/types/fornecedor'
+import { Fornecedor, FornecedorFormData } from '@/types/fornecedor'
 import { FornecedorModal } from '@/components/supplier/FornecedorModal';
 import { FornecedorForm } from '@/components/supplier/FornecedorForm';
 import BaseHeader from '@/components/layout/base-header';
@@ -19,13 +19,13 @@ export default function FornecedoresPage() {
         setIsModalOpen(true);
         };
 
-    const handleSave = async (formData: FornecedorFormData, files: File[], mdr?: FornecedorMDRForm ) => {
+    const handleSave = async (formData: FornecedorFormData) => {
         try{
         setLoading(true);
         const response = await fetch('/api/supplier', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({fornecedor: formData, mdr: mdr}),
+            body: JSON.stringify({fornecedor: formData}),
         });
 
         const result = await response.json();
@@ -85,11 +85,9 @@ export default function FornecedoresPage() {
     return (
         <div className="overflow-x-hidden">
             <BaseHeader
-                breadcrumbItems={[{ title: <h1 className="text-2xl font-bold text-gray-900 dark:text-white px-5">Gestão de Fornecedores</h1>, 
-                                    subtitle: <p className="text-gray-600 dark:text-white px-5">
-                                    Configuração custos, taxas e parcerias com fornecedores de serviços financeiros
-                                    </p>,                 
-                                        url: "/supplier" }]}
+                breadcrumbItems={[{ title: "Fornecedores" }]}
+                showBackButton={true}
+                backHref="/"
             />
             
             <div className="p-6">
@@ -102,12 +100,11 @@ export default function FornecedoresPage() {
                         <div> Carregando...</div>
                     ) : (
                         <FornecedorForm
-                            onSubmit={async (data, files, mdr) => {
-                                await handleSave(data, files, mdr);
+                            onSubmit={async (data) => {
+                                await handleSave(data);
                             }}
                             onCancel={() => setIsModalOpen(false)}
-                            isEditing={false} 
-                            categories={[]}
+                            isEditing={false}
                         />
                     )}
                 </FornecedorModal>

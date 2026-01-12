@@ -2,10 +2,29 @@
 
 import { db } from "@/lib/db";
 import { profiles, functions, profileFunctions } from "../../../../drizzle/schema";
-import { eq, and, ilike, inArray } from "drizzle-orm";
+import { eq, and, ilike, inArray, sql } from "drizzle-orm";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
 import { revalidatePath } from "next/cache";
 import { generateSlug } from "@/lib/utils";
+
+// Mapeamento grupo de permissão -> menu correspondente
+const PERMISSION_TO_MENU_MAP: Record<string, string> = {
+  "Dashboard": "dashboard",
+  "Estabelecimentos": "estabelecimentos",
+  "Vendas": "vendas",
+  "Fechamento": "fechamento",
+  "Categorias": "config",
+  "Configurar Perfis e Usuários": "config",
+  "ISOs": "isos",
+  "CNAE/MCC": "cnae_mcc",
+  "Analytics": "analytics",
+  "Repasses": "repasses",
+  "Fornecedores": "fornecedores",
+  "Margens": "margens",
+  "Consentimento LGPD": "lgpd",
+  "Configurações": "config",
+  "Usuários": "config",
+};
 
 // =====================================================
 // Definição das funções do Portal-Outbank (Admin Consolle)
@@ -88,6 +107,16 @@ const PORTAL_FUNCTIONS = {
   // Grupo: Analytics
   Analytics: [
     { name: "Visualizar Analytics", group: "Analytics" },
+  ],
+  // Grupo: Margens
+  Margens: [
+    { name: "Acessar Margens", group: "Margens" },
+    { name: "Editar Margens", group: "Margens" },
+  ],
+  // Grupo: Repasses
+  Repasses: [
+    { name: "Acessar Repasses", group: "Repasses" },
+    { name: "Gerenciar Repasses", group: "Repasses" },
   ],
 };
 
@@ -266,6 +295,7 @@ export async function getCategoryPermissions(categoryId: number) {
 /**
  * Atribui permissões a uma categoria
  * Remove todas as permissões atuais e adiciona as novas
+ * Também sincroniza automaticamente os menus correspondentes
  */
 export async function updateCategoryPermissions(
   categoryId: number,
@@ -344,6 +374,59 @@ export async function updateCategoryPermissions(
       }));
 
       await db.insert(profileFunctions).values(values);
+    }
+  }
+
+  // SINCRONIZAÇÃO: Adicionar menus correspondentes às permissões selecionadas
+  if (functionIds.length > 0) {
+    // Buscar os grupos das funções selecionadas
+    const selectedFunctions = await db
+      .select({ group: functions.group })
+      .from(functions)
+      .where(inArray(functions.id, functionIds));
+
+    // Coletar menus correspondentes aos grupos
+    const menusToAdd = new Set<string>();
+    for (const func of selectedFunctions) {
+      if (func.group) {
+        const menuId = PERMISSION_TO_MENU_MAP[func.group];
+        if (menuId) {
+          menusToAdd.add(menuId);
+        }
+      }
+    }
+
+    if (menusToAdd.size > 0) {
+      // Buscar menus atuais da categoria
+      const currentMenusResult = await db.execute(sql`
+        SELECT authorized_menus FROM profiles WHERE id = ${categoryId}
+      `);
+      
+      let currentMenus: string[] = [];
+      const rawMenus = currentMenusResult.rows?.[0]?.authorized_menus;
+      if (rawMenus) {
+        try {
+          currentMenus = typeof rawMenus === 'string' ? JSON.parse(rawMenus) : rawMenus;
+        } catch {
+          currentMenus = [];
+        }
+      }
+
+      // Adicionar novos menus sem remover os existentes
+      const updatedMenus = [...new Set([...currentMenus, ...menusToAdd])];
+
+      // Atualizar menus autorizados
+      const menusJson = JSON.stringify(updatedMenus);
+      await db.execute(sql`
+        UPDATE profiles 
+        SET authorized_menus = ${menusJson}, dtupdate = NOW()
+        WHERE id = ${categoryId}
+      `);
+
+      const addedMenus = [...menusToAdd].filter((m) => !currentMenus.includes(m));
+      if (addedMenus.length > 0) {
+        console.log(`[updateCategoryPermissions] Sincronizados ${addedMenus.length} menus para categoria ${categoryId}: ${addedMenus.join(', ')}`);
+      }
     }
   }
 

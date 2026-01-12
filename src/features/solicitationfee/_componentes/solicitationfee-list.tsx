@@ -1,24 +1,33 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SolicitationFeelist, deleteSolicitationFee } from "../server/solicitationfee";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export default function SolicitationFeeList({SolicitationFees}:{
     SolicitationFees: SolicitationFeelist
 }) {
     const router = useRouter();
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+    const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
     
-    const handleDelete = async (id: number) => {
-        const confirm = window.confirm("Tem certeza que deseja deletar esta solicitação de tarifa?");
-        if (confirm) {
-            await deleteSolicitationFee(id);
+    const handleDeleteRequest = (id: number) => {
+        setPendingDeleteId(id);
+        setConfirmDeleteOpen(true);
+    };
+    
+    const handleDeleteConfirm = async () => {
+        if (pendingDeleteId) {
+            await deleteSolicitationFee(pendingDeleteId);
+            setPendingDeleteId(null);
             router.refresh();
         }
-    }
+    };
 
     return (
       <div className="w-full max-w-full overflow-x-hidden">
@@ -70,7 +79,7 @@ export default function SolicitationFeeList({SolicitationFees}:{
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(fee.id)}
+                        onClick={() => handleDeleteRequest(fee.id)}
                         className="cursor-pointer"
                       >
                         Excluir
@@ -82,6 +91,17 @@ export default function SolicitationFeeList({SolicitationFees}:{
             </Table>
           </div>
         </div>
+
+        <ConfirmDialog
+          open={confirmDeleteOpen}
+          onOpenChange={setConfirmDeleteOpen}
+          title="Excluir Solicitação de Tarifa"
+          description="Tem certeza que deseja deletar esta solicitação de tarifa? Esta ação não pode ser desfeita."
+          confirmText="Excluir"
+          cancelText="Cancelar"
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setPendingDeleteId(null)}
+        />
       </div>
     );
   } 

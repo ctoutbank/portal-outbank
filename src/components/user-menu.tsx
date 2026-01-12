@@ -2,15 +2,20 @@
 "use client";
 
 import { useUserCache } from "@/hooks/use-user-cache";
-import { ChevronUp, LogOut, Settings, Shield } from "lucide-react";
+import { ChevronUp, LogOut, Settings, Shield, Bell } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import Image from 'next/image';
 import { ConsentNotificationsBadge } from "@/features/consent/components/consent-notifications-badge";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useUserCache();
+
+  const router = useRouter();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

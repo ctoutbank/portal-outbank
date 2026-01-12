@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { addresses, contacts } from "../../../../drizzle/schema";
 import { eq, getTableColumns } from "drizzle-orm";
+import { validateDeletePermission } from "@/lib/permissions/check-permissions";
 
 export type ContactInsert = typeof contacts.$inferInsert;
 export type ContactUpdate = typeof contacts.$inferSelect;
@@ -38,6 +39,11 @@ export async function updateContact(contact: ContactUpdate) {
 }
 
 export async function deleteContact(id: number) {
+  const canDelete = await validateDeletePermission();
+  if (!canDelete) {
+    throw new Error("Apenas Super Admin pode deletar contatos");
+  }
+  
   await db.delete(contacts).where(eq(contacts.id, id));
 }
 

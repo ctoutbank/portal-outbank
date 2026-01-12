@@ -32,12 +32,12 @@ export function FornecedorModal({
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
+            <div className="fixed inset-0 bg-black bg-opacity-70 transition-opacity" onClick={onClose} />
             <div className="flex min-h-screen items-center justify-center p-4">
-                <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                    <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
+                <div className="relative bg-[#171717] rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-[rgba(255,255,255,0.1)]">
+                    <div className="sticky top-0 bg-[#171717] border-b border-[rgba(255,255,255,0.1)] px-6 py-4 flex justify-between items-center">
+                        <h2 className="text-xl font-semibold text-white">{title}</h2>
+                        <button onClick={onClose} className="text-[#5C5C5C] hover:text-white transition">
                             <X className="h-6 w-6" />
                         </button>
                     </div>

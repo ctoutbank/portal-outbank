@@ -129,5 +129,41 @@ export interface FornecedorMDRForm{
   cminonline : string,
   cmaxonline : string,
   antecipacaoonline : string,
-  mcc?: string[];  
+  mcc?: string[];
+  
+  // Novos campos: Custo Fornecedor e Margem Portal (POS)
+  custoDebitoPos?: string,
+  custoCreditoPos?: string,
+  custoCredito2xPos?: string,
+  custoCredito7xPos?: string,
+  custoVoucherPos?: string,
+  margemDebitoPos?: string,
+  margemCreditoPos?: string,
+  margemCredito2xPos?: string,
+  margemCredito7xPos?: string,
+  margemVoucherPos?: string,
+  
+  // Novos campos: Custo Fornecedor e Margem Portal (Online)
+  custoDebitoOnline?: string,
+  custoCreditoOnline?: string,
+  custoCredito2xOnline?: string,
+  custoCredito7xOnline?: string,
+  custoVoucherOnline?: string,
+  margemDebitoOnline?: string,
+  margemCreditoOnline?: string,
+  margemCredito2xOnline?: string,
+  margemCredito7xOnline?: string,
+  margemVoucherOnline?: string,
+  
+  // PIX: valores fixos em R$
+  custoPixPos?: string,
+  margemPixPos?: string,
+  custoPixOnline?: string,
+  margemPixOnline?: string,
+  
+  // PIX: campos snake_case do banco (PostgreSQL retorna assim)
+  custo_pix_pos?: string,
+  margem_pix_pos?: string,
+  custo_pix_online?: string,
+  margem_pix_online?: string,
 }

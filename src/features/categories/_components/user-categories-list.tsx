@@ -31,7 +31,8 @@ type Category = {
   description: string | null;
   active: boolean | null;
   restrictCustomerData: boolean | null;
-  isSalesAgent: boolean | null;
+  categoryType?: string | null;
+  locked?: boolean | null;
   userCount: number;
   dtinsert?: string | null;
   dtupdate?: string | null;
@@ -74,6 +75,14 @@ export function UserCategoriesList({ categories }: UserCategoriesListProps) {
     return name.toUpperCase().includes("SUPER_ADMIN") || name.toUpperCase().includes("SUPER");
   };
 
+  // Categorias protegidas: Super Admin, CORE, Executivo ou bloqueadas manualmente
+  const isProtectedCategory = (category: Category) => {
+    if (isSuperAdmin(category.name)) return true;
+    if (category.locked) return true;
+    const categoryType = category.categoryType?.toUpperCase() || "";
+    return categoryType === "CORE" || categoryType === "EXECUTIVO";
+  };
+
   return (
     <>
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden">
@@ -82,7 +91,7 @@ export function UserCategoriesList({ categories }: UserCategoriesListProps) {
             <TableHeader>
               <TableRow className="bg-[#1f1f1f] border-b border-[#2a2a2a] hover:bg-[#1f1f1f]">
                 <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider">Nome</TableHead>
-                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider">Descrição</TableHead>
+                <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider">Tipo</TableHead>
                 <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider">Usuários</TableHead>
                 <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider">Restrição</TableHead>
                 <TableHead className="p-4 text-white text-xs font-medium uppercase tracking-wider">Status</TableHead>
@@ -92,7 +101,7 @@ export function UserCategoriesList({ categories }: UserCategoriesListProps) {
             <TableBody>
               {categories.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-[#808080]">
+                  <TableCell colSpan={7} className="text-center py-8 text-[#808080]">
                     Nenhuma categoria encontrada
                   </TableCell>
                 </TableRow>
@@ -121,9 +130,15 @@ export function UserCategoriesList({ categories }: UserCategoriesListProps) {
                         </div>
                       </TableCell>
                       <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
-                        <span className="text-[11px] text-[#606060]">
-                          {category.description || "--"}
-                        </span>
+                        {category.categoryType === "EXECUTIVO" && (
+                          <Badge variant="info" className="text-[11px]">Executivo</Badge>
+                        )}
+                        {category.categoryType === "CORE" && (
+                          <Badge variant="warning" className="text-[11px]">Core</Badge>
+                        )}
+                        {(!category.categoryType || category.categoryType === "OUTRO") && (
+                          <span className="text-[#808080]">--</span>
+                        )}
                       </TableCell>
                       <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                         <div className="flex items-center gap-1">
@@ -145,11 +160,11 @@ export function UserCategoriesList({ categories }: UserCategoriesListProps) {
                       </TableCell>
                       <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                         {category.active ? (
-                          <Badge className="bg-green-600 hover:bg-green-700 text-white text-[11px]">
+                          <Badge variant="success" className="text-[11px] whitespace-nowrap">
                             Ativo
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="text-[11px]">Inativo</Badge>
+                          <Badge variant="inactive" className="text-[11px]">Inativo</Badge>
                         )}
                       </TableCell>
                       <TableCell className="p-4 text-right">
@@ -159,7 +174,7 @@ export function UserCategoriesList({ categories }: UserCategoriesListProps) {
                               <Pencil className="h-4 w-4" />
                             </Link>
                           </Button>
-                          {!isSuper && (
+                          {!isProtectedCategory(category) && (
                             <Button
                               variant="ghost"
                               size="sm"

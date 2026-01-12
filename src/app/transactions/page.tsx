@@ -4,7 +4,6 @@ import BaseHeader from "@/components/layout/base-header";
 import PageSizeSelector from "@/components/page-size-selector";
 import PaginationRecords from "@/components/pagination-Records";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TransactionsCardsWrapper } from "@/features/transactions/_components/transactions-cards-wrapper";
 import { TransactionsFilter } from "@/features/transactions/_components/transactions-filter";
 import TransactionsList from "@/features/transactions/_components/transactions-list";
 import {
@@ -197,7 +196,9 @@ export default async function TransactionsPage({
   return (
       <>
         <BaseHeader
-            breadcrumbItems={[{ title: "Vendas", subtitle: "", url: "/transactions" }]}
+            breadcrumbItems={[{ title: "Vendas" }]}
+            showBackButton={true}
+            backHref="/"
         />
         <BaseBody
             title=""

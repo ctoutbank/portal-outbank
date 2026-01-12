@@ -14,10 +14,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import {
   ProfileDD,
   UserDetailForm,
-  getUserDetailWithClerk,
-  getUsersWithClerk,
+  getUserDetail,
+  UserDetail,
+  getUsersByCustomerId,
 } from "../users/_actions/user-actions";
-import { UserWithClerk } from "../users/_components/user-table-updated";
 import {
   saveCustomization,
   updateCustomization,
@@ -27,6 +27,7 @@ import {
 } from "@/utils/serverActions";
 import Image from "next/image";
 import { Info, Palette, Building2, Users, Save, ChevronDown } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Tooltip,
   TooltipProvider,
@@ -57,7 +58,7 @@ export default function CustomerWizardForm({
     customer.id || null
   );
   const [isFirstStepComplete, setIsFirstStepComplete] = useState(!!customer.id);
-  const [users, setUsers] = useState<UserWithClerk[]>([]);
+  const [users, setUsers] = useState<UserDetail[]>([]);
   const [isLoadingUsers] = useState(false);
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [userToEdit, setUserToEdit] = useState<UserDetailForm | null>(null);
@@ -68,7 +69,6 @@ export default function CustomerWizardForm({
     subdomain?: string;
     primaryColor?: string;
     secondaryColor?: string;
-    // Novas cores do login
     loginButtonColor?: string;
     loginButtonTextColor?: string;
     loginTitleColor?: string;
@@ -76,8 +76,6 @@ export default function CustomerWizardForm({
     loginImageUrl?: string;
     faviconUrl?: string;
     emailImageUrl?: string;
-    // Ícone do menu
-    menuIconUrl?: string;
   } | null>(
     customizationInitial ? {
       imageUrl: customizationInitial.imageUrl ?? undefined,
@@ -85,7 +83,6 @@ export default function CustomerWizardForm({
       subdomain: customizationInitial.slug ?? undefined,
       primaryColor: customizationInitial.primaryColor ?? undefined,
       secondaryColor: customizationInitial.secondaryColor ?? undefined,
-      // Novas cores do login
       loginButtonColor: customizationInitial.loginButtonColor ?? undefined,
       loginButtonTextColor: customizationInitial.loginButtonTextColor ?? undefined,
       loginTitleColor: customizationInitial.loginTitleColor ?? undefined,
@@ -93,8 +90,6 @@ export default function CustomerWizardForm({
       loginImageUrl: customizationInitial.loginImageUrl ?? undefined,
       faviconUrl: customizationInitial.faviconUrl ?? undefined,
       emailImageUrl: customizationInitial.emailImageUrl ?? undefined,
-      // Ícone do menu
-      menuIconUrl: customizationInitial.menuIconUrl ?? undefined,
     } : null
   );
 
@@ -357,6 +352,10 @@ export default function CustomerWizardForm({
                 formData.append("subdomain", iso.subdomain);
                 formData.append("primaryColor", primaryColorHex || "#000000");
                 formData.append("secondaryColor", secondaryColorHex || "#ffffff");
+                formData.append("loginButtonColor", loginButtonColorHex || "#3b82f6");
+                formData.append("loginButtonTextColor", loginButtonTextColorHex || "#ffffff");
+                formData.append("loginTitleColor", loginTitleColorHex || "#ffffff");
+                formData.append("loginTextColor", loginTextColorHex || "#d1d5db");
               }
               
               if (customizationData?.id) {
@@ -400,11 +399,10 @@ export default function CustomerWizardForm({
             formData.set("customerId", String(customerId));
             formData.set("primaryColor", primaryColorHex);
             formData.set("secondaryColor", secondaryColorHex);
-            // Novas cores do login
-            formData.set("loginButtonColor", loginButtonColorHex);
-            formData.set("loginButtonTextColor", loginButtonTextColorHex);
-            formData.set("loginTitleColor", loginTitleColorHex);
-            formData.set("loginTextColor", loginTextColorHex);
+            formData.set("loginButtonColor", loginButtonColorHex || "#3b82f6");
+            formData.set("loginButtonTextColor", loginButtonTextColorHex || "#ffffff");
+            formData.set("loginTitleColor", loginTitleColorHex || "#ffffff");
+            formData.set("loginTextColor", loginTextColorHex || "#d1d5db");
             if (customizationData?.id) {
               formData.set("id", String(customizationData.id));
             }
@@ -414,7 +412,6 @@ export default function CustomerWizardForm({
             const loginImageInput = document.getElementById('loginImage') as HTMLInputElement;
             const faviconInput = document.getElementById('favicon') as HTMLInputElement;
             const emailImageInput = document.getElementById('emailImage') as HTMLInputElement;
-            const menuIconInput = document.getElementById('menuIcon') as HTMLInputElement;
 
             if (imageInput?.files?.[0]) {
               formData.append("image", imageInput.files[0]);
@@ -427,9 +424,6 @@ export default function CustomerWizardForm({
             }
             if (emailImageInput?.files?.[0]) {
               formData.append("emailImage", emailImageInput.files[0]);
-            }
-            if (menuIconInput?.files?.[0]) {
-              formData.append("menuIcon", menuIconInput.files[0]);
             }
 
             const validationData = {
@@ -454,16 +448,9 @@ export default function CustomerWizardForm({
                   subdomain: result.customization.slug ?? undefined,
                   primaryColor: result.customization.primaryColor ?? undefined,
                   secondaryColor: result.customization.secondaryColor ?? undefined,
-                  // Novas cores do login
-                  loginButtonColor: result.customization.loginButtonColor ?? undefined,
-                  loginButtonTextColor: result.customization.loginButtonTextColor ?? undefined,
-                  loginTitleColor: result.customization.loginTitleColor ?? undefined,
-                  loginTextColor: result.customization.loginTextColor ?? undefined,
                   loginImageUrl: result.customization.loginImageUrl ?? undefined,
                   faviconUrl: result.customization.faviconUrl ?? undefined,
                   emailImageUrl: result.customization.emailImageUrl ?? undefined,
-                  // Ícone do menu
-                  menuIconUrl: result.customization.menuIconUrl ?? undefined,
                 });
 
                 if (result.customization.primaryColor) {
@@ -471,19 +458,6 @@ export default function CustomerWizardForm({
                 }
                 if (result.customization.secondaryColor) {
                   setSecondaryColorHex(hslToHex(result.customization.secondaryColor));
-                }
-                // Sincronizar novas cores do login
-                if (result.customization.loginButtonColor) {
-                  setLoginButtonColorHex(hslToHex(result.customization.loginButtonColor));
-                }
-                if (result.customization.loginButtonTextColor) {
-                  setLoginButtonTextColorHex(hslToHex(result.customization.loginButtonTextColor));
-                }
-                if (result.customization.loginTitleColor) {
-                  setLoginTitleColorHex(hslToHex(result.customization.loginTitleColor));
-                }
-                if (result.customization.loginTextColor) {
-                  setLoginTextColorHex(hslToHex(result.customization.loginTextColor));
                 }
 
                 // ✅ ATUALIZAÇÃO INSTANTÂNEA: Atualizar DOM imediatamente
@@ -563,13 +537,14 @@ export default function CustomerWizardForm({
   const [emailImagePreview, setEmailImagePreview] = useState<string | null>(null);
   const [emailImageError, setEmailImageError] = useState<string | null>(null);
   const [emailImageFileName, setEmailImageFileName] = useState<string>("");
-  // Estados para ícone do menu (36x36px)
-  const [menuIconPreview, setMenuIconPreview] = useState<string | null>(null);
-  const [menuIconError, setMenuIconError] = useState<string | null>(null);
-  const [menuIconFileName, setMenuIconFileName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingCustomization, setIsSavingCustomization] = useState(false);
   const [isRemovingImage, setIsRemovingImage] = useState(false);
+  
+  // Estados para modais de confirmação
+  const [confirmRemoveImageOpen, setConfirmRemoveImageOpen] = useState(false);
+  const [confirmRemoveAllImagesOpen, setConfirmRemoveAllImagesOpen] = useState(false);
+  const [pendingRemoveImageType, setPendingRemoveImageType] = useState<'logo' | 'login' | 'favicon' | 'email' | null>(null);
   
   // ✅ Estado controlado para cores (atualização instantânea)
   const [primaryColorHex, setPrimaryColorHex] = useState<string>(
@@ -583,16 +558,16 @@ export default function CustomerWizardForm({
       : "#ffffff"
   );
   
-  // Estados para novas cores do login
+  // Estados para cores da página de login
   const [loginButtonColorHex, setLoginButtonColorHex] = useState<string>(
     customizationData?.loginButtonColor 
       ? hslToHex(customizationData.loginButtonColor) 
-      : "#ffffff"
+      : "#3b82f6"
   );
   const [loginButtonTextColorHex, setLoginButtonTextColorHex] = useState<string>(
     customizationData?.loginButtonTextColor 
       ? hslToHex(customizationData.loginButtonTextColor) 
-      : "#000000"
+      : "#ffffff"
   );
   const [loginTitleColorHex, setLoginTitleColorHex] = useState<string>(
     customizationData?.loginTitleColor 
@@ -602,7 +577,7 @@ export default function CustomerWizardForm({
   const [loginTextColorHex, setLoginTextColorHex] = useState<string>(
     customizationData?.loginTextColor 
       ? hslToHex(customizationData.loginTextColor) 
-      : "#9ca3af"
+      : "#d1d5db"
   );
 
   // ✅ Sincronizar cores hex quando customizationData mudar
@@ -613,7 +588,6 @@ export default function CustomerWizardForm({
     if (customizationData?.secondaryColor) {
       setSecondaryColorHex(hslToHex(customizationData.secondaryColor));
     }
-    // Sincronizar novas cores do login
     if (customizationData?.loginButtonColor) {
       setLoginButtonColorHex(hslToHex(customizationData.loginButtonColor));
     }
@@ -885,57 +859,6 @@ export default function CustomerWizardForm({
     }
   };
 
-  // Handler para ícone do menu (36x36px)
-  const handleMenuIconChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    setMenuIconError(null);
-
-    if (file) {
-      // Validar tipo de arquivo
-      if (!file.type.startsWith('image/')) {
-        setMenuIconError('❌ Por favor, selecione uma imagem válida');
-        e.target.value = "";
-        return;
-      }
-
-      setMenuIconFileName(file.name);
-      
-      const MAX_SIZE = 1 * 1024 * 1024; // 1MB máximo para ícone
-      if (file.size > MAX_SIZE) {
-        setMenuIconError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 1MB`);
-        setMenuIconPreview(null);
-        e.target.value = "";
-        setMenuIconFileName("");
-        return;
-      }
-
-      try {
-        // ✅ Comprimir imagem se necessário (máximo 0.2MB para ícone)
-        const compressedFile = await compressImage(file, 0.2);
-        
-        // Atualizar o input com o arquivo comprimido
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(compressedFile);
-        e.target.files = dataTransfer.files;
-
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          setMenuIconPreview(result);
-        };
-        reader.readAsDataURL(compressedFile);
-      } catch (error) {
-        console.error('Erro ao processar ícone do menu:', error);
-        setMenuIconError('❌ Erro ao processar imagem. Tente novamente.');
-        e.target.value = "";
-        setMenuIconFileName("");
-      }
-    } else {
-      setMenuIconPreview(null);
-      setMenuIconFileName("");
-    }
-  };
-
   const handleFirstStepComplete = async (id: number) => {
     if (iso.subdomain && iso.subdomain.trim() !== "") {
       try {
@@ -944,6 +867,10 @@ export default function CustomerWizardForm({
         formData.append("subdomain", iso.subdomain);
         formData.append("primaryColor", "#000000");
         formData.append("secondaryColor", "#ffffff");
+        formData.append("loginButtonColor", "#3b82f6");
+        formData.append("loginButtonTextColor", "#ffffff");
+        formData.append("loginTitleColor", "#ffffff");
+        formData.append("loginTextColor", "#d1d5db");
         
         if (customizationData?.id) {
           formData.append("id", customizationData.id.toString());
@@ -968,7 +895,7 @@ export default function CustomerWizardForm({
   // Função para recarregar a lista de usuários
   const loadUsers = async (customerId: number) => {
     try {
-      const users = await getUsersWithClerk(customerId);
+      const users = await getUsersByCustomerId(customerId);
       setUsers(users);
     } catch (error) {
       console.error("Erro ao carregar usuários:", error);
@@ -976,24 +903,21 @@ export default function CustomerWizardForm({
     }
   };
 
-  const handleRemoveImage = async (type: 'logo' | 'login' | 'favicon' | 'email' | 'menuIcon') => {
+  const handleRemoveImageRequest = (type: 'logo' | 'login' | 'favicon' | 'email') => {
     if (!newCustomerId) {
       toast.error("ID do cliente não encontrado");
       return;
     }
+    setPendingRemoveImageType(type);
+    setConfirmRemoveImageOpen(true);
+  };
 
-    const confirmMessage = type === 'logo' 
-      ? "Tem certeza que deseja remover o logo?" 
-      : type === 'login'
-      ? "Tem certeza que deseja remover a imagem de fundo do login?"
-      : type === 'favicon'
-      ? "Tem certeza que deseja remover o favicon?"
-      : "Tem certeza que deseja remover a logo de email?";
-
-    if (!confirm(confirmMessage)) {
+  const handleRemoveImageConfirm = async () => {
+    if (!newCustomerId || !pendingRemoveImageType) {
       return;
     }
 
+    const type = pendingRemoveImageType;
     setIsRemovingImage(true);
     try {
       const result = await removeImage({ customerId: newCustomerId, type });
@@ -1034,16 +958,20 @@ export default function CustomerWizardForm({
       toast.error("Erro ao remover imagem");
     } finally {
       setIsRemovingImage(false);
+      setPendingRemoveImageType(null);
     }
   };
 
-  const handleRemoveAllImages = async () => {
+  const handleRemoveAllImagesRequest = () => {
     if (!newCustomerId) {
       toast.error("ID do cliente não encontrado");
       return;
     }
+    setConfirmRemoveAllImagesOpen(true);
+  };
 
-    if (!confirm("Tem certeza que deseja remover TODAS as imagens? Esta ação removerá o logo, imagem de login e favicon.")) {
+  const handleRemoveAllImagesConfirm = async () => {
+    if (!newCustomerId) {
       return;
     }
 
@@ -1104,7 +1032,7 @@ export default function CustomerWizardForm({
       if (selectedUser) {
         setIsLoadingUser(true);
         try {
-          const userDetail = await getUserDetailWithClerk(selectedUser);
+          const userDetail = await getUserDetail(selectedUser);
           if (userDetail) {
             setUserToEdit(userDetail);
           } else {
@@ -1201,7 +1129,6 @@ export default function CustomerWizardForm({
                             settlementManagementType: customer?.settlementManagementType || "",
                           };
                           const updatedId = await updateCustomer(updatedData);
-                          toast.success("ISO atualizado com sucesso");
                           
                           if (iso.subdomain && iso.subdomain.trim() !== "") {
                             const formData = new FormData();
@@ -1209,15 +1136,29 @@ export default function CustomerWizardForm({
                             formData.append("subdomain", iso.subdomain);
                             formData.append("primaryColor", primaryColorHex || "#000000");
                             formData.append("secondaryColor", secondaryColorHex || "#ffffff");
+                            formData.append("loginButtonColor", loginButtonColorHex || "#3b82f6");
+                            formData.append("loginButtonTextColor", loginButtonTextColorHex || "#ffffff");
+                            formData.append("loginTitleColor", loginTitleColorHex || "#ffffff");
+                            formData.append("loginTextColor", loginTextColorHex || "#d1d5db");
                             
-                            if (customizationData?.id) {
-                              formData.append("id", customizationData.id.toString());
-                              await updateCustomization(formData);
-                            } else {
-                              await saveCustomization(formData);
+                            try {
+                              if (customizationData?.id) {
+                                formData.append("id", customizationData.id.toString());
+                                await updateCustomization(formData);
+                              } else {
+                                await saveCustomization(formData);
+                              }
+                              toast.success("ISO atualizado com sucesso");
+                              router.refresh();
+                            } catch (subdomainError: any) {
+                              if (subdomainError.message?.includes("já está em uso")) {
+                                toast.error("Este subdomínio já está em uso por outro ISO. Por favor, escolha outro nome.");
+                              } else {
+                                throw subdomainError;
+                              }
                             }
-                            
-                            router.refresh();
+                          } else {
+                            toast.success("ISO atualizado com sucesso");
                           }
                         } else {
                           const slug = generateSlug();
@@ -1237,9 +1178,13 @@ export default function CustomerWizardForm({
                             router.replace(`/customers/${newId}`, { scroll: false });
                           }
                         }
-                      } catch (error) {
+                      } catch (error: any) {
                         console.error("Erro ao salvar ISO:", error);
-                        toast.error("Ocorreu um erro ao processar a solicitação");
+                        if (error.message?.includes("já está em uso")) {
+                          toast.error("Este subdomínio já está em uso por outro ISO. Por favor, escolha outro nome.");
+                        } else {
+                          toast.error("Ocorreu um erro ao processar a solicitação");
+                        }
                       } finally {
                         setIsLoading(false);
                       }
@@ -1301,6 +1246,10 @@ export default function CustomerWizardForm({
                   // ✅ Garantir que sempre envie HEX, não HSL
                   formData.set("primaryColor", primaryColorHex);
                   formData.set("secondaryColor", secondaryColorHex);
+                  formData.set("loginButtonColor", loginButtonColorHex || "#3b82f6");
+                  formData.set("loginButtonTextColor", loginButtonTextColorHex || "#ffffff");
+                  formData.set("loginTitleColor", loginTitleColorHex || "#ffffff");
+                  formData.set("loginTextColor", loginTextColorHex || "#d1d5db");
                   if (customizationData?.id) {
                     formData.set("id", String(customizationData.id));
                   }
@@ -1309,6 +1258,10 @@ export default function CustomerWizardForm({
                     subdomain: subdomain,
                     primaryColor: primaryColorHex, // Usar valor HEX do estado
                     secondaryColor: secondaryColorHex, // Usar valor HEX do estado
+                    loginButtonColor: loginButtonColorHex,
+                    loginButtonTextColor: loginButtonTextColorHex,
+                    loginTitleColor: loginTitleColorHex,
+                    loginTextColor: loginTextColorHex,
                     image: formData.get("image"),
                     customerId: String(customerId),
                     id: customizationData?.id,
@@ -1618,19 +1571,25 @@ export default function CustomerWizardForm({
                       </div>
                     </div>
 
-                    {/* LINHA 1.5: CORES DO LOGIN */}
-                    <div className="mb-10">
-                      <h4 className="text-sm font-medium text-gray-400 mb-4 flex items-center gap-2">
+                    {/* LINHA 1.5: CORES DA PÁGINA DE LOGIN */}
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
                         <Palette className="w-4 h-4" />
-                        Cores da Tela de Login
+                        Cores da Página de Login
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {/* Cor do Botão */}
-                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
-                          <label className="block text-sm font-medium text-white mb-3">
-                            Cor do Botão
-                          </label>
-                          <div className="flex items-center gap-2">
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                          <div className="flex items-center justify-between mb-4">
+                            <label className="text-sm font-medium text-white">
+                              Cor do Botão
+                            </label>
+                            <div
+                              className="w-6 h-6 rounded border border-[#2a2a2a]"
+                              style={{ backgroundColor: loginButtonColorHex }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-3">
                             <div className="relative w-[50px] h-10">
                               <input
                                 type="color"
@@ -1639,6 +1598,11 @@ export default function CustomerWizardForm({
                                 onChange={(e) => {
                                   const hexColor = e.target.value;
                                   setLoginButtonColorHex(hexColor);
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    loginButtonColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                  }));
                                 }}
                                 className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
                               />
@@ -1649,19 +1613,32 @@ export default function CustomerWizardForm({
                               onChange={(e) => {
                                 const hexColor = e.target.value;
                                 setLoginButtonColorHex(hexColor);
+                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    loginButtonColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                  }));
+                                }
                               }}
-                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-xs text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                              placeholder="#ffffff"
+                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                              placeholder="#3b82f6"
                             />
                           </div>
                         </div>
 
                         {/* Cor do Texto do Botão */}
-                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
-                          <label className="block text-sm font-medium text-white mb-3">
-                            Texto do Botão
-                          </label>
-                          <div className="flex items-center gap-2">
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                          <div className="flex items-center justify-between mb-4">
+                            <label className="text-sm font-medium text-white">
+                              Texto do Botão
+                            </label>
+                            <div
+                              className="w-6 h-6 rounded border border-[#2a2a2a]"
+                              style={{ backgroundColor: loginButtonTextColorHex }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-3">
                             <div className="relative w-[50px] h-10">
                               <input
                                 type="color"
@@ -1670,6 +1647,11 @@ export default function CustomerWizardForm({
                                 onChange={(e) => {
                                   const hexColor = e.target.value;
                                   setLoginButtonTextColorHex(hexColor);
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    loginButtonTextColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                  }));
                                 }}
                                 className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
                               />
@@ -1680,19 +1662,32 @@ export default function CustomerWizardForm({
                               onChange={(e) => {
                                 const hexColor = e.target.value;
                                 setLoginButtonTextColorHex(hexColor);
+                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    loginButtonTextColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                  }));
+                                }
                               }}
-                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-xs text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                              placeholder="#000000"
+                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                              placeholder="#ffffff"
                             />
                           </div>
                         </div>
 
                         {/* Cor do Título */}
-                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
-                          <label className="block text-sm font-medium text-white mb-3">
-                            Cor do Título
-                          </label>
-                          <div className="flex items-center gap-2">
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                          <div className="flex items-center justify-between mb-4">
+                            <label className="text-sm font-medium text-white">
+                              Cor do Título
+                            </label>
+                            <div
+                              className="w-6 h-6 rounded border border-[#2a2a2a]"
+                              style={{ backgroundColor: loginTitleColorHex }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-3">
                             <div className="relative w-[50px] h-10">
                               <input
                                 type="color"
@@ -1701,6 +1696,11 @@ export default function CustomerWizardForm({
                                 onChange={(e) => {
                                   const hexColor = e.target.value;
                                   setLoginTitleColorHex(hexColor);
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    loginTitleColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                  }));
                                 }}
                                 className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
                               />
@@ -1711,19 +1711,32 @@ export default function CustomerWizardForm({
                               onChange={(e) => {
                                 const hexColor = e.target.value;
                                 setLoginTitleColorHex(hexColor);
+                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    loginTitleColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                  }));
+                                }
                               }}
-                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-xs text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
                               placeholder="#ffffff"
                             />
                           </div>
                         </div>
 
                         {/* Cor do Texto */}
-                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-4">
-                          <label className="block text-sm font-medium text-white mb-3">
-                            Cor do Texto
-                          </label>
-                          <div className="flex items-center gap-2">
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                          <div className="flex items-center justify-between mb-4">
+                            <label className="text-sm font-medium text-white">
+                              Cor do Texto
+                            </label>
+                            <div
+                              className="w-6 h-6 rounded border border-[#2a2a2a]"
+                              style={{ backgroundColor: loginTextColorHex }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-3">
                             <div className="relative w-[50px] h-10">
                               <input
                                 type="color"
@@ -1732,6 +1745,11 @@ export default function CustomerWizardForm({
                                 onChange={(e) => {
                                   const hexColor = e.target.value;
                                   setLoginTextColorHex(hexColor);
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    loginTextColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                  }));
                                 }}
                                 className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
                               />
@@ -1742,17 +1760,24 @@ export default function CustomerWizardForm({
                               onChange={(e) => {
                                 const hexColor = e.target.value;
                                 setLoginTextColorHex(hexColor);
+                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    loginTextColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                  }));
+                                }
                               }}
-                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-xs text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                              placeholder="#9ca3af"
+                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                              placeholder="#d1d5db"
                             />
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* LINHA 2: 4 CARDS DE IMAGENS */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                    {/* LINHA 2: 3 CARDS DE IMAGENS */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                       {/* Card 1: Logotipo Principal */}
                       <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
                         <label className="text-sm font-medium text-white mb-1">
@@ -1807,7 +1832,7 @@ export default function CustomerWizardForm({
 
                         <button
                           type="button"
-                          onClick={() => handleRemoveImage('logo')}
+                          onClick={() => handleRemoveImageRequest('logo')}
                           disabled={isRemovingImage || (!imagePreview && !customizationData?.imageUrl)}
                           className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
                         >
@@ -1870,7 +1895,7 @@ export default function CustomerWizardForm({
 
                         <button
                           type="button"
-                          onClick={() => handleRemoveImage('email')}
+                          onClick={() => handleRemoveImageRequest('email')}
                           disabled={isRemovingImage || (!emailImagePreview && !customizationData?.emailImageUrl)}
                           className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
                         >
@@ -1951,93 +1976,12 @@ export default function CustomerWizardForm({
 
                         <button
                           type="button"
-                          onClick={() => handleRemoveImage('favicon')}
+                          onClick={() => handleRemoveImageRequest('favicon')}
                           disabled={isRemovingImage || (!faviconPreview && !customizationData?.faviconUrl)}
                           className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
                         >
                           <span>🗑️</span>
                           <span>{isRemovingImage ? "Removendo..." : "Remover favicon"}</span>
-                        </button>
-                      </div>
-
-                      {/* Card 4: Ícone do Menu */}
-                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
-                        <label className="text-sm font-medium text-white mb-1">
-                          Ícone do Menu
-                        </label>
-                        <p className="text-xs text-gray-400 mb-4">
-                          PNG ou SVG • 36×36px • Quadrado • Versão ícone/símbolo da marca • Máx. 100KB
-                        </p>
-                        
-                        <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[120px] flex items-center justify-center mb-4 transition-colors ${(menuIconPreview || customizationData?.menuIconUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
-                          {menuIconPreview ? (
-                            <div className="flex gap-4 items-center">
-                              <div className="flex flex-col items-center gap-1">
-                                <img src={menuIconPreview} alt="Menu Icon 36x36" width={36} height={36} className="border border-[#2a2a2a] rounded-md" />
-                                <span className="text-xs text-gray-400">36×36</span>
-                              </div>
-                              <div className="flex flex-col items-center gap-1">
-                                <img src={menuIconPreview} alt="Menu Icon 48x48" width={48} height={48} className="border border-[#2a2a2a] rounded-md" />
-                                <span className="text-xs text-gray-400">48×48</span>
-                              </div>
-                            </div>
-                          ) : customizationData?.menuIconUrl ? (
-                            <div className="flex gap-4 items-center">
-                              <div className="flex flex-col items-center gap-1">
-                                <img src={addCacheBustingToUrl(customizationData.menuIconUrl)} alt="Menu Icon 36x36" width={36} height={36} className="border border-[#2a2a2a] rounded-md" key={`${customizationData.menuIconUrl}-36`} />
-                                <span className="text-xs text-gray-400">36×36</span>
-                              </div>
-                              <div className="flex flex-col items-center gap-1">
-                                <img src={addCacheBustingToUrl(customizationData.menuIconUrl)} alt="Menu Icon 48x48" width={48} height={48} className="border border-[#2a2a2a] rounded-md" key={`${customizationData.menuIconUrl}-48`} />
-                                <span className="text-xs text-gray-400">48×48</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-center text-[#606060]">
-                              <div className="text-5xl mb-2 opacity-50">🔲</div>
-                              <div className="text-xs">Nenhum ícone selecionado</div>
-                            </div>
-                          )}
-                        </div>
-
-                        {menuIconError && (
-                          <p className="text-xs text-orange-600 font-medium mb-2">
-                            {menuIconError}
-                          </p>
-                        )}
-
-                        <div className="relative mb-3">
-                          <input
-                            type="file"
-                            accept="image/png,image/svg+xml"
-                            name="menuIcon"
-                            id="menuIcon"
-                            onChange={handleMenuIconChange}
-                            className="hidden"
-                          />
-                          <label
-                            htmlFor="menuIcon"
-                            className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
-                          >
-                            <span>📁</span>
-                            <span>Selecionar arquivo</span>
-                          </label>
-                        </div>
-
-                        {menuIconFileName && (
-                          <p className="text-xs text-green-600 font-medium mb-3">
-                            ✓ Arquivo selecionado: {menuIconFileName}
-                          </p>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage('menuIcon')}
-                          disabled={isRemovingImage || (!menuIconPreview && !customizationData?.menuIconUrl)}
-                          className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
-                        >
-                          <span>🗑️</span>
-                          <span>{isRemovingImage ? "Removendo..." : "Remover ícone do menu"}</span>
                         </button>
                       </div>
                     </div>
@@ -2097,7 +2041,7 @@ export default function CustomerWizardForm({
 
                         <button
                           type="button"
-                          onClick={() => handleRemoveImage('login')}
+                          onClick={() => handleRemoveImageRequest('login')}
                           disabled={isRemovingImage || (!loginImagePreview && !customizationData?.loginImageUrl)}
                           className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
                         >
@@ -2114,7 +2058,7 @@ export default function CustomerWizardForm({
                           type="button"
                           variant="outline"
                           className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
-                          onClick={handleRemoveAllImages}
+                          onClick={handleRemoveAllImagesRequest}
                           disabled={isRemovingImage}
                         >
                           {isRemovingImage ? "Removendo..." : "Remover todas as imagens"}
@@ -2183,23 +2127,9 @@ export default function CustomerWizardForm({
           <CollapsibleContent className="px-6 pb-6">
             {isFirstStepComplete ? (
               <div className="space-y-6">
-                {/* Formulário de Criação de Usuário */}
-                {selectedUser === null && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Criar Novo Usuário</h3>
-                    <UserCustomerForm
-                      customerId={newCustomerId || undefined}
-                      onSuccess={handleUserSuccess}
-                      profiles={profiles}
-                      hideWrapper={true}
-                    />
-                  </div>
-                )}
-
                 {/* Tabela de Usuários */}
                 {selectedUser === null && (
-                  <div className="space-y-4 pt-6 border-t">
-                    <h3 className="text-lg font-semibold">Usuários Cadastrados</h3>
+                  <div className="space-y-4">
                     {isLoadingUsers ? (
                       <div className="text-center p-8">
                         <p>Carregando usuários...</p>
@@ -2208,6 +2138,7 @@ export default function CustomerWizardForm({
                       <UsersCustomerList
                         users={users}
                         customerId={newCustomerId || 0}
+                        customerName={customer.name || undefined}
                         onRefresh={() => loadUsers(newCustomerId || 0)}
                       />
                     )}
@@ -2265,6 +2196,37 @@ export default function CustomerWizardForm({
           {isLoading ? "Salvando..." : "Salvar Tudo"}
         </Button>
       </div>
+
+      {/* Modal de confirmação para remover imagem individual */}
+      <ConfirmDialog
+        open={confirmRemoveImageOpen}
+        onOpenChange={setConfirmRemoveImageOpen}
+        title="Remover Imagem"
+        description={
+          pendingRemoveImageType === 'logo' 
+            ? "Tem certeza que deseja remover o logo?" 
+            : pendingRemoveImageType === 'login'
+            ? "Tem certeza que deseja remover a imagem de fundo do login?"
+            : pendingRemoveImageType === 'favicon'
+            ? "Tem certeza que deseja remover o favicon?"
+            : "Tem certeza que deseja remover a logo de email?"
+        }
+        confirmText="Remover"
+        cancelText="Cancelar"
+        onConfirm={handleRemoveImageConfirm}
+        onCancel={() => setPendingRemoveImageType(null)}
+      />
+
+      {/* Modal de confirmação para remover todas as imagens */}
+      <ConfirmDialog
+        open={confirmRemoveAllImagesOpen}
+        onOpenChange={setConfirmRemoveAllImagesOpen}
+        title="Remover Todas as Imagens"
+        description="Tem certeza que deseja remover TODAS as imagens? Esta ação removerá o logo, imagem de login, favicon e logo de email."
+        confirmText="Remover Todas"
+        cancelText="Cancelar"
+        onConfirm={handleRemoveAllImagesConfirm}
+      />
     </div>
   );
 }

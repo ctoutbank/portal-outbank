@@ -14,6 +14,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { MerchantsListResult } from "../server/merchants";
 import { MerchantsTableSettings } from "./merchants-table-settings";
+import { maskEstablishment, maskPhone, maskEmail, maskAddress } from "@/utils/mask-sensitive-data";
 
 type Column = {
   id: string;
@@ -28,11 +29,13 @@ export default function MerchantsList({
   columnsConfig,
   visibleColumns,
   onToggleColumn,
+  shouldMaskData = false,
 }: { 
   list: MerchantsListResult;
   columnsConfig?: Column[];
   visibleColumns?: string[];
   onToggleColumn?: (columnId: string) => void;
+  shouldMaskData?: boolean;
 }) {
   const columns: Column[] = [
     {
@@ -175,14 +178,18 @@ export default function MerchantsList({
                       href={`/merchants/${merchant.merchantid}`}
                       className="font-medium hover:underline text-white"
                     >
-                      {merchant.name?.toUpperCase() || "-"}
+                      {shouldMaskData 
+                        ? maskEstablishment(merchant.name)?.toUpperCase() 
+                        : (merchant.name?.toUpperCase() || "-")}
                     </Link>
                   </TableCell>
                 )}
                 {currentVisibleColumns.includes("localidade") && (
                   <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                     <div className="flex items-center gap-2">
-                      <span className="text-white">{merchant.addressname || "-"}</span>
+                      <span className="text-white">
+                        {shouldMaskData ? maskAddress(merchant.addressname) : (merchant.addressname || "-")}
+                      </span>
                       {merchant.state && (
                         <span className="text-[11px] text-[#606060]">
                           ({merchant.state})
@@ -197,9 +204,9 @@ export default function MerchantsList({
                       <Badge
                         variant={
                           merchant.kic_status === "APPROVED"
-                            ? "default"
+                            ? "success"
                             : merchant.kic_status === "PENDING"
-                              ? "secondary"
+                              ? "warning"
                               : "destructive"
                         }
                         className="text-[11px]"
@@ -212,14 +219,16 @@ export default function MerchantsList({
                 {currentVisibleColumns.includes("phone") && (
                   <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                     {merchant.areaCode && merchant.number
-                      ? `(${merchant.areaCode}) ${merchant.number}`
+                      ? (shouldMaskData 
+                          ? maskPhone(`${merchant.areaCode}${merchant.number}`)
+                          : `(${merchant.areaCode}) ${merchant.number}`)
                       : "-"}
                   </TableCell>
                 )}
                 {currentVisibleColumns.includes("email") && (
                   <TableCell className="p-4 text-[#b0b0b0] text-[13px]">
                     <span className="truncate max-w-[200px] block">
-                      {merchant.email || "-"}
+                      {shouldMaskData ? maskEmail(merchant.email) : (merchant.email || "-")}
                     </span>
                   </TableCell>
                 )}
@@ -229,13 +238,9 @@ export default function MerchantsList({
                       variant={
                         merchant.lockCpAnticipationOrder
                           ? "destructive"
-                          : "default"
+                          : "success"
                       }
-                      className={`text-[11px] ${
-                        !merchant.lockCpAnticipationOrder
-                          ? "bg-green-600 hover:bg-green-700"
-                          : ""
-                      }`}
+                      className="text-[11px]"
                     >
                       {merchant.lockCpAnticipationOrder ? "Inativo" : "Ativo"}
                     </Badge>
@@ -247,13 +252,9 @@ export default function MerchantsList({
                       variant={
                         merchant.lockCnpAnticipationOrder
                           ? "destructive"
-                          : "default"
+                          : "success"
                       }
-                      className={`text-[11px] ${
-                        !merchant.lockCnpAnticipationOrder
-                          ? "bg-green-600 hover:bg-green-700"
-                          : ""
-                      }`}
+                      className="text-[11px]"
                     >
                       {merchant.lockCnpAnticipationOrder
                         ? "Bloqueado"
@@ -291,12 +292,8 @@ export default function MerchantsList({
                   <TableCell className="text-center p-4 text-[#b0b0b0] text-[13px]">
                     <div className="flex justify-center">
                       <Badge
-                        variant={merchant.active ? "default" : "destructive"}
-                        className={`text-[11px] ${
-                          merchant.active
-                            ? "bg-green-600 hover:bg-green-700"
-                            : ""
-                        }`}
+                        variant={merchant.active ? "success" : "inactive"}
+                        className="text-[11px]"
                       >
                         {merchant.active ? "Ativo" : "Inativo"}
                       </Badge>

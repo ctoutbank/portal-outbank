@@ -163,7 +163,7 @@ export async function getIsoList(simulatedUserId?: number | null): Promise<IsoMa
   return allConfigs.filter(c => allowedIds.includes(c.customerId));
 }
 
-export async function getUserRole(simulatedUserId?: number | null): Promise<'super_admin' | 'admin' | 'executivo' | 'core' | null> {
+export async function getUserRole(simulatedUserId?: number | null): Promise<'super_admin' | 'executivo' | 'core' | null> {
   const context = await validateSimulationAccess(simulatedUserId);
   if (!context) {
     return null;
@@ -290,6 +290,22 @@ export async function getFornecedoresList(): Promise<Array<{ id: string; nome: s
     return [];
   }
   return isoMarginsRepository.getFornecedores();
+}
+
+export async function getCanValidateMdr(): Promise<boolean> {
+  const superAdmin = await isSuperAdmin();
+  if (superAdmin) return true;
+  
+  const user = await getCurrentUser();
+  if (!user) return false;
+  
+  const { sql } = await import('@vercel/postgres');
+  
+  const { rows } = await sql.query(`
+    SELECT can_validate_mdr FROM users WHERE id = $1
+  `, [user.id]);
+  
+  return rows[0]?.can_validate_mdr === true;
 }
 
 export async function checkIsSuperAdmin(): Promise<boolean> {

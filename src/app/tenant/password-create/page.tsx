@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUserCache } from "@/lib/user-cache";
+import { useUserCache } from "@/hooks/use-user-cache";
 import {
   Dialog,
   DialogContent,
@@ -68,10 +68,10 @@ function isLightColor(hex: string): boolean {
 }
 
 export default function PasswordCreatePage() {
-  const { user, isLoading: userLoading } = useUserCache();
+  const { isLoaded } = useUserCache();
   const router = useRouter();
   const [customization, setCustomization] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isCustomizationLoading, setIsCustomizationLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -90,14 +90,14 @@ export default function PasswordCreatePage() {
       } catch (error) {
         console.error("Error loading customization:", error);
       } finally {
-        setIsLoading(false);
+        setIsCustomizationLoading(false);
       }
     };
 
-    if (!userLoading) {
+    if (isLoaded) {
       loadCustomization();
     }
-  }, [userLoading]);
+  }, [isLoaded]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,7 +131,7 @@ export default function PasswordCreatePage() {
     }
   };
 
-  if (userLoading || isLoading) {
+  if (!isLoaded || isCustomizationLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -222,3 +222,4 @@ export default function PasswordCreatePage() {
     </div>
   );
 }
+

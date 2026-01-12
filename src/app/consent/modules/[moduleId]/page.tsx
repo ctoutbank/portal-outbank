@@ -4,9 +4,6 @@ import ModuleConsentForm from "@/features/consent/components/module-consent-form
 import { getModuleConsentDetails } from "@/features/consent/server/module-consent-details";
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
-import { users } from "@/lib/db";
-import { eq } from "drizzle-orm";
 import { Suspense } from "react";
 
 interface PageProps {
@@ -24,26 +21,13 @@ async function ConsentModuleContent({
   moduleId: number;
   merchantId?: number;
 }) {
-  const sessionUser = await getCurrentUser();
+  const user = await getCurrentUser();
   
-  if (!sessionUser) {
+  if (!user) {
     redirect("/sign-in");
   }
 
-  const userEmail = sessionUser.email;
-  
-  if (!userEmail) {
-    redirect("/sign-in");
-  }
-
-  // Buscar user_id no banco
-  const userRecord = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, userEmail))
-    .limit(1);
-
-  const userId = userRecord[0]?.id;
+  const userId = user.id;
 
   if (!userId) {
     return (
@@ -101,9 +85,11 @@ export default async function ConsentModulePage({ params, searchParams }: PagePr
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Consentimento LGPD", subtitle: "", url: "/consent/modules" },
-          { title: "Dar Consentimento", subtitle: "" },
+          { title: "Consentimento LGPD", url: "/consent/modules" },
+          { title: "Dar Consentimento" },
         ]}
+        showBackButton={true}
+        backHref="/consent/modules"
       />
       <BaseBody
         title="Consentimento LGPD - Módulo"
@@ -119,3 +105,4 @@ export default async function ConsentModulePage({ params, searchParams }: PagePr
     </>
   );
 }
+

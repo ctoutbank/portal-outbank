@@ -97,6 +97,10 @@ export function FilterTransactionsContent({
 
   const filterRef = useRef<HTMLDivElement>(null);
 
+  const today = new Date();
+  const threeYearsAgo = new Date();
+  threeYearsAgo.setFullYear(today.getFullYear() - 3);
+
   useClickOutside(filterRef, onClose);
 
   useEffect(() => {
@@ -288,6 +292,9 @@ export function FilterTransactionsContent({
                 <Calendar
                   mode="single"
                   selected={dateFrom ? new Date(dateFrom) : undefined}
+                  fromDate={threeYearsAgo}
+                  toDate={today}
+                  showMonthYearPicker
                   onSelect={(date) => {
                     if (date) {
                       const formatted = format(date, "yyyy-MM-dd'T'HH:mm");
@@ -323,6 +330,9 @@ export function FilterTransactionsContent({
                 <Calendar
                   mode="single"
                   selected={dateTo ? new Date(dateTo) : undefined}
+                  fromDate={threeYearsAgo}
+                  toDate={today}
+                  showMonthYearPicker
                   onSelect={(date) => {
                     if (date) {
                       const formatted = format(date, "yyyy-MM-dd'T'HH:mm");

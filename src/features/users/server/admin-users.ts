@@ -772,6 +772,7 @@ export async function createAdminUser(data: {
   return {
     id: userId,
     email,
+    clerkId: null,
   };
 }
 

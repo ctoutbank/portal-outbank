@@ -31,9 +31,12 @@ export default async function NewUserPage() {
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Configurações", subtitle: "Usuários", url: "/config/users" },
-          { title: "Novo Usuário", subtitle: "", url: "/config/users/new" },
+          { title: "Configurações", url: "/config" },
+          { title: "Usuários", url: "/config/users" },
+          { title: "Novo Usuário" },
         ]}
+        showBackButton={true}
+        backHref="/config/users"
       />
       <BaseBody title="Novo Usuário" subtitle="Criar novo usuário no sistema">
         <AdminUserPermissionsForm

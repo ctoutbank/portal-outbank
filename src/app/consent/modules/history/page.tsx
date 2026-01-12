@@ -4,34 +4,18 @@ import ConsentHistoryList from "@/features/consent/components/consent-history-li
 import { getUserConsentHistory } from "@/features/consent/server/consent-history";
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
-import { users } from "@/lib/db";
-import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function ConsentHistoryPage() {
-  const sessionUser = await getCurrentUser();
+  const user = await getCurrentUser();
   
-  if (!sessionUser) {
+  if (!user) {
     redirect("/sign-in");
   }
 
-  const userEmail = sessionUser.email;
-  
-  if (!userEmail) {
-    redirect("/sign-in");
-  }
-
-  // Buscar user_id no banco
-  const userRecord = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, userEmail))
-    .limit(1);
-
-  const userId = userRecord[0]?.id;
+  const userId = user.id;
 
   if (!userId) {
     return (
@@ -53,9 +37,11 @@ export default async function ConsentHistoryPage() {
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Consentimento LGPD", subtitle: "", url: "/consent/modules" },
-          { title: "Histórico", subtitle: "" },
+          { title: "Consentimento LGPD", url: "/consent/modules" },
+          { title: "Histórico" },
         ]}
+        showBackButton={true}
+        backHref="/consent/modules"
       />
       <BaseBody
         title="Histórico de Consentimentos LGPD"
@@ -66,3 +52,4 @@ export default async function ConsentHistoryPage() {
     </>
   );
 }
+

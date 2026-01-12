@@ -3,6 +3,7 @@ import { db } from "@/db/drizzle";
 import { solicitationFee, customers, solicitationFeeBrand, solicitationBrandProductType, solicitationFeeDocument, file } from "../../../../drizzle/schema";
 import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import { SolicitationFeeSchema } from "../schema/schema";
+import { validateDeletePermission } from "@/lib/permissions/check-permissions";
 
 export type SolicitationFeeInsert = typeof solicitationFee.$inferInsert;
 export type SolicitationFeeDetail = typeof solicitationFee.$inferSelect;
@@ -150,6 +151,11 @@ export async function updateSolicitationFee(fee: SolicitationFeeSchema): Promise
 }
 
 export async function deleteSolicitationFee(id: number): Promise<number> {
+    const canDelete = await validateDeletePermission();
+    if (!canDelete) {
+        throw new Error("Apenas Super Admin pode deletar solicitações de tarifa");
+    }
+    
     const feeDelete = await db.delete(solicitationFee).where(eq(solicitationFee.id, id)).returning({ id: solicitationFee.id });
     return feeDelete[0].id;
 }

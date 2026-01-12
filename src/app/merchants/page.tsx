@@ -3,6 +3,7 @@ import BaseHeader from "@/components/layout/base-header";
 import { requireMerchantsAccess } from "@/lib/permissions/require-merchants-access";
 import { getAllMerchants, getAvailableCustomersForFilter, getMerchantSuggestions, getMerchantEmailSuggestions, getMerchantDocumentSuggestions, getSalesAgentSuggestions, getStateSuggestions } from "@/features/merchants/server/merchants";
 import { MerchantsPageClient } from "@/features/merchants/_components/merchants-page-client";
+import { shouldMaskSensitiveData } from "@/lib/permissions/check-permissions";
 
 export const revalidate = 300;
 
@@ -35,7 +36,7 @@ export default async function MerchantsPage({
   const search = resolvedSearchParams.search || "";
 
   // Buscar dados em paralelo
-  const [merchantsData, availableCustomers, merchantSuggestions, emailSuggestions, documentSuggestions, salesAgentSuggestions, stateSuggestions] = await Promise.all([
+  const [merchantsData, availableCustomers, merchantSuggestions, emailSuggestions, documentSuggestions, salesAgentSuggestions, stateSuggestions, shouldMask] = await Promise.all([
     getAllMerchants(
       page,
       pageSize,
@@ -60,6 +61,7 @@ export default async function MerchantsPage({
     getMerchantDocumentSuggestions(),
     getSalesAgentSuggestions(),
     getStateSuggestions(),
+    shouldMaskSensitiveData(),
   ]);
 
   const totalRecords = merchantsData.totalCount;
@@ -68,8 +70,10 @@ export default async function MerchantsPage({
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Estabelecimentos", subtitle: "", url: "/merchants" },
+          { title: "Estabelecimentos" },
         ]}
+        showBackButton={true}
+        backHref="/"
       />
 
       <BaseBody
@@ -88,6 +92,7 @@ export default async function MerchantsPage({
           totalRecords={totalRecords}
           page={page}
           pageSize={pageSize}
+          shouldMaskData={shouldMask}
         />
       </BaseBody>
     </>

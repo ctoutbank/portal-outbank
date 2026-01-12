@@ -30,15 +30,15 @@ export default function TransactionDetails({ transaction }: TransactionDetailsPr
     if (status.includes("AUTHORIZED") || status.includes("APPROVED")) {
       return "success";
     } else if (status.includes("PENDING")) {
-      return "pending";
+      return "warning";
     } else if (status.includes("DENIED") || status.includes("REJECTED")) {
       return "destructive";
     } else if (status.includes("CANCELED")) {
-      return "outline";
+      return "inactive";
     } else if (status.includes("EXPIRED")) {
-      return "secondary";
+      return "inactive";
     } else if (status.includes("PRE_AUTHORIZED")) {
-      return "default";
+      return "info";
     }
     return "secondary";
   };

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { pageVisibilitySettings } from "@/../../drizzle/schema";
+import { pageVisibilitySettings } from "../../../../drizzle/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { isSuperAdmin } from "@/lib/permissions/check-permissions";
 

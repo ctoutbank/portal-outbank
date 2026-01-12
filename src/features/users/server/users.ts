@@ -5,7 +5,7 @@ import { sendWelcomePasswordEmail } from "@/lib/send-email";
 import { generateSlug } from "@/lib/utils";
 import { db } from "@/db/drizzle";
 import { getCurrentUser } from "@/lib/auth";
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 
 const DEV_BYPASS_ENABLED = 
   process.env.NODE_ENV === "development" && 
@@ -24,6 +24,25 @@ import {
   file,
 } from "../../../../drizzle/schema";
 import { AddressSchema } from "../schema/schema";
+
+interface ClerkUserData {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  emailAddresses: Array<{
+    emailAddress: string;
+  }>;
+}
+
+interface ClerkError {
+  code: string;
+  message: string;
+}
+
+interface ClerkErrorResponse {
+  status: number;
+  errors: ClerkError[];
+}
 
 export type UserInsert = {
   firstName: string;
@@ -807,3 +826,5 @@ export async function getMerchantsWithDDD(): Promise<
     })
     .from(merchants);
 }
+
+

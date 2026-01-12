@@ -42,6 +42,10 @@ export function AnalyticsFilters({
     customerIdsIn ? customerIdsIn.split(",").filter(Boolean) : []
   );
 
+  const today = new Date();
+  const threeYearsAgo = new Date();
+  threeYearsAgo.setFullYear(today.getFullYear() - 3);
+
   const handleApplyFilters = () => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams?.toString() || "");
@@ -110,6 +114,9 @@ export function AnalyticsFilters({
               mode="single"
               selected={dateFrom}
               onSelect={setDateFrom}
+              fromDate={threeYearsAgo}
+              toDate={today}
+              showMonthYearPicker
               initialFocus
             />
           </PopoverContent>
@@ -137,6 +144,9 @@ export function AnalyticsFilters({
               mode="single"
               selected={dateTo}
               onSelect={setDateTo}
+              fromDate={threeYearsAgo}
+              toDate={today}
+              showMonthYearPicker
               initialFocus
             />
           </PopoverContent>

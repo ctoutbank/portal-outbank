@@ -43,8 +43,11 @@ export default async function CategoriesPage({
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Configurações", subtitle: "Categorias", url: "/config/categories" },
+          { title: "Configurações", url: "/config" },
+          { title: "Categorias" },
         ]}
+        showBackButton={true}
+        backHref="/config"
       />
 
       <BaseBody
@@ -52,13 +55,6 @@ export default async function CategoriesPage({
         subtitle="Gerenciamento de categorias e permissões do sistema"
       >
         <div className="flex flex-col space-y-4">
-          <div className="mb-4">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/config">
-                Voltar
-              </Link>
-            </Button>
-          </div>
           <div className="mb-1 flex items-center justify-between">
             <div className="flex-1">
               <UserCategoriesFilter

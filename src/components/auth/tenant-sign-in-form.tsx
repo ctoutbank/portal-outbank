@@ -3,16 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Eye, EyeOff, ArrowRight } from "lucide-react";
 
 export function TenantSignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,14 +22,14 @@ export function TenantSignInForm() {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ email, password, rememberMe }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         toast.success("Login realizado com sucesso!");
-        window.location.href = "/tenant/dashboard";
+        window.location.href = "/";
       } else {
         toast.error(data.error || "Credenciais inválidas");
       }
@@ -46,102 +42,89 @@ export function TenantSignInForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-gray-800/50 p-8 rounded-xl backdrop-blur-sm">
-      <div className="space-y-1 relative">
-        <Mail
-          className="absolute left-3 top-11 -translate-y-1/2 text-gray-400"
-          size={18}
-        />
-        <label
-          className="text-sm font-medium ml-2"
-          htmlFor="email"
-          style={{ color: 'var(--tenant-login-text, #d1d5db)' }}
-        >
-          Email
-        </label>
-        <Input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="seu@email.com"
-          required
-          disabled={isLoading}
-          autoComplete="email"
-          className="bg-black/20 border-gray-600 text-white focus:ring-1 focus:ring-white/30 pl-10"
-        />
-      </div>
+    <div className="w-full max-w-md">
+      <div className="bg-[#0f0f0f] rounded-2xl shadow-2xl border border-[#2a2a2a] overflow-hidden">
+        <div className="px-8 pb-8 pt-6">
+          <form onSubmit={handleSubmit}>
+            <div className="mb-5">
+              <label 
+                htmlFor="email" 
+                className="block text-sm font-medium mb-2"
+                style={{ color: 'var(--tenant-login-text, #a0a0a0)' }}
+              >
+                E-mail
+              </label>
+              <input
+                id="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+                autoComplete="email"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#3a3a3a] focus:border-[#3a3a3a] transition-all placeholder:text-[#555]"
+              />
+            </div>
 
-      <div className="space-y-1">
-        <label
-          className="text-sm font-medium ml-2"
-          htmlFor="password"
-          style={{ color: 'var(--tenant-login-text, #d1d5db)' }}
-        >
-          Senha
-        </label>
-        <div className="relative">
-          <Lock
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            size={18}
-          />
-          <Input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            disabled={isLoading}
-            autoComplete="current-password"
-            className="bg-black/20 border-gray-600 text-white focus:ring-1 focus:ring-white/30 pl-10 pr-10"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
-          >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <label 
+                  htmlFor="password" 
+                  className="text-sm font-medium"
+                  style={{ color: 'var(--tenant-login-text, #a0a0a0)' }}
+                >
+                  Senha
+                </label>
+                <Link 
+                  href="/tenant/auth/forgot-password" 
+                  className="text-sm hover:opacity-80 transition-opacity"
+                  style={{ color: 'var(--tenant-login-text, #808080)' }}
+                >
+                  Esqueci minha senha
+                </Link>
+              </div>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  autoComplete="current-password"
+                  className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg py-3 px-4 pr-12 focus:outline-none focus:ring-2 focus:ring-[#3a3a3a] focus:border-[#3a3a3a] transition-all placeholder:text-[#555]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#555] hover:text-[#a0a0a0] transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-lg py-3 px-4 font-semibold flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+              style={{ 
+                backgroundColor: 'var(--tenant-login-button, #3b82f6)', 
+                color: 'var(--tenant-login-button-text, #ffffff)' 
+              }}
+            >
+              <span>{isLoading ? "Entrando..." : "Entrar"}</span>
+              {!isLoading && <ArrowRight className="w-5 h-5" />}
+            </button>
+          </form>
         </div>
       </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="rememberMe"
-            checked={rememberMe}
-            onCheckedChange={(checked) => setRememberMe(checked === true)}
-            className="border-gray-500 data-[state=checked]:bg-white data-[state=checked]:text-black"
-          />
-          <label
-            htmlFor="rememberMe"
-            className="text-sm cursor-pointer"
-            style={{ color: 'var(--tenant-login-text, #d1d5db)' }}
-          >
-            Manter conectado
-          </label>
-        </div>
-        <Link
-          href="/tenant/auth/forgot-password"
-          className="text-sm hover:underline"
-          style={{ color: 'var(--tenant-login-text, #d1d5db)' }}
-        >
-          Esqueceu a senha?
-        </Link>
-      </div>
-
-      <Button
-        type="submit"
-        className="w-full hover:opacity-90"
-        style={{
-          backgroundColor: 'var(--tenant-login-button, #ffffff)',
-          color: 'var(--tenant-login-button-text, #000000)',
-        }}
-        disabled={isLoading}
-      >
-        {isLoading ? "Entrando..." : "Entrar"}
-      </Button>
-    </form>
+    </div>
   );
 }

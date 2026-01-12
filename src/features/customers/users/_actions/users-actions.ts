@@ -116,7 +116,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
     ultimos3Chars: '***' + finalPassword.substring(finalPassword.length - 3),
   });
 
-  // ✅ Validar que a senha tenha pelo menos 8 caracteres
+  // ✅ Validar que a senha tenha pelo menos 8 caracteres (requisito do Clerk)
   if (finalPassword.length < 8) {
     console.error(`[InsertUser] ❌ Senha muito curta: ${finalPassword.length} caracteres`);
     return {

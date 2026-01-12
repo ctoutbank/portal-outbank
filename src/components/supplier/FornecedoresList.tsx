@@ -147,7 +147,7 @@ export function FornecedoresList({ role, onAdd, onEdit, onDelete, refreshKey }: 
         {/* right: botão novo fornecedor */}
         <button
           onClick={onAdd}
-          className="inline-flex items-center gap-2 px-4 py-2 h-[42px] bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] transition-colors rounded-[6px] text-sm font-normal text-[#E0E0E0] whitespace-nowrap"
+          className="inline-flex items-center gap-2 px-4 py-2 h-[42px] bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] transition-colors rounded-[6px] text-sm font-normal text-[#E0E0E0] whitespace-nowrap cursor-pointer"
         >
           + Novo Fornecedor
         </button>
@@ -186,7 +186,7 @@ export function FornecedoresList({ role, onAdd, onEdit, onDelete, refreshKey }: 
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="p-2 rounded-[6px] border border-[#2E2E2E] bg-[#212121] hover:bg-[#2E2E2E] disabled:opacity-50 disabled:cursor-not-allowed text-[#E0E0E0] transition-colors"
+                className="p-2 rounded-[6px] border border-[#2E2E2E] bg-[#212121] hover:bg-[#2E2E2E] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[#E0E0E0] transition-colors"
                 aria-label="Página anterior"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -199,7 +199,7 @@ export function FornecedoresList({ role, onAdd, onEdit, onDelete, refreshKey }: 
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="p-2 rounded-[6px] border border-[#2E2E2E] bg-[#212121] hover:bg-[#2E2E2E] disabled:opacity-50 disabled:cursor-not-allowed text-[#E0E0E0] transition-colors"
+                className="p-2 rounded-[6px] border border-[#2E2E2E] bg-[#212121] hover:bg-[#2E2E2E] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[#E0E0E0] transition-colors"
                 aria-label="Próxima página"
               >
                 <ChevronRight className="h-5 w-5" />

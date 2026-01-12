@@ -8,7 +8,7 @@ import { IsoMarginConfig } from '@/lib/db/iso-margins';
 
 interface MargensWrapperProps {
   initialIsoConfigs: IsoMarginConfig[];
-  initialUserRole: 'super_admin' | 'admin' | 'executivo' | 'core' | null;
+  initialUserRole: 'super_admin' | 'executivo' | 'core' | null;
   initialIsSuperAdmin: boolean;
   initialIsSimulating?: boolean;
   initialSimulatedUserId?: number | null;
@@ -25,7 +25,7 @@ export function MargensWrapper({
   const previousSimulatedUserId = useRef<number | null>(initialSimulatedUserId);
   
   const [isoConfigs, setIsoConfigs] = useState<IsoMarginConfig[]>(initialIsoConfigs);
-  const [userRole, setUserRole] = useState<'super_admin' | 'admin' | 'executivo' | 'core' | null>(initialUserRole);
+  const [userRole, setUserRole] = useState<'super_admin' | 'executivo' | 'core' | null>(initialUserRole);
   const [isSuperAdminForView, setIsSuperAdminForView] = useState(initialIsSuperAdmin);
   const [loading, setLoading] = useState(false);
   const [isSimulating, setIsSimulating] = useState(initialIsSimulating);

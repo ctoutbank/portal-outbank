@@ -1,9 +1,9 @@
 "use server";
 import { db } from "@/db/drizzle";
-import { customers, customerCustomization, adminCustomers, customerModules, users, salesAgents } from "../../../../drizzle/schema";
-import { and, asc, count, desc, eq, ilike, or, sql, inArray } from "drizzle-orm";
+import { customers, customerCustomization, adminCustomers, customerModules, modules, users, userCustomers } from "../../../../drizzle/schema";
+import { and, asc, count, desc, eq, ilike, or, sql, inArray, ne } from "drizzle-orm";
 import { CustomerSchema } from "../schema/schema";
-import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
+import { getCurrentUserInfo, validateDeletePermission } from "@/lib/permissions/check-permissions";
 import { getCustomerModuleSlugs } from "@/lib/modules/customer-modules";
 
 export type CustomersInsert = typeof customers.$inferInsert;
@@ -43,21 +43,14 @@ export async function getCustomers(
     whereConditions.push(ilike(customers.customerId, `%${customerId}%`));
   }
 
-  // Filtro por usuário: buscar no banco local (sem Clerk)
+  // Filtro por usuário: buscar usuários no banco pelo email e filtrar ISOs pelos idCustomer
   if (userName && userName.trim() !== "") {
     try {
-      // Buscar usuários pelo nome em sales_agents
+      // Buscar usuários pelo email diretamente no banco
       const dbUsers = await db
         .select({ idCustomer: users.idCustomer })
         .from(users)
-        .leftJoin(salesAgents, eq(salesAgents.idUsers, users.id))
-        .where(
-          or(
-            ilike(salesAgents.firstName, `%${userName.trim()}%`),
-            ilike(salesAgents.lastName, `%${userName.trim()}%`),
-            ilike(users.email, `%${userName.trim()}%`)
-          )
-        );
+        .where(ilike(users.email, `%${userName.trim()}%`));
 
       const customerIds = dbUsers
         .map((u) => u.idCustomer)
@@ -70,12 +63,12 @@ export async function getCustomers(
         whereConditions.push(sql`1 = 0`);
       }
     } catch (error) {
-      console.error("Erro ao buscar usuários:", error);
+      console.error("Erro ao buscar usuários no banco:", error);
       // Em caso de erro, não aplicar filtro de usuário
     }
   }
 
-  // Filtrar por permissões do usuário
+  // Filtrar por permissões do usuário (Multi-ISO)
   const userInfo = await getCurrentUserInfo();
   
   if (userInfo) {
@@ -83,20 +76,17 @@ export async function getCustomers(
     if (userInfo.isSuperAdmin) {
       // Não adiciona filtro - vê todos
     }
-    // Admin vê apenas ISOs autorizados
-    else if (userInfo.isAdmin && !userInfo.isSuperAdmin && userInfo.allowedCustomers) {
-      if (userInfo.allowedCustomers.length === 0) {
-        // Admin sem ISOs autorizados retorna lista vazia
-        whereConditions.push(sql`1 = 0`); // Condição impossível
-      } else {
-        whereConditions.push(inArray(customers.id, userInfo.allowedCustomers));
-      }
+    // Todos os outros usuários (Admin, Executivo, Core) veem apenas ISOs autorizados via allowedCustomers
+    else if (userInfo.allowedCustomers && userInfo.allowedCustomers.length > 0) {
+      whereConditions.push(inArray(customers.id, userInfo.allowedCustomers));
     }
-    // Usuário normal vê apenas seu ISO
-    else if (!userInfo.isAdmin && userInfo.idCustomer) {
-      whereConditions.push(eq(customers.id, userInfo.idCustomer));
+    // Usuário sem ISOs vinculados retorna lista vazia
+    else {
+      whereConditions.push(sql`1 = 0`);
     }
   }
+
+  // whereConditions.push(eq(customers.isActive, true));
 
   const orderByClauses = [desc(customers.isActive)];
   
@@ -238,7 +228,42 @@ export async function updateCustomer(
   }
 }
 
+export async function getCustomerUserCount(customerId: number): Promise<number> {
+  const result = await db
+    .select({ count: count() })
+    .from(users)
+    .where(eq(users.idCustomer, customerId));
+  
+  return result[0]?.count || 0;
+}
+
+export async function canDeleteCustomer(customerId: number): Promise<{ canDelete: boolean; reason?: string; userCount?: number; isSuperAdmin?: boolean }> {
+  const userInfo = await getCurrentUserInfo();
+  
+  if (!userInfo) {
+    return { canDelete: false, reason: "Usuário não autenticado" };
+  }
+  
+  const userCount = await getCustomerUserCount(customerId);
+  
+  if (!userInfo.isSuperAdmin) {
+    return { 
+      canDelete: false, 
+      reason: "Apenas Super Admin pode deletar ISOs.",
+      userCount,
+      isSuperAdmin: false
+    };
+  }
+  
+  return { canDelete: true, userCount, isSuperAdmin: true };
+}
+
 export async function deleteCustomer(id: number): Promise<number> {
+  const canDelete = await validateDeletePermission();
+  if (!canDelete) {
+    throw new Error("Apenas Super Admin pode deletar clientes");
+  }
+  
   const customerDelete = await db
     .delete(customers)
     .where(eq(customers.id, id))
@@ -247,6 +272,11 @@ export async function deleteCustomer(id: number): Promise<number> {
 }
 
 export async function deleteCustomersWithRelations(ids: number[]): Promise<{ deleted: number; errors: string[] }> {
+  const canDelete = await validateDeletePermission();
+  if (!canDelete) {
+    throw new Error("Apenas Super Admin pode deletar clientes");
+  }
+  
   const errors: string[] = [];
   let deleted = 0;
 
@@ -256,19 +286,19 @@ export async function deleteCustomersWithRelations(ids: number[]): Promise<{ del
       await db.delete(users).where(eq(users.idCustomer, id));
       console.log(`[deleteCustomersWithRelations] Usuários do ISO ${id} deletados`);
 
-      // 2. Deletar customizações
+      // 4. Deletar customizações
       await db.delete(customerCustomization).where(eq(customerCustomization.customerId, id));
       console.log(`[deleteCustomersWithRelations] Customização do ISO ${id} deletada`);
 
-      // 3. Deletar admin_customers
+      // 5. Deletar admin_customers
       await db.delete(adminCustomers).where(eq(adminCustomers.idCustomer, id));
       console.log(`[deleteCustomersWithRelations] admin_customers do ISO ${id} deletados`);
 
-      // 4. Deletar customer_modules
+      // 6. Deletar customer_modules
       await db.delete(customerModules).where(eq(customerModules.idCustomer, id));
       console.log(`[deleteCustomersWithRelations] customer_modules do ISO ${id} deletados`);
 
-      // 5. Finalmente, deletar o customer
+      // 7. Finalmente, deletar o customer
       await db.delete(customers).where(eq(customers.id, id));
       console.log(`[deleteCustomersWithRelations] ISO ${id} deletado com sucesso`);
 
@@ -305,13 +335,61 @@ export interface Customerslist {
 }
 
 export async function deactivateCustomer(id: number) {
+  // 1. Desativar o ISO
   await db
     .update(customers)
     .set({ isActive: false })
     .where(eq(customers.id, id));
+
+  // 2. Buscar todos os usuários vinculados a este ISO via user_customers (apenas vínculos ativos)
+  const linkedUsers = await db
+    .select({ idUser: userCustomers.idUser })
+    .from(userCustomers)
+    .where(
+      and(
+        eq(userCustomers.idCustomer, id),
+        eq(userCustomers.active, true)
+      )
+    );
+
+  if (linkedUsers.length > 0) {
+    // 3. Para cada usuário, verificar se tem outros vínculos ativos com ISOs ativos
+    for (const user of linkedUsers) {
+      // Buscar outros vínculos ativos do usuário com ISOs ativos (excluindo o ISO sendo desativado)
+      const otherActiveLinks = await db
+        .select({ id: userCustomers.id })
+        .from(userCustomers)
+        .innerJoin(customers, eq(userCustomers.idCustomer, customers.id))
+        .where(
+          and(
+            eq(userCustomers.idUser, user.idUser),
+            ne(userCustomers.idCustomer, id),
+            eq(userCustomers.active, true),
+            eq(customers.isActive, true)
+          )
+        );
+
+      // Só desativa o usuário se não tiver outros vínculos ativos com ISOs ativos
+      if (otherActiveLinks.length === 0) {
+        await db
+          .update(users)
+          .set({ active: false })
+          .where(
+            and(
+              eq(users.id, user.idUser),
+              ne(users.userType, 'SUPER_ADMIN')
+            )
+          );
+      }
+    }
+  }
 }
 
 export async function activateCustomer(id: number) {
+  // Ativar o ISO
+  // NOTA: Não reativamos automaticamente os usuários para evitar reativar
+  // usuários que foram desativados manualmente por um admin.
+  // O admin deve reativar os usuários manualmente após ativar o ISO.
   await db
     .update(customers)
     .set({ isActive: true })
@@ -328,6 +406,11 @@ export async function getAllCustomersIncludingInactive(): Promise<CustomersDetai
 }
 
 export async function deleteAllCustomersExcept(keepId: number): Promise<number> {
+  const canDelete = await validateDeletePermission();
+  if (!canDelete) {
+    throw new Error("Apenas Super Admin pode realizar esta operação");
+  }
+
   const { sql } = await import("drizzle-orm");
   
   const result = await db

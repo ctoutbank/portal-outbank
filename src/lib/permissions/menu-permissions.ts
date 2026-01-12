@@ -56,6 +56,9 @@ export const MENU_PERMISSIONS: MenuPermissionConfig[] = [
   
   // Categorias - apenas para super admin
   { url: "/config/categories", requiredFunction: "Listar Categorias", functionGroup: "Categorias", superAdminOnly: true },
+  
+  // Design Settings - apenas para super admin
+  { url: "/design-settings", requiredFunction: "Gerenciar Design", functionGroup: "Design Settings", superAdminOnly: true },
 ];
 
 /**
@@ -96,6 +99,7 @@ export const PAGE_PERMISSION_MAP: Record<string, { group: string; function: stri
   "/config": { group: "Configurações", function: "Acessar Configurações" },
   "/config/users": { group: "Usuários", function: "Listar Usuários" },
   "/config/categories": { group: "Categorias", function: "Listar Categorias" },
+  "/design-settings": { group: "Design Settings", function: "Gerenciar Design" },
   "/consent": { group: "Consentimento LGPD", function: "Acessar Consentimento" },
   "/suppliers": { group: "Fornecedores", function: "Listar Fornecedores" },
   "/cnae-mcc": { group: "CNAE/MCC", function: "Listar CNAE/MCC" },

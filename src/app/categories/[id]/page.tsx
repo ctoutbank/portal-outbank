@@ -42,19 +42,16 @@ export default async function CategoryDetailPage({ params }: PageProps) {
         <>
             <BaseHeader
                 breadcrumbItems={[
-                    { title: "Categorias", subtitle: '', url: "/categories" },
-                    {
-                        title: `Categoria #${category.id}`,
-                        subtitle: "",
-                        url: `/categories/${category.id}`,
-                    },
+                    { title: "CNAE/MCC", url: "/categories" },
+                    { title: category.name || `Categoria #${category.id}` },
                 ]}
+                showBackButton={true}
+                backHref="/categories"
             />
 
             <BaseBody
                 title={`Categoria: ${category.name}`}
                 subtitle="Detalhes e edição da categoria"
-                className="overflow-x-hidden bg-[#161616] [&_h1]:text-[#FFFFFF] [&_h1]:text-[22px] [&_h1]:font-semibold [&_p]:text-[#5C5C5C] [&_p]:text-sm [&_p]:font-normal"
             >
                 <div className="flex flex-col space-y-4">
                     <Categoriesform categories={formattedCategory} />

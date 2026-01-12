@@ -1,0 +1,331 @@
+/* ====================================
+   MDR Table Styles - Portal Outbank
+   Theme: Dark Mode
+   ==================================== */
+
+/* === VARIABLES === */
+:root {
+  /* Background Colors */
+  --mdr-bg-page: #0a0a0a;
+  --mdr-bg-card: #0a0a0a;
+  --mdr-bg-table: #121212;
+  --mdr-bg-table-header: #0a0a0a;
+  --mdr-bg-input: #1a1a1a;
+  --mdr-bg-section: #0f0f0f;
+  --mdr-bg-hover: #2E2E2E;
+
+  /* Border Colors */
+  --mdr-border-card: #1a1a1a;
+  --mdr-border-table: #2a2a2a;
+  --mdr-border-row: #1f1f1f;
+  --mdr-border-input: #2a2a2a;
+  --mdr-border-focus: #ff9800;
+
+  /* Text Colors */
+  --mdr-text-primary: #FFFFFF;
+  --mdr-text-secondary: #5C5C5C;
+  --mdr-text-placeholder: #555555;
+  --mdr-text-highlight: #ff9800;
+  --mdr-text-suffix: #555555;
+
+  /* Button Colors */
+  --mdr-btn-primary-bg: #ff9800;
+  --mdr-btn-primary-text: #000000;
+  --mdr-btn-primary-hover: #ffb74d;
+  --mdr-btn-secondary-bg: #1a1a1a;
+  --mdr-btn-secondary-border: #2a2a2a;
+  --mdr-btn-secondary-text: #E0E0E0;
+  --mdr-btn-danger-bg: #1a1a1a;
+  --mdr-btn-danger-border: rgba(127, 29, 29, 0.5);
+  --mdr-btn-danger-text: #f87171;
+
+  /* Spacing */
+  --mdr-card-padding: 32px;
+  --mdr-section-gap: 40px;
+  --mdr-section-padding: 24px;
+  --mdr-input-height: 48px;
+
+  /* Border Radius */
+  --mdr-radius-card: 12px;
+  --mdr-radius-input: 6px;
+  --mdr-radius-button: 8px;
+  --mdr-radius-section: 8px;
+}
+
+/* === CARD CONTAINER === */
+.mdr-card {
+  background-color: var(--mdr-bg-card);
+  border: 1px solid var(--mdr-border-card);
+  border-radius: var(--mdr-radius-card);
+  padding: var(--mdr-card-padding);
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* === SECTION TITLE === */
+.mdr-section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--mdr-text-primary);
+  border-bottom: 1px solid var(--mdr-border-row);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.mdr-subsection-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--mdr-text-primary);
+  margin-bottom: 16px;
+}
+
+/* === TABLE === */
+.mdr-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+.mdr-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* Table Header */
+.mdr-table thead tr {
+  height: 52px;
+}
+
+.mdr-table th {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--mdr-text-primary);
+  padding: 16px;
+  border-bottom: 1px solid var(--mdr-border-table);
+  text-align: center;
+  min-width: 120px;
+}
+
+.mdr-table th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: var(--mdr-bg-table-header);
+  text-align: left;
+  min-width: 100px;
+}
+
+.mdr-table th:not(:first-child) {
+  border-left: 1px solid var(--mdr-border-table);
+}
+
+/* Table Body */
+.mdr-table tbody tr {
+  border-bottom: 1px solid var(--mdr-border-row);
+}
+
+.mdr-table tbody td {
+  font-size: 14px;
+  padding: 8px;
+  text-align: center;
+  background-color: var(--mdr-bg-table);
+  border-left: 1px solid var(--mdr-border-row);
+}
+
+.mdr-table tbody td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: var(--mdr-bg-table-header);
+  font-weight: 500;
+  color: var(--mdr-text-primary);
+  padding: 12px 16px;
+  text-align: left;
+  border-right: 1px solid var(--mdr-border-row);
+  border-left: none;
+}
+
+/* === INPUTS === */
+.mdr-input-rate {
+  width: 100%;
+  text-align: center;
+  border: 1px solid var(--mdr-border-input);
+  border-radius: 4px;
+  background-color: var(--mdr-bg-input);
+  color: var(--mdr-text-highlight);
+  font-size: 14px;
+  padding: 8px 24px 8px 8px;
+}
+
+.mdr-input-rate::placeholder {
+  color: var(--mdr-text-placeholder);
+}
+
+.mdr-input-rate:focus {
+  outline: none;
+  border-color: var(--mdr-border-focus);
+}
+
+.mdr-input-wrapper {
+  position: relative;
+}
+
+.mdr-input-suffix {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--mdr-text-suffix);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* Full-width input (PIX, Antecipação) */
+.mdr-input-full {
+  width: 100%;
+  height: var(--mdr-input-height);
+  padding: 0 40px 0 16px;
+  font-size: 14px;
+  border: 1px solid var(--mdr-border-input);
+  border-radius: var(--mdr-radius-input);
+  background-color: var(--mdr-bg-input);
+  color: var(--mdr-text-primary);
+}
+
+.mdr-input-full::placeholder {
+  color: var(--mdr-text-placeholder);
+}
+
+.mdr-input-full:focus {
+  outline: none;
+  border-color: var(--mdr-border-focus);
+}
+
+.mdr-input-full.has-value {
+  color: var(--mdr-text-highlight);
+}
+
+/* === PIX SECTION === */
+.mdr-pix-section {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  background-color: var(--mdr-bg-section);
+  border-radius: var(--mdr-radius-section);
+  padding: var(--mdr-section-padding);
+  border: 1px solid var(--mdr-border-card);
+  margin-top: 24px;
+}
+
+@media (max-width: 640px) {
+  .mdr-pix-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mdr-label {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--mdr-text-secondary);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.mdr-label.has-value {
+  color: var(--mdr-text-highlight);
+}
+
+/* === BUTTONS === */
+.mdr-btn {
+  height: var(--mdr-input-height);
+  padding: 0 24px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--mdr-radius-button);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.mdr-btn-primary {
+  background-color: var(--mdr-btn-primary-bg);
+  color: var(--mdr-btn-primary-text);
+  border: none;
+}
+
+.mdr-btn-primary:hover {
+  background-color: var(--mdr-btn-primary-hover);
+}
+
+.mdr-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mdr-btn-secondary {
+  background-color: var(--mdr-btn-secondary-bg);
+  color: var(--mdr-btn-secondary-text);
+  border: 1px solid var(--mdr-btn-secondary-border);
+}
+
+.mdr-btn-secondary:hover {
+  background-color: var(--mdr-bg-hover);
+}
+
+.mdr-btn-danger {
+  background-color: var(--mdr-btn-danger-bg);
+  color: var(--mdr-btn-danger-text);
+  border: 1px solid var(--mdr-btn-danger-border);
+}
+
+.mdr-btn-danger:hover {
+  background-color: rgba(127, 29, 29, 0.3);
+  border-color: #991b1b;
+}
+
+/* === BUTTON CONTAINER === */
+.mdr-button-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 32px;
+}
+
+.mdr-button-group {
+  display: flex;
+  gap: 16px;
+}
+
+/* === SECTION SPACING === */
+.mdr-section {
+  margin-bottom: var(--mdr-section-gap);
+}
+
+/* === READ-ONLY CELL (para ISO) === */
+.mdr-cell-readonly {
+  background-color: #0d0d0d;
+  color: var(--mdr-text-secondary);
+  padding: 8px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* === EDITABLE CELL HIGHLIGHT === */
+.mdr-cell-editable {
+  background-color: var(--mdr-bg-table);
+}
+
+/* === FINAL RATE CELL === */
+.mdr-cell-final {
+  background-color: #0d0d0d;
+  color: var(--mdr-text-highlight);
+  font-weight: 500;
+  padding: 8px;
+  text-align: center;
+  font-size: 14px;
+}

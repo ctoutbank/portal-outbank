@@ -47,8 +47,10 @@ export class MdrRepository {
           debitoonline = $12, creditoonline = $13, credito2xonline = $14,
           credito7xonline = $15, voucheronline = $16, preonline = $17,
           mdronline = $18, cminonline = $19, cmaxonline = $20, antecipacaoonline = $21,
+          custo_pix_pos = $22, margem_pix_pos = $23,
+          custo_pix_online = $24, margem_pix_online = $25,
           updated_at = NOW()
-        WHERE id = $22
+        WHERE id = $26
         RETURNING *`,
         [
           data.bandeiras, data.debitopos, data.creditopos,
@@ -57,6 +59,8 @@ export class MdrRepository {
           data.debitoonline, data.creditoonline, data.credito2xonline,
           data.credito7xonline, data.voucheronline, data.preonline,
           data.mdronline, data.cminonline, data.cmaxonline, data.antecipacaoonline,
+          data.custoPixPos || null, data.margemPixPos || null,
+          data.custoPixOnline || null, data.margemPixOnline || null,
           existing.id
         ]
       );
@@ -86,10 +90,12 @@ export class MdrRepository {
           prepos, mdrpos, cminpos, cmaxpos, antecipacao,
           debitoonline, creditoonline, credito2xonline, credito7xonline, voucheronline,
           preonline, mdronline, cminonline, cmaxonline, antecipacaoonline,
+          custo_pix_pos, margem_pix_pos, custo_pix_online, margem_pix_online,
           created_at, updated_at
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-          $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, NOW(), NOW()
+          $12, $13, $14, $15, $16, $17, $18, $19, $20, $21,
+          $22, $23, $24, $25, NOW(), NOW()
         ) RETURNING *`,
         [
           data.bandeiras, data.debitopos, data.creditopos,
@@ -97,7 +103,9 @@ export class MdrRepository {
           data.prepos, data.mdrpos, data.cminpos, data.cmaxpos, data.antecipacao,
           data.debitoonline, data.creditoonline, data.credito2xonline,
           data.credito7xonline, data.voucheronline, data.preonline,
-          data.mdronline, data.cminonline, data.cmaxonline, data.antecipacaoonline
+          data.mdronline, data.cminonline, data.cmaxonline, data.antecipacaoonline,
+          data.custoPixPos || null, data.margemPixPos || null,
+          data.custoPixOnline || null, data.margemPixOnline || null
         ]
       );
 
@@ -107,7 +115,7 @@ export class MdrRepository {
       // Atualizar a tabela fornecedor_categories para incluir o mdr_id
       const { rowCount } = await sql.query(
         `UPDATE fornecedor_categories
-         SET mdr_id = $1, updated_at = NOW()
+         SET mdr_id = $1
          WHERE fornecedor_id = $2 AND category_id = $3`,
         [mdr.id, fornecedorId, categoryId]
       );

@@ -3,8 +3,6 @@ import BaseHeader from "@/components/layout/base-header";
 import { requireSuperAdmin } from "@/lib/permissions/require-super-admin";
 import { CategoryForm } from "@/features/categories/_components/category-form";
 import { getAllFunctions } from "@/features/categories/server/permissions";
-import { getAvailableCustomers } from "@/features/users/server/admin-users";
-
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
 
@@ -12,19 +10,19 @@ export default async function NewCategoryPage() {
   // Verificar se usuário é Super Admin
   await requireSuperAdmin();
 
-  // Buscar todas as funções (permissões) e ISOs disponíveis
-  const [functions, availableCustomers] = await Promise.all([
-    getAllFunctions(),
-    getAvailableCustomers().catch(() => []),
-  ]);
+  // Buscar todas as funções (permissões)
+  const functions = await getAllFunctions();
 
   return (
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Configurações", subtitle: "Categorias", url: "/config/categories" },
-          { title: "Nova Categoria", subtitle: "", url: "/config/categories/new" },
+          { title: "Configurações", url: "/config" },
+          { title: "Categorias", url: "/config/categories" },
+          { title: "Nova Categoria" },
         ]}
+        showBackButton={true}
+        backHref="/config/categories"
       />
 
       <BaseBody
@@ -33,7 +31,6 @@ export default async function NewCategoryPage() {
       >
         <CategoryForm 
           functions={functions}
-          customers={availableCustomers}
         />
       </BaseBody>
     </>

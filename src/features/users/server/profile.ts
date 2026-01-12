@@ -1,14 +1,13 @@
 "use server";
 
-import { db } from "@/db/drizzle";
-import { users, profiles, customers, adminCustomers, profileFunctions, functions, userFunctions, profileCustomers, salesAgents } from "../../../../drizzle/schema";
-import { eq, and } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { users, profiles, customers, adminCustomers, profileFunctions, functions, userFunctions, profileCustomers } from "../../../../drizzle/schema";
+import { eq, and, inArray } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
-import { hashPassword, matchPassword } from "@/app/utils/password";
+import { hashPassword } from "@/app/utils/password";
 import { revalidatePath } from "next/cache";
-
 /**
- * Email do Super Admin protegido - definido localmente
+ * Email do Super Admin protegido - definido localmente (não pode importar de "use server")
  */
 const PROTECTED_SUPER_ADMIN_EMAIL = "cto@outbank.com.br";
 
@@ -18,33 +17,33 @@ const PROTECTED_SUPER_ADMIN_EMAIL = "cto@outbank.com.br";
 
 /**
  * Obtém o perfil completo do usuário logado
- * Inclui dados do banco (nome, email, categoria, ISOs, permissões)
+ * Inclui dados do Clerk (nome, email) e do banco (categoria, ISOs, permissões)
  */
 export async function getUserProfile() {
   try {
-    const currentUserSession = await getCurrentUser();
-    if (!currentUserSession) {
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) {
       return null;
     }
 
-    // Buscar usuário no banco com dados de sales_agents para nome
+    // Buscar usuário no banco
     const user = await db
       .select({
         id: users.id,
         email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        imageUrl: users.imageUrl,
         idCustomer: users.idCustomer,
         idProfile: users.idProfile,
         fullAccess: users.fullAccess,
         active: users.active,
         profileName: profiles.name,
         profileDescription: profiles.description,
-        firstName: salesAgents.firstName,
-        lastName: salesAgents.lastName,
       })
       .from(users)
       .leftJoin(profiles, eq(users.idProfile, profiles.id))
-      .leftJoin(salesAgents, eq(salesAgents.idUsers, users.id))
-      .where(eq(users.id, currentUserSession.id))
+      .where(eq(users.id, sessionUser.id))
       .limit(1);
 
     if (!user || user.length === 0) {
@@ -54,11 +53,11 @@ export async function getUserProfile() {
     const userData = user[0];
 
     return {
-      // Dados do usuário
       id: userData.id,
-      firstName: userData.firstName || "",
-      lastName: userData.lastName || "",
-      email: userData.email || "",
+      email: userData.email || sessionUser.email || "",
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      imageUrl: userData.imageUrl,
       
       // Dados do banco
       idCustomer: userData.idCustomer,
@@ -86,62 +85,38 @@ export async function getUserProfile() {
 export async function updateUserProfile(data: {
   firstName?: string;
   lastName?: string;
+  imageUrl?: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const currentUserSession = await getCurrentUser();
-    if (!currentUserSession) {
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) {
       return { success: false, error: "Usuário não autenticado" };
     }
 
-    // Validar dados
-    if (data.firstName && data.firstName.trim().length === 0) {
-      return { success: false, error: "Primeiro nome não pode ser vazio" };
+    // Preparar dados para atualização
+    const updateData: Record<string, any> = {
+      dtupdate: new Date().toISOString(),
+    };
+
+    if (data.firstName !== undefined) {
+      updateData.firstName = data.firstName.trim() || null;
     }
 
-    if (data.lastName && data.lastName.trim().length === 0) {
-      return { success: false, error: "Último nome não pode ser vazio" };
+    if (data.lastName !== undefined) {
+      updateData.lastName = data.lastName.trim() || null;
     }
 
-    // Verificar se existe registro em sales_agents
-    const existingAgent = await db
-      .select({ id: salesAgents.id })
-      .from(salesAgents)
-      .where(eq(salesAgents.idUsers, currentUserSession.id))
-      .limit(1);
-
-    if (existingAgent.length > 0) {
-      // Atualizar sales_agents existente
-      await db
-        .update(salesAgents)
-        .set({
-          firstName: data.firstName?.trim(),
-          lastName: data.lastName?.trim(),
-          dtupdate: new Date().toISOString(),
-        })
-        .where(eq(salesAgents.idUsers, currentUserSession.id));
-    } else {
-      // Criar novo registro em sales_agents
-      const userDb = await db
-        .select({ email: users.email })
-        .from(users)
-        .where(eq(users.id, currentUserSession.id))
-        .limit(1);
-
-      if (userDb.length > 0) {
-        await db.insert(salesAgents).values({
-          slug: `agent-${currentUserSession.id}`,
-          firstName: data.firstName?.trim() || "",
-          lastName: data.lastName?.trim() || "",
-          email: userDb[0].email || "",
-          idUsers: currentUserSession.id,
-          active: true,
-          dtinsert: new Date().toISOString(),
-          dtupdate: new Date().toISOString(),
-        });
-      }
+    if (data.imageUrl !== undefined) {
+      updateData.imageUrl = data.imageUrl || null;
     }
 
-    console.log(`[updateUserProfile] ✅ Perfil atualizado: ${currentUserSession.id}`);
+    // Atualizar no banco de dados
+    await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, sessionUser.id));
+
+    console.log(`[updateUserProfile] ✅ Perfil atualizado: ${sessionUser.id}`);
     
     revalidatePath("/account");
     return { success: true };
@@ -163,8 +138,8 @@ export async function changePassword(data: {
   newPassword: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const currentUserSession = await getCurrentUser();
-    if (!currentUserSession) {
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) {
       return { success: false, error: "Usuário não autenticado" };
     }
 
@@ -173,40 +148,44 @@ export async function changePassword(data: {
       return { success: false, error: "Nova senha deve ter pelo menos 8 caracteres" };
     }
 
-    // Buscar hash da senha atual do usuário
-    const userDb = await db
-      .select({ id: users.id, hashedPassword: users.hashedPassword })
-      .from(users)
-      .where(eq(users.id, currentUserSession.id))
-      .limit(1);
-
-    if (!userDb || userDb.length === 0 || !userDb[0].hashedPassword) {
-      return { success: false, error: "Usuário não encontrado" };
-    }
-
-    // Validar senha atual
-    const isValid = matchPassword(data.currentPassword, userDb[0].hashedPassword);
-    if (!isValid) {
-      return { success: false, error: "Senha atual incorreta" };
-    }
-
     // Verificar se nova senha é igual à atual
     if (data.currentPassword === data.newPassword) {
       return { success: false, error: "Nova senha deve ser diferente da atual" };
     }
 
-    // Atualizar senha no banco
+    // Buscar usuário no banco para validar senha atual
+    const userDb = await db
+      .select({ id: users.id, hashedPassword: users.hashedPassword })
+      .from(users)
+      .where(eq(users.id, sessionUser.id))
+      .limit(1);
+
+    if (!userDb || userDb.length === 0) {
+      return { success: false, error: "Usuário não encontrado" };
+    }
+
+    // Validar senha atual usando bcrypt
+    const bcrypt = await import("bcryptjs");
+    const currentHashedPassword = userDb[0].hashedPassword;
+    
+    if (currentHashedPassword) {
+      const isValid = await bcrypt.compare(data.currentPassword, currentHashedPassword);
+      if (!isValid) {
+        return { success: false, error: "Senha atual incorreta" };
+      }
+    }
+
+    // Atualizar hash no banco
     const newHashedPassword = hashPassword(data.newPassword);
     await db
       .update(users)
       .set({
         hashedPassword: newHashedPassword,
-        initialPassword: data.newPassword,
         dtupdate: new Date().toISOString(),
       })
-      .where(eq(users.id, currentUserSession.id));
+      .where(eq(users.id, sessionUser.id));
 
-    console.log(`[changePassword] ✅ Senha alterada: ${currentUserSession.id}`);
+    console.log(`[changePassword] ✅ Senha alterada: ${sessionUser.id}`);
     return { success: true };
   } catch (error: any) {
     console.error("[changePassword] Error:", error);
@@ -223,8 +202,8 @@ export async function changePassword(data: {
  */
 export async function getUserPermissionsSummary() {
   try {
-    const currentUserSession = await getCurrentUser();
-    if (!currentUserSession) {
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) {
       return null;
     }
 
@@ -239,7 +218,7 @@ export async function getUserPermissionsSummary() {
       })
       .from(users)
       .leftJoin(profiles, eq(users.idProfile, profiles.id))
-      .where(eq(users.id, currentUserSession.id))
+      .where(eq(users.id, sessionUser.id))
       .limit(1);
 
     if (!user || user.length === 0) {
@@ -406,11 +385,12 @@ export async function getUserPermissionsSummary() {
 
 /**
  * Verifica se o usuário logado pode alterar sua própria senha
+ * O Super Admin protegido (cto@outbank.com.br) só pode ter a senha alterada por ele mesmo
  */
 export async function canChangeOwnPassword(): Promise<boolean> {
   try {
-    const currentUserSession = await getCurrentUser();
-    if (!currentUserSession) {
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) {
       return false;
     }
 
@@ -421,3 +401,4 @@ export async function canChangeOwnPassword(): Promise<boolean> {
     return false;
   }
 }
+

@@ -14,7 +14,6 @@ export type CustomerCustomization = {
   slug: string | null;
   primaryColor: string | null;
   secondaryColor: string | null;
-  // Cores de personalização do login
   loginButtonColor: string | null;
   loginButtonTextColor: string | null;
   loginTitleColor: string | null;
@@ -23,7 +22,6 @@ export type CustomerCustomization = {
   loginImageUrl: string | null;
   faviconUrl: string | null;
   emailImageUrl: string | null;
-  // Ícone do menu/sidebar (36x36px)
   menuIconUrl: string | null;
   customerId: number | null;
 };
@@ -127,9 +125,8 @@ async function uploadImageToS3(file: File, prefix: string): Promise<string> {
     Key: key,
     Body: buffer,
     ContentType: file.type,
-    // ✅ Cache otimizado para atualização rápida (5 segundos)
-    // Permite revalidação do browser a cada 5 segundos para atualização quase instantânea
-    CacheControl: 'public, max-age=5, must-revalidate',
+    // ✅ Sem cache - atualização instantânea
+    CacheControl: 'no-cache, no-store, must-revalidate',
   });
   
   await s3Client.send(command);
@@ -194,6 +191,10 @@ const customizationSchema = z.object({
   subdomain: z.string().min(1),
   primaryColor: z.string().min(1),
   secondaryColor: z.string().optional(),
+  loginButtonColor: z.string().optional(),
+  loginButtonTextColor: z.string().optional(),
+  loginTitleColor: z.string().optional(),
+  loginTextColor: z.string().optional(),
   customerId: z.coerce.number(),
 });
 
@@ -208,7 +209,6 @@ export async function getCustomizationByCustomerId(
         slug: customerCustomization.slug,
         primaryColor: customerCustomization.primaryColor,
         secondaryColor: customerCustomization.secondaryColor,
-        // Cores de personalização do login
         loginButtonColor: customerCustomization.loginButtonColor,
         loginButtonTextColor: customerCustomization.loginButtonTextColor,
         loginTitleColor: customerCustomization.loginTitleColor,
@@ -218,8 +218,6 @@ export async function getCustomizationByCustomerId(
         loginImageUrl: customerCustomization.loginImageUrl,
         faviconUrl: customerCustomization.faviconUrl,
         emailImageUrl: customerCustomization.emailImageUrl,
-        // Ícone do menu/sidebar
-        menuIconUrl: customerCustomization.menuIconUrl,
         customerId: customerCustomization.customerId,
       })
       .from(customerCustomization)
@@ -244,14 +242,13 @@ export async function getCustomizationBySubdomain(
   subdomain: string
 ): Promise<CustomerCustomization | null> {
   try {
-    let result = await db
+    const result = await db
       .select({
         id: customerCustomization.id,
         name: customerCustomization.name,
         slug: customerCustomization.slug,
         primaryColor: customerCustomization.primaryColor,
         secondaryColor: customerCustomization.secondaryColor,
-        // Cores de personalização do login
         loginButtonColor: customerCustomization.loginButtonColor,
         loginButtonTextColor: customerCustomization.loginButtonTextColor,
         loginTitleColor: customerCustomization.loginTitleColor,
@@ -261,8 +258,6 @@ export async function getCustomizationBySubdomain(
         loginImageUrl: customerCustomization.loginImageUrl,
         faviconUrl: customerCustomization.faviconUrl,
         emailImageUrl: customerCustomization.emailImageUrl,
-        // Ícone do menu/sidebar
-        menuIconUrl: customerCustomization.menuIconUrl,
         customerId: customerCustomization.customerId,
       })
       .from(customerCustomization)
@@ -271,41 +266,11 @@ export async function getCustomizationBySubdomain(
       .limit(1);
 
     if (result.length === 0) {
-      console.log(`[getCustomizationBySubdomain] No record found for slug="${subdomain}", trying fallback by name`);
-      result = await db
-        .select({
-          id: customerCustomization.id,
-          name: customerCustomization.name,
-          slug: customerCustomization.slug,
-          primaryColor: customerCustomization.primaryColor,
-          secondaryColor: customerCustomization.secondaryColor,
-          // Cores de personalização do login
-          loginButtonColor: customerCustomization.loginButtonColor,
-          loginButtonTextColor: customerCustomization.loginButtonTextColor,
-          loginTitleColor: customerCustomization.loginTitleColor,
-          loginTextColor: customerCustomization.loginTextColor,
-          imageUrl: file.fileUrl,
-          imageUrlDirect: customerCustomization.imageUrl,
-          loginImageUrl: customerCustomization.loginImageUrl,
-          faviconUrl: customerCustomization.faviconUrl,
-          emailImageUrl: customerCustomization.emailImageUrl,
-          // Ícone do menu/sidebar
-          menuIconUrl: customerCustomization.menuIconUrl,
-          customerId: customerCustomization.customerId,
-        })
-        .from(customerCustomization)
-        .leftJoin(file, eq(customerCustomization.fileId, file.id))
-        .where(eq(customerCustomization.name, subdomain))
-        .limit(1);
-      
-      if (result.length > 0) {
-        console.log(`[getCustomizationBySubdomain] Found record by name fallback for "${subdomain}"`);
-      }
+      console.log(`[getCustomizationBySubdomain] No record found for slug="${subdomain}"`);
+      return null;
     }
 
     const row = result[0];
-    if (!row) return null;
-
     return {
       ...row,
       imageUrl: row.imageUrl || row.imageUrlDirect || null,
@@ -323,7 +288,6 @@ export async function saveCustomization(formData: FormData) {
     subdomain: formData.get("subdomain"),
     primaryColor: formData.get("primaryColor"),
     secondaryColor: formData.get("secondaryColor"),
-    // Novas cores do login
     loginButtonColor: formData.get("loginButtonColor"),
     loginButtonTextColor: formData.get("loginButtonTextColor"),
     loginTitleColor: formData.get("loginTitleColor"),
@@ -335,10 +299,6 @@ export async function saveCustomization(formData: FormData) {
     subdomain: typeof rawData.subdomain,
     primaryColor: typeof rawData.primaryColor,
     secondaryColor: typeof rawData.secondaryColor,
-    loginButtonColor: typeof rawData.loginButtonColor,
-    loginButtonTextColor: typeof rawData.loginButtonTextColor,
-    loginTitleColor: typeof rawData.loginTitleColor,
-    loginTextColor: typeof rawData.loginTextColor,
     customerId: typeof rawData.customerId,
   });
 
@@ -352,7 +312,7 @@ export async function saveCustomization(formData: FormData) {
     throw new Error(`Dados inválidos: ${errorMessages}`);
   }
 
-  const { subdomain, primaryColor, secondaryColor, customerId } =
+  const { subdomain, primaryColor, secondaryColor, loginButtonColor, loginButtonTextColor, loginTitleColor, loginTextColor, customerId } =
     validated.data;
 
   console.log("[saveCustomization] Validated data:", {
@@ -390,8 +350,6 @@ export async function saveCustomization(formData: FormData) {
   let faviconFileId: number | null = null;
   let emailImageUrl = "";
   let emailImageFileId: number | null = null;
-  let menuIconUrl = "";
-  let menuIconFileId: number | null = null;
 
   const image = formData.get("image") as File | null;
   console.log("[saveCustomization] Image file:", image ? `present (${image.size} bytes, ${image.type})` : 'not provided');
@@ -525,55 +483,16 @@ export async function saveCustomization(formData: FormData) {
     emailImageFileId = result[0].id;
   }
 
-  // Processar ícone do menu (36x36px)
-  const menuIcon = formData.get("menuIcon") as File | null;
-  console.log("[saveCustomization] Menu icon file:", menuIcon ? `present (${menuIcon.size} bytes, ${menuIcon.type})` : 'not provided');
-  if (menuIcon) {
-    try {
-      menuIconUrl = await uploadImageToS3(menuIcon, 'menu-icon');
-      console.log("Menu icon uploaded successfully:", menuIconUrl);
-    } catch (error: any) {
-      console.error("S3 Upload Error (menu icon):", {
-        name: error.name,
-        message: error.message,
-        statusCode: error.$metadata?.httpStatusCode,
-      });
-      throw new Error(`Falha no upload do ícone do menu: ${error.message}`);
-    }
-
-    const extension = menuIcon.name.split(".").pop() || "png";
-    const fileType = menuIcon.type || "image/png";
-
-    const result = await db
-      .insert(file)
-      .values({
-        fileUrl: menuIconUrl,
-        fileName: menuIcon.name,
-        extension: extension,
-        fileType: fileType,
-        active: true,
-      })
-      .returning({ id: file.id });
-
-    menuIconFileId = result[0].id;
-  }
-
   const primaryHSL = hexToHsl(primaryColor);
   const secondaryHSL = secondaryColor ? hexToHsl(secondaryColor) : null;
-  
-  // Converter novas cores do login
-  const loginButtonColorHSL = rawData.loginButtonColor ? hexToHsl(rawData.loginButtonColor as string) : null;
-  const loginButtonTextColorHSL = rawData.loginButtonTextColor ? hexToHsl(rawData.loginButtonTextColor as string) : null;
-  const loginTitleColorHSL = rawData.loginTitleColor ? hexToHsl(rawData.loginTitleColor as string) : null;
-  const loginTextColorHSL = rawData.loginTextColor ? hexToHsl(rawData.loginTextColor as string) : null;
+  const loginButtonColorHSL = loginButtonColor ? hexToHsl(loginButtonColor) : null;
+  const loginButtonTextColorHSL = loginButtonTextColor ? hexToHsl(loginButtonTextColor) : null;
+  const loginTitleColorHSL = loginTitleColor ? hexToHsl(loginTitleColor) : null;
+  const loginTextColorHSL = loginTextColor ? hexToHsl(loginTextColor) : null;
 
   console.log("[saveCustomization] Color conversion:", {
     primaryHSL: primaryHSL ? 'converted' : 'failed',
     secondaryHSL: secondaryHSL ? 'converted' : 'not provided or failed',
-    loginButtonColorHSL: loginButtonColorHSL ? 'converted' : 'not provided or failed',
-    loginButtonTextColorHSL: loginButtonTextColorHSL ? 'converted' : 'not provided or failed',
-    loginTitleColorHSL: loginTitleColorHSL ? 'converted' : 'not provided or failed',
-    loginTextColorHSL: loginTextColorHSL ? 'converted' : 'not provided or failed',
   });
 
   const existingCustomization = await db
@@ -593,7 +512,6 @@ export async function saveCustomization(formData: FormData) {
         slug: normalizedSubdomain,
         primaryColor: primaryHSL,
         ...(secondaryHSL && { secondaryColor: secondaryHSL }),
-        // Novas cores do login
         ...(loginButtonColorHSL && { loginButtonColor: loginButtonColorHSL }),
         ...(loginButtonTextColorHSL && { loginButtonTextColor: loginButtonTextColorHSL }),
         ...(loginTitleColorHSL && { loginTitleColor: loginTitleColorHSL }),
@@ -606,9 +524,6 @@ export async function saveCustomization(formData: FormData) {
         ...(faviconFileId && { faviconFileId: faviconFileId }),
         ...(emailImageUrl && { emailImageUrl: emailImageUrl }),
         ...(emailImageFileId && { emailImageFileId: emailImageFileId }),
-        // Ícone do menu
-        ...(menuIconUrl && { menuIconUrl: menuIconUrl }),
-        ...(menuIconFileId && { menuIconFileId: menuIconFileId }),
       })
       .where(eq(customerCustomization.id, existingCustomization[0].id));
   } else {
@@ -618,7 +533,6 @@ export async function saveCustomization(formData: FormData) {
       slug: normalizedSubdomain,
       primaryColor: primaryHSL,
       secondaryColor: secondaryHSL,
-      // Novas cores do login
       loginButtonColor: loginButtonColorHSL,
       loginButtonTextColor: loginButtonTextColorHSL,
       loginTitleColor: loginTitleColorHSL,
@@ -632,9 +546,6 @@ export async function saveCustomization(formData: FormData) {
       faviconFileId: faviconFileId,
       emailImageUrl: emailImageUrl || null,
       emailImageFileId: emailImageFileId,
-      // Ícone do menu
-      menuIconUrl: menuIconUrl || null,
-      menuIconFileId: menuIconFileId,
     });
   }
 
@@ -673,7 +584,6 @@ export async function updateCustomization(formData: FormData) {
     subdomain: formData.get("subdomain"),
     primaryColor: formData.get("primaryColor"),
     secondaryColor: formData.get("secondaryColor"),
-    // Novas cores do login
     loginButtonColor: formData.get("loginButtonColor"),
     loginButtonTextColor: formData.get("loginButtonTextColor"),
     loginTitleColor: formData.get("loginTitleColor"),
@@ -695,7 +605,7 @@ export async function updateCustomization(formData: FormData) {
     throw new Error(`Dados inválidos: ${errorMessages}`);
   }
 
-  const { id, subdomain, primaryColor, secondaryColor } = validated.data;
+  const { id, subdomain, primaryColor, secondaryColor, loginButtonColor, loginButtonTextColor, loginTitleColor, loginTextColor } = validated.data;
 
   if (!subdomain || subdomain.trim() === "") {
     console.error(`[updateCustomization] Subdomain is required but was empty`);
@@ -725,8 +635,6 @@ export async function updateCustomization(formData: FormData) {
   let faviconFileId: number | null = null;
   let emailImageUrl = "";
   let emailImageFileId: number | null = null;
-  let menuIconUrl = "";
-  let menuIconFileId: number | null = null;
 
   // Buscar customização existente para deletar imagens antigas
   const existingCustomization = await getCustomizationByCustomerId(
@@ -926,62 +834,12 @@ export async function updateCustomization(formData: FormData) {
     }
   }
 
-  // Processar ícone do menu (36x36px)
-  const menuIcon = formData.get("menuIcon") as File | null;
-  if (menuIcon && menuIcon.size > 0) {
-    // Deletar imagem antiga antes de fazer upload da nova
-    if (existingCustomization?.menuIconUrl) {
-      await deleteOldImageFromS3(existingCustomization.menuIconUrl);
-    }
-
-    try {
-      menuIconUrl = await uploadImageToS3(menuIcon, 'menu-icon');
-      console.log("Menu icon updated successfully:", menuIconUrl);
-    } catch (error: any) {
-      console.error("S3 Upload Error (menu icon update):", {
-        name: error.name,
-        message: error.message,
-        statusCode: error.$metadata?.httpStatusCode,
-      });
-      throw new Error(`Falha na atualização do ícone do menu: ${error.message}`);
-    }
-
-    const extension = menuIcon.name.split(".").pop() || "png";
-    const fileType = menuIcon.type || "image/png";
-
-    const result = await db
-      .insert(file)
-      .values({
-        fileUrl: menuIconUrl,
-        fileName: menuIcon.name,
-        extension: extension,
-        fileType: fileType,
-        active: true,
-      })
-      .returning({ id: file.id });
-
-    menuIconFileId = result[0].id;
-  } else {
-    // Manter menu icon existente
-    if (existingCustomization?.menuIconUrl) {
-      menuIconUrl = existingCustomization.menuIconUrl;
-      const existingFile = await db
-        .select({ id: file.id })
-        .from(file)
-        .where(eq(file.fileUrl, existingCustomization.menuIconUrl))
-        .limit(1);
-      menuIconFileId = existingFile[0]?.id || null;
-    }
-  }
-
   const primaryHSL = hexToHsl(primaryColor);
   const secondaryHSL = secondaryColor ? hexToHsl(secondaryColor) : null;
-  
-  // Converter novas cores do login
-  const loginButtonColorHSL = rawData.loginButtonColor ? hexToHsl(rawData.loginButtonColor as string) : null;
-  const loginButtonTextColorHSL = rawData.loginButtonTextColor ? hexToHsl(rawData.loginButtonTextColor as string) : null;
-  const loginTitleColorHSL = rawData.loginTitleColor ? hexToHsl(rawData.loginTitleColor as string) : null;
-  const loginTextColorHSL = rawData.loginTextColor ? hexToHsl(rawData.loginTextColor as string) : null;
+  const loginButtonColorHSL = loginButtonColor ? hexToHsl(loginButtonColor) : null;
+  const loginButtonTextColorHSL = loginButtonTextColor ? hexToHsl(loginButtonTextColor) : null;
+  const loginTitleColorHSL = loginTitleColor ? hexToHsl(loginTitleColor) : null;
+  const loginTextColorHSL = loginTextColor ? hexToHsl(loginTextColor) : null;
 
   console.log(`[updateCustomization] Updating customization id=${id} for customerId=${validated.data.customerId}`);
   console.log(`[updateCustomization] Color conversion:`, {
@@ -1009,7 +867,6 @@ export async function updateCustomization(formData: FormData) {
       slug: normalizedSubdomain,
       primaryColor: primaryHSL,
       ...(secondaryHSL && { secondaryColor: secondaryHSL }),
-      // Novas cores do login
       ...(loginButtonColorHSL && { loginButtonColor: loginButtonColorHSL }),
       ...(loginButtonTextColorHSL && { loginButtonTextColor: loginButtonTextColorHSL }),
       ...(loginTitleColorHSL && { loginTitleColor: loginTitleColorHSL }),
@@ -1022,9 +879,6 @@ export async function updateCustomization(formData: FormData) {
       faviconFileId: faviconFileId,
       ...(emailImageUrl && { emailImageUrl: emailImageUrl }),
       emailImageFileId: emailImageFileId,
-      // Ícone do menu
-      ...(menuIconUrl && { menuIconUrl: menuIconUrl }),
-      menuIconFileId: menuIconFileId,
     })
     .where(eq(customerCustomization.id, id));
 
@@ -1061,7 +915,7 @@ export async function updateCustomization(formData: FormData) {
 
 const removeImageSchema = z.object({
   customerId: z.coerce.number(),
-  type: z.enum(['logo', 'login', 'favicon', 'email', 'menuIcon']),
+  type: z.enum(['logo', 'login', 'favicon', 'email']),
 });
 
 const removeAllImagesSchema = z.object({

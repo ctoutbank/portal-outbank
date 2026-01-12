@@ -3,7 +3,7 @@ import BaseHeader from "@/components/layout/base-header";
 import { requireAdmin } from "@/lib/permissions/require-admin";
 import { getAllProfiles, getAvailableCustomers, getAdminCustomers } from "@/features/users/server/admin-users";
 import { AdminUserPermissionsForm } from "@/features/users/_components/admin-user-permissions-form";
-import { getUserDetailWithClerk } from "@/features/customers/users/_actions/user-actions";
+import { getUserDetail, getUserIsoCommissionLinks } from "@/features/customers/users/_actions/user-actions";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
 
 export const revalidate = 0;
@@ -35,9 +35,12 @@ export default async function UserDetailPage({ params }: PageProps) {
       <>
         <BaseHeader
           breadcrumbItems={[
-            { title: "Configurações", subtitle: "Usuários", url: "/config/users" },
-            { title: "Novo Usuário", subtitle: "", url: "/config/users/new" },
+            { title: "Configurações", url: "/config" },
+            { title: "Usuários", url: "/config/users" },
+            { title: "Novo Usuário" },
           ]}
+          showBackButton={true}
+          backHref="/config/users"
         />
         <BaseBody title="Novo Usuário" subtitle="Criar novo usuário no sistema">
           <AdminUserPermissionsForm
@@ -58,8 +61,11 @@ export default async function UserDetailPage({ params }: PageProps) {
       <>
         <BaseHeader
           breadcrumbItems={[
-            { title: "Configurações", subtitle: "Usuários", url: "/config/users" },
+            { title: "Configurações", url: "/config" },
+            { title: "Usuários", url: "/config/users" },
           ]}
+          showBackButton={true}
+          backHref="/config/users"
         />
         <BaseBody title="Usuário não encontrado" subtitle="">
           <p className="text-muted-foreground">ID de usuário inválido.</p>
@@ -68,14 +74,15 @@ export default async function UserDetailPage({ params }: PageProps) {
     );
   }
 
-  let user: Awaited<ReturnType<typeof getUserDetailWithClerk>> | null;
+  let user: Awaited<ReturnType<typeof getUserDetail>> | null;
   let profiles: Awaited<ReturnType<typeof getAllProfiles>>;
   let customers: Awaited<ReturnType<typeof getAvailableCustomers>>;
   let adminCustomers: Awaited<ReturnType<typeof getAdminCustomers>> = [];
+  let isoCommissionLinks: Awaited<ReturnType<typeof getUserIsoCommissionLinks>> = [];
   
   try {
     [user, profiles, customers] = await Promise.all([
-      getUserDetailWithClerk(userId),
+      getUserDetail(userId),
       getAllProfiles(),
       getAvailableCustomers(),
     ]);
@@ -85,8 +92,15 @@ export default async function UserDetailPage({ params }: PageProps) {
       adminCustomers = await getAdminCustomers(userId);
     } catch (error) {
       console.warn('Erro ao buscar ISOs autorizados (tabela pode não existir):', error);
-      // Retorna array vazio, não quebra a página
       adminCustomers = [];
+    }
+
+    // Buscar vínculos ISO com tipo de comissão
+    try {
+      isoCommissionLinks = await getUserIsoCommissionLinks(userId);
+    } catch (error) {
+      console.warn('Erro ao buscar vínculos de comissão:', error);
+      isoCommissionLinks = [];
     }
   } catch (error) {
     console.error('Erro ao carregar dados do usuário:', error);
@@ -97,8 +111,11 @@ export default async function UserDetailPage({ params }: PageProps) {
       <>
         <BaseHeader
           breadcrumbItems={[
-            { title: "Configurações", subtitle: "Usuários", url: "/config/users" },
+            { title: "Configurações", url: "/config" },
+            { title: "Usuários", url: "/config/users" },
           ]}
+          showBackButton={true}
+          backHref="/config/users"
         />
         <BaseBody title="Erro ao carregar usuário" subtitle="">
           <p className="text-muted-foreground">Ocorreu um erro ao carregar os dados do usuário. Por favor, tente novamente.</p>
@@ -112,8 +129,11 @@ export default async function UserDetailPage({ params }: PageProps) {
       <>
         <BaseHeader
           breadcrumbItems={[
-            { title: "Configurações", subtitle: "Usuários", url: "/config/users" },
+            { title: "Configurações", url: "/config" },
+            { title: "Usuários", url: "/config/users" },
           ]}
+          showBackButton={true}
+          backHref="/config/users"
         />
         <BaseBody title="Usuário não encontrado" subtitle="">
           <p className="text-muted-foreground">O usuário solicitado não foi encontrado.</p>
@@ -126,9 +146,12 @@ export default async function UserDetailPage({ params }: PageProps) {
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Configurações", subtitle: "Usuários", url: "/config/users" },
-          { title: "Editar Usuário", subtitle: user.email || "", url: `/config/users/${userId}` },
+          { title: "Configurações", url: "/config" },
+          { title: "Usuários", url: "/config/users" },
+          { title: user.name || "Editar Usuário" },
         ]}
+        showBackButton={true}
+        backHref="/config/users"
       />
       <BaseBody title="Editar Usuário" subtitle={`Gerenciar permissões de ${user.email}`}>
         <AdminUserPermissionsForm
@@ -136,6 +159,11 @@ export default async function UserDetailPage({ params }: PageProps) {
           profiles={profiles}
           customers={customers}
           adminCustomers={Array.isArray(adminCustomers) ? adminCustomers.map((ac) => ac.idCustomer).filter((id): id is number => id !== null) : []}
+          isoCommissionLinks={isoCommissionLinks.map(l => ({
+            customerId: l.customerId,
+            customerName: l.customerName,
+            commissionType: l.commissionType,
+          }))}
           isSuperAdmin={isSuperAdmin}
         />
       </BaseBody>

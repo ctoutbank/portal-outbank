@@ -13,12 +13,14 @@ interface CategorylistProps {
   Categories: CategoryList;
   sortField: string;
   sortOrder: "asc" | "desc";
+  headerActions?: React.ReactNode;
 }
 
 export default function Categorylist({
   Categories,
   sortField,
   sortOrder,
+  headerActions,
 }: CategorylistProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -82,9 +84,9 @@ export default function Categorylist({
 
   return (
     <div className="w-full overflow-x-hidden bg-[#161616]">
-      {/* Campo de busca */}
-      <div className="mb-5">
-        <div className="relative">
+      {/* Campo de busca com abas */}
+      <div className="mb-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#616161] z-10" />
           <Input
             type="text"
@@ -94,6 +96,7 @@ export default function Categorylist({
             className="pl-10 pr-4 h-[42px] bg-[#424242] border border-[#353535] rounded-[6px] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
           />
         </div>
+        {headerActions}
       </div>
 
       {/* Header com botões de ordenação */}

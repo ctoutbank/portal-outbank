@@ -6,7 +6,11 @@ import { getCustomerById } from "@/features/customers/server/customers";
 import { getDDProfiles } from "@/features/customers/users/_actions/user-actions";
 import CustomerActionButtons from "@/features/customers/_componentes/buttonIsActive";
 import { getCustomizationByCustomerId } from "@/utils/serverActions";
-import { requireAdmin } from "@/lib/permissions/require-admin";
+import { requireAdminOrCore, requireIsoAccess } from "@/lib/permissions/require-admin";
+import { getCurrentUserInfo, isCoreProfile } from "@/lib/permissions/check-permissions";
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // Definir explicitamente os params
 interface PageProps {
@@ -14,18 +18,38 @@ interface PageProps {
 }
 
 export default async function CustomerDetail({ params }: PageProps) {
-    // Verificar se usuário é admin antes de mostrar a página
-    await requireAdmin();
+    // Verificar se usuário é admin ou CORE antes de mostrar a página
+    await requireAdminOrCore();
+    
+    // Obter informações do usuário atual para controle de permissões
+    const userInfo = await getCurrentUserInfo();
+    const isCore = await isCoreProfile();
+    
+    // Determinar permissões para os botões
+    // - canDeactivate: SUPER_ADMIN, CORE, ISO_ADMIN (ISO_PORTAL_ADMIN)
+    // - canDelete: apenas SUPER_ADMIN
+    const canDeactivate = userInfo?.isSuperAdmin || userInfo?.isAdmin || isCore;
+    const canDelete = userInfo?.isSuperAdmin || false;
     
     const { id } = await params;
     
     const customerId = parseInt(id);
+    
+    // Verificar se o usuário tem acesso ao ISO específico
+    // customerId 0 = criação de novo ISO (permitido para todos com acesso à página)
+    await requireIsoAccess(customerId || 0);
+    
     if (isNaN(customerId)) {
       const profiles = await getDDProfiles();
       return (
         <>
           <BaseHeader
-            breadcrumbItems={[{ title: "ISOS", subtitle: "", url: "/customers" }]}
+            breadcrumbItems={[
+              { title: "ISOs", url: "/customers" },
+              { title: "Novo ISO" }
+            ]}
+            showBackButton={true}
+            backHref="/customers"
           />
           <BaseBody title="ISO" subtitle={`Criação de novo ISO`}>
             <CustomerWizardForm 
@@ -70,10 +94,15 @@ export default async function CustomerDetail({ params }: PageProps) {
     return (
     <>
     <BaseHeader
-        breadcrumbItems={[{ title: "ISOS",subtitle: "",url: "/customers" }]}
+        breadcrumbItems={[
+          { title: "ISOs", url: "/customers" },
+          { title: Customer?.name || "Detalhes" }
+        ]}
+        showBackButton={true}
+        backHref="/customers"
       />
       <BaseBody title="ISO" subtitle={`Visualização do ISO`} actions={
-         Customer?.id && <CustomerActionButtons isActive={Customer.isActive ?? true} />
+         Customer?.id && <CustomerActionButtons isActive={Customer.isActive ?? true} canDeactivate={canDeactivate} canDelete={canDelete} />
       }>
         <CustomerWizardForm 
           customer={Customer ? {

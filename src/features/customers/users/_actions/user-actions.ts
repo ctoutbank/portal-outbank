@@ -9,19 +9,25 @@ import {
   adminCustomers,
   customerCustomization,
   customers,
+  file,
   profiles,
   reportExecution,
-  userCustomers,
   userMerchants,
   userNotifications,
   users,
+  userCustomers,
+  salesAgents,
 } from "../../../../../drizzle/schema";
 
 import { sendWelcomePasswordEmail } from "@/lib/send-email";
 import { getCustomizationByCustomerId } from "@/utils/serverActions";
 import { ilike } from "drizzle-orm";
+import { validateDeletePermission } from "@/lib/permissions/check-permissions";
 
-export type UserDetail = typeof users.$inferSelect;
+export type UserDetail = typeof users.$inferSelect & {
+  firstName: string;
+  lastName: string;
+};
 
 export type ProfileDD = {
   id: number;
@@ -44,6 +50,7 @@ export type UserInsert = {
   idAddress: number | null;
   selectedMerchants?: string[];
   active: boolean | null;
+  canViewSensitiveData?: boolean;
   idClerk: string | null;
   slug?: string;
   dtinsert?: string;
@@ -56,6 +63,8 @@ export interface UserDetailForm extends UserDetail {
   email: string;
   selectedMerchants?: string[];
   fullAccess: boolean;
+  canViewSensitiveData: boolean;
+  customerName?: string;
 }
 
 export async function generateRandomPassword(length = 8) {
@@ -68,7 +77,7 @@ export async function generateRandomPassword(length = 8) {
   return randomPassword;
 }
 
-export async function updateUserWithClerk(id: number, data: UserInsert) {
+export async function updateUser(id: number, data: UserInsert) {
   if (!id) {
     throw new Error("ID do usuário é obrigatório");
   }
@@ -98,19 +107,46 @@ export async function updateUserWithClerk(id: number, data: UserInsert) {
       throw new Error("Usuário não encontrado");
     }
 
-    const profile = await db
-      .select()
-      .from(profiles)
-      .where(eq(profiles.name, "Admin Total"));
+    // Atualizar usuário na tabela users
+    // Preservar valor existente de canViewSensitiveData se não for passado
     await db
       .update(users)
       .set({
-        idProfile: profile[0].id,
         idCustomer: data.idCustomer,
         idAddress: data.idAddress,
+        active: data.active,
+        canViewSensitiveData: data.canViewSensitiveData ?? existingUser[0].canViewSensitiveData ?? false,
         dtupdate: new Date().toISOString(),
       })
       .where(eq(users.id, id));
+
+    // Atualizar ou criar dados em sales_agents
+    const existingSalesAgent = await db
+      .select()
+      .from(salesAgents)
+      .where(eq(salesAgents.idUsers, id))
+      .limit(1);
+
+    if (existingSalesAgent.length > 0) {
+      await db
+        .update(salesAgents)
+        .set({
+          firstName: data.firstName,
+          lastName: data.lastName,
+        })
+        .where(eq(salesAgents.idUsers, id));
+    } else {
+      await db.insert(salesAgents).values({
+        slug: generateSlug(),
+        active: true,
+        dtinsert: new Date().toISOString(),
+        dtupdate: new Date().toISOString(),
+        idUsers: id,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+      });
+    }
 
     revalidatePath("/portal/users");
     return true;
@@ -120,19 +156,42 @@ export async function updateUserWithClerk(id: number, data: UserInsert) {
   }
 }
 
-export async function getUserDetailWithClerk(
+export async function getUserDetail(
   userId: number
 ): Promise<UserDetailForm | null> {
   try {
-    const user = await db
-      .select()
+    // Buscar usuário com dados de sales_agents
+    const result = await db
+      .select({
+        id: users.id,
+        slug: users.slug,
+        dtinsert: users.dtinsert,
+        dtupdate: users.dtupdate,
+        active: users.active,
+        idClerk: users.idClerk,
+        idCustomer: users.idCustomer,
+        idProfile: users.idProfile,
+        fullAccess: users.fullAccess,
+        idAddress: users.idAddress,
+        hashedPassword: users.hashedPassword,
+        email: users.email,
+        initialPassword: users.initialPassword,
+        isInvisible: users.isInvisible,
+        userType: users.userType,
+        canViewSensitiveData: users.canViewSensitiveData,
+        firstName: salesAgents.firstName,
+        lastName: salesAgents.lastName,
+      })
       .from(users)
+      .leftJoin(salesAgents, eq(salesAgents.idUsers, users.id))
       .where(eq(users.id, userId))
       .limit(1);
 
-    if (!user || user.length === 0) {
+    if (!result || result.length === 0) {
       return null;
     }
+
+    const user = result[0];
 
     // Obter os relacionamentos merchant-user
     const userMerchantRelations = await db
@@ -144,14 +203,29 @@ export async function getUserDetailWithClerk(
       .filter((relation) => relation.idMerchant !== null)
       .map((relation) => relation.idMerchant!.toString());
 
-    // Compor o objeto UserDetailForm usando dados do banco
+    // Buscar nome do customer/ISO se houver
+    let customerName: string | undefined;
+    if (user.idCustomer) {
+      const customer = await db
+        .select({ name: customers.name })
+        .from(customers)
+        .where(eq(customers.id, user.idCustomer))
+        .limit(1);
+      if (customer.length > 0) {
+        customerName = customer[0].name || undefined;
+      }
+    }
+
+    // Compor o objeto UserDetailForm usando dados reais
     const userDetailForm: UserDetailForm = {
-      ...user[0],
-      firstName: user[0].slug?.split(" ")[0] || "",
-      lastName: user[0].slug?.split(" ").slice(1).join(" ") || "",
-      email: user[0].email || "",
+      ...user,
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email || "",
       selectedMerchants,
-      fullAccess: user[0].fullAccess || false,
+      fullAccess: user.fullAccess || false,
+      canViewSensitiveData: user.canViewSensitiveData || false,
+      customerName,
     };
 
     return userDetailForm;
@@ -161,183 +235,7 @@ export async function getUserDetailWithClerk(
   }
 }
 
-interface InsertUserInput {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password?: string;
-  idCustomer: number | null;
-  active?: boolean;
-  idProfile?: number;      // ← Novo: perfil opcional
-  fullAccess?: boolean;    // ← Novo: acesso total opcional
-}
-
-export async function InsertUser(data: InsertUserInput) {
-  try {
-    const {
-      firstName,
-      lastName,
-      email,
-      password,
-      idCustomer,
-      active = true,
-      idProfile: providedIdProfile,    // ← Novo
-      fullAccess: providedFullAccess,  // ← Novo
-    } = data;
-
-    const finalPassword =
-      password && password.trim() !== ""
-        ? password
-        : await generateRandomPassword();
-
-    // ✅ Validar que a senha tenha pelo menos 8 caracteres
-    if (finalPassword.length < 8) {
-      throw new Error("A senha deve ter pelo menos 8 caracteres.");
-    }
-
-    const hashedPwd = hashPassword(finalPassword);
-
-    // Buscar perfil: se fornecido, usar; senão, buscar ADMIN como padrão
-    let idProfile = providedIdProfile;
-    let fullAccess = providedFullAccess ?? false;
-
-    if (!idProfile) {
-      // Se não forneceu perfil, busca ADMIN como padrão
-      const adminProfile = await db
-        .select()
-        .from(profiles)
-        .where(ilike(profiles.name, "%ADMIN%"))
-        .limit(1)
-        .execute();
-
-      if (!adminProfile || adminProfile.length === 0) {
-        throw new Error("Profile ADMIN não encontrado no banco.");
-      }
-
-      idProfile = adminProfile[0].id;
-    }
-
-    // Verificar se o email já existe para este ISO
-    if (idCustomer) {
-      const existingUser = await db
-        .select()
-        .from(users)
-        .where(
-          and(
-            eq(users.email, email),
-            eq(users.idCustomer, idCustomer)
-          )
-        )
-        .limit(1);
-
-      if (existingUser.length > 0) {
-        throw new Error("Usuário já existe com este email para este ISO");
-      }
-    } else {
-      const existingUser = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
-
-      if (existingUser.length > 0) {
-        throw new Error("Usuário já existe com este email");
-      }
-    }
-
-    // Criação no banco
-    const created = await db
-      .insert(users)
-      .values({
-        slug: `${firstName} ${lastName}`,
-        dtinsert: new Date().toISOString(),
-        dtupdate: new Date().toISOString(),
-        active,
-        email,
-        idCustomer: idCustomer ?? null,
-        idClerk: null, // Não usa mais Clerk
-        idProfile,
-        idAddress: null,
-        fullAccess,
-        hashedPassword: hashedPwd,
-        initialPassword: finalPassword,
-      })
-      .returning({ id: users.id });
-
-    const domain = await getCustomizationByCustomerId(idCustomer ?? 0);
-
-    // ✅ Buscar logo de email (emailImageUrl) ou logo padrão
-    const logo =
-      domain?.emailImageUrl ||
-      domain?.imageUrl ||
-      "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
-
-    // ✅ Buscar nome do customer
-    const customerData = await db
-      .select({
-        name: customers.name,
-        slug: customerCustomization.slug,
-      })
-      .from(customers)
-      .leftJoin(customerCustomization, eq(customerCustomization.customerId, customers.id))
-      .where(eq(customers.id, idCustomer ?? 0))
-      .limit(1);
-
-    const customerName = customerData[0]?.name || domain?.slug || "Seu ISO";
-
-    const linkSlug = domain?.slug || domain?.name;
-    const link = linkSlug ? `https://${linkSlug}.consolle.one` : undefined;
-
-    try {
-      await sendWelcomePasswordEmail(
-        email,
-        finalPassword,
-        logo,
-        customerName,
-        link
-      );
-      console.log("[InsertUser] Welcome email sent successfully", {
-        to: email,
-        logo,
-        customerName,
-        hasLink: !!link,
-      });
-    } catch (emailError) {
-      console.error("[InsertUser] Failed to send welcome email:", emailError);
-      console.error("[InsertUser] User created successfully but email failed. User can use 'Resend invite' action.");
-    }
-
-    return created[0].id;
-  } catch (error: unknown) {
-    console.error("Erro ao criar usuário:", error);
-
-    // Se for um erro de string simples, verificar se contém informações sobre duplicação
-    if (
-      typeof error === "string" &&
-      (error.includes("already exists") ||
-        error.includes("duplicate") ||
-        error.includes("já existe"))
-    ) {
-      throw new Error("Usuário já existe com este email");
-    }
-
-    // Se for um Error object, verificar a mensagem
-    if (error instanceof Error) {
-      if (
-        error.message.includes("already exists") ||
-        error.message.includes("duplicate") ||
-        error.message.includes("já existe")
-      ) {
-        throw new Error("Usuário já existe com este email");
-      }
-    }
-
-    // Para outros erros, manter o comportamento original
-    throw error;
-  }
-}
-
-export async function getUsersWithClerk(customerId: number) {
+export async function getUsersByCustomerId(customerId: number) {
   const dbUsers = await db
     .select({
       id: users.id,
@@ -356,28 +254,24 @@ export async function getUsersWithClerk(customerId: number) {
       isInvisible: users.isInvisible,
       userType: users.userType,
       canViewSensitiveData: users.canViewSensitiveData,
-      imageUrl: users.imageUrl,
+      firstName: salesAgents.firstName,
+      lastName: salesAgents.lastName,
     })
     .from(users)
+    .leftJoin(salesAgents, eq(salesAgents.idUsers, users.id))
     .where(
       and(
         eq(users.idCustomer, customerId),
-        eq(users.isInvisible, false)
+        eq(users.isInvisible, false),
+        eq(users.active, true)
       )
     );
 
-  const result = dbUsers.map((user) => {
-    // Extrair firstName e lastName do slug
-    const nameParts = (user.slug || "").split(" ");
-    const firstName = nameParts[0] || "";
-    const lastName = nameParts.slice(1).join(" ") || "";
-
-    return {
-      ...user,
-      firstName,
-      lastName,
-    };
-  });
+  const result = dbUsers.map((user) => ({
+    ...user,
+    firstName: user.firstName || "",
+    lastName: user.lastName || "",
+  }));
 
   return result;
 }
@@ -493,6 +387,11 @@ export async function resendWelcomeEmail(userId: number): Promise<{
 
 export async function deleteUser(id: number): Promise<boolean> {
   try {
+    const canDelete = await validateDeletePermission();
+    if (!canDelete) {
+      throw new Error("Apenas Super Admin pode deletar usuários");
+    }
+    
     // Verificar se o usuário existe
     const existingUser = await db.select().from(users).where(eq(users.id, id));
 
@@ -500,12 +399,15 @@ export async function deleteUser(id: number): Promise<boolean> {
       throw new Error("Usuário não encontrado");
     }
 
+    const userToDelete = existingUser[0];
+
     // 1. Deletar relacionamentos primeiro (para evitar erro de foreign key)
     // 1.1. Deletar user_merchants
     try {
       await db.delete(userMerchants).where(eq(userMerchants.idUser, id));
       console.log(`[deleteUser] ✅ Relacionamentos user_merchants deletados para usuário ID: ${id}`);
     } catch (merchantError: any) {
+      // Se a tabela não existir ou não houver relacionamentos, continuar
       if (merchantError?.code !== '42P01' && !merchantError?.message?.includes('does not exist')) {
         console.warn(`[deleteUser] ⚠️ Aviso ao deletar relacionamentos user_merchants:`, merchantError);
       }
@@ -516,6 +418,7 @@ export async function deleteUser(id: number): Promise<boolean> {
       await db.delete(userNotifications).where(eq(userNotifications.idUser, id));
       console.log(`[deleteUser] ✅ Notificações do usuário deletadas para usuário ID: ${id}`);
     } catch (notificationError: any) {
+      // Se a tabela não existir ou não houver relacionamentos, continuar
       if (notificationError?.code !== '42P01' && !notificationError?.message?.includes('does not exist')) {
         console.warn(`[deleteUser] ⚠️ Aviso ao deletar notificações do usuário:`, notificationError);
       }
@@ -526,6 +429,7 @@ export async function deleteUser(id: number): Promise<boolean> {
       await db.delete(adminCustomers).where(eq(adminCustomers.idUser, id));
       console.log(`[deleteUser] ✅ Relacionamentos admin_customers deletados para usuário ID: ${id}`);
     } catch (adminCustomerError: any) {
+      // Se a tabela não existir ou não houver relacionamentos, continuar
       if (adminCustomerError?.code !== '42P01' && !adminCustomerError?.message?.includes('does not exist')) {
         console.warn(`[deleteUser] ⚠️ Aviso ao deletar relacionamentos admin_customers:`, adminCustomerError);
       }
@@ -536,8 +440,20 @@ export async function deleteUser(id: number): Promise<boolean> {
       await db.delete(reportExecution).where(eq(reportExecution.idUser, id));
       console.log(`[deleteUser] ✅ Execuções de relatório deletadas para usuário ID: ${id}`);
     } catch (reportError: any) {
+      // Se a tabela não existir ou não houver relacionamentos, continuar
       if (reportError?.code !== '42P01' && !reportError?.message?.includes('does not exist')) {
         console.warn(`[deleteUser] ⚠️ Aviso ao deletar execuções de relatório:`, reportError);
+      }
+    }
+
+    // 1.5. Deletar sales_agents
+    try {
+      await db.delete(salesAgents).where(eq(salesAgents.idUsers, id));
+      console.log(`[deleteUser] ✅ Relacionamentos sales_agents deletados para usuário ID: ${id}`);
+    } catch (salesAgentError: any) {
+      // Se a tabela não existir ou não houver relacionamentos, continuar
+      if (salesAgentError?.code !== '42P01' && !salesAgentError?.message?.includes('does not exist')) {
+        console.warn(`[deleteUser] ⚠️ Aviso ao deletar relacionamentos sales_agents:`, salesAgentError);
       }
     }
 
@@ -545,7 +461,7 @@ export async function deleteUser(id: number): Promise<boolean> {
     await db.delete(users).where(eq(users.id, id));
     console.log(`[deleteUser] ✅ Usuário deletado do banco de dados: ID ${id}`);
 
-    // 3. Revalidar caminhos relacionados
+    // 4. Revalidar caminhos relacionados
     revalidatePath("/customers");
     revalidatePath("/portal/users");
 
@@ -564,7 +480,83 @@ export async function deleteUser(id: number): Promise<boolean> {
 }
 
 /**
- * Reseta a senha de um usuário, atualizando no banco de dados
+ * Desvincula um usuário de um ISO específico (em vez de deletar completamente)
+ * Esta função é usada quando um ISO Admin está removendo um usuário do seu ISO
+ * O usuário permanece no sistema, apenas perde o vínculo com aquele ISO específico
+ * Se for o último vínculo, o usuário é desativado (não deletado) para preservar histórico
+ * @param userId - ID do usuário
+ * @param customerId - ID do ISO (customer) do qual o usuário será desvinculado
+ * @returns true se desvinculado com sucesso
+ */
+export async function unlinkUserFromIso(userId: number, customerId: number): Promise<boolean> {
+  try {
+    console.log(`[unlinkUserFromIso] Desvinculando usuário ${userId} do ISO ${customerId}`);
+
+    // Verificar se o usuário existe
+    const existingUser = await db.select().from(users).where(eq(users.id, userId));
+
+    if (!existingUser || existingUser.length === 0) {
+      throw new Error("Usuário não encontrado");
+    }
+
+    const user = existingUser[0];
+
+    // Verificar quantos ISOs o usuário está vinculado
+    const userLinks = await db
+      .select({ customerId: userCustomers.idCustomer })
+      .from(userCustomers)
+      .where(and(eq(userCustomers.idUser, userId), eq(userCustomers.active, true)));
+
+    const activeLinks = userLinks.length;
+    console.log(`[unlinkUserFromIso] Usuário ${userId} tem ${activeLinks} vínculos ativos com ISOs`);
+
+    // Desativar o vínculo do usuário com este ISO específico
+    await db
+      .update(userCustomers)
+      .set({ active: false })
+      .where(
+        and(
+          eq(userCustomers.idUser, userId),
+          eq(userCustomers.idCustomer, customerId)
+        )
+      );
+    console.log(`[unlinkUserFromIso] ✅ Vínculo user_customers desativado para usuário ${userId} e ISO ${customerId}`);
+
+    // Se o usuário só estava vinculado a este ISO, desativar o usuário completamente
+    // Não deletamos para preservar histórico - apenas desativamos e limpamos o idCustomer
+    if (activeLinks <= 1 && user.idCustomer === customerId) {
+      console.log(`[unlinkUserFromIso] Usuário ${userId} só tinha este vínculo. Desativando usuário e limpando idCustomer.`);
+      await db
+        .update(users)
+        .set({ active: false, idCustomer: null })
+        .where(eq(users.id, userId));
+      console.log(`[unlinkUserFromIso] ✅ Usuário ${userId} desativado e idCustomer limpo`);
+    } else if (user.idCustomer === customerId) {
+      // Se o idCustomer do usuário é este ISO, atualizar para outro ISO ativo
+      const otherLinks = userLinks.filter(l => l.customerId !== customerId);
+      if (otherLinks.length > 0) {
+        await db
+          .update(users)
+          .set({ idCustomer: otherLinks[0].customerId })
+          .where(eq(users.id, userId));
+        console.log(`[unlinkUserFromIso] ✅ idCustomer do usuário ${userId} atualizado para ${otherLinks[0].customerId}`);
+      }
+    }
+
+    // Revalidar caminhos relacionados
+    revalidatePath("/customers");
+    revalidatePath(`/customers/${customerId}`);
+    revalidatePath("/portal/users");
+
+    return true;
+  } catch (error: any) {
+    console.error("[unlinkUserFromIso] ❌ Erro ao desvincular usuário:", error);
+    throw error;
+  }
+}
+
+/**
+ * Reseta a senha de um usuário no banco de dados local
  * @param userId - ID do usuário no banco de dados
  * @returns Objeto com sucesso, nova senha e email do usuário
  */
@@ -616,7 +608,7 @@ export async function resetUserPassword(userId: number): Promise<{
       .where(eq(users.id, userId));
     console.log(`[resetUserPassword] ✅ Senha atualizada no banco de dados para usuário ID: ${userId}`);
 
-    // 4. Buscar dados do ISO para email
+    // 5. Buscar dados do ISO para email
     let logo = "https://file-upload-outbank.s3.amazonaws.com/LUmLuBIG.jpg";
     let customerName = "Consolle";
     let link: string | undefined;
@@ -643,7 +635,7 @@ export async function resetUserPassword(userId: number): Promise<{
       }
     }
 
-    // 5. Enviar email com nova senha
+    // 6. Enviar email com nova senha
     try {
       await sendWelcomePasswordEmail(
         user.email,
@@ -658,7 +650,7 @@ export async function resetUserPassword(userId: number): Promise<{
       // Não falhar se email falhar - senha já foi resetada com sucesso
     }
 
-    // 6. Revalidar caminhos
+    // 7. Revalidar caminhos
     revalidatePath("/customers");
     
     return {
@@ -865,11 +857,11 @@ export async function getUserIsoCommissionLinks(
 
     // Filtrar apenas links que têm commission_type definido (não NULL)
     return links
-      .filter((l) => l.commissionType !== null)
+      .filter((l) => l.commissionType !== null && l.commissionType !== undefined)
       .map((l) => ({
         customerId: l.customerId,
-        customerName: l.customerName || "",
-        commissionType: l.commissionType || "",
+        customerName: l.customerName || "Sem nome",
+        commissionType: l.commissionType as string,
       }));
   } catch (error) {
     console.error("[getUserIsoCommissionLinks] Erro ao buscar vínculos:", error);

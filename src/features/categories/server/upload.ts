@@ -10,6 +10,7 @@ import {
     merchantfile,
     solicitationFeeDocument,
 } from "../../../../drizzle/schema";
+import { validateDeletePermission } from "@/lib/permissions/check-permissions";
 
 // Tipos para gerenciamento de arquivos
 export type FileEntityType =
@@ -150,6 +151,11 @@ export async function uploadFile(
  * Função para excluir um arquivo do S3 e marcar como inativo no banco de dados
  */
 export async function deleteFile(fileId: number): Promise<boolean> {
+    const canDelete = await validateDeletePermission();
+    if (!canDelete) {
+        throw new Error("Apenas Super Admin pode realizar esta operação");
+    }
+
     try {
         // Buscar informações do arquivo
         const fileRecord = await db
@@ -360,6 +366,11 @@ export async function deleteFileRelation(
     entityId: number,
     fileId?: number
 ) {
+    const canDelete = await validateDeletePermission();
+    if (!canDelete) {
+        throw new Error("Apenas Super Admin pode realizar esta operação");
+    }
+
     try {
         let fileToDelete: { id: number; fileUrl: string | null } | undefined;
 

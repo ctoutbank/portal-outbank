@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { merchantBankAccounts } from "../../../../drizzle/schema";
+import { validateDeletePermission } from "@/lib/permissions/check-permissions";
 
 export type MerchantBankAccountInsert = typeof merchantBankAccounts.$inferInsert;
 export type MerchantBankAccountUpdate = typeof merchantBankAccounts.$inferSelect;
@@ -63,6 +64,11 @@ export async function getMerchantBankAccountByDocumentId(documentId: string) {
 }
 
 export async function deleteMerchantBankAccount(id: number) {
+  const canDelete = await validateDeletePermission();
+  if (!canDelete) {
+    throw new Error("Apenas Super Admin pode deletar contas bancárias");
+  }
+  
   await db.delete(merchantBankAccounts).where(eq(merchantBankAccounts.id, id));
 }
 

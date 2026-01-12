@@ -78,7 +78,7 @@ export default function TenantCustomization({ subdomain }: TenantCustomizationPr
             const style = document.createElement('style');
             style.id = 'tenant-login-background';
             style.textContent = `
-              .clerk-rootBox {
+              .login-container {
                 background-image: url('${loginImageUrl}') !important;
                 background-size: cover !important;
                 background-position: center !important;

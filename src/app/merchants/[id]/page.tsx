@@ -1,6 +1,5 @@
 import BaseBody from "@/components/layout/base-body";
 import BaseHeader from "@/components/layout/base-header";
-import { requireMerchantsAccess } from "@/lib/permissions/require-merchants-access";
 import { checkPagePermission, isSuperAdmin } from "@/lib/permissions/check-permissions";
 import { getMerchantById, getUserMerchantsAccess } from "@/features/merchants/server/merchants";
 import { getCnaeMccForDropdown, getEstablishmentFormatForDropdown, getLegalNaturesForDropdown, getSalesAgentForDropdown } from "@/features/merchants/server/merchant-helpers";
@@ -117,8 +116,11 @@ export default async function MerchantDetail({
       <>
         <BaseHeader
           breadcrumbItems={[
-            { title: "Estabelecimentos", subtitle: "", url: "/merchants" },
+            { title: "Estabelecimentos", url: "/merchants" },
+            { title: "Não encontrado" }
           ]}
+          showBackButton={true}
+          backHref="/merchants"
         />
         <BaseBody title="Estabelecimento" subtitle="Estabelecimento não encontrado">
           <div className="p-4 text-center">
@@ -144,9 +146,11 @@ export default async function MerchantDetail({
     <>
       <BaseHeader
         breadcrumbItems={[
-          { title: "Estabelecimentos", subtitle: "", url: "/merchants" },
-          { title: merchant.merchants.name || "Estabelecimento", subtitle: "", url: `/merchants/${merchantId}` },
+          { title: "Estabelecimentos", url: "/merchants" },
+          { title: merchant.merchants.name || "Estabelecimento" },
         ]}
+        showBackButton={true}
+        backHref="/merchants"
       />
 
       <BaseBody

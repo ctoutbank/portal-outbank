@@ -12,8 +12,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User } from "lucide-react";
+import { User, Building2, Calendar, Mail, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -22,7 +23,9 @@ import {
 } from "../_actions/users-actions";
 import { SchemaUser } from "../schema/schema";
 import {useParams} from "next/navigation";
-import {updateUserWithClerk, UserDetailForm} from "@/features/customers/users/_actions/user-actions";
+import {updateUser, UserDetailForm} from "@/features/customers/users/_actions/user-actions";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface UserFormProps {
   user?: UserDetailForm;
@@ -42,6 +45,7 @@ type FormValues = {
   idAddress: number | null;
   selectedMerchants: string[];
   active: boolean;
+  canViewSensitiveData: boolean;
   idClerk: string | null;
   slug: string;
 };
@@ -62,11 +66,12 @@ export default function UserCustomerForm({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
     email: user?.email || "",
-    idCustomer: user?.idCustomer || customerIdFromUrl || null, // aqui está a modificação
+    idCustomer: user?.idCustomer || customerIdFromUrl || null,
     idProfile: user?.idProfile || null,
     idAddress: user?.idAddress || null,
     selectedMerchants: user?.selectedMerchants || [],
     active: user?.active !== undefined ? Boolean(user.active) : true,
+    canViewSensitiveData: user?.canViewSensitiveData !== undefined ? Boolean(user.canViewSensitiveData) : true,
     idClerk: user?.idClerk || null,
     slug: user?.slug || "",
   };
@@ -89,6 +94,7 @@ export default function UserCustomerForm({
         idProfile: user.idProfile || null,
         selectedMerchants: user.selectedMerchants || [],
         active: user.active !== undefined ? Boolean(user.active) : true,
+        canViewSensitiveData: user.canViewSensitiveData !== undefined ? Boolean(user.canViewSensitiveData) : true,
         idClerk: user.idClerk || null,
         slug: user.slug || "",
       });
@@ -100,7 +106,7 @@ export default function UserCustomerForm({
     setIsLoading(true);
     try {
       if (isEditing && user?.id) {
-        await updateUserWithClerk(user.id, {
+        await updateUser(user.id, {
           ...data,
         });
         toast.success("Usuário atualizado com sucesso");
@@ -109,6 +115,11 @@ export default function UserCustomerForm({
         const result = await InsertUser({
           ...data,
         });
+        
+        if (!result) {
+          toast.error("Erro ao criar usuário. Tente novamente.");
+          return;
+        }
         
         if (result.ok) {
           if (result.reused) {
@@ -134,23 +145,67 @@ export default function UserCustomerForm({
     }
   };
 
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "-";
+    try {
+      return format(new Date(dateString), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    } catch {
+      return "-";
+    }
+  };
+
   const formFields = (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {isEditing && user && (
+        <div className="p-4 bg-black rounded-lg border border-[#2E2E2E] mb-6">
+          <h3 className="text-sm font-medium text-[#E0E0E0] mb-3">Informações do Usuário</h3>
+          <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-sm">
+            <div>
+              <span className="text-[#A0A0A0] block text-xs mb-1">Email</span>
+              <span className="text-[#E0E0E0]">{user.email || "-"}</span>
+            </div>
+            <div>
+              <span className="text-[#A0A0A0] block text-xs mb-1">Categoria</span>
+              <Badge variant="outline" className="border-[#2E2E2E] text-[#E0E0E0] bg-[#2E2E2E]">
+                <Building2 className="h-3 w-3 mr-1" />
+                ISO Admin
+              </Badge>
+            </div>
+            <div>
+              <span className="text-[#A0A0A0] block text-xs mb-1">ISO Vinculado</span>
+              <span className="text-[#E0E0E0]">{user.customerName || "-"}</span>
+            </div>
+            <div>
+              <span className="text-[#A0A0A0] block text-xs mb-1">Criado em</span>
+              <span className="text-[#E0E0E0]">{formatDate(user.dtinsert)}</span>
+            </div>
+            {user.dtupdate && user.dtupdate !== user.dtinsert && (
+              <div>
+                <span className="text-[#A0A0A0] block text-xs mb-1">Atualizado em</span>
+                <span className="text-[#E0E0E0]">{formatDate(user.dtupdate)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      <div className="space-y-4">
+        {isEditing && <h3 className="text-sm font-medium text-[#E0E0E0]">Dados do Usuário</h3>}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FormField
           // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
           control={form.control}
           name="firstName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-foreground">
-                Primeiro Nome <span className="text-destructive">*</span>
+              <FormLabel className="text-[#E0E0E0]">
+                Primeiro Nome <span className="text-[#A0A0A0]">*</span>
               </FormLabel>
               <FormControl>
                 <Input
                   maxLength={15}
                   placeholder="Digite o primeiro nome"
-                  className="bg-background border-border text-foreground placeholder:text-muted-foreground"
+                  className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] placeholder:text-[#707070] focus:border-[#404040] focus-visible:ring-[#404040]/50"
                   {...field}
                 />
               </FormControl>
@@ -165,14 +220,14 @@ export default function UserCustomerForm({
           name="lastName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-foreground">
-                Último Nome <span className="text-destructive">*</span>
+              <FormLabel className="text-[#E0E0E0]">
+                Último Nome <span className="text-[#A0A0A0]">*</span>
               </FormLabel>
               <FormControl>
                 <Input
                   maxLength={15}
                   placeholder="Digite o último nome"
-                  className="bg-background border-border text-foreground placeholder:text-muted-foreground"
+                  className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] placeholder:text-[#707070] focus:border-[#404040] focus-visible:ring-[#404040]/50"
                   {...field}
                 />
               </FormControl>
@@ -187,15 +242,15 @@ export default function UserCustomerForm({
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-foreground">
-                E-mail <span className="text-destructive">*</span>
+              <FormLabel className="text-[#E0E0E0]">
+                E-mail <span className="text-[#A0A0A0]">*</span>
               </FormLabel>
               <FormControl>
                 <Input
                   maxLength={100}
                   type="email"
                   placeholder="Digite o e-mail"
-                  className="bg-background border-border text-foreground placeholder:text-muted-foreground"
+                  className="bg-[#212121] border-[#2E2E2E] text-[#E0E0E0] placeholder:text-[#707070] focus:border-[#404040] focus-visible:ring-[#404040]/50 disabled:opacity-60 disabled:bg-[#1A1A1A]"
                   {...field}
                   disabled={isEditing}
                 />
@@ -204,30 +259,54 @@ export default function UserCustomerForm({
             </FormItem>
           )}
         />
+        </div>
       </div>
 
-      <FormField
-        // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
-        control={form.control}
-        name="active"
-        render={({ field }) => (
-          <FormItem className="flex flex-row items-start space-x-3 mt-4">
-            <FormControl>
-              <Checkbox
-                checked={Boolean(field.value)}
-                onCheckedChange={field.onChange}
-                className="cursor-pointer"
-              />
-            </FormControl>
-            <div className="space-y-1 leading-none">
-              <FormLabel className="text-foreground">
-                Usuário Ativo
-              </FormLabel>
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <div className="space-y-4 pt-2">
+        <h3 className="text-sm font-medium text-[#E0E0E0]">Permissões e Status</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
+            control={form.control}
+            name="active"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-3">
+                <FormControl>
+                  <Checkbox
+                    checked={Boolean(field.value)}
+                    onCheckedChange={field.onChange}
+                    className="cursor-pointer border-[#404040] data-[state=checked]:bg-[#404040]"
+                  />
+                </FormControl>
+                <FormLabel className="text-[#E0E0E0] font-normal">
+                  Usuário Ativo
+                </FormLabel>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            // @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis
+            control={form.control}
+            name="canViewSensitiveData"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-3">
+                <FormControl>
+                  <Checkbox
+                    checked={Boolean(field.value)}
+                    onCheckedChange={field.onChange}
+                    className="cursor-pointer border-[#404040] data-[state=checked]:bg-[#404040]"
+                  />
+                </FormControl>
+                <FormLabel className="text-[#E0E0E0] font-normal">
+                  Visualizar Dados Sensíveis
+                </FormLabel>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </div>
     </>
   );
 
@@ -237,9 +316,14 @@ export default function UserCustomerForm({
         {/* @ts-expect-error - Funcionalmente correto mas com tipos incompatíveis */}
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {formFields}
-          <div className="flex justify-end space-x-2 mt-4">
-            <Button type="submit" className="cursor-pointer" disabled={isLoading}>
-              {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
+          <div className="flex justify-end pt-4 border-t border-[#2E2E2E]">
+            <Button 
+              type="submit" 
+              variant="outline"
+              className="cursor-pointer border-[#2E2E2E] text-[#E0E0E0] hover:bg-[#2E2E2E]" 
+              disabled={isLoading}
+            >
+              {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar Usuário"}
             </Button>
           </div>
         </form>
@@ -254,16 +338,21 @@ export default function UserCustomerForm({
         <Card className="border-border bg-card">
           <CardHeader className="border-b border-border">
             <CardTitle className="flex items-center gap-2 text-foreground">
-              <User className="h-5 w-5" />
-              Criação do Usuário
+              <User className="h-5 w-5 text-muted-foreground" />
+              {isEditing ? "Editar Usuário" : "Novo Usuário"}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
             {formFields}
           </CardContent>
-          <div className="flex justify-end space-x-2 mr-4 mt-2">
-            <Button type="submit" className="cursor-pointer" disabled={isLoading}>
-              {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
+          <div className="flex justify-end space-x-2 mr-4 mt-2 pb-4">
+            <Button 
+              type="submit" 
+              variant="outline"
+              className="cursor-pointer" 
+              disabled={isLoading}
+            >
+              {isLoading ? "Salvando..." : isEditing ? "Atualizar" : "Criar Usuário"}
             </Button>
           </div>
         </Card>

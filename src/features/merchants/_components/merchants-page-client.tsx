@@ -36,12 +36,14 @@ type MerchantsPageClientProps = {
   totalRecords: number;
   page: number;
   pageSize: number;
+  shouldMaskData?: boolean;
 };
 
 const MerchantsTableContext = createContext<{
   visibleColumns: string[];
   toggleColumn: (columnId: string) => void;
   columns: typeof merchantsColumns;
+  shouldMaskData: boolean;
 } | null>(null);
 
 export function useMerchantsTable() {
@@ -64,6 +66,7 @@ export function MerchantsPageClient({
   totalRecords,
   page,
   pageSize,
+  shouldMaskData = false,
 }: MerchantsPageClientProps) {
   const [visibleColumns, setVisibleColumns] = useState(
     merchantsColumns.filter((column) => column.defaultVisible).map((column) => column.id)
@@ -89,7 +92,7 @@ export function MerchantsPageClient({
   );
 
   return (
-    <MerchantsTableContext.Provider value={{ visibleColumns, toggleColumn, columns: merchantsColumns }}>
+    <MerchantsTableContext.Provider value={{ visibleColumns, toggleColumn, columns: merchantsColumns, shouldMaskData }}>
       <div className="flex flex-col space-y-2">
         <MerchantsDashboardWrapper data={data} tableSettingsButton={tableSettingsButton}>
           <MerchantsFilter

@@ -241,7 +241,7 @@ export function AdminUsersFilter({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs font-medium mb-1.5 block">Perfil</Label>
+                <Label className="text-xs font-medium mb-1.5 block">Categoria</Label>
                 <Select 
                   value={profileId || "all"} 
                   onValueChange={(value) => {
@@ -249,10 +249,10 @@ export function AdminUsersFilter({
                   }}
                 >
                   <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Todos os perfis" />
+                    <SelectValue placeholder="Todas as categorias" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos os perfis</SelectItem>
+                    <SelectItem value="all">Todas as categorias</SelectItem>
                     {profiles.map((profile) => (
                       <SelectItem key={profile.id} value={profile.id.toString()}>
                         {profile.name || "Sem nome"}

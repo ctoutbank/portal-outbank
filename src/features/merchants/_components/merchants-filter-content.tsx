@@ -76,6 +76,10 @@ export function FilterMerchantsContent({
     { value: "false", label: "Não" },
   ];
 
+  const today = new Date();
+  const threeYearsAgo = new Date();
+  threeYearsAgo.setFullYear(today.getFullYear() - 3);
+
   const applyFilters = () => {
     onFilter({
       dateFrom,
@@ -260,6 +264,9 @@ export function FilterMerchantsContent({
                     mode="single"
                     selected={dateFrom}
                     onSelect={setDateFrom}
+                    fromDate={threeYearsAgo}
+                    toDate={today}
+                    showMonthYearPicker
                     initialFocus
                   />
                 </PopoverContent>

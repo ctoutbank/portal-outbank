@@ -210,12 +210,12 @@ export async function getPricingSolicitationById(
 export async function insertPricingSolicitation(
   pricingSolicitation: PricingSolicitationForm
 ) {
-  const sessionUser = await getCurrentUser();
+  const user = await currentUser();
 
   const userDB = await db
     .select({ customersId: users.idCustomer })
     .from(users)
-    .where(eq(users.id, sessionUser?.id || 0));
+    .where(eq(users.idClerk, user?.id || ""));
 
   const customerId = await db
     .select({ id: customers.id })

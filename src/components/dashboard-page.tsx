@@ -2,11 +2,18 @@
 
 import { MerchantData } from "@/app/dashboard/actions"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, CreditCard, DollarSign, TrendingDown, TrendingUp } from "lucide-react"
-import { ModuleBadges } from "@/components/ui/module-badge"
-import { useEffect } from "react"
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
-import RefreshButton from "@/app/dashboard/refresh-button"
+import { Building2, CreditCard, DollarSign } from "lucide-react"
+import { useEffect, useState } from "react"
+
+interface IsoStats {
+  customerId: number;
+  customerName: string;
+  transactionCount: number;
+  volume: number;
+  profit: number;
+  marginPercent: number;
+  merchantCount?: number;
+}
 
 interface DashboardProps {
   dashboardData: {
@@ -15,56 +22,56 @@ interface DashboardProps {
     totalBruto: number;
     totalLucro: number;
     topMerchants: MerchantData[];
+    isoBreakdown?: IsoStats[];
     lastUpdate?: Date;
   }
 }
 
-// Dados padrão para uso quando os dados reais não estão disponíveis
 const defaultData = {
   totalEstabelecimentos: 0,
   totalTransacoes: 0,
   totalBruto: 0,
   totalLucro: 0,
   topMerchants: [],
+  isoBreakdown: [] as IsoStats[],
   lastUpdate: new Date()
 };
 
-// Cores para os cards de clientes
-const cardColors = [
-  { border: 'border-orange-500', bg: 'bg-orange-500', progress: 'bg-orange-500' },
-  { border: 'border-blue-500', bg: 'bg-blue-500', progress: 'bg-blue-500' },
-  { border: 'border-green-500', bg: 'bg-green-500', progress: 'bg-green-500' },
-  { border: 'border-purple-500', bg: 'bg-purple-500', progress: 'bg-purple-500' },
-  { border: 'border-pink-500', bg: 'bg-pink-500', progress: 'bg-pink-500' },
-];
-
-// Formatar data
+// Formatar data de forma consistente (evita erro de hidratação)
 function formatLastUpdate(date?: Date) {
   if (!date) return 'Data desconhecida';
   
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  }).format(new Date(date));
+  const d = new Date(date);
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const year = d.getUTCFullYear();
+  const hours = String(d.getUTCHours()).padStart(2, '0');
+  const minutes = String(d.getUTCMinutes()).padStart(2, '0');
+  const seconds = String(d.getUTCSeconds()).padStart(2, '0');
+  
+  return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds} (UTC)`;
 }
 
 export default function Dashboard({ dashboardData = defaultData }: DashboardProps) {
+  const [mounted, setMounted] = useState(false);
+
+  // Efeito para marcar quando o componente foi montado no cliente
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Efeito para logging de debug
   useEffect(() => {
     console.log("Dashboard data received:", dashboardData);
   }, [dashboardData]);
 
-  // Garantir que dashboardData tenha valores válidos usando defaults onde necessário
   const data = {
     totalEstabelecimentos: dashboardData?.totalEstabelecimentos ?? defaultData.totalEstabelecimentos,
     totalTransacoes: dashboardData?.totalTransacoes ?? defaultData.totalTransacoes,
     totalBruto: dashboardData?.totalBruto ?? defaultData.totalBruto,
     totalLucro: dashboardData?.totalLucro ?? defaultData.totalLucro,
     topMerchants: dashboardData?.topMerchants ?? defaultData.topMerchants,
+    isoBreakdown: dashboardData?.isoBreakdown ?? defaultData.isoBreakdown,
     lastUpdate: dashboardData?.lastUpdate ?? defaultData.lastUpdate
   };
 
@@ -81,18 +88,17 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
 
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4 md:p-6 overflow-x-hidden bg-[#161616] space-y-5">
-      {/* Cabeçalho com última atualização e botão de refresh */}
+      {/* Cabeçalho com última atualização */}
       <div className="flex justify-between items-center">
         <div className="text-xs text-[#5C5C5C]">
-          Última atualização: {formatLastUpdate(data.lastUpdate)}
+          Última atualização: {mounted ? formatLastUpdate(data.lastUpdate) : '...'}
         </div>
-        <RefreshButton />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium">Bruto total</CardTitle>
+            <CardTitle className="text-xs font-medium">TPV</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -100,13 +106,13 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.totalBruto)}
             </div>
             <div className="flex items-center space-x-2">
-              <p className="text-xs text-muted-foreground">Total bruto das transações</p>
+              <p className="text-xs text-muted-foreground">Total de volume processado</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium">Lucro total</CardTitle>
+            <CardTitle className="text-xs font-medium">Lucro</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -114,7 +120,7 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.totalLucro)}
             </div>
             <div className="flex items-center space-x-2">
-              <p className="text-xs text-muted-foreground">Total de lucro realizado</p>
+              <p className="text-xs text-muted-foreground">Lucro baseado na sua margem</p>
             </div>
           </CardContent>
         </Card>
@@ -144,119 +150,80 @@ export default function Dashboard({ dashboardData = defaultData }: DashboardProp
         </Card>
       </div>
 
-      {/* Gráfico de Barras */}
-      <Card className="col-span-4">
-        <CardHeader>
-          <CardTitle>Top 5 Estabelecimentos</CardTitle>
-          <CardDescription>
-            Desempenho de faturamento bruto dos 5 maiores estabelecimentos
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pl-2">
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="name"
-                  tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
-                />
-                <YAxis 
-                  tickFormatter={(value) => new Intl.NumberFormat('pt-BR', { 
-                    notation: 'compact',
-                    compactDisplay: 'short',
-                    style: 'currency', 
-                    currency: 'BRL'
-                  }).format(value)}
-                />
-                <Tooltip 
-                  formatter={(value: number) => new Intl.NumberFormat('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  }).format(value)}
-                />
-                <Bar dataKey="bruto" name="Valor Bruto" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-[350px] text-center">
-              <div className="text-gray-500">
-                <p>Nenhum estabelecimento com dados suficientes encontrado.</p>
-                <p className="mt-2 text-xs">Os valores totais estão disponíveis nos cards acima.</p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Dados detalhados dos clientes */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Dados dos Estabelecimentos</CardTitle>
-          <CardDescription>
-            Detalhamento dos 5 principais estabelecimentos
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {data.topMerchants.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {data.topMerchants.map((merchant, index) => (
-                <div key={merchant.id} className={`p-4 rounded-lg border ${cardColors[index % cardColors.length].border}`}>
-                  <div className="font-medium truncate">{merchant.name}</div>
-                  <div className="mt-2 space-y-2">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Bruto</p>
-                      <p className="font-medium">
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        }).format(merchant.bruto)}
-                      </p>
+      {/* Resumo por ISO */}
+      {data.isoBreakdown && data.isoBreakdown.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium">Resumo por ISO</CardTitle>
+            <CardDescription className="text-xs">
+              Detalhamento de volume e lucro por ISO vinculado
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {data.isoBreakdown.map((iso) => {
+                const volumePercent = data.totalBruto > 0 ? (iso.volume / data.totalBruto) * 100 : 0;
+                return (
+                  <div 
+                    key={iso.customerId} 
+                    className="p-4 rounded-lg border border-[#2a2a2a]"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-white text-sm truncate max-w-[70%]">
+                        {iso.customerName}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded border border-blue-500/50 text-blue-400 bg-blue-500/10">
+                        {iso.marginPercent.toFixed(2)}%
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Lucro</p>
-                      <p className="font-medium">
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        }).format(merchant.lucro)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Crescimento</p>
-                      <div className={`flex items-center font-medium ${merchant.crescimento >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {merchant.crescimento >= 0 ? (
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                        ) : (
-                          <TrendingDown className="h-3 w-3 mr-1" />
-                        )}
-                        {merchant.crescimento.toFixed(1)}%
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">TPV</span>
+                        <span className="text-white font-medium">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(iso.volume)}
+                        </span>
                       </div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">% do Total</p>
-                      <p className="font-medium">
-                        {totalBruto > 0 ? ((merchant.bruto / totalBruto) * 100).toFixed(1) : '0.0'}%
-                      </p>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Lucro</span>
+                        <span className="text-white font-medium">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(iso.profit)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Transações</span>
+                        <span className="text-white">
+                          {iso.transactionCount.toLocaleString('pt-BR')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">ECs</span>
+                        <span className="text-white">
+                          {(iso.merchantCount || 0).toLocaleString('pt-BR')}
+                        </span>
+                      </div>
+                      {data.isoBreakdown && data.isoBreakdown.length > 1 && (
+                        <div className="mt-2 pt-2 border-t border-[#2a2a2a]">
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">% Total do TPV</span>
+                            <span className="text-white">{volumePercent.toFixed(1)}%</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-[#2a2a2a] rounded-full mt-1 overflow-hidden">
+                            <div 
+                              className="h-full bg-green-500 rounded-full"
+                              style={{ width: `${volumePercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="mt-4 w-full bg-secondary rounded-full h-2.5">
-                    <div
-                      className={`h-2.5 rounded-full ${cardColors[index % cardColors.length].progress}`}
-                      style={{ width: `${totalBruto > 0 ? (merchant.bruto / totalBruto) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          ) : (
-            <div className="py-8 text-center">
-              <p className="text-gray-500">Nenhum estabelecimento com dados detalhados disponível.</p>
-              <p className="mt-2 text-xs text-gray-500">Os valores totais do ISO estão disponíveis nos cards acima.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
+
     </div>
   )
 } 

@@ -9,7 +9,7 @@ interface MerchantsListWithContextProps {
 }
 
 export function MerchantsListWithContext({ list }: MerchantsListWithContextProps) {
-  const { visibleColumns, toggleColumn, columns } = useMerchantsTable();
+  const { visibleColumns, toggleColumn, columns, shouldMaskData } = useMerchantsTable();
 
   return (
     <MerchantsList
@@ -17,6 +17,7 @@ export function MerchantsListWithContext({ list }: MerchantsListWithContextProps
       columnsConfig={columns}
       visibleColumns={visibleColumns}
       onToggleColumn={toggleColumn}
+      shouldMaskData={shouldMaskData}
     />
   );
 }

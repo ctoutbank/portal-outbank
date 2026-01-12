@@ -210,14 +210,14 @@ export const SolicitationFeeProductTypeList: SelectItemSolicitationFee[] = [
         transactionFeeEnd: "12",
     },
     {
-        value: "VOUCHER",
-        label: "Voucher",
+        value: "PREPAID_CREDIT",
+        label: "Pré-pago",
         transactionFeeStart: "0",
         transactionFeeEnd: "0",
     },
     {
-        value: "PREPAID_CREDIT",
-        label: "Pré-pago",
+        value: "VOUCHER",
+        label: "Voucher",
         transactionFeeStart: "0",
         transactionFeeEnd: "0",
     },

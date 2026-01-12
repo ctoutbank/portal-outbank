@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import MdrForm from '@/components/supplier/MdrForm';
 import { FornecedorMDRForm } from '@/types/fornecedor';
+import BaseHeader from '@/components/layout/base-header';
+import BaseBody from '@/components/layout/base-body';
 
 interface MdrPageData {
   fornecedor: {
@@ -18,6 +20,8 @@ interface MdrPageData {
     name: string;
     cnae: string;
     mcc: string;
+    suporta_pos?: boolean;
+    suporta_online?: boolean;
   };
   mdr: any | null;
 }
@@ -79,7 +83,6 @@ export default function SupplierCnaeMdrPage() {
 
       toast.success('Taxas MDR salvas com sucesso!');
       
-      // Recarregar dados para garantir persistência
       const refreshRes = await fetch(`/api/supplier/${params.id}/cnae/${params.cnaeId}/mdr`);
       
       if (refreshRes.ok) {
@@ -96,6 +99,87 @@ export default function SupplierCnaeMdrPage() {
     }
   };
 
+  const handleSaveAndRedirect = async (formData: FornecedorMDRForm) => {
+    try {
+      setSaving(true);
+      console.log('📤 Enviando dados (redirect):', formData);
+
+      const res = await fetch(`/api/supplier/${params.id}/cnae/${params.cnaeId}/mdr`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('❌ Erro na resposta:', errorData);
+        throw new Error(errorData.error || 'Erro ao salvar');
+      }
+
+      toast.success('Taxas MDR salvas com sucesso!');
+      
+      router.push(`/supplier/${params.id}`);
+
+    } catch (error: any) {
+      console.error('❌ Erro ao salvar:', error);
+      toast.error(error.message || 'Erro ao salvar taxas MDR');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChannelChange = async (channel: 'pos' | 'online', value: boolean) => {
+    if (!data) return;
+    
+    const updatedData = {
+      suporta_pos: channel === 'pos' ? value : (data.cnae.suporta_pos ?? true),
+      suporta_online: channel === 'online' ? value : (data.cnae.suporta_online ?? true),
+    };
+
+    try {
+      await fetch(`/api/supplier/${params.id}/cnae/${params.cnaeId}/channels`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData),
+      });
+
+      setData({
+        ...data,
+        cnae: {
+          ...data.cnae,
+          ...updatedData,
+        },
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar canal:', error);
+      toast.error('Erro ao atualizar configuração de canal');
+    }
+  };
+
+  const handleClear = async () => {
+    try {
+      console.log('🗑️ Limpando taxas MDR...');
+
+      const res = await fetch(`/api/supplier/${params.id}/cnae/${params.cnaeId}/mdr`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao limpar taxas');
+      }
+
+      toast.success('Taxas limpas com sucesso!');
+      
+      router.push(`/supplier/${params.id}`);
+
+    } catch (error: any) {
+      console.error('❌ Erro ao limpar:', error);
+      toast.error(error.message || 'Erro ao limpar taxas MDR');
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -109,10 +193,8 @@ export default function SupplierCnaeMdrPage() {
     return null;
   }
 
-  // 🔥 TRANSFORMAR DADOS DO BACKEND PARA O FORMATO DO MDRFORM
   const transformMdrToForm = (mdr: any): Partial<FornecedorMDRForm> => {
     if (!mdr) {
-      // Se não tem MDR, retorna valores vazios com o MCC do CNAE
       return {
         mcc: [data.cnae.mcc],
       };
@@ -140,54 +222,50 @@ export default function SupplierCnaeMdrPage() {
       cminonline: mdr.cminonline || '',
       cmaxonline: mdr.cmaxonline || '',
       antecipacaoonline: mdr.antecipacaoonline || '',
-      mcc: mdr.mcc || [data.cnae.mcc], // Usa MCC do MDR ou do CNAE
+      mcc: mdr.mcc || [data.cnae.mcc],
+      custo_pix_pos: mdr.custo_pix_pos || '',
+      custo_pix_online: mdr.custo_pix_online || '',
     };
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a]">
-      {/* Header */}
-      <div className="bg-white dark:bg-[#171717] border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              Taxas MDR - {data.cnae.name}
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Fornecedor: {data.fornecedor.nome} | CNAE: {data.cnae.cnae} | MCC: {data.cnae.mcc}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto p-6">
-        {/* Botão voltar */}
-        <button
-          onClick={() => router.push(`/supplier/${params.id}`)}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 mb-6 transition"
-          disabled={saving}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Voltar para CNAEs do Fornecedor
-        </button>
-
-        {/* Formulário MDR - SEMPRE VISÍVEL */}
+    <div className="min-h-screen bg-[#0a0a0a]">
+      <BaseHeader 
+        breadcrumbItems={[
+          { title: 'Fornecedores', url: '/supplier' },
+          { title: data.fornecedor.nome, url: `/supplier/${params.id}` },
+          { title: 'Taxas MDR' }
+        ]}
+        showBackButton={true}
+        backHref={`/supplier/${params.id}`}
+      />
+      <BaseBody
+        title={`${data.mdr ? "Editar" : "Cadastrar"} Custo Dock (MDR)`}
+        subtitle={`${data.cnae.name} | CNAE: ${data.cnae.cnae} | MCC: ${data.cnae.mcc}`}
+      >
         <MdrForm
           mdrData={transformMdrToForm(data.mdr)}
           onSubmit={handleSubmit}
+          onSaveAndRedirect={handleSaveAndRedirect}
           isEditing={!!data.mdr}
           onCancel={() => router.push(`/supplier/${params.id}`)}
+          onClear={handleClear}
           isOpen={true}
+          suportaPos={data.cnae.suporta_pos ?? true}
+          suportaOnline={data.cnae.suporta_online ?? true}
+          onChannelChange={handleChannelChange}
         />
 
-        {/* Indicador de salvamento */}
         {saving && (
-          <div className="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Salvando...</span>
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+            <div className="bg-[#171717] border border-[#2E2E2E] rounded-lg px-8 py-6 flex flex-col items-center gap-4 shadow-2xl">
+              <Loader2 className="w-10 h-10 animate-spin text-[#ff9800]" />
+              <span className="text-white text-lg font-medium">Salvando...</span>
+              <p className="text-[#616161] text-sm">Aguarde enquanto salvamos as taxas MDR</p>
+            </div>
           </div>
         )}
-      </div>
+      </BaseBody>
     </div>
   );
 }

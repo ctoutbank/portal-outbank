@@ -41,7 +41,7 @@ function saveIsoAccess(customerId: number): void {
 
 interface IsoListProps {
   isoConfigs: IsoMarginConfig[];
-  userRole: 'super_admin' | 'admin' | 'executivo' | 'core' | null;
+  userRole: 'super_admin' | 'executivo' | 'core' | null;
   isSuperAdminForView?: boolean;
   isSimulating?: boolean;
   simulatedUserId?: number | null;
@@ -52,6 +52,7 @@ export function IsoList({
   userRole,
   isSuperAdminForView = false,
   isSimulating = false,
+  simulatedUserId = null
 }: IsoListProps) {
   const isNonAdmin = userRole === 'executivo' || userRole === 'core';
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,6 +97,7 @@ export function IsoList({
   }, [isoConfigs, searchTerm, statusFilter, accessHistory]);
 
   const totalPages = Math.max(1, Math.ceil(filteredConfigs.length / pageSize));
+
   const safeCurrentPage = Math.min(currentPage, totalPages);
 
   const paginatedConfigs = useMemo(() => {
@@ -148,6 +150,7 @@ export function IsoList({
 
   return (
     <div className="space-y-6">
+      {/* Mensagem de simulação só aparece quando Super Admin está simulando outro usuário */}
       {isSimulating && !isSuperAdminForView && (
         <div className="bg-amber-600/20 border border-amber-500/50 rounded-lg px-6 py-3">
           <div className="flex items-center justify-between">

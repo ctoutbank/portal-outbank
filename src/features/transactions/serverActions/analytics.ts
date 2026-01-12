@@ -390,7 +390,7 @@ export async function getAnalyticsByDimension(
     .innerJoin(merchants, eq(transactions.slugMerchant, merchants.slug))
     .where(whereClause)
     .groupBy(dimensionColumn)
-    .orderBy(sql`totalTransacoes DESC`);
+    .orderBy(sql`count(*) DESC`);
 
     return result.map((item) => ({
       dimension: item.dimension || "N/A",
@@ -435,7 +435,7 @@ export async function getAnalyticsByCustomer(
     .leftJoin(customers, eq(transactions.slugCustomer, customers.slug))
     .where(whereClause)
     .groupBy(customers.id, customers.name)
-    .orderBy(sql`totalTransacoes DESC`);
+    .orderBy(sql`count(*) DESC`);
 
     return result.map((item) => ({
       customerId: item.customerId || 0,

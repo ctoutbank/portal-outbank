@@ -224,3 +224,5 @@ export async function updateAddress(address: AddressDetail): Promise<void> {
     .set(address)
     .where(eq(addresses.id, address.id));
 }
+
+

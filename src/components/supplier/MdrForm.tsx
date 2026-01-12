@@ -1,88 +1,120 @@
 'use client';
 import { FornecedorMDRForm } from "@/types/fornecedor";
-import { X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { FileImage } from "lucide-react";
 
 import { Card, CardContent } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { SolicitationFeeProductTypeList } from "@/lib/lookuptables/lookuptables";
 import { brandList } from "@/lib/lookuptables/lookuptables-transactions";
+import { OcrUploadModal } from "./OcrUploadModal";
+import { ClearMdrModal } from "./ClearMdrModal";
+import { Trash2 } from "lucide-react";
 
-// Usar brandList para garantir ordem correta: Master, Visa, Elo, Amex, Hipercard, Cabal
+type ExtractType = 'pos' | 'online' | 'both';
+
+interface ExtractedRate {
+  brand: string;
+  productType: string;
+  rate: string;
+}
+
 type BrandValue = typeof brandList[number]['value'];
 
 type TaxaFields = {
-  [key: string]: string; // Mapeia os productTypes (DEBIT, CREDIT, CREDIT_INSTALLMENTS_2_TO_6, etc.)
+  [key: string]: string;
 };
 
 interface MdrFormState {
   mcc: string[];
-  // Taxas POS: mapeia brand -> productType -> valor
   taxasPos: Record<BrandValue, TaxaFields>;
-  // Taxas Online: mapeia brand -> productType -> valor
   taxasOnline: Record<BrandValue, TaxaFields>;
-  // Seção PIX POS
-  pixPosMdr: string;
-  pixPosCustoMin: string;
-  pixPosCustoMax: string;
-  pixPosAntecipacao: string;
-  // Seção PIX Online
-  pixOnlineMdr: string;
-  pixOnlineCustoMin: string;
-  pixOnlineCustoMax: string;
-  pixOnlineAntecipacao: string;
-  // Outras taxas POS (legado para compatibilidade com API)
-  prepos: string;
-  mdrpos: string;
-  cminpos: string;
-  cmaxpos: string;
-  antecipacao: string;
-  // Outras taxas Online (legado para compatibilidade com API)
-  preonline: string;
-  mdronline: string;
-  cminonline: string;
-  cmaxonline: string;
-  antecipacaoonline: string;
+  pixPosCusto: string;
+  pixOnlineCusto: string;
+  antecipacaoPos: string;
+  antecipacaoOnline: string;
 }
 
 interface MdrProps {
   onSubmit: (data: FornecedorMDRForm) => Promise<void>;
+  onSaveAndRedirect?: (data: FornecedorMDRForm) => Promise<void>;
   isOpen: boolean;
   mdrData?: Partial<FornecedorMDRForm>;
   categories?: Array<{ id: string; label: string }>;
   onCancel: () => void;
+  onClear?: () => Promise<void>;
   isEditing: boolean;
+  suportaPos?: boolean;
+  suportaOnline?: boolean;
+  onChannelChange?: (channel: 'pos' | 'online', value: boolean) => void;
 }
 
 export default function MdrForm({
   mdrData,
   onSubmit,
+  onSaveAndRedirect,
   isEditing = false,
   onCancel,
-  categories: categoriesProp,
+  onClear,
+  suportaPos = true,
+  suportaOnline = true,
+  onChannelChange,
 }: MdrProps) {
-
   const [loading, setLoading] = useState(false);
+  const [loadingRedirect, setLoadingRedirect] = useState(false);
+  const [ocrModalOpen, setOcrModalOpen] = useState(false);
+  const [clearModalOpen, setClearModalOpen] = useState(false);
+  const [localSuportaPos, setLocalSuportaPos] = useState(suportaPos);
+  const [localSuportaOnline, setLocalSuportaOnline] = useState(suportaOnline);
 
-  // Função para formatar valor com máscara de porcentagem
-  const formatValueWithPercentage = (value: string): string => {
-    if (!value || value.trim() === "") return "";
-    // Remove % se já existir e adiciona novamente
-    const cleanValue = value.replace(/%/g, "").trim();
-    return cleanValue ? `${cleanValue}%` : "";
+  useEffect(() => {
+    setLocalSuportaPos(suportaPos);
+  }, [suportaPos]);
+
+  useEffect(() => {
+    setLocalSuportaOnline(suportaOnline);
+  }, [suportaOnline]);
+
+  const handleChannelToggle = (channel: 'pos' | 'online', value: boolean) => {
+    if (channel === 'pos') {
+      setLocalSuportaPos(value);
+    } else {
+      setLocalSuportaOnline(value);
+    }
+    onChannelChange?.(channel, value);
   };
 
-  // Função para remover % do valor ao editar
-  const removePercentage = (value: string): string => {
-    return value.replace(/%/g, "").trim();
+  const sanitizeNumericInput = (value: string): string => {
+    let cleaned = value.replace(/[^0-9.,]/g, "");
+    cleaned = cleaned.replace(/,/g, ".");
+    const parts = cleaned.split(".");
+    if (parts.length > 2) {
+      cleaned = parts[0] + "." + parts.slice(1).join("");
+    }
+    return cleaned;
   };
 
-  // Função para verificar se valor está preenchido
-  const isValueFilled = (value: string | undefined): boolean => {
-    return value !== undefined && value !== null && value.trim() !== "";
+  const formatWithDecimalMask = (value: string): string => {
+    if (!value || value.trim() === '') return '';
+    
+    // If user already has a decimal point, respect it and just normalize
+    if (value.includes('.') || value.includes(',')) {
+      const normalized = value.replace(',', '.');
+      const num = parseFloat(normalized);
+      if (isNaN(num)) return '';
+      return num.toFixed(2);
+    }
+    
+    // No decimal point - treat as cents (e.g., 123 → 1.23)
+    const digits = value.replace(/[^0-9]/g, "");
+    if (digits === "") return "";
+    if (digits.length === 1) return "0.0" + digits;
+    if (digits.length === 2) return "0." + digits;
+    const intPart = digits.slice(0, -2).replace(/^0+/, "") || "0";
+    const decPart = digits.slice(-2);
+    return intPart + "." + decPart;
   };
-  
-  // Função para inicializar estrutura de taxas vazia
+
   const initializeTaxasStructure = (): Record<BrandValue, TaxaFields> => {
     const structure: Record<string, TaxaFields> = {};
     brandList.forEach((brand) => {
@@ -96,81 +128,17 @@ export default function MdrForm({
 
   const [mdrForm, setMdrForm] = useState<MdrFormState>({
     mcc: mdrData?.mcc || [],
-    
-    // Taxas POS por bandeira (nova estrutura usando SolicitationFeeProductTypeList)
     taxasPos: initializeTaxasStructure(),
-    
-    // Taxas Online por bandeira (nova estrutura usando SolicitationFeeProductTypeList)
     taxasOnline: initializeTaxasStructure(),
-    
-    // Seção PIX POS
-    pixPosMdr: mdrData?.mdrpos || "",
-    pixPosCustoMin: mdrData?.cminpos || "",
-    pixPosCustoMax: mdrData?.cmaxpos || "",
-    pixPosAntecipacao: mdrData?.antecipacao || "",
-    
-    // Seção PIX Online
-    pixOnlineMdr: mdrData?.mdronline || "",
-    pixOnlineCustoMin: mdrData?.cminonline || "",
-    pixOnlineCustoMax: mdrData?.cmaxonline || "",
-    pixOnlineAntecipacao: mdrData?.antecipacaoonline || "",
-    
-    // Outras taxas (legado para compatibilidade com API)
-    prepos: mdrData?.prepos || "",
-    mdrpos: mdrData?.mdrpos || "",
-    cminpos: mdrData?.cminpos || "",
-    cmaxpos: mdrData?.cmaxpos || "",
-    antecipacao: mdrData?.antecipacao || "",
-    preonline: mdrData?.preonline || "",
-    mdronline: mdrData?.mdronline || "",
-    cminonline: mdrData?.cminonline || "",
-    cmaxonline: mdrData?.cmaxonline || "",
-    antecipacaoonline: mdrData?.antecipacaoonline || "",
+    pixPosCusto: mdrData?.custo_pix_pos || "",
+    pixOnlineCusto: mdrData?.custo_pix_online || "",
+    antecipacaoPos: mdrData?.antecipacao || "",
+    antecipacaoOnline: mdrData?.antecipacaoonline || "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setMdrForm((prev) => {
-      // Atualizar campos PIX
-      if (
-        name === 'pixPosMdr' ||
-        name === 'pixPosCustoMin' ||
-        name === 'pixPosCustoMax' ||
-        name === 'pixPosAntecipacao' ||
-        name === 'pixOnlineMdr' ||
-        name === 'pixOnlineCustoMin' ||
-        name === 'pixOnlineCustoMax' ||
-        name === 'pixOnlineAntecipacao'
-      ) {
-        const updated = { ...prev, [name]: value };
-        // Sincronizar com campos legados para compatibilidade
-        if (name === 'pixPosMdr') updated.mdrpos = value;
-        if (name === 'pixPosCustoMin') updated.cminpos = value;
-        if (name === 'pixPosCustoMax') updated.cmaxpos = value;
-        if (name === 'pixPosAntecipacao') updated.antecipacao = value;
-        if (name === 'pixOnlineMdr') updated.mdronline = value;
-        if (name === 'pixOnlineCustoMin') updated.cminonline = value;
-        if (name === 'pixOnlineCustoMax') updated.cmaxonline = value;
-        if (name === 'pixOnlineAntecipacao') updated.antecipacaoonline = value;
-        return updated;
-      }
-      // Campos legados
-      if (
-        name === 'prepos' ||
-        name === 'mdrpos' ||
-        name === 'cminpos' ||
-        name === 'cmaxpos' ||
-        name === 'antecipacao' ||
-        name === 'preonline' ||
-        name === 'mdronline' ||
-        name === 'cminonline' ||
-        name === 'cmaxonline' ||
-        name === 'antecipacaoonline'
-      ) {
-        return { ...prev, [name]: value } as MdrFormState;
-      }
-      return prev;
-    });
+    setMdrForm((prev) => ({ ...prev, [name]: value } as MdrFormState));
   };
 
   const handleTaxaChange = (
@@ -191,49 +159,26 @@ export default function MdrForm({
     }));
   };
 
-  // Função que transforma os dados da nova estrutura para o formato da API (compatibilidade)
   const transformToApiFormat = (): FornecedorMDRForm => {
     const bandeiras = brandList.map(b => b.label).join(',');
     
-    // Mapear os valores usando SolicitationFeeProductTypeList
-    const getTaxaValue = (taxas: Record<BrandValue, TaxaFields>, brandValue: BrandValue, productType: string): string => {
-      // Mapear valores novos para antigos (compatibilidade)
-      const mapToOldFormat: Record<string, string> = {
-        'DEBIT': 'DEBIT',
-        'CREDIT': 'CREDIT',
-        'CREDIT_INSTALLMENTS_2_TO_6': 'CREDIT_INSTALLMENTS_2_TO_6',
-        'CREDIT_INSTALLMENTS_7_TO_12': 'CREDIT_INSTALLMENTS_7_TO_12',
-        'VOUCHER': 'VOUCHER',
-        'PREPAID_CREDIT': 'PREPAID_CREDIT',
-      };
-      
-      // Para compatibilidade com API antiga, mapear:
-      // CREDIT_INSTALLMENTS_2_TO_6 -> credito2x (primeira parcela)
-      // CREDIT_INSTALLMENTS_7_TO_12 -> credito7x (primeira parcela)
-      
-      if (productType === 'CREDIT_INSTALLMENTS_2_TO_6') {
-        return taxas[brandValue]?.[productType] || taxas[brandValue]?.['credito2x'] || "0";
-      }
-      if (productType === 'CREDIT_INSTALLMENTS_7_TO_12') {
-        return taxas[brandValue]?.[productType] || taxas[brandValue]?.['credito7x'] || "0";
-      }
-      
-      return taxas[brandValue]?.[productType] || "0";
+    const getTaxa = (taxas: Record<BrandValue, TaxaFields>, brandValue: BrandValue, productType: string): string => {
+      return taxas[brandValue]?.[productType] || "";
     };
     
-    // Concatenar valores de todas as bandeiras separados por vírgula (usando ordem do brandList)
-    const debitopos = brandList.map(b => getTaxaValue(mdrForm.taxasPos, b.value, 'DEBIT')).join(',');
-    const creditopos = brandList.map(b => getTaxaValue(mdrForm.taxasPos, b.value, 'CREDIT')).join(',');
-    const credito2xpos = brandList.map(b => getTaxaValue(mdrForm.taxasPos, b.value, 'CREDIT_INSTALLMENTS_2_TO_6')).join(',');
-    const credito7xpos = brandList.map(b => getTaxaValue(mdrForm.taxasPos, b.value, 'CREDIT_INSTALLMENTS_7_TO_12')).join(',');
-    const voucherpos = brandList.map(b => getTaxaValue(mdrForm.taxasPos, b.value, 'VOUCHER')).join(',');
-    const prepagopos = brandList.map(b => getTaxaValue(mdrForm.taxasPos, b.value, 'PREPAID_CREDIT')).join(',');
+    const debitopos = brandList.map(b => getTaxa(mdrForm.taxasPos, b.value, 'DEBIT')).join(',');
+    const creditopos = brandList.map(b => getTaxa(mdrForm.taxasPos, b.value, 'CREDIT')).join(',');
+    const credito2xpos = brandList.map(b => getTaxa(mdrForm.taxasPos, b.value, 'CREDIT_INSTALLMENTS_2_TO_6')).join(',');
+    const credito7xpos = brandList.map(b => getTaxa(mdrForm.taxasPos, b.value, 'CREDIT_INSTALLMENTS_7_TO_12')).join(',');
+    const voucherpos = brandList.map(b => getTaxa(mdrForm.taxasPos, b.value, 'VOUCHER')).join(',');
+    const prepos = brandList.map(b => getTaxa(mdrForm.taxasPos, b.value, 'PREPAID_CREDIT')).join(',');
     
-    const debitoonline = brandList.map(b => getTaxaValue(mdrForm.taxasOnline, b.value, 'DEBIT')).join(',');
-    const creditoonline = brandList.map(b => getTaxaValue(mdrForm.taxasOnline, b.value, 'CREDIT')).join(',');
-    const credito2xonline = brandList.map(b => getTaxaValue(mdrForm.taxasOnline, b.value, 'CREDIT_INSTALLMENTS_2_TO_6')).join(',');
-    const credito7xonline = brandList.map(b => getTaxaValue(mdrForm.taxasOnline, b.value, 'CREDIT_INSTALLMENTS_7_TO_12')).join(',');
-    const voucheronline = brandList.map(b => getTaxaValue(mdrForm.taxasOnline, b.value, 'VOUCHER')).join(',');
+    const debitoonline = brandList.map(b => getTaxa(mdrForm.taxasOnline, b.value, 'DEBIT')).join(',');
+    const creditoonline = brandList.map(b => getTaxa(mdrForm.taxasOnline, b.value, 'CREDIT')).join(',');
+    const credito2xonline = brandList.map(b => getTaxa(mdrForm.taxasOnline, b.value, 'CREDIT_INSTALLMENTS_2_TO_6')).join(',');
+    const credito7xonline = brandList.map(b => getTaxa(mdrForm.taxasOnline, b.value, 'CREDIT_INSTALLMENTS_7_TO_12')).join(',');
+    const voucheronline = brandList.map(b => getTaxa(mdrForm.taxasOnline, b.value, 'VOUCHER')).join(',');
+    const preonline = brandList.map(b => getTaxa(mdrForm.taxasOnline, b.value, 'PREPAID_CREDIT')).join(',');
 
     return {
       bandeiras,
@@ -242,80 +187,52 @@ export default function MdrForm({
       credito2xpos,
       credito7xpos,
       voucherpos,
-      prepos: mdrForm.prepos || "",
-      mdrpos: mdrForm.pixPosMdr || mdrForm.mdrpos || "",
-      cminpos: mdrForm.pixPosCustoMin || mdrForm.cminpos || "",
-      cmaxpos: mdrForm.pixPosCustoMax || mdrForm.cmaxpos || "",
-      antecipacao: mdrForm.pixPosAntecipacao || mdrForm.antecipacao || "",
+      prepos,
+      mdrpos: "",
+      cminpos: "",
+      cmaxpos: "",
+      antecipacao: mdrForm.antecipacaoPos || "",
       debitoonline,
       creditoonline,
       credito2xonline,
       credito7xonline,
       voucheronline,
-      preonline: mdrForm.preonline || "",
-      mdronline: mdrForm.pixOnlineMdr || mdrForm.mdronline || "",
-      cminonline: mdrForm.pixOnlineCustoMin || mdrForm.cminonline || "",
-      cmaxonline: mdrForm.pixOnlineCustoMax || mdrForm.cmaxonline || "",
-      antecipacaoonline: mdrForm.pixOnlineAntecipacao || mdrForm.antecipacaoonline || "",
+      preonline,
+      mdronline: "",
+      cminonline: "",
+      cmaxonline: "",
+      antecipacaoonline: mdrForm.antecipacaoOnline || "",
       mcc: mdrForm.mcc,
+      custoPixPos: mdrForm.pixPosCusto,
+      margemPixPos: "",
+      custoPixOnline: mdrForm.pixOnlineCusto,
+      margemPixOnline: "",
     };
   };
 
-  // Função para carregar dados existentes do mdrData
   useEffect(() => {
     if (!mdrData || !isEditing) return;
 
-    // Função para parsear valores separados por vírgula
     const parseCommaSeparatedValues = (value: string | undefined, brandIndex: number): string => {
       if (!value) return "";
       const values = value.split(',');
       return values[brandIndex]?.trim() || "";
     };
 
-    // Função para mapear valores antigos para novos productTypes
-    const mapOldToNewProductType = (oldValue: string): string => {
-      const map: Record<string, string> = {
-        'debito': 'DEBIT',
-        'credito': 'CREDIT',
-        'credito2x': 'CREDIT_INSTALLMENTS_2_TO_6',
-        'credito7x': 'CREDIT_INSTALLMENTS_7_TO_12',
-        'voucher': 'VOUCHER',
-        'prepago': 'PREPAID_CREDIT',
-      };
-      return map[oldValue.toLowerCase()] || oldValue.toUpperCase();
-    };
-
-    // Atualizar taxas POS
     const updatedTaxasPos = initializeTaxasStructure();
+    const updatedTaxasOnline = initializeTaxasStructure();
+    
     brandList.forEach((brand, brandIndex) => {
       SolicitationFeeProductTypeList.forEach((productType) => {
-        // Mapear para formato antigo para buscar valores
-        const oldKeyMap: Record<string, string> = {
+        const oldKeyMapPos: Record<string, string> = {
           'DEBIT': 'debitopos',
           'CREDIT': 'creditopos',
           'CREDIT_INSTALLMENTS_2_TO_6': 'credito2xpos',
           'CREDIT_INSTALLMENTS_7_TO_12': 'credito7xpos',
           'VOUCHER': 'voucherpos',
-          'PREPAID_CREDIT': 'prepos', // Pré-pago não tem posição específica na API antiga
+          'PREPAID_CREDIT': 'prepos',
         };
-        const oldKey = oldKeyMap[productType.value];
-        if (oldKey && mdrData[oldKey as keyof FornecedorMDRForm]) {
-          const value = parseCommaSeparatedValues(
-            mdrData[oldKey as keyof FornecedorMDRForm] as string,
-            brandIndex
-          );
-          if (value) {
-            updatedTaxasPos[brand.value][productType.value] = value;
-          }
-        }
-      });
-    });
-
-    // Atualizar taxas Online
-    const updatedTaxasOnline = initializeTaxasStructure();
-    brandList.forEach((brand, brandIndex) => {
-      SolicitationFeeProductTypeList.forEach((productType) => {
-        const oldKeyMap: Record<string, string> = {
+        const oldKeyMapOnline: Record<string, string> = {
           'DEBIT': 'debitoonline',
           'CREDIT': 'creditoonline',
           'CREDIT_INSTALLMENTS_2_TO_6': 'credito2xonline',
@@ -323,10 +240,23 @@ export default function MdrForm({
           'VOUCHER': 'voucheronline',
           'PREPAID_CREDIT': 'preonline',
         };
-        const oldKey = oldKeyMap[productType.value];
-        if (oldKey && mdrData[oldKey as keyof FornecedorMDRForm]) {
+        
+        const oldKeyPos = oldKeyMapPos[productType.value];
+        const oldKeyOnline = oldKeyMapOnline[productType.value];
+        
+        if (oldKeyPos && mdrData[oldKeyPos as keyof FornecedorMDRForm]) {
           const value = parseCommaSeparatedValues(
-            mdrData[oldKey as keyof FornecedorMDRForm] as string,
+            mdrData[oldKeyPos as keyof FornecedorMDRForm] as string,
+            brandIndex
+          );
+          if (value) {
+            updatedTaxasPos[brand.value][productType.value] = value;
+          }
+        }
+        
+        if (oldKeyOnline && mdrData[oldKeyOnline as keyof FornecedorMDRForm]) {
+          const value = parseCommaSeparatedValues(
+            mdrData[oldKeyOnline as keyof FornecedorMDRForm] as string,
             brandIndex
           );
           if (value) {
@@ -340,15 +270,10 @@ export default function MdrForm({
       ...prev,
       taxasPos: updatedTaxasPos,
       taxasOnline: updatedTaxasOnline,
-      // Atualizar campos PIX também
-      pixPosMdr: mdrData.mdrpos || prev.pixPosMdr,
-      pixPosCustoMin: mdrData.cminpos || prev.pixPosCustoMin,
-      pixPosCustoMax: mdrData.cmaxpos || prev.pixPosCustoMax,
-      pixPosAntecipacao: mdrData.antecipacao || prev.pixPosAntecipacao,
-      pixOnlineMdr: mdrData.mdronline || prev.pixOnlineMdr,
-      pixOnlineCustoMin: mdrData.cminonline || prev.pixOnlineCustoMin,
-      pixOnlineCustoMax: mdrData.cmaxonline || prev.pixOnlineCustoMax,
-      pixOnlineAntecipacao: mdrData.antecipacaoonline || prev.pixOnlineAntecipacao,
+      pixPosCusto: mdrData.custo_pix_pos || prev.pixPosCusto,
+      pixOnlineCusto: mdrData.custo_pix_online || prev.pixOnlineCusto,
+      antecipacaoPos: mdrData.antecipacao || prev.antecipacaoPos,
+      antecipacaoOnline: mdrData.antecipacaoonline || prev.antecipacaoOnline,
     }));
   }, [mdrData, isEditing]);
 
@@ -366,42 +291,193 @@ export default function MdrForm({
     }
   };
 
-  
+  const handleSaveAndRedirect = async () => {
+    if (!onSaveAndRedirect) return;
+    setLoadingRedirect(true);
+    try {
+      const payload = transformToApiFormat();
+      console.log("Payload transformado (redirect):", payload);
+      await onSaveAndRedirect(payload);
+      console.log("MDR salvo e redirecionando!");
+    } catch (error) {
+      console.error("Erro ao submeter MDR:", error);
+    } finally {
+      setLoadingRedirect(false);
+    }
+  };
 
+  const handleClearConfirm = async () => {
+    if (!onClear) return;
+    
+    await onClear();
+    setMdrForm({
+      mcc: mdrData?.mcc || [],
+      taxasPos: initializeTaxasStructure(),
+      taxasOnline: initializeTaxasStructure(),
+      pixPosCusto: "",
+      pixOnlineCusto: "",
+      antecipacaoPos: "",
+      antecipacaoOnline: "",
+    });
+  };
 
+  const handleOcrData = (data: { pos?: ExtractedRate[]; online?: ExtractedRate[]; pixPos?: string; pixOnline?: string; antecipacaoPos?: string; antecipacaoOnline?: string }, extractType: ExtractType) => {
+    setMdrForm(prev => {
+      const newTaxasPos = extractType === 'online' ? prev.taxasPos : { ...prev.taxasPos };
+      const newTaxasOnline = extractType === 'pos' ? prev.taxasOnline : { ...prev.taxasOnline };
+
+      if (data.pos && (extractType === 'pos' || extractType === 'both')) {
+        data.pos.forEach(rate => {
+          if (newTaxasPos[rate.brand]) {
+            newTaxasPos[rate.brand][rate.productType] = rate.rate;
+          }
+        });
+      }
+
+      if (data.online && (extractType === 'online' || extractType === 'both')) {
+        data.online.forEach(rate => {
+          if (newTaxasOnline[rate.brand]) {
+            newTaxasOnline[rate.brand][rate.productType] = rate.rate;
+          }
+        });
+      }
+
+      return {
+        ...prev,
+        taxasPos: newTaxasPos,
+        taxasOnline: newTaxasOnline,
+        pixPosCusto: data.pixPos || prev.pixPosCusto,
+        pixOnlineCusto: data.pixOnline || prev.pixOnlineCusto,
+        antecipacaoPos: data.antecipacaoPos || prev.antecipacaoPos,
+        antecipacaoOnline: data.antecipacaoOnline || prev.antecipacaoOnline,
+      };
+    });
+  };
+
+  const formatDecimalInput = (value: string): string => {
+    let cleaned = sanitizeNumericInput(value);
+    if (cleaned && !cleaned.includes('.') && cleaned.length > 2) {
+      const intPart = cleaned.slice(0, -2);
+      const decPart = cleaned.slice(-2);
+      cleaned = `${intPart}.${decPart}`;
+    }
+    return cleaned;
+  };
+
+  const renderTaxaCell = (
+    tipo: 'taxasPos' | 'taxasOnline',
+    brand: typeof brandList[number],
+    productType: typeof SolicitationFeeProductTypeList[number]
+  ) => {
+    const taxa = mdrForm[tipo][brand.value]?.[productType.value] || "";
+    const isEmpty = taxa.trim() === '';
+
+    return (
+      <TableCell
+        key={`${tipo}-${brand.value}-${productType.value}`}
+        className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2 text-sm"
+      >
+        <div className="relative">
+          <input
+            type="text"
+            value={taxa}
+            onChange={(e) => {
+              const cleanValue = sanitizeNumericInput(e.target.value);
+              handleTaxaChange(tipo, brand.value, productType.value, cleanValue);
+            }}
+            onBlur={(e) => {
+              const formatted = formatWithDecimalMask(e.target.value);
+              if (formatted !== taxa) {
+                handleTaxaChange(tipo, brand.value, productType.value, formatted);
+              }
+            }}
+            placeholder="0.00"
+            className={`w-full text-center border rounded bg-[#1a1a1a] placeholder:text-[#555] focus-visible:outline-none text-sm pl-2 pr-6 py-2 text-[#ff9800] ${
+              isEmpty ? 'border-red-500/50 bg-red-950/20' : 'border-[#2a2a2a]'
+            }`}
+          />
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#555] text-sm pointer-events-none">%</span>
+        </div>
+      </TableCell>
+    );
+  };
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto p-4 md:p-6 overflow-x-hidden bg-[#000000]">
-      {/* Header/Título */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="h-7 w-7 bg-[#212121] border border-[#2E2E2E] rounded-[6px] flex items-center justify-center text-[#E0E0E0] text-sm font-medium">
-          $
-        </div>
-        <h1 className="text-2xl font-semibold text-[#FFFFFF]">
-          {isEditing ? "Editar" : "Cadastrar"} MDR do Fornecedor
-        </h1>
-      </div>
-
+    <div className="w-full max-w-[1600px] mx-auto overflow-x-hidden bg-[#0a0a0a]">
+      <OcrUploadModal
+        isOpen={ocrModalOpen}
+        onClose={() => setOcrModalOpen(false)}
+        onDataExtracted={handleOcrData}
+      />
+      
+      <ClearMdrModal
+        isOpen={clearModalOpen}
+        onClose={() => setClearModalOpen(false)}
+        onConfirm={handleClearConfirm}
+      />
+      
       <Card className="w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-[12px]">
         <CardContent className="p-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <label className="text-sm text-[#a0a0a0]">Canais:</label>
+                <button
+                  type="button"
+                  onClick={() => handleChannelToggle('pos', !localSuportaPos)}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition cursor-pointer ${
+                    localSuportaPos 
+                      ? 'bg-green-900/50 text-green-400 border border-green-700' 
+                      : 'bg-[#1a1a1a] text-[#616161] border border-[#2a2a2a]'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${localSuportaPos ? 'bg-green-400' : 'bg-[#616161]'}`} />
+                  POS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChannelToggle('online', !localSuportaOnline)}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition cursor-pointer ${
+                    localSuportaOnline 
+                      ? 'bg-green-900/50 text-green-400 border border-green-700' 
+                      : 'bg-[#1a1a1a] text-[#616161] border border-[#2a2a2a]'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${localSuportaOnline ? 'bg-green-400' : 'bg-[#616161]'}`} />
+                  Online
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setOcrModalOpen(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-[#616161] bg-[#1a1a1a] border border-[#2a2a2a] rounded-md hover:bg-[#252525] hover:text-[#a0a0a0] transition cursor-pointer"
+              title="Importar taxas de uma imagem"
+            >
+              <FileImage className="w-3.5 h-3.5" />
+              Importar via Imagem
+            </button>
+          </div>
+          
           <div className="space-y-10">
-            {/* Taxas POS */}
+            {localSuportaPos && (
+            <>
             <div className="w-full overflow-x-auto">
               <div className="min-w-0">
-                <h3 className="text-2xl font-semibold mb-6 text-[#FFFFFF] border-b border-[#1f1f1f] pb-4">
-                  Taxas Transações na POS
+                <h3 className="text-xl font-semibold mb-6 text-[#FFFFFF] border-b border-[#1f1f1f] pb-4">
+                  Custo Dock - Transações POS
                 </h3>
                 <div className="overflow-x-auto mb-4">
-                  <Table className="w-full min-w-[600px] border-collapse border-spacing-0">
+                  <Table className="w-full min-w-[900px] border-collapse border-spacing-0">
                     <TableHeader>
                       <TableRow className="h-[52px]">
-                        <TableHead className="sticky left-0 z-10 bg-transparent text-sm font-medium text-[#FFFFFF] p-4 text-left border-b border-[#2a2a2a] border-l-0 h-[52px]">
+                        <TableHead className="sticky left-0 z-10 bg-[#0a0a0a] text-sm font-medium text-[#FFFFFF] p-4 text-left border-b border-[#2a2a2a] min-w-[100px]">
                           Bandeiras
                         </TableHead>
-                        {SolicitationFeeProductTypeList.map((productType, index) => (
+                        {SolicitationFeeProductTypeList.map((productType) => (
                           <TableHead
-                            key={`pos-header-${productType.value}-${index}`}
-                            className="text-center min-w-[100px] text-sm font-medium text-[#FFFFFF] bg-transparent p-4 h-[52px] border-b border-[#2a2a2a] border-l border-[#2a2a2a]"
+                            key={`pos-header-${productType.value}`}
+                            className="text-center min-w-[120px] text-sm font-medium text-[#FFFFFF] bg-transparent p-4 border-b border-[#2a2a2a] border-l border-[#2a2a2a]"
                           >
                             {productType.label}
                           </TableHead>
@@ -409,40 +485,17 @@ export default function MdrForm({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {brandList.map((brand, brandIndex) => (
+                      {brandList.map((brand) => (
                         <TableRow 
                           key={`pos-${brand.value}`} 
-                          className="h-[52px] border-b border-[#1f1f1f] hover:[&>td]:bg-[#161616] hover:[&>td:first-child]:bg-[#050505]"
+                          className="border-b border-[#1f1f1f]"
                         >
-                          <TableCell className="font-medium sticky left-0 z-10 bg-[#000000] text-[#FFFFFF] px-5 py-4 text-left border-l-0 border-r border-[#1f1f1f]">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-[#FFFFFF]">{brand.label}</span>
-                            </div>
+                          <TableCell className="font-medium sticky left-0 z-10 bg-[#0a0a0a] text-[#FFFFFF] px-4 py-3 text-left border-r border-[#1f1f1f]">
+                            <span className="font-medium text-[#FFFFFF]">{brand.label}</span>
                           </TableCell>
-                          {SolicitationFeeProductTypeList.map((productType, typeIndex) => {
-                            const currentValue = mdrForm.taxasPos[brand.value]?.[productType.value] || "";
-                            const isFilled = isValueFilled(currentValue);
-                            const displayValue = currentValue ? formatValueWithPercentage(currentValue) : "";
-                            return (
-                              <TableCell
-                                key={`pos-${brand.value}-${productType.value}-${typeIndex}`}
-                                className="text-center bg-[#121212] border-l border-[#1f1f1f] p-4 text-sm"
-                              >
-                                <input
-                                  type="text"
-                                  value={displayValue}
-                                  onChange={(e) => {
-                                    const cleanValue = removePercentage(e.target.value);
-                                    handleTaxaChange('taxasPos', brand.value, productType.value, cleanValue);
-                                  }}
-                                  placeholder="0.00"
-                                  className={`w-full text-center border-0 bg-transparent placeholder:text-[#808080] focus-visible:outline-none text-sm px-2 py-0 h-full ${
-                                    isFilled ? 'text-[#FFFFFF] font-bold' : 'text-[#808080]'
-                                  }`}
-                                />
-                              </TableCell>
-                            );
-                          })}
+                          {SolicitationFeeProductTypeList.map((productType) => 
+                            renderTaxaCell('taxasPos', brand, productType)
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -451,84 +504,78 @@ export default function MdrForm({
               </div>
             </div>
 
-            {/* Seção PIX POS */}
-            <div className="mt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 bg-[#0f0f0f] rounded-[8px] p-6 border border-[#1a1a1a]">
+            <div className="mt-6">
+              <h4 className="text-lg font-medium text-white mb-4">PIX POS - Custo Dock</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#0f0f0f] rounded-[8px] p-6 border border-[#1a1a1a]">
                 <div className="flex flex-col">
-                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">PIX (%)</label>
-                  <input
-                    type="text"
-                    name="prepos"
-                    value={mdrForm.prepos}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
-                  />
+                  <label className={`text-[13px] mb-2 font-normal ${mdrForm.pixPosCusto ? 'text-[#ff9800]' : 'text-[#5C5C5C]'}`}>Custo PIX (R$)</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="pixPosCusto"
+                      value={mdrForm.pixPosCusto}
+                      onChange={(e) => {
+                        const cleanValue = sanitizeNumericInput(e.target.value);
+                        setMdrForm(prev => ({ ...prev, pixPosCusto: cleanValue }));
+                      }}
+                      onBlur={(e) => {
+                        const formatted = formatWithDecimalMask(e.target.value);
+                        if (formatted !== mdrForm.pixPosCusto) {
+                          setMdrForm(prev => ({ ...prev, pixPosCusto: formatted }));
+                        }
+                      }}
+                      placeholder="0.14"
+                      className={`w-full h-[48px] px-4 pr-10 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] placeholder:text-[#555] focus:border-[#ff9800] focus:outline-none ${mdrForm.pixPosCusto ? 'text-[#ff9800]' : 'text-white'}`}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] text-sm pointer-events-none">R$</span>
+                  </div>
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">MDR (%)</label>
-                  <input
-                    type="text"
-                    name="pixPosMdr"
-                    value={mdrForm.pixPosMdr}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Custo Mín (R$)</label>
-                  <input
-                    type="text"
-                    name="pixPosCustoMin"
-                    value={mdrForm.pixPosCustoMin}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Custo Máx (R$)</label>
-                  <input
-                    type="text"
-                    name="pixPosCustoMax"
-                    value={mdrForm.pixPosCustoMax}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Antecipação (%)</label>
-                  <input
-                    type="text"
-                    name="pixPosAntecipacao"
-                    value={mdrForm.pixPosAntecipacao}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#0d0d0d] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
-                  />
+                  <label className={`text-[13px] mb-2 font-normal ${mdrForm.antecipacaoPos ? 'text-[#ff9800]' : 'text-[#5C5C5C]'}`}>Antecipação (%)</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="antecipacaoPos"
+                      value={mdrForm.antecipacaoPos}
+                      onChange={(e) => {
+                        const cleanValue = sanitizeNumericInput(e.target.value);
+                        setMdrForm(prev => ({ ...prev, antecipacaoPos: cleanValue }));
+                      }}
+                      onBlur={(e) => {
+                        const formatted = formatWithDecimalMask(e.target.value);
+                        if (formatted !== mdrForm.antecipacaoPos) {
+                          setMdrForm(prev => ({ ...prev, antecipacaoPos: formatted }));
+                        }
+                      }}
+                      placeholder="0.00"
+                      className={`w-full h-[48px] px-4 pr-8 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] placeholder:text-[#555] focus:border-[#ff9800] focus:outline-none ${mdrForm.antecipacaoPos ? 'text-[#ff9800]' : 'text-white'}`}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] text-sm pointer-events-none">%</span>
+                  </div>
                 </div>
               </div>
             </div>
+            </>
+            )}
 
-            {/* Taxas Online */}
+            {localSuportaOnline && (
+            <>
             <div className="w-full overflow-x-auto mt-10">
               <div className="min-w-0">
-                <h3 className="text-2xl font-semibold mb-6 text-[#FFFFFF] border-b border-[#1f1f1f] pb-4">
-                  Taxas Transações Online
+                <h3 className="text-xl font-semibold mb-6 text-[#FFFFFF] border-b border-[#1f1f1f] pb-4">
+                  Custo Dock - Transações Online
                 </h3>
-                <div className="overflow-x-auto mb-10">
-                  <Table className="w-full min-w-[600px] border-collapse border-spacing-0">
+                <div className="overflow-x-auto mb-4">
+                  <Table className="w-full min-w-[900px] border-collapse border-spacing-0">
                     <TableHeader>
                       <TableRow className="h-[52px]">
-                        <TableHead className="sticky left-0 z-10 bg-transparent text-sm font-medium text-[#FFFFFF] p-4 text-left border-b border-[#2a2a2a] border-l-0 h-[52px]">
+                        <TableHead className="sticky left-0 z-10 bg-[#0a0a0a] text-sm font-medium text-[#FFFFFF] p-4 text-left border-b border-[#2a2a2a] min-w-[100px]">
                           Bandeiras
                         </TableHead>
-                        {SolicitationFeeProductTypeList.map((productType, index) => (
+                        {SolicitationFeeProductTypeList.map((productType) => (
                           <TableHead
-                            key={`online-header-${productType.value}-${index}`}
-                            className="text-center min-w-[100px] text-sm font-medium text-[#FFFFFF] bg-transparent p-4 h-[52px] border-b border-[#2a2a2a] border-l border-[#2a2a2a]"
+                            key={`online-header-${productType.value}`}
+                            className="text-center min-w-[120px] text-sm font-medium text-[#FFFFFF] bg-transparent p-4 border-b border-[#2a2a2a] border-l border-[#2a2a2a]"
                           >
                             {productType.label}
                           </TableHead>
@@ -536,40 +583,17 @@ export default function MdrForm({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {brandList.map((brand, brandIndex) => (
+                      {brandList.map((brand) => (
                         <TableRow 
                           key={`online-${brand.value}`} 
-                          className="h-[52px] border-b border-[#1f1f1f] hover:[&>td]:bg-[#161616] hover:[&>td:first-child]:bg-[#050505]"
+                          className="border-b border-[#1f1f1f]"
                         >
-                          <TableCell className="font-medium sticky left-0 z-10 bg-[#000000] text-[#FFFFFF] px-5 py-4 text-left border-l-0 border-r border-[#1f1f1f]">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-[#FFFFFF]">{brand.label}</span>
-                            </div>
+                          <TableCell className="font-medium sticky left-0 z-10 bg-[#0a0a0a] text-[#FFFFFF] px-4 py-3 text-left border-r border-[#1f1f1f]">
+                            <span className="font-medium text-[#FFFFFF]">{brand.label}</span>
                           </TableCell>
-                          {SolicitationFeeProductTypeList.map((productType, typeIndex) => {
-                            const currentValue = mdrForm.taxasOnline[brand.value]?.[productType.value] || "";
-                            const isFilled = isValueFilled(currentValue);
-                            const displayValue = currentValue ? formatValueWithPercentage(currentValue) : "";
-                            return (
-                              <TableCell
-                                key={`online-${brand.value}-${productType.value}-${typeIndex}`}
-                                className="text-center bg-[#121212] border-l border-[#1f1f1f] p-4 text-sm"
-                              >
-                                <input
-                                  type="text"
-                                  value={displayValue}
-                                  onChange={(e) => {
-                                    const cleanValue = removePercentage(e.target.value);
-                                    handleTaxaChange('taxasOnline', brand.value, productType.value, cleanValue);
-                                  }}
-                                  placeholder="0.00"
-                                  className={`w-full text-center border-0 bg-transparent placeholder:text-[#808080] focus-visible:outline-none text-sm px-2 py-0 h-full ${
-                                    isFilled ? 'text-[#FFFFFF] font-bold' : 'text-[#808080]'
-                                  }`}
-                                />
-                              </TableCell>
-                            );
-                          })}
+                          {SolicitationFeeProductTypeList.map((productType) => 
+                            renderTaxaCell('taxasOnline', brand, productType)
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -578,88 +602,102 @@ export default function MdrForm({
               </div>
             </div>
 
-            {/* Seção PIX Online (sem Cartão) */}
-            <div className="mt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 bg-[#0f0f0f] rounded-[8px] p-6 border border-[#1a1a1a]">
+            <div className="mt-6">
+              <h4 className="text-lg font-medium text-white mb-4">PIX Online - Custo Dock</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#0f0f0f] rounded-[8px] p-6 border border-[#1a1a1a]">
                 <div className="flex flex-col">
-                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">PIX (%)</label>
-                  <input
-                    type="text"
-                    name="preonline"
-                    value={mdrForm.preonline}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
-                  />
+                  <label className={`text-[13px] mb-2 font-normal ${mdrForm.pixOnlineCusto ? 'text-[#ff9800]' : 'text-[#5C5C5C]'}`}>Custo PIX (R$)</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="pixOnlineCusto"
+                      value={mdrForm.pixOnlineCusto}
+                      onChange={(e) => {
+                        const cleanValue = sanitizeNumericInput(e.target.value);
+                        setMdrForm(prev => ({ ...prev, pixOnlineCusto: cleanValue }));
+                      }}
+                      onBlur={(e) => {
+                        const formatted = formatWithDecimalMask(e.target.value);
+                        if (formatted !== mdrForm.pixOnlineCusto) {
+                          setMdrForm(prev => ({ ...prev, pixOnlineCusto: formatted }));
+                        }
+                      }}
+                      placeholder="0.14"
+                      className={`w-full h-[48px] px-4 pr-10 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] placeholder:text-[#555] focus:border-[#ff9800] focus:outline-none ${mdrForm.pixOnlineCusto ? 'text-[#ff9800]' : 'text-white'}`}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] text-sm pointer-events-none">R$</span>
+                  </div>
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">MDR (%)</label>
-                  <input
-                    type="text"
-                    name="pixOnlineMdr"
-                    value={mdrForm.pixOnlineMdr}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Custo Mín (R$)</label>
-                  <input
-                    type="text"
-                    name="pixOnlineCustoMin"
-                    value={mdrForm.pixOnlineCustoMin}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Custo Máx (R$)</label>
-                  <input
-                    type="text"
-                    name="pixOnlineCustoMax"
-                    value={mdrForm.pixOnlineCustoMax}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-[13px] text-[#a0a0a0] mb-2 font-normal">Antecipação (%)</label>
-                  <input
-                    type="text"
-                    name="pixOnlineAntecipacao"
-                    value={mdrForm.pixOnlineAntecipacao}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="w-full h-[48px] px-4 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#0d0d0d] text-[#808080] placeholder:text-[#808080] focus:border-[#3a3a3a] focus:outline-none hover:border-[#353535] transition-colors"
-                  />
+                  <label className={`text-[13px] mb-2 font-normal ${mdrForm.antecipacaoOnline ? 'text-[#ff9800]' : 'text-[#5C5C5C]'}`}>Antecipação (%)</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="antecipacaoOnline"
+                      value={mdrForm.antecipacaoOnline}
+                      onChange={(e) => {
+                        const cleanValue = sanitizeNumericInput(e.target.value);
+                        setMdrForm(prev => ({ ...prev, antecipacaoOnline: cleanValue }));
+                      }}
+                      onBlur={(e) => {
+                        const formatted = formatWithDecimalMask(e.target.value);
+                        if (formatted !== mdrForm.antecipacaoOnline) {
+                          setMdrForm(prev => ({ ...prev, antecipacaoOnline: formatted }));
+                        }
+                      }}
+                      placeholder="0.00"
+                      className={`w-full h-[48px] px-4 pr-8 text-sm border border-[#2a2a2a] rounded-[6px] bg-[#1a1a1a] placeholder:text-[#555] focus:border-[#ff9800] focus:outline-none ${mdrForm.antecipacaoOnline ? 'text-[#ff9800]' : 'text-white'}`}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555] text-sm pointer-events-none">%</span>
+                  </div>
                 </div>
               </div>
             </div>
-            
-            {/* Buttons */}
-            <div className="flex justify-end gap-3 pt-8 mt-10 border-t border-[#1f1f1f]">
-              <button
-                type="button"
-                onClick={onCancel}
-                className="px-6 py-2.5 h-[42px] bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] font-medium rounded-[6px] transition"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={loading}
-                className="px-6 py-2.5 h-[42px] bg-[#212121] border border-[#2E2E2E] hover:bg-[#2E2E2E] text-[#E0E0E0] font-medium rounded-[6px] transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? "Salvando..." : isEditing ? "Atualizar" : "Salvar MDR"}
-              </button>
-            </div>
+            </>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex justify-between mt-8">
+        <div>
+          {isEditing && onClear && (
+            <button
+              type="button"
+              onClick={() => setClearModalOpen(true)}
+              className="h-[48px] px-6 text-sm font-medium text-red-400 bg-[#1a1a1a] border border-red-900/50 rounded-[8px] hover:bg-red-950/30 hover:border-red-800 transition-colors cursor-pointer inline-flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Limpar Taxas
+            </button>
+          )}
+        </div>
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-[48px] px-6 text-sm font-medium text-[#a0a0a0] bg-[#1a1a1a] border border-[#2a2a2a] rounded-[8px] hover:bg-[#252525] transition-colors cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading || loadingRedirect}
+            className="h-[48px] px-6 text-sm font-medium text-[#ff9800] bg-[#1a1a1a] border border-[#ff9800]/50 rounded-[8px] hover:bg-[#252525] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Salvando..." : "Salvar Rascunho"}
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveAndRedirect}
+            disabled={loading || loadingRedirect}
+            className="h-[48px] px-8 text-sm font-medium text-white bg-[#ff9800] rounded-[8px] hover:bg-[#e68a00] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loadingRedirect ? "Salvando..." : "Salvar"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
