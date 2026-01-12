@@ -41,7 +41,7 @@ function saveIsoAccess(customerId: number): void {
 
 interface IsoListProps {
   isoConfigs: IsoMarginConfig[];
-  userRole: 'super_admin' | 'executivo' | 'core' | null;
+  userRole: 'super_admin' | 'admin' | 'executivo' | 'core' | null;
   isSuperAdminForView?: boolean;
   isSimulating?: boolean;
   simulatedUserId?: number | null;
