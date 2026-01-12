@@ -11,6 +11,7 @@ import {
   customers,
   profiles,
   reportExecution,
+  userCustomers,
   userMerchants,
   userNotifications,
   users,
