@@ -353,6 +353,9 @@ export async function getUsersWithClerk(customerId: number) {
       email: users.email,
       initialPassword: users.initialPassword,
       isInvisible: users.isInvisible,
+      userType: users.userType,
+      canViewSensitiveData: users.canViewSensitiveData,
+      imageUrl: users.imageUrl,
     })
     .from(users)
     .where(
