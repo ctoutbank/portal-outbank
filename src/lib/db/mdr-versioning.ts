@@ -1,6 +1,13 @@
 import { neon } from '@neondatabase/serverless';
 
-const sql = neon(process.env.DATABASE_URL!);
+
+
+function getSql() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL not set');
+  }
+  return neon(process.env.DATABASE_URL);
+}
 
 export interface MdrVersion {
   id: string;
@@ -36,15 +43,15 @@ export interface IsoNotification {
 }
 
 export async function createMdrVersion(originalMdrId: string): Promise<string> {
-  const [original] = await sql`
+  const [original] = await getSql()`
     SELECT * FROM mdr WHERE id = ${originalMdrId}::uuid
   `;
-  
+
   if (!original) {
     throw new Error('MDR não encontrado');
   }
 
-  const [newMdr] = await sql`
+  const [newMdr] = await getSql()`
     WITH updated AS (
       UPDATE mdr SET is_current = false WHERE id = ${originalMdrId}::uuid
       RETURNING id
@@ -78,7 +85,7 @@ export async function notifyIsosOfNewVersion(
   fornecedorCategoryId: string,
   newMdrId: string
 ): Promise<void> {
-  const affectedLinks = await sql`
+  const affectedLinks = await getSql()`
     SELECT iml.id, iml.customer_id, c.name as customer_name
     FROM iso_mdr_links iml
     JOIN customers c ON iml.customer_id = c.id
@@ -88,13 +95,13 @@ export async function notifyIsosOfNewVersion(
   `;
 
   for (const link of affectedLinks) {
-    await sql`
+    await getSql()`
       UPDATE iso_mdr_links 
       SET pending_update = true, pending_version_id = ${newMdrId}::uuid
       WHERE id = ${link.id}::uuid
     `;
 
-    await sql`
+    await getSql()`
       INSERT INTO iso_notifications (customer_id, type, title, message, iso_mdr_link_id)
       VALUES (
         ${link.customer_id}::bigint,
@@ -108,7 +115,7 @@ export async function notifyIsosOfNewVersion(
 }
 
 export async function getIsoNotifications(customerId: number): Promise<IsoNotification[]> {
-  const notifications = await sql`
+  const notifications = await getSql()`
     SELECT 
       id, customer_id, type, title, message, 
       iso_mdr_link_id, is_read, created_at, read_at
@@ -132,7 +139,7 @@ export async function getIsoNotifications(customerId: number): Promise<IsoNotifi
 }
 
 export async function getUnreadNotificationCount(customerId: number): Promise<number> {
-  const [result] = await sql`
+  const [result] = await getSql()`
     SELECT COUNT(*) as count
     FROM iso_notifications
     WHERE customer_id = ${customerId}::bigint AND is_read = false
@@ -141,7 +148,7 @@ export async function getUnreadNotificationCount(customerId: number): Promise<nu
 }
 
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
-  await sql`
+  await getSql()`
     UPDATE iso_notifications 
     SET is_read = true, read_at = NOW()
     WHERE id = ${notificationId}::uuid
@@ -149,7 +156,7 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
 }
 
 export async function markAllNotificationsAsRead(customerId: number): Promise<void> {
-  await sql`
+  await getSql()`
     UPDATE iso_notifications 
     SET is_read = true, read_at = NOW()
     WHERE customer_id = ${customerId}::bigint AND is_read = false
@@ -157,7 +164,7 @@ export async function markAllNotificationsAsRead(customerId: number): Promise<vo
 }
 
 export async function getMdrVersionHistory(mdrId: string): Promise<MdrVersion[]> {
-  const versions = await sql`
+  const versions = await getSql()`
     WITH RECURSIVE version_chain AS (
       SELECT id, version, parent_mdr_id, is_current, created_at
       FROM mdr WHERE id = ${mdrId}::uuid
@@ -181,7 +188,7 @@ export async function getMdrVersionHistory(mdrId: string): Promise<MdrVersion[]>
 }
 
 export async function getIsoLinkWithVersionInfo(linkId: string): Promise<IsoMdrLinkVersion | null> {
-  const [link] = await sql`
+  const [link] = await getSql()`
     SELECT 
       id, customer_id, fornecedor_category_id, version,
       valid_from, valid_until, auto_renew, pending_update,
@@ -222,7 +229,7 @@ export async function setLinkValidityDates(
 }
 
 export async function applyPendingVersion(linkId: string): Promise<void> {
-  const [link] = await sql`
+  const [link] = await getSql()`
     SELECT iml.pending_version_id, iml.customer_id, iml.fornecedor_category_id,
            fc.fornecedor_id, fc.category_id
     FROM iso_mdr_links iml
@@ -234,7 +241,7 @@ export async function applyPendingVersion(linkId: string): Promise<void> {
     throw new Error('Não há versão pendente para aplicar');
   }
 
-  const [newFc] = await sql`
+  const [newFc] = await getSql()`
     INSERT INTO fornecedor_categories (fornecedor_id, category_id, mdr_id)
     VALUES (${link.fornecedor_id}::uuid, ${link.category_id}::bigint, ${link.pending_version_id}::uuid)
     ON CONFLICT (fornecedor_id, category_id) 
@@ -274,7 +281,7 @@ export async function checkExpiringContracts(): Promise<{
   const in7days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const in30days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-  const expiring30d = await sql`
+  const expiring30d = await getSql()`
     SELECT id, customer_id, fornecedor_category_id, version, valid_from, valid_until, auto_renew, pending_update, pending_version_id, status
     FROM iso_mdr_links
     WHERE valid_until IS NOT NULL
@@ -284,7 +291,7 @@ export async function checkExpiringContracts(): Promise<{
       AND is_active = true
   `;
 
-  const expiring7d = await sql`
+  const expiring7d = await getSql()`
     SELECT id, customer_id, fornecedor_category_id, version, valid_from, valid_until, auto_renew, pending_update, pending_version_id, status
     FROM iso_mdr_links
     WHERE valid_until IS NOT NULL
@@ -294,7 +301,7 @@ export async function checkExpiringContracts(): Promise<{
       AND is_active = true
   `;
 
-  const expired = await sql`
+  const expired = await getSql()`
     SELECT id, customer_id, fornecedor_category_id, version, valid_from, valid_until, auto_renew, pending_update, pending_version_id, status
     FROM iso_mdr_links
     WHERE valid_until IS NOT NULL
@@ -334,15 +341,15 @@ export async function processExpiringContracts(): Promise<{
   let autoRenewed = 0;
 
   for (const link of expiring30d) {
-    const [existing] = await sql`
+    const [existing] = await getSql()`
       SELECT id FROM iso_notifications 
       WHERE iso_mdr_link_id = ${link.id}::uuid 
         AND type = 'expiring_30d'
         AND created_at > NOW() - INTERVAL '25 days'
     `;
-    
+
     if (!existing) {
-      await sql`
+      await getSql()`
         INSERT INTO iso_notifications (customer_id, type, title, message, iso_mdr_link_id)
         VALUES (
           ${link.customerId}::bigint,
@@ -358,15 +365,15 @@ export async function processExpiringContracts(): Promise<{
   }
 
   for (const link of expiring7d) {
-    const [existing] = await sql`
+    const [existing] = await getSql()`
       SELECT id FROM iso_notifications 
       WHERE iso_mdr_link_id = ${link.id}::uuid 
         AND type = 'expiring_7d'
         AND created_at > NOW() - INTERVAL '5 days'
     `;
-    
+
     if (!existing) {
-      await sql`
+      await getSql()`
         INSERT INTO iso_notifications (customer_id, type, title, message, iso_mdr_link_id)
         VALUES (
           ${link.customerId}::bigint,
@@ -386,15 +393,15 @@ export async function processExpiringContracts(): Promise<{
       await applyPendingVersion(link.id);
       autoRenewed++;
     } else {
-      const [existing] = await sql`
+      const [existing] = await getSql()`
         SELECT id FROM iso_notifications 
         WHERE iso_mdr_link_id = ${link.id}::uuid 
           AND type = 'expired'
           AND created_at > NOW() - INTERVAL '1 day'
       `;
-      
+
       if (!existing) {
-        await sql`
+        await getSql()`
           INSERT INTO iso_notifications (customer_id, type, title, message, iso_mdr_link_id)
           VALUES (
             ${link.customerId}::bigint,
