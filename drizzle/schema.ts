@@ -38,10 +38,10 @@ export const paymentInstitution = pgTable("payment_institution", {
         idCustomerDb: bigint("id_customer_db", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idCustomerDb],
-                        foreignColumns: [customers.id],
-                        name: "payment_institution_id_customer_db_fkey"
-                }),
+                columns: [table.idCustomerDb],
+                foreignColumns: [customers.id],
+                name: "payment_institution_id_customer_db_fkey"
+        }),
 ]);
 
 export const state = pgTable("state", {
@@ -94,10 +94,10 @@ export const salesAgents = pgTable("sales_agents", {
         idUsers: bigint("id_users", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idUsers],
-                        foreignColumns: [users.id],
-                        name: "fk_sales_agents_id_users"
-                }),
+                columns: [table.idUsers],
+                foreignColumns: [users.id],
+                name: "fk_sales_agents_id_users"
+        }),
 ]);
 
 export const settlements = pgTable("settlements", {
@@ -136,10 +136,10 @@ export const settlements = pgTable("settlements", {
         idCustomer: bigint("id_customer", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idCustomer],
-                        foreignColumns: [customers.id],
-                        name: "settlements_id_customer_fkey"
-                }),
+                columns: [table.idCustomer],
+                foreignColumns: [customers.id],
+                name: "settlements_id_customer_fkey"
+        }),
 ]);
 
 export const customers = pgTable("customers", {
@@ -154,10 +154,10 @@ export const customers = pgTable("customers", {
         isActive: boolean("is_active").default(true),
 }, (table) => [
         foreignKey({
-                        columns: [table.idParent],
-                        foreignColumns: [table.id],
-                        name: "customers_id_parent_fkey"
-                }),
+                columns: [table.idParent],
+                foreignColumns: [table.id],
+                name: "customers_id_parent_fkey"
+        }),
 ]);
 
 export const reportTypes = pgTable("report_types", {
@@ -177,15 +177,15 @@ export const reportFilters = pgTable("report_filters", {
         dtupdate: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
         foreignKey({
-                        columns: [table.idReport],
-                        foreignColumns: [reports.id],
-                        name: "fk_report_filters_reports"
-                }).onDelete("cascade"),
+                columns: [table.idReport],
+                foreignColumns: [reports.id],
+                name: "fk_report_filters_reports"
+        }).onDelete("cascade"),
         foreignKey({
-                        columns: [table.idReportFilterParam],
-                        foreignColumns: [reportFiltersParam.id],
-                        name: "fk_report_filters_param"
-                }).onDelete("cascade"),
+                columns: [table.idReportFilterParam],
+                foreignColumns: [reportFiltersParam.id],
+                name: "fk_report_filters_param"
+        }).onDelete("cascade"),
 ]);
 
 export const country = pgTable("country", {
@@ -215,12 +215,12 @@ export const merchantPixSettlementOrders = pgTable("merchant_pix_settlement_orde
         authorizerMerchantId: varchar("authorizer_merchant_id", { length: 50 }),
         expectedPaymentDate: timestamp("expected_payment_date", { mode: 'string' }),
         transactionCount: integer("transaction_count"),
-        totalAmount: numeric("total_amount", { precision: 18, scale:  2 }),
-        totalRefundAmount: numeric("total_refund_amount", { precision: 18, scale:  2 }),
-        totalNetAmount: numeric("total_net_amount", { precision: 18, scale:  2 }),
-        totalFeeAmount: numeric("total_fee_amount", { precision: 18, scale:  2 }),
-        totalCostAmount: numeric("total_cost_amount", { precision: 18, scale:  2 }),
-        totalSettlementAmount: numeric("total_settlement_amount", { precision: 18, scale:  2 }),
+        totalAmount: numeric("total_amount", { precision: 18, scale: 2 }),
+        totalRefundAmount: numeric("total_refund_amount", { precision: 18, scale: 2 }),
+        totalNetAmount: numeric("total_net_amount", { precision: 18, scale: 2 }),
+        totalFeeAmount: numeric("total_fee_amount", { precision: 18, scale: 2 }),
+        totalCostAmount: numeric("total_cost_amount", { precision: 18, scale: 2 }),
+        totalSettlementAmount: numeric("total_settlement_amount", { precision: 18, scale: 2 }),
         status: varchar({ length: 20 }),
         compeCode: varchar("compe_code", { length: 10 }),
         accountNumber: varchar("account_number", { length: 20 }),
@@ -240,20 +240,20 @@ export const merchantPixSettlementOrders = pgTable("merchant_pix_settlement_orde
         idMerchantSettlement: bigint("id_merchant_settlement", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idCustomer],
-                        foreignColumns: [customers.id],
-                        name: "merchant_pix_settlement_orders_id_customer_fkey"
-                }),
+                columns: [table.idCustomer],
+                foreignColumns: [customers.id],
+                name: "merchant_pix_settlement_orders_id_customer_fkey"
+        }),
         foreignKey({
-                        columns: [table.idMerchant],
-                        foreignColumns: [merchants.id],
-                        name: "merchant_pix_settlement_orders_id_merchant_fkey"
-                }),
+                columns: [table.idMerchant],
+                foreignColumns: [merchants.id],
+                name: "merchant_pix_settlement_orders_id_merchant_fkey"
+        }),
         foreignKey({
-                        columns: [table.idMerchantSettlement],
-                        foreignColumns: [merchantSettlements.id],
-                        name: "merchant_pix_settlement_orders_id_merchant_settlement_fkey"
-                }),
+                columns: [table.idMerchantSettlement],
+                foreignColumns: [merchantSettlements.id],
+                name: "merchant_pix_settlement_orders_id_merchant_settlement_fkey"
+        }),
 ]);
 
 export const syncLog = pgTable("sync_log", {
@@ -290,15 +290,15 @@ export const profileFunctions = pgTable("profile_functions", {
         idFunctions: bigint("id_functions", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idProfile],
-                        foreignColumns: [profiles.id],
-                        name: "profile_functions_id_profile_fkey"
-                }),
+                columns: [table.idProfile],
+                foreignColumns: [profiles.id],
+                name: "profile_functions_id_profile_fkey"
+        }),
         foreignKey({
-                        columns: [table.idFunctions],
-                        foreignColumns: [functions.id],
-                        name: "profile_functions_id_functions_fkey"
-                }),
+                columns: [table.idFunctions],
+                foreignColumns: [functions.id],
+                name: "profile_functions_id_functions_fkey"
+        }),
 ]);
 
 export const profileCustomers = pgTable("profile_customers", {
@@ -314,15 +314,15 @@ export const profileCustomers = pgTable("profile_customers", {
         idCustomer: bigint("id_customer", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idProfile],
-                        foreignColumns: [profiles.id],
-                        name: "profile_customers_id_profile_fkey"
-                }),
+                columns: [table.idProfile],
+                foreignColumns: [profiles.id],
+                name: "profile_customers_id_profile_fkey"
+        }),
         foreignKey({
-                        columns: [table.idCustomer],
-                        foreignColumns: [customers.id],
-                        name: "profile_customers_id_customer_fkey"
-                }),
+                columns: [table.idCustomer],
+                foreignColumns: [customers.id],
+                name: "profile_customers_id_customer_fkey"
+        }),
 ]);
 
 export const profiles = pgTable("profiles", {
@@ -353,10 +353,10 @@ export const shoppingItems = pgTable("shopping_items", {
         slug: varchar({ length: 50 }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idPaymentLink],
-                        foreignColumns: [paymentLink.id],
-                        name: "shopping_items_id_payment_link_fkey"
-                }),
+                columns: [table.idPaymentLink],
+                foreignColumns: [paymentLink.id],
+                name: "shopping_items_id_payment_link_fkey"
+        }),
 ]);
 
 export const establishmentFormat = pgTable("establishment_format", {
@@ -398,10 +398,10 @@ export const merchantTransactionPrice = pgTable("merchant_transaction_price", {
         idMerchantPriceGroup: bigint("id_merchant_price_group", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idMerchantPriceGroup],
-                        foreignColumns: [merchantPriceGroup.id],
-                        name: "merchant_transaction_price_id_merchant_price_group_fkey"
-                }),
+                columns: [table.idMerchantPriceGroup],
+                foreignColumns: [merchantPriceGroup.id],
+                name: "merchant_transaction_price_id_merchant_price_group_fkey"
+        }),
 ]);
 
 export const productType = pgTable("product_type", {
@@ -436,7 +436,7 @@ export const transactions = pgTable("transactions", {
         authorizerMerchantId: varchar("authorizer_merchant_id", { length: 50 }),
         muid: varchar({ length: 50 }),
         currency: varchar({ length: 10 }),
-        totalAmount: numeric("total_amount", { precision: 15, scale:  2 }),
+        totalAmount: numeric("total_amount", { precision: 15, scale: 2 }),
         transactionStatus: varchar("transaction_status", { length: 50 }),
         productType: varchar("product_type", { length: 50 }),
         rrn: varchar({ length: 50 }),
@@ -473,8 +473,8 @@ export const transactionCycles = pgTable("transaction_cycles", {
         responseCode: varchar("response_code", { length: 10 }),
         gatewayVersion: varchar("gateway_version", { length: 50 }),
         trackingNumber: varchar("tracking_number", { length: 50 }),
-        amount: numeric({ precision: 18, scale:  2 }),
-        interest: numeric({ precision: 18, scale:  2 }),
+        amount: numeric({ precision: 18, scale: 2 }),
+        interest: numeric({ precision: 18, scale: 2 }),
         authorizationCode: varchar("authorization_code", { length: 50 }),
         rrn: varchar({ length: 50 }),
         connectionMode: varchar("connection_mode", { length: 50 }),
@@ -515,15 +515,15 @@ export const moduleFunctions = pgTable("module_functions", {
         idFunction: bigint("id_function", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idModule],
-                        foreignColumns: [modules.id],
-                        name: "module_functions_id_module_fkey"
-                }),
+                columns: [table.idModule],
+                foreignColumns: [modules.id],
+                name: "module_functions_id_module_fkey"
+        }),
         foreignKey({
-                        columns: [table.idFunction],
-                        foreignColumns: [functions.id],
-                        name: "module_functions_id_function_fkey"
-                }),
+                columns: [table.idFunction],
+                foreignColumns: [functions.id],
+                name: "module_functions_id_function_fkey"
+        }),
 ]);
 
 export const addresses = pgTable("addresses", {
@@ -573,10 +573,10 @@ export const merchantPriceGroup = pgTable("merchant_price_group", {
         idMerchantPrice: bigint("id_merchant_price", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idMerchantPrice],
-                        foreignColumns: [merchantPrice.id],
-                        name: "merchant_price_group_id_merchant_price_fkey"
-                }),
+                columns: [table.idMerchantPrice],
+                foreignColumns: [merchantPrice.id],
+                name: "merchant_price_group_id_merchant_price_fkey"
+        }),
 ]);
 
 export const merchants = pgTable("merchants", {
@@ -611,7 +611,7 @@ export const merchants = pgTable("merchants", {
         hasPix: boolean("has_pix"),
         hasTop: boolean("has_top"),
         establishmentFormat: varchar("establishment_format", { length: 10 }),
-        revenue: numeric({ precision: 15, scale:  2 }),
+        revenue: numeric({ precision: 15, scale: 2 }),
         idCategory: integer("id_category"),
         slugCategory: varchar("slug_category", { length: 50 }),
         idLegalNature: integer("id_legal_nature"),
@@ -630,45 +630,45 @@ export const merchants = pgTable("merchants", {
         idMerchantBankAccount: bigint("id_merchant_bank_account", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idCategory],
-                        foreignColumns: [categories.id],
-                        name: "merchants_id_category_fkey"
-                }),
+                columns: [table.idCategory],
+                foreignColumns: [categories.id],
+                name: "merchants_id_category_fkey"
+        }),
         foreignKey({
-                        columns: [table.idLegalNature],
-                        foreignColumns: [legalNatures.id],
-                        name: "merchants_id_legal_nature_fkey"
-                }),
+                columns: [table.idLegalNature],
+                foreignColumns: [legalNatures.id],
+                name: "merchants_id_legal_nature_fkey"
+        }),
         foreignKey({
-                        columns: [table.idSalesAgent],
-                        foreignColumns: [salesAgents.id],
-                        name: "merchants_id_sales_agent_fkey"
-                }),
+                columns: [table.idSalesAgent],
+                foreignColumns: [salesAgents.id],
+                name: "merchants_id_sales_agent_fkey"
+        }),
         foreignKey({
-                        columns: [table.idConfiguration],
-                        foreignColumns: [configurations.id],
-                        name: "merchants_id_configuration_fkey"
-                }),
+                columns: [table.idConfiguration],
+                foreignColumns: [configurations.id],
+                name: "merchants_id_configuration_fkey"
+        }),
         foreignKey({
-                        columns: [table.idAddress],
-                        foreignColumns: [addresses.id],
-                        name: "merchants_id_address_fkey"
-                }),
+                columns: [table.idAddress],
+                foreignColumns: [addresses.id],
+                name: "merchants_id_address_fkey"
+        }),
         foreignKey({
-                        columns: [table.idMerchantPrice],
-                        foreignColumns: [merchantPrice.id],
-                        name: "merchants_id_merchant_price_fkey"
-                }),
+                columns: [table.idMerchantPrice],
+                foreignColumns: [merchantPrice.id],
+                name: "merchants_id_merchant_price_fkey"
+        }),
         foreignKey({
-                        columns: [table.idCustomer],
-                        foreignColumns: [customers.id],
-                        name: "merchants_id_customer_fkey"
-                }),
+                columns: [table.idCustomer],
+                foreignColumns: [customers.id],
+                name: "merchants_id_customer_fkey"
+        }),
         foreignKey({
-                        columns: [table.idMerchantBankAccount],
-                        foreignColumns: [merchantBankAccounts.id],
-                        name: "merchants_id_merchant_bank_account_fkey"
-                }),
+                columns: [table.idMerchantBankAccount],
+                foreignColumns: [merchantBankAccounts.id],
+                name: "merchants_id_merchant_bank_account_fkey"
+        }),
 ]);
 
 export const categories = pgTable("categories", {
@@ -689,10 +689,10 @@ export const categories = pgTable("categories", {
         idSolicitationFee: bigint("id_solicitation_fee", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idSolicitationFee],
-                        foreignColumns: [solicitationFee.id],
-                        name: "cnae_solicitation_fee_id"
-                }),
+                columns: [table.idSolicitationFee],
+                foreignColumns: [solicitationFee.id],
+                name: "cnae_solicitation_fee_id"
+        }),
 ]);
 
 export const legalNatures = pgTable("legal_natures", {
@@ -734,15 +734,15 @@ export const customerFunctions = pgTable("customer_functions", {
         idFunctions: bigint("id_functions", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idCustomer],
-                        foreignColumns: [customers.id],
-                        name: "customer_functions_id_customer_fkey"
-                }),
+                columns: [table.idCustomer],
+                foreignColumns: [customers.id],
+                name: "customer_functions_id_customer_fkey"
+        }),
         foreignKey({
-                        columns: [table.idFunctions],
-                        foreignColumns: [functions.id],
-                        name: "customer_functions_id_functions_fkey"
-                }),
+                columns: [table.idFunctions],
+                foreignColumns: [functions.id],
+                name: "customer_functions_id_functions_fkey"
+        }),
 ]);
 
 export const reportExecutionStatus = pgTable("report_execution_status", {
@@ -815,10 +815,10 @@ export const merchantpixaccount = pgTable("merchantpixaccount", {
         slugMerchant: varchar("slug_merchant", { length: 50 }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idMerchant],
-                        foreignColumns: [merchants.id],
-                        name: "merchantpixaccount_id_merchant_fkey"
-                }),
+                columns: [table.idMerchant],
+                foreignColumns: [merchants.id],
+                name: "merchantpixaccount_id_merchant_fkey"
+        }),
 ]);
 
 export const users = pgTable("users", {
@@ -847,20 +847,20 @@ export const users = pgTable("users", {
         imageUrl: varchar("image_url", { length: 500 }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idCustomer],
-                        foreignColumns: [customers.id],
-                        name: "users_id_customer_fkey"
-                }),
+                columns: [table.idCustomer],
+                foreignColumns: [customers.id],
+                name: "users_id_customer_fkey"
+        }),
         foreignKey({
-                        columns: [table.idProfile],
-                        foreignColumns: [profiles.id],
-                        name: "users_id_profile_fkey"
-                }),
+                columns: [table.idProfile],
+                foreignColumns: [profiles.id],
+                name: "users_id_profile_fkey"
+        }),
         foreignKey({
-                        columns: [table.idAddress],
-                        foreignColumns: [addresses.id],
-                        name: "fk_users_id_address"
-                }),
+                columns: [table.idAddress],
+                foreignColumns: [addresses.id],
+                name: "fk_users_id_address"
+        }),
 ]);
 
 export const adminCustomers = pgTable("admin_customers", {
@@ -876,15 +876,15 @@ export const adminCustomers = pgTable("admin_customers", {
         idCustomer: bigint("id_customer", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idUser],
-                        foreignColumns: [users.id],
-                        name: "admin_customers_id_user_fkey"
-                }),
+                columns: [table.idUser],
+                foreignColumns: [users.id],
+                name: "admin_customers_id_user_fkey"
+        }),
         foreignKey({
-                        columns: [table.idCustomer],
-                        foreignColumns: [customers.id],
-                        name: "admin_customers_id_customer_fkey"
-                }),
+                columns: [table.idCustomer],
+                foreignColumns: [customers.id],
+                name: "admin_customers_id_customer_fkey"
+        }),
         unique("admin_customers_id_user_id_customer_key").on(table.idUser, table.idCustomer),
 ]);
 
@@ -909,30 +909,30 @@ export const reportExecution = pgTable("report_execution", {
         fileId: bigint("file_id", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idReport],
-                        foreignColumns: [reports.id],
-                        name: "report_execution_id_report_fkey"
-                }),
+                columns: [table.idReport],
+                foreignColumns: [reports.id],
+                name: "report_execution_id_report_fkey"
+        }),
         foreignKey({
-                        columns: [table.idUser],
-                        foreignColumns: [users.id],
-                        name: "report_execution_id_user_fkey"
-                }),
+                columns: [table.idUser],
+                foreignColumns: [users.id],
+                name: "report_execution_id_user_fkey"
+        }),
         foreignKey({
-                        columns: [table.idFile],
-                        foreignColumns: [file.id],
-                        name: "report_execution_id_file_fkey"
-                }),
+                columns: [table.idFile],
+                foreignColumns: [file.id],
+                name: "report_execution_id_file_fkey"
+        }),
         foreignKey({
-                        columns: [table.status],
-                        foreignColumns: [reportExecutionStatus.code],
-                        name: "report_execution_status_fkey"
-                }),
+                columns: [table.status],
+                foreignColumns: [reportExecutionStatus.code],
+                name: "report_execution_status_fkey"
+        }),
         foreignKey({
-                        columns: [table.fileId],
-                        foreignColumns: [file.id],
-                        name: "fk_report_execution_file"
-                }),
+                columns: [table.fileId],
+                foreignColumns: [file.id],
+                name: "fk_report_execution_file"
+        }),
 ]);
 
 export const contacts = pgTable("contacts", {
@@ -957,15 +957,15 @@ export const contacts = pgTable("contacts", {
         icFederativeUnit: varchar("ic_federative_unit", { length: 5 }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idAddress],
-                        foreignColumns: [addresses.id],
-                        name: "contacts_id_address_fkey"
-                }),
+                columns: [table.idAddress],
+                foreignColumns: [addresses.id],
+                name: "contacts_id_address_fkey"
+        }),
         foreignKey({
-                        columns: [table.idMerchant],
-                        foreignColumns: [merchants.id],
-                        name: "contacts_id_merchant_fkey"
-                }),
+                columns: [table.idMerchant],
+                foreignColumns: [merchants.id],
+                name: "contacts_id_merchant_fkey"
+        }),
 ]);
 
 export const merchantAuthorizers = pgTable("merchant_authorizers", {
@@ -986,10 +986,10 @@ export const merchantAuthorizers = pgTable("merchant_authorizers", {
         idMerchant: bigint("id_merchant", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idMerchant],
-                        foreignColumns: [merchants.id],
-                        name: "merchant_authorizers_id_merchant_fkey"
-                }),
+                columns: [table.idMerchant],
+                foreignColumns: [merchants.id],
+                name: "merchant_authorizers_id_merchant_fkey"
+        }),
 ]);
 
 export const paymentLink = pgTable("payment_link", {
@@ -1015,10 +1015,10 @@ export const paymentLink = pgTable("payment_link", {
         isDeleted: boolean("is_deleted"),
 }, (table) => [
         foreignKey({
-                        columns: [table.idMerchant],
-                        foreignColumns: [merchants.id],
-                        name: "payment_link_id_merchant_fkey"
-                }),
+                columns: [table.idMerchant],
+                foreignColumns: [merchants.id],
+                name: "payment_link_id_merchant_fkey"
+        }),
 ]);
 
 export const merchantSettlements = pgTable("merchant_settlements", {
@@ -1030,21 +1030,21 @@ export const merchantSettlements = pgTable("merchant_settlements", {
         dtupdate: timestamp({ mode: 'string' }),
         transactionCount: integer("transaction_count"),
         adjustmentCount: integer("adjustment_count"),
-        batchAmount: numeric("batch_amount", { precision: 18, scale:  2 }),
-        netSettlementAmount: numeric("net_settlement_amount", { precision: 18, scale:  2 }),
-        pixAmount: numeric("pix_amount", { precision: 18, scale:  2 }),
-        pixNetAmount: numeric("pix_net_amount", { precision: 18, scale:  2 }),
-        pixFeeAmount: numeric("pix_fee_amount", { precision: 18, scale:  2 }),
-        pixCostAmount: numeric("pix_cost_amount", { precision: 18, scale:  2 }),
-        creditAdjustmentAmount: numeric("credit_adjustment_amount", { precision: 18, scale:  2 }),
-        debitAdjustmentAmount: numeric("debit_adjustment_amount", { precision: 18, scale:  2 }),
-        totalAnticipationAmount: numeric("total_anticipation_amount", { precision: 18, scale:  2 }),
-        totalRestitutionAmount: numeric("total_restitution_amount", { precision: 18, scale:  2 }),
-        pendingRestitutionAmount: numeric("pending_restitution_amount", { precision: 18, scale:  2 }),
-        totalSettlementAmount: numeric("total_settlement_amount", { precision: 18, scale:  2 }),
-        pendingFinancialAdjustmentAmount: numeric("pending_financial_adjustment_amount", { precision: 18, scale:  2 }),
-        creditFinancialAdjustmentAmount: numeric("credit_financial_adjustment_amount", { precision: 18, scale:  2 }),
-        debitFinancialAdjustmentAmount: numeric("debit_financial_adjustment_amount", { precision: 18, scale:  2 }),
+        batchAmount: numeric("batch_amount", { precision: 18, scale: 2 }),
+        netSettlementAmount: numeric("net_settlement_amount", { precision: 18, scale: 2 }),
+        pixAmount: numeric("pix_amount", { precision: 18, scale: 2 }),
+        pixNetAmount: numeric("pix_net_amount", { precision: 18, scale: 2 }),
+        pixFeeAmount: numeric("pix_fee_amount", { precision: 18, scale: 2 }),
+        pixCostAmount: numeric("pix_cost_amount", { precision: 18, scale: 2 }),
+        creditAdjustmentAmount: numeric("credit_adjustment_amount", { precision: 18, scale: 2 }),
+        debitAdjustmentAmount: numeric("debit_adjustment_amount", { precision: 18, scale: 2 }),
+        totalAnticipationAmount: numeric("total_anticipation_amount", { precision: 18, scale: 2 }),
+        totalRestitutionAmount: numeric("total_restitution_amount", { precision: 18, scale: 2 }),
+        pendingRestitutionAmount: numeric("pending_restitution_amount", { precision: 18, scale: 2 }),
+        totalSettlementAmount: numeric("total_settlement_amount", { precision: 18, scale: 2 }),
+        pendingFinancialAdjustmentAmount: numeric("pending_financial_adjustment_amount", { precision: 18, scale: 2 }),
+        creditFinancialAdjustmentAmount: numeric("credit_financial_adjustment_amount", { precision: 18, scale: 2 }),
+        debitFinancialAdjustmentAmount: numeric("debit_financial_adjustment_amount", { precision: 18, scale: 2 }),
         status: varchar({ length: 50 }),
         slugMerchant: varchar("slug_merchant", { length: 50 }),
         // You can use { mode: "bigint" } if numbers are exceeding js number limitations
@@ -1052,26 +1052,26 @@ export const merchantSettlements = pgTable("merchant_settlements", {
         slugCustomer: varchar("slug_customer", { length: 50 }),
         // You can use { mode: "bigint" } if numbers are exceeding js number limitations
         idCustomer: bigint("id_customer", { mode: "number" }),
-        outstandingAmount: numeric("outstanding_amount", { precision: 18, scale:  2 }),
-        restRoundingAmount: numeric("rest_rounding_amount", { precision: 18, scale:  2 }),
+        outstandingAmount: numeric("outstanding_amount", { precision: 18, scale: 2 }),
+        restRoundingAmount: numeric("rest_rounding_amount", { precision: 18, scale: 2 }),
         // You can use { mode: "bigint" } if numbers are exceeding js number limitations
         idSettlement: bigint("id_settlement", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idMerchant],
-                        foreignColumns: [merchants.id],
-                        name: "merchantsettlements_id_merchant_fkey"
-                }),
+                columns: [table.idMerchant],
+                foreignColumns: [merchants.id],
+                name: "merchantsettlements_id_merchant_fkey"
+        }),
         foreignKey({
-                        columns: [table.idCustomer],
-                        foreignColumns: [customers.id],
-                        name: "merchantsettlements_id_customer_fkey"
-                }),
+                columns: [table.idCustomer],
+                foreignColumns: [customers.id],
+                name: "merchantsettlements_id_customer_fkey"
+        }),
         foreignKey({
-                        columns: [table.idSettlement],
-                        foreignColumns: [settlements.id],
-                        name: "merchantsettlements_id_settlement_fkey"
-                }),
+                columns: [table.idSettlement],
+                foreignColumns: [settlements.id],
+                name: "merchantsettlements_id_settlement_fkey"
+        }),
 ]);
 
 export const payout = pgTable("payout", {
@@ -1108,15 +1108,15 @@ export const payout = pgTable("payout", {
         slugMerchantSplit: varchar("slug_merchant_split", { length: 50 }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idMerchant],
-                        foreignColumns: [merchants.id],
-                        name: "payout_id_merchant_fkey"
-                }),
+                columns: [table.idMerchant],
+                foreignColumns: [merchants.id],
+                name: "payout_id_merchant_fkey"
+        }),
         foreignKey({
-                        columns: [table.idCustomer],
-                        foreignColumns: [customers.id],
-                        name: "payout_id_customer_fkey"
-                }),
+                columns: [table.idCustomer],
+                foreignColumns: [customers.id],
+                name: "payout_id_customer_fkey"
+        }),
 ]);
 
 export const cronJobMonitoring = pgTable("cron_job_monitoring", {
@@ -1143,15 +1143,15 @@ export const merchantfile = pgTable("merchantfile", {
         extension: varchar({ length: 10 }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idMerchant],
-                        foreignColumns: [merchants.id],
-                        name: "fl_merchantfile_id_merchant_fkey"
-                }),
+                columns: [table.idMerchant],
+                foreignColumns: [merchants.id],
+                name: "fl_merchantfile_id_merchant_fkey"
+        }),
         foreignKey({
-                        columns: [table.idFile],
-                        foreignColumns: [file.id],
-                        name: "fl_merchantfile_id_file_fkey"
-                }),
+                columns: [table.idFile],
+                foreignColumns: [file.id],
+                name: "fl_merchantfile_id_file_fkey"
+        }),
 ]);
 
 export const userMerchants = pgTable("user_merchants", {
@@ -1166,15 +1166,15 @@ export const userMerchants = pgTable("user_merchants", {
         idUser: bigint("id_user", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idMerchant],
-                        foreignColumns: [merchants.id],
-                        name: "user_merchants_id_merchant_fkey"
-                }),
+                columns: [table.idMerchant],
+                foreignColumns: [merchants.id],
+                name: "user_merchants_id_merchant_fkey"
+        }),
         foreignKey({
-                        columns: [table.idUser],
-                        foreignColumns: [users.id],
-                        name: "user_merchants_id_user_fkey"
-                }),
+                columns: [table.idUser],
+                foreignColumns: [users.id],
+                name: "user_merchants_id_user_fkey"
+        }),
 ]);
 
 export const payoutAntecipations = pgTable("payout_antecipations", {
@@ -1214,15 +1214,15 @@ export const payoutAntecipations = pgTable("payout_antecipations", {
         idCustomer: bigint("id_customer", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idMerchants],
-                        foreignColumns: [merchants.id],
-                        name: "payout_antecipations_id_merchants_fkey"
-                }),
+                columns: [table.idMerchants],
+                foreignColumns: [merchants.id],
+                name: "payout_antecipations_id_merchants_fkey"
+        }),
         foreignKey({
-                        columns: [table.idCustomer],
-                        foreignColumns: [customers.id],
-                        name: "payout_antecipations_id_customer_fkey"
-                }),
+                columns: [table.idCustomer],
+                foreignColumns: [customers.id],
+                name: "payout_antecipations_id_customer_fkey"
+        }),
 ]);
 
 export const merchantSettlementOrders = pgTable("merchant_settlement_orders", {
@@ -1260,15 +1260,15 @@ export const merchantSettlementOrders = pgTable("merchant_settlement_orders", {
         lock: boolean(),
 }, (table) => [
         foreignKey({
-                        columns: [table.idPaymentInstitution],
-                        foreignColumns: [paymentInstitution.id],
-                        name: "merchant_settlement_orders_id_payment_institution_fkey"
-                }),
+                columns: [table.idPaymentInstitution],
+                foreignColumns: [paymentInstitution.id],
+                name: "merchant_settlement_orders_id_payment_institution_fkey"
+        }),
         foreignKey({
-                        columns: [table.idMerchantSettlements],
-                        foreignColumns: [merchantSettlements.id],
-                        name: "merchant_settlement_orders_id_merchant_settlements_fkey"
-                }),
+                columns: [table.idMerchantSettlements],
+                foreignColumns: [merchantSettlements.id],
+                name: "merchant_settlement_orders_id_merchant_settlements_fkey"
+        }),
 ]);
 
 export const merchantBankAccounts = pgTable("merchant_bank_accounts", {
@@ -1301,10 +1301,10 @@ export const solicitationFeeBrand = pgTable("solicitation_fee_brand", {
         idGroup: integer("id_group"),
 }, (table) => [
         foreignKey({
-                        columns: [table.solicitationFeeId],
-                        foreignColumns: [solicitationFee.id],
-                        name: "solicitation_fee_brand_solicitation_fee_id_fkey"
-                }).onDelete("cascade"),
+                columns: [table.solicitationFeeId],
+                foreignColumns: [solicitationFee.id],
+                name: "solicitation_fee_brand_solicitation_fee_id_fkey"
+        }).onDelete("cascade"),
 ]);
 
 export const solicitationFeeDocument = pgTable("solicitation_fee_document", {
@@ -1320,15 +1320,15 @@ export const solicitationFeeDocument = pgTable("solicitation_fee_document", {
         solicitationFeeId: bigint("solicitation_fee_id", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idFile],
-                        foreignColumns: [file.id],
-                        name: "solicitation_fee_document_id_file_fkey"
-                }).onDelete("cascade"),
+                columns: [table.idFile],
+                foreignColumns: [file.id],
+                name: "solicitation_fee_document_id_file_fkey"
+        }).onDelete("cascade"),
         foreignKey({
-                        columns: [table.solicitationFeeId],
-                        foreignColumns: [solicitationFee.id],
-                        name: "solicitation_fee_document_solicitation_fee_id_fkey"
-                }).onDelete("cascade"),
+                columns: [table.solicitationFeeId],
+                foreignColumns: [solicitationFee.id],
+                name: "solicitation_fee_document_solicitation_fee_id_fkey"
+        }).onDelete("cascade"),
 ]);
 
 export const solicitationBrandProductType = pgTable("solicitation_brand_product_type", {
@@ -1352,10 +1352,10 @@ export const solicitationBrandProductType = pgTable("solicitation_brand_product_
         noCardTransactionAnticipationMdr: numeric("no_card_transaction_anticipation_mdr"),
 }, (table) => [
         foreignKey({
-                        columns: [table.solicitationFeeBrandId],
-                        foreignColumns: [solicitationFeeBrand.id],
-                        name: "solicitation_brand_product_type_solicitation_fee_brand_id_fkey"
-                }).onDelete("cascade"),
+                columns: [table.solicitationFeeBrandId],
+                foreignColumns: [solicitationFeeBrand.id],
+                name: "solicitation_brand_product_type_solicitation_fee_brand_id_fkey"
+        }).onDelete("cascade"),
 ]);
 
 export const feeBrandProductType = pgTable("fee_brand_product_type", {
@@ -1376,10 +1376,10 @@ export const feeBrandProductType = pgTable("fee_brand_product_type", {
         idFeeBrand: bigint("id_fee_brand", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idFeeBrand],
-                        foreignColumns: [feeBrand.id],
-                        name: "fee_brand_product_type_id_fee_brand_fkey"
-                }).onDelete("cascade"),
+                columns: [table.idFeeBrand],
+                foreignColumns: [feeBrand.id],
+                name: "fee_brand_product_type_id_fee_brand_fkey"
+        }).onDelete("cascade"),
 ]);
 
 export const solicitationFee = pgTable("solicitation_fee", {
@@ -1427,10 +1427,10 @@ export const solicitationFee = pgTable("solicitation_fee", {
         nonCardEventualAnticipationFeeDock: numeric("non_card_eventual_anticipation_fee_dock"),
 }, (table) => [
         foreignKey({
-                        columns: [table.idCustomers],
-                        foreignColumns: [customers.id],
-                        name: "solicitation_fee_id_customers_fkey"
-                }).onDelete("cascade"),
+                columns: [table.idCustomers],
+                foreignColumns: [customers.id],
+                name: "solicitation_fee_id_customers_fkey"
+        }).onDelete("cascade"),
 ]);
 
 export const feeBrand = pgTable("fee_brand", {
@@ -1446,30 +1446,30 @@ export const feeBrand = pgTable("fee_brand", {
         idFee: bigint("id_fee", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idFee],
-                        foreignColumns: [fee.id],
-                        name: "fee_brand_id_fee_fkey"
-                }).onDelete("cascade"),
+                columns: [table.idFee],
+                foreignColumns: [fee.id],
+                name: "fee_brand_id_fee_fkey"
+        }).onDelete("cascade"),
 ]);
 
 export const feeCredit = pgTable("fee_credit", {
         // You can use { mode: "bigint" } if numbers are exceeding js number limitations
         id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "fee_credit_id_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
         installmentNumber: integer("installment_number").notNull(),
-        compulsoryAnticipation: numeric("compulsory_anticipation", { precision: 10, scale:  2 }),
-        noCardCompulsoryAnticipation: numeric("no_card_compulsory_anticipation", { precision: 10, scale:  2 }),
-        fee: numeric({ precision: 10, scale:  2 }),
+        compulsoryAnticipation: numeric("compulsory_anticipation", { precision: 10, scale: 2 }),
+        noCardCompulsoryAnticipation: numeric("no_card_compulsory_anticipation", { precision: 10, scale: 2 }),
+        fee: numeric({ precision: 10, scale: 2 }),
         dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
         dtupdate: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
         // You can use { mode: "bigint" } if numbers are exceeding js number limitations
         idFeeBrandProductType: bigint("id_fee_brand_product_type", { mode: "number" }),
-        noFee: numeric("no_fee", { precision: 10, scale:  2 }),
+        noFee: numeric("no_fee", { precision: 10, scale: 2 }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idFeeBrandProductType],
-                        foreignColumns: [feeBrandProductType.id],
-                        name: "fee_credit_id_fee_brand_product_type_fkey"
-                }).onDelete("cascade"),
+                columns: [table.idFeeBrandProductType],
+                foreignColumns: [feeBrandProductType.id],
+                name: "fee_credit_id_fee_brand_product_type_fkey"
+        }).onDelete("cascade"),
 ]);
 
 export const financialAdjustments = pgTable("financial_adjustments", {
@@ -1528,15 +1528,15 @@ export const financialAdjustmentMerchants = pgTable("financial_adjustment_mercha
         idMerchant: bigint("id_merchant", { mode: "number" }),
 }, (table) => [
         foreignKey({
-                        columns: [table.idFinancialAdjustment],
-                        foreignColumns: [financialAdjustments.id],
-                        name: "financial_adjustment_merchants_id_financial_adjustment_fkey"
-                }),
+                columns: [table.idFinancialAdjustment],
+                foreignColumns: [financialAdjustments.id],
+                name: "financial_adjustment_merchants_id_financial_adjustment_fkey"
+        }),
         foreignKey({
-                        columns: [table.idMerchant],
-                        foreignColumns: [merchants.id],
-                        name: "financial_adjustment_merchants_id_merchant_fkey"
-                }),
+                columns: [table.idMerchant],
+                foreignColumns: [merchants.id],
+                name: "financial_adjustment_merchants_id_merchant_fkey"
+        }),
 ]);
 
 export const userNotifications = pgTable("user_notifications", {
@@ -1555,10 +1555,10 @@ export const userNotifications = pgTable("user_notifications", {
         isRead: boolean("is_read").default(false),
 }, (table) => [
         foreignKey({
-                        columns: [table.idUser],
-                        foreignColumns: [users.id],
-                        name: "user_notifications_id_user_fkey"
-                }),
+                columns: [table.idUser],
+                foreignColumns: [users.id],
+                name: "user_notifications_id_user_fkey"
+        }),
 ]);
 
 export const customerCustomization = pgTable("customer_customization", {
@@ -1594,62 +1594,62 @@ export const customerCustomization = pgTable("customer_customization", {
 
 
 export const cnaes = pgTable("cnaes", {
-  id: uuid().primaryKey().defaultRandom(),
-  codigo: varchar({ length: 10 }).notNull().unique(),
-  descricao: text().notNull(),
-  createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+        id: uuid().primaryKey().defaultRandom(),
+        codigo: varchar({ length: 10 }).notNull().unique(),
+        descricao: text().notNull(),
+        createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
-  unique("cnaes_codigo_key").on(table.codigo),
+        unique("cnaes_codigo_key").on(table.codigo),
 ]);
 
 export const fornecedores = pgTable("fornecedores", {
-  id: uuid().primaryKey().defaultRandom(),
-  nome: varchar({ length: 255 }).notNull(),
-  cnpj: varchar({ length: 18 }).notNull().unique(),
-  email: varchar({ length: 255 }).notNull(),
-  telefone: varchar({ length: 20 }),
-  endereco: text(),
-  cidade: varchar({ length: 100 }),
-  estado: varchar({ length: 2 }),
-  cep: varchar({ length: 10 }),
-  cnaecodigo: varchar("cnae_codigo", { length: 10 }),
-  ativo: boolean().default(true),
-  createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+        id: uuid().primaryKey().defaultRandom(),
+        nome: varchar({ length: 255 }).notNull(),
+        cnpj: varchar({ length: 18 }).notNull().unique(),
+        email: varchar({ length: 255 }).notNull(),
+        telefone: varchar({ length: 20 }),
+        endereco: text(),
+        cidade: varchar({ length: 100 }),
+        estado: varchar({ length: 2 }),
+        cep: varchar({ length: 10 }),
+        cnaecodigo: varchar("cnae_codigo", { length: 10 }),
+        ativo: boolean().default(true),
+        createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
-  unique("fornecedores_cnpj_key").on(table.cnpj),
-  foreignKey({
-    columns: [table.cnaecodigo],
-    foreignColumns: [cnaes.codigo],
-    name: "fk_fornecedor_cnae"
-  }),
+        unique("fornecedores_cnpj_key").on(table.cnpj),
+        foreignKey({
+                columns: [table.cnaecodigo],
+                foreignColumns: [cnaes.codigo],
+                name: "fk_fornecedor_cnae"
+        }),
 ]);
 
 export const fornecedorDocuments = pgTable("fornecedor_documents", {
-  id: uuid().primaryKey().defaultRandom(),
-  fornecedorId: uuid("fornecedor_id").notNull(),
-  nome: varchar({ length: 255 }).notNull(),
-  tipo: varchar({ length: 100 }).notNull(),
-  url: text().notNull(),
-  size: integer().default(0),
-  uploadedAt: timestamp("uploaded_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
+        id: uuid().primaryKey().defaultRandom(),
+        fornecedorId: uuid("fornecedor_id").notNull(),
+        nome: varchar({ length: 255 }).notNull(),
+        tipo: varchar({ length: 100 }).notNull(),
+        url: text().notNull(),
+        size: integer().default(0),
+        uploadedAt: timestamp("uploaded_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
-  foreignKey({
-    columns: [table.fornecedorId],
-    foreignColumns: [fornecedores.id],
-    name: "fk_document_fornecedor"
-  }).onDelete("cascade"),
+        foreignKey({
+                columns: [table.fornecedorId],
+                foreignColumns: [fornecedores.id],
+                name: "fk_document_fornecedor"
+        }).onDelete("cascade"),
 ]);
 
 export const customerModules = pgTable("customer_modules", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "customer_modules_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "customer_modules_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
         slug: varchar({ length: 50 }),
         dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
@@ -1672,30 +1672,30 @@ export const customerModules = pgTable("customer_modules", {
 ]);
 
 export const merchantModules = pgTable("merchant_modules", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "merchant_modules_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "merchant_modules_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
         slug: varchar({ length: 50 }),
         dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
         dtupdate: timestamp({ mode: 'string' }),
-        
+
         idMerchant: bigint("id_merchant", { mode: "number" }),
         idModule: bigint("id_module", { mode: "number" }),
         idCustomer: bigint("id_customer", { mode: "number" }),
-        
+
         consentGiven: boolean("consent_given").default(false),
         consentDate: timestamp("consent_date", { mode: 'string' }),
         consentIp: varchar("consent_ip", { length: 50 }),
         consentUserAgent: text("consent_user_agent"),
-        
+
         active: boolean().default(false),
         notified: boolean().default(false),
-        
+
 }, (table) => [
         unique("merchant_modules_unique").on(table.idMerchant, table.idModule),
         foreignKey({
@@ -1716,31 +1716,31 @@ export const merchantModules = pgTable("merchant_modules", {
 ]);
 
 export const moduleConsents = pgTable("module_consents", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "module_consents_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "module_consents_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
-        
+
         idMerchantModule: bigint("id_merchant_module", { mode: "number" }),
         idMerchant: bigint("id_merchant", { mode: "number" }),
         idModule: bigint("id_module", { mode: "number" }),
         idCustomer: bigint("id_customer", { mode: "number" }),
-        
+
         action: varchar({ length: 50 }),
         consentText: text("consent_text"),
         ipAddress: varchar("ip_address", { length: 50 }),
         userAgent: text("user_agent"),
         deviceInfo: text("device_info"),
-        
+
         userEmail: varchar("user_email", { length: 255 }),
         userId: bigint("user_id", { mode: "number" }),
-        
+
         dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
-        
+
 }, (table) => [
         foreignKey({
                 columns: [table.idMerchantModule],
@@ -1765,13 +1765,13 @@ export const moduleConsents = pgTable("module_consents", {
 ]);
 
 export const pageVisibilitySettings = pgTable("page_visibility_settings", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "page_visibility_settings_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "page_visibility_settings_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
         pageSlug: varchar("page_slug", { length: 100 }).notNull(),
         userId: bigint("user_id", { mode: "number" }),
@@ -1794,45 +1794,45 @@ export const pageVisibilitySettings = pgTable("page_visibility_settings", {
 ]);
 
 export const stakeholders = pgTable("stakeholders", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "stakeholders_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "stakeholders_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
         slug: varchar({ length: 50 }),
         dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
         dtupdate: timestamp({ mode: 'string' }),
         active: boolean().default(true),
-        
+
         name: varchar({ length: 255 }),
         cnpj: varchar({ length: 18 }),
         email: varchar({ length: 255 }),
         phone: varchar({ length: 20 }),
         commissionRate: numeric("commission_rate", { precision: 5, scale: 2 }),
-        
+
 }, (table) => [
         unique("stakeholders_cnpj_unique").on(table.cnpj),
 ]);
 
 export const stakeholderCustomers = pgTable("stakeholder_customers", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "stakeholder_customers_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "stakeholder_customers_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
         dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
         dtupdate: timestamp({ mode: 'string' }),
-        
+
         idStakeholder: bigint("id_stakeholder", { mode: "number" }),
         idCustomer: bigint("id_customer", { mode: "number" }),
         commissionRate: numeric("commission_rate", { precision: 5, scale: 2 }),
-        
+
 }, (table) => [
         unique("stakeholder_customers_unique").on(table.idStakeholder, table.idCustomer),
         foreignKey({
@@ -1867,30 +1867,33 @@ export const nivelRiscoEnum = pgEnum("nivel_risco", ["baixo", "medio", "alto"]);
 export const tipoLiquidacaoEnum = pgEnum("tipo_liquidacao", ["D0", "D1", "D2", "D14", "D30", "sob_analise"]);
 
 export const mcc = pgTable("mcc", {
-  id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-    name: "mcc_id_seq", 
-    startWith: 1, 
-    increment: 1, 
-    minValue: 1, 
-    maxValue: 9223372036854775807, 
-    cache: 1 
-  }),
-  code: varchar({ length: 4 }).notNull().unique(),
-  description: varchar({ length: 255 }).notNull(),
-  categoria: varchar({ length: 100 }).notNull(),
-  subcategoria: varchar({ length: 100 }),
-  nivelRisco: nivelRiscoEnum("nivel_risco").default("baixo").notNull(),
-  tipoLiquidacao: tipoLiquidacaoEnum("tipo_liquidacao").default("D2").notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  exigeAnaliseManual: boolean("exige_analise_manual").default(false).notNull(),
-  observacoesRegulatorias: text("observacoes_regulatorias"),
-  createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-  updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "mcc_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
+        }),
+        code: varchar({ length: 4 }).notNull().unique(),
+        description: varchar({ length: 255 }).notNull(),
+        categoria: varchar({ length: 100 }).notNull(),
+        subcategoria: varchar({ length: 100 }),
+        nivelRisco: nivelRiscoEnum("nivel_risco").default("baixo").notNull(),
+        tipoLiquidacao: tipoLiquidacaoEnum("tipo_liquidacao").default("D2").notNull(),
+        isActive: boolean("is_active").default(true).notNull(),
+        exigeAnaliseManual: boolean("exige_analise_manual").default(false).notNull(),
+        observacoesRegulatorias: text("observacoes_regulatorias"),
+        mccGroupId: varchar("mcc_group_id", { length: 10 }).references(() => mccGroups.code),
+        availabilityDate: varchar("availability_date", { length: 50 }),
+        databaseOperation: varchar("database_operation", { length: 10 }),
+        createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+        updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => [
-  index("mcc_code_idx").on(table.code),
-  index("mcc_categoria_idx").on(table.categoria),
-  index("mcc_nivel_risco_idx").on(table.nivelRisco),
-  index("mcc_is_active_idx").on(table.isActive),
+        index("mcc_code_idx").on(table.code),
+        index("mcc_categoria_idx").on(table.categoria),
+        index("mcc_nivel_risco_idx").on(table.nivelRisco),
+        index("mcc_is_active_idx").on(table.isActive),
 ]);
 
 // Tipos para MCC
@@ -1899,19 +1902,21 @@ export type SelectMcc = typeof mcc.$inferSelect;
 
 // Tabela MCC Groups (para sincronização com Dock)
 export const mccGroups = pgTable("mcc_groups", {
-  id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-    name: "mcc_groups_id_seq", 
-    startWith: 1, 
-    increment: 1, 
-    minValue: 1, 
-    maxValue: 9223372036854775807, 
-    cache: 1 
-  }),
-  code: varchar({ length: 10 }).notNull().unique(),
-  description: varchar({ length: 255 }).notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
-  updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "mcc_groups_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
+        }),
+        code: varchar({ length: 10 }).notNull().unique(),
+        description: varchar({ length: 255 }).notNull(),
+        availabilityDate: varchar("availability_date", { length: 50 }),
+        databaseOperation: varchar("database_operation", { length: 10 }),
+        isActive: boolean("is_active").default(true).notNull(),
+        createdAt: timestamp("created_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+        updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
 // Tipos para MCC Groups
@@ -1923,13 +1928,13 @@ export type SelectMccGroup = typeof mccGroups.$inferSelect;
 // =====================================================
 
 export const userFunctions = pgTable("user_functions", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "user_functions_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "user_functions_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
         slug: varchar({ length: 50 }),
         dtinsert: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
@@ -1963,13 +1968,13 @@ export type SelectUserFunction = typeof userFunctions.$inferSelect;
 // =====================================================
 
 export const userCustomers = pgTable("user_customers", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "user_customers_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "user_customers_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
         idUser: bigint("id_user", { mode: "number" }).notNull(),
         idCustomer: bigint("id_customer", { mode: "number" }).notNull(),
@@ -1995,13 +2000,13 @@ export const userCustomers = pgTable("user_customers", {
 ]);
 
 export const permissionCategories = pgTable("permission_categories", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "permission_categories_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "permission_categories_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
         name: varchar({ length: 100 }).notNull(),
         description: text(),
@@ -2020,13 +2025,13 @@ export const permissionCategories = pgTable("permission_categories", {
 ]);
 
 export const categoryFunctions = pgTable("category_functions", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "category_functions_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "category_functions_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
         idCategory: bigint("id_category", { mode: "number" }).notNull(),
         functionCode: varchar("function_code", { length: 100 }).notNull(),
@@ -2048,13 +2053,13 @@ export const categoryFunctions = pgTable("category_functions", {
 ]);
 
 export const userCategories = pgTable("user_categories", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "user_categories_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "user_categories_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
         idUser: bigint("id_user", { mode: "number" }).notNull(),
         idCategory: bigint("id_category", { mode: "number" }).notNull(),
@@ -2089,13 +2094,13 @@ export const settlementStatusEnum = pgEnum("settlement_status", [
 
 // User monthly settlements - consolidação mensal por usuário/ISO
 export const userMonthlySettlements = pgTable("user_monthly_settlements", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "user_monthly_settlements_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "user_monthly_settlements_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
         idUser: bigint("id_user", { mode: "number" }).notNull(),
         idCustomer: bigint("id_customer", { mode: "number" }).notNull(),
@@ -2144,13 +2149,13 @@ export const userMonthlySettlements = pgTable("user_monthly_settlements", {
 
 // Settlement invoices - notas fiscais vinculadas aos settlements
 export const settlementInvoices = pgTable("settlement_invoices", {
-        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ 
-                name: "settlement_invoices_id_seq", 
-                startWith: 1, 
-                increment: 1, 
-                minValue: 1, 
-                maxValue: 9223372036854775807, 
-                cache: 1 
+        id: bigint({ mode: "number" }).primaryKey().generatedAlwaysAsIdentity({
+                name: "settlement_invoices_id_seq",
+                startWith: 1,
+                increment: 1,
+                minValue: 1,
+                maxValue: 9223372036854775807,
+                cache: 1
         }),
         idSettlement: bigint("id_settlement", { mode: "number" }).notNull(),
         fileUrl: varchar("file_url", { length: 500 }),

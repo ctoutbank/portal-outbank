@@ -15,6 +15,13 @@
       "when": 1764364405626,
       "tag": "0001_merchant_authorizers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768240435013,
+      "tag": "0002_left_silver_samurai",
+      "breakpoints": true
     }
   ]
 }
