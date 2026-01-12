@@ -35,7 +35,6 @@ const publicPaths = [
   "/api/auth/me",
   "/api/public",
   "/api/check-subdomain-auth",
-  "/api/debug-env",
   "/unauthorized",
   "/_next",
   "/favicon.ico",

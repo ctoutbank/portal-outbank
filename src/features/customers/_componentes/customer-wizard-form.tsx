@@ -76,6 +76,7 @@ export default function CustomerWizardForm({
     loginImageUrl?: string;
     faviconUrl?: string;
     emailImageUrl?: string;
+    menuIconUrl?: string;
   } | null>(
     customizationInitial ? {
       imageUrl: customizationInitial.imageUrl ?? undefined,
@@ -90,6 +91,7 @@ export default function CustomerWizardForm({
       loginImageUrl: customizationInitial.loginImageUrl ?? undefined,
       faviconUrl: customizationInitial.faviconUrl ?? undefined,
       emailImageUrl: customizationInitial.emailImageUrl ?? undefined,
+      menuIconUrl: customizationInitial.menuIconUrl ?? undefined,
     } : null
   );
 
@@ -425,6 +427,10 @@ export default function CustomerWizardForm({
             if (emailImageInput?.files?.[0]) {
               formData.append("emailImage", emailImageInput.files[0]);
             }
+            const menuIconInput = document.getElementById('menuIcon') as HTMLInputElement;
+            if (menuIconInput?.files?.[0]) {
+              formData.append("menuIcon", menuIconInput.files[0]);
+            }
 
             const validationData = {
               subdomain: subdomain,
@@ -537,6 +543,9 @@ export default function CustomerWizardForm({
   const [emailImagePreview, setEmailImagePreview] = useState<string | null>(null);
   const [emailImageError, setEmailImageError] = useState<string | null>(null);
   const [emailImageFileName, setEmailImageFileName] = useState<string>("");
+  const [menuIconPreview, setMenuIconPreview] = useState<string | null>(null);
+  const [menuIconError, setMenuIconError] = useState<string | null>(null);
+  const [menuIconFileName, setMenuIconFileName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingCustomization, setIsSavingCustomization] = useState(false);
   const [isRemovingImage, setIsRemovingImage] = useState(false);
@@ -544,7 +553,7 @@ export default function CustomerWizardForm({
   // Estados para modais de confirmação
   const [confirmRemoveImageOpen, setConfirmRemoveImageOpen] = useState(false);
   const [confirmRemoveAllImagesOpen, setConfirmRemoveAllImagesOpen] = useState(false);
-  const [pendingRemoveImageType, setPendingRemoveImageType] = useState<'logo' | 'login' | 'favicon' | 'email' | null>(null);
+  const [pendingRemoveImageType, setPendingRemoveImageType] = useState<'logo' | 'login' | 'favicon' | 'email' | 'menuIcon' | null>(null);
 
   // ✅ Estado controlado para cores (atualização instantânea)
   const [primaryColorHex, setPrimaryColorHex] = useState<string>(
@@ -859,6 +868,56 @@ export default function CustomerWizardForm({
     }
   };
 
+  const handleMenuIconChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setMenuIconError(null);
+
+    if (file) {
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        setMenuIconError('❌ Por favor, selecione uma imagem válida');
+        e.target.value = "";
+        return;
+      }
+
+      setMenuIconFileName(file.name);
+
+      const MAX_SIZE = 500 * 1024; // 500KB
+      if (file.size > MAX_SIZE) {
+        setMenuIconError(`❌ Arquivo muito grande (${(file.size / 1024).toFixed(0)}KB). Máximo permitido: 500KB`);
+        setMenuIconPreview(null);
+        e.target.value = "";
+        setMenuIconFileName("");
+        return;
+      }
+
+      try {
+        // ✅ Comprimir imagem se necessário (máximo 100KB)
+        const compressedFile = await compressImage(file, 0.1);
+
+        // Atualizar o input com o arquivo comprimido
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(compressedFile);
+        e.target.files = dataTransfer.files;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          setMenuIconPreview(result);
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        console.error('Erro ao processar ícone do menu:', error);
+        setMenuIconError('❌ Erro ao processar imagem. Tente novamente.');
+        e.target.value = "";
+        setMenuIconFileName("");
+      }
+    } else {
+      setMenuIconPreview(null);
+      setMenuIconFileName("");
+    }
+  };
+
   const handleFirstStepComplete = async (id: number) => {
     if (iso.subdomain && iso.subdomain.trim() !== "") {
       try {
@@ -903,7 +962,7 @@ export default function CustomerWizardForm({
     }
   };
 
-  const handleRemoveImageRequest = (type: 'logo' | 'login' | 'favicon' | 'email') => {
+  const handleRemoveImageRequest = (type: 'logo' | 'login' | 'favicon' | 'email' | 'menuIcon') => {
     if (!newCustomerId) {
       toast.error("ID do cliente não encontrado");
       return;
@@ -932,6 +991,7 @@ export default function CustomerWizardForm({
           loginImageUrl: result.customization.loginImageUrl ?? undefined,
           faviconUrl: result.customization.faviconUrl ?? undefined,
           emailImageUrl: result.customization.emailImageUrl ?? undefined,
+          menuIconUrl: result.customization.menuIconUrl ?? undefined,
         });
 
         if (type === 'logo') {
@@ -948,6 +1008,16 @@ export default function CustomerWizardForm({
           setFaviconPreview(null);
           setFaviconFileName("");
           const fileInput = document.getElementById('favicon') as HTMLInputElement;
+          if (fileInput) fileInput.value = "";
+        } else if (type === 'email') {
+          setEmailImagePreview(null);
+          setEmailImageFileName("");
+          const fileInput = document.getElementById('emailImage') as HTMLInputElement;
+          if (fileInput) fileInput.value = "";
+        } else if (type === 'menuIcon') {
+          setMenuIconPreview(null);
+          setMenuIconFileName("");
+          const fileInput = document.getElementById('menuIcon') as HTMLInputElement;
           if (fileInput) fileInput.value = "";
         }
 
@@ -989,6 +1059,7 @@ export default function CustomerWizardForm({
           loginImageUrl: result.customization.loginImageUrl ?? undefined,
           faviconUrl: result.customization.faviconUrl ?? undefined,
           emailImageUrl: result.customization.emailImageUrl ?? undefined,
+          menuIconUrl: result.customization.menuIconUrl ?? undefined,
         });
 
         setImagePreview(null);
@@ -1986,6 +2057,77 @@ export default function CustomerWizardForm({
                           </div>
                         </div>
 
+                        {/* ÍCONE DO MENU (36x36px) */}
+                        <div className="w-full md:w-1/3 mb-10">
+                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                            <label className="text-sm font-medium text-white mb-1">
+                              Ícone do Menu (36×36px)
+                            </label>
+                            <p className="text-xs text-gray-400 mb-4">
+                              PNG ou SVG • 36×36px • Fundo transparente recomendado • Máx. 500KB
+                            </p>
+
+                            <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[120px] flex items-center justify-center mb-4 transition-colors ${(menuIconPreview || customizationData?.menuIconUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                              {menuIconPreview ? (
+                                <div className="flex flex-col items-center gap-2">
+                                  <img src={menuIconPreview} alt="Preview ícone do menu" width={36} height={36} className="border border-[#2a2a2a]" />
+                                  <span className="text-xs text-gray-400">36×36</span>
+                                </div>
+                              ) : customizationData?.menuIconUrl ? (
+                                <div className="flex flex-col items-center gap-2">
+                                  <img src={addCacheBustingToUrl(customizationData.menuIconUrl)} alt="Ícone do menu atual" width={36} height={36} className="border border-[#2a2a2a]" key={customizationData.menuIconUrl} />
+                                  <span className="text-xs text-gray-400">36×36</span>
+                                </div>
+                              ) : (
+                                <div className="text-center text-[#606060]">
+                                  <div className="text-4xl mb-2 opacity-50">🔲</div>
+                                  <div className="text-xs">Nenhum ícone selecionado</div>
+                                </div>
+                              )}
+                            </div>
+
+                            {menuIconError && (
+                              <p className="text-xs text-orange-600 font-medium mb-2">
+                                {menuIconError}
+                              </p>
+                            )}
+
+                            <div className="relative mb-3">
+                              <input
+                                type="file"
+                                accept="image/png,image/svg+xml"
+                                name="menuIcon"
+                                id="menuIcon"
+                                onChange={handleMenuIconChange}
+                                className="hidden"
+                              />
+                              <label
+                                htmlFor="menuIcon"
+                                className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                              >
+                                <span>📁</span>
+                                <span>Selecionar arquivo</span>
+                              </label>
+                            </div>
+
+                            {menuIconFileName && (
+                              <p className="text-xs text-green-600 font-medium mb-3">
+                                ✓ Arquivo selecionado: {menuIconFileName}
+                              </p>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImageRequest('menuIcon')}
+                              disabled={isRemovingImage || (!menuIconPreview && !customizationData?.menuIconUrl)}
+                              className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                            >
+                              <span>🗑️</span>
+                              <span>{isRemovingImage ? "Removendo..." : "Remover ícone"}</span>
+                            </button>
+                          </div>
+                        </div>
+
                         {/* LINHA 3: IMAGEM DE FUNDO DO LOGIN */}
                         <div className="w-full md:w-1/3 mb-10">
                           <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
@@ -2209,7 +2351,9 @@ export default function CustomerWizardForm({
               ? "Tem certeza que deseja remover a imagem de fundo do login?"
               : pendingRemoveImageType === 'favicon'
                 ? "Tem certeza que deseja remover o favicon?"
-                : "Tem certeza que deseja remover a logo de email?"
+                : pendingRemoveImageType === 'menuIcon'
+                  ? "Tem certeza que deseja remover o ícone do menu?"
+                  : "Tem certeza que deseja remover a logo de email?"
         }
         confirmText="Remover"
         cancelText="Cancelar"

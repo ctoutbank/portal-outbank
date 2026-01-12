@@ -22,6 +22,8 @@ export type CustomerCustomization = {
   loginImageUrl: string | null;
   faviconUrl: string | null;
   emailImageUrl: string | null;
+  menuIconUrl: string | null;
+  menuIconFileId: number | null;
   customerId: number | null;
 };
 
@@ -217,6 +219,8 @@ export async function getCustomizationByCustomerId(
         loginImageUrl: customerCustomization.loginImageUrl,
         faviconUrl: customerCustomization.faviconUrl,
         emailImageUrl: customerCustomization.emailImageUrl,
+        menuIconUrl: customerCustomization.menuIconUrl,
+        menuIconFileId: customerCustomization.menuIconFileId,
         customerId: customerCustomization.customerId,
       })
       .from(customerCustomization)
@@ -257,6 +261,8 @@ export async function getCustomizationBySubdomain(
         loginImageUrl: customerCustomization.loginImageUrl,
         faviconUrl: customerCustomization.faviconUrl,
         emailImageUrl: customerCustomization.emailImageUrl,
+        menuIconUrl: customerCustomization.menuIconUrl,
+        menuIconFileId: customerCustomization.menuIconFileId,
         customerId: customerCustomization.customerId,
       })
       .from(customerCustomization)
@@ -349,6 +355,8 @@ export async function saveCustomization(formData: FormData) {
   let faviconFileId: number | null = null;
   let emailImageUrl = "";
   let emailImageFileId: number | null = null;
+  let menuIconUrl = "";
+  let menuIconFileId: number | null = null;
 
   const image = formData.get("image") as File | null;
   console.log("[saveCustomization] Image file:", image ? `present (${image.size} bytes, ${image.type})` : 'not provided');
@@ -482,6 +490,39 @@ export async function saveCustomization(formData: FormData) {
     emailImageFileId = result[0].id;
   }
 
+  const menuIcon = formData.get("menuIcon") as File | null;
+  console.log("[saveCustomization] Menu icon file:", menuIcon ? `present (${menuIcon.size} bytes, ${menuIcon.type})` : 'not provided');
+  if (menuIcon) {
+    // ✅ Upload com URL única (timestamp + nanoid)
+    try {
+      menuIconUrl = await uploadImageToS3(menuIcon, 'menuicon');
+      console.log("Menu icon uploaded successfully:", menuIconUrl);
+    } catch (error: any) {
+      console.error("S3 Upload Error (menu icon):", {
+        name: error.name,
+        message: error.message,
+        statusCode: error.$metadata?.httpStatusCode,
+      });
+      throw new Error(`Falha no upload do ícone do menu: ${error.message}`);
+    }
+
+    const extension = menuIcon.name.split(".").pop() || "png";
+    const fileType = menuIcon.type || "image/png";
+
+    const result = await db
+      .insert(file)
+      .values({
+        fileUrl: menuIconUrl,
+        fileName: menuIcon.name,
+        extension: extension,
+        fileType: fileType,
+        active: true,
+      })
+      .returning({ id: file.id });
+
+    menuIconFileId = result[0].id;
+  }
+
   const primaryHSL = hexToHsl(primaryColor);
   const secondaryHSL = secondaryColor ? hexToHsl(secondaryColor) : null;
   const loginButtonColorHSL = loginButtonColor ? hexToHsl(loginButtonColor) : null;
@@ -523,6 +564,8 @@ export async function saveCustomization(formData: FormData) {
         ...(faviconFileId && { faviconFileId: faviconFileId }),
         ...(emailImageUrl && { emailImageUrl: emailImageUrl }),
         ...(emailImageFileId && { emailImageFileId: emailImageFileId }),
+        ...(menuIconUrl && { menuIconUrl: menuIconUrl }),
+        ...(menuIconFileId && { menuIconFileId: menuIconFileId }),
       })
       .where(eq(customerCustomization.id, existingCustomization[0].id));
   } else {
@@ -545,6 +588,8 @@ export async function saveCustomization(formData: FormData) {
       faviconFileId: faviconFileId,
       emailImageUrl: emailImageUrl || null,
       emailImageFileId: emailImageFileId,
+      menuIconUrl: menuIconUrl || null,
+      menuIconFileId: menuIconFileId,
     });
   }
 
@@ -634,6 +679,8 @@ export async function updateCustomization(formData: FormData) {
   let faviconFileId: number | null = null;
   let emailImageUrl = "";
   let emailImageFileId: number | null = null;
+  let menuIconUrl = "";
+  let menuIconFileId: number | null = null;
 
   // Buscar customização existente para deletar imagens antigas
   const existingCustomization = await getCustomizationByCustomerId(
@@ -833,6 +880,54 @@ export async function updateCustomization(formData: FormData) {
     }
   }
 
+  const menuIcon = formData.get("menuIcon") as File | null;
+  if (menuIcon && menuIcon.size > 0) {
+    // ✅ Deletar imagem antiga antes de fazer upload da nova
+    if (existingCustomization?.menuIconUrl) {
+      await deleteOldImageFromS3(existingCustomization.menuIconUrl);
+    }
+
+    // ✅ Upload nova (URL única com timestamp)
+    try {
+      menuIconUrl = await uploadImageToS3(menuIcon, 'menuicon');
+      console.log("Menu icon updated successfully:", menuIconUrl);
+    } catch (error: any) {
+      console.error("S3 Upload Error (menu icon update):", {
+        name: error.name,
+        message: error.message,
+        statusCode: error.$metadata?.httpStatusCode,
+      });
+      throw new Error(`Falha na atualização do ícone do menu: ${error.message}`);
+    }
+
+    const extension = menuIcon.name.split(".").pop() || "png";
+    const fileType = menuIcon.type || "image/png";
+
+    const result = await db
+      .insert(file)
+      .values({
+        fileUrl: menuIconUrl,
+        fileName: menuIcon.name,
+        extension: extension,
+        fileType: fileType,
+        active: true,
+      })
+      .returning({ id: file.id });
+
+    menuIconFileId = result[0].id;
+  } else {
+    // Manter menu icon existente
+    if (existingCustomization?.menuIconUrl) {
+      menuIconUrl = existingCustomization.menuIconUrl;
+      const existingFile = await db
+        .select({ id: file.id })
+        .from(file)
+        .where(eq(file.fileUrl, existingCustomization.menuIconUrl))
+        .limit(1);
+      menuIconFileId = existingFile[0]?.id || null;
+    }
+  }
+
   const primaryHSL = hexToHsl(primaryColor);
   const secondaryHSL = secondaryColor ? hexToHsl(secondaryColor) : null;
   const loginButtonColorHSL = loginButtonColor ? hexToHsl(loginButtonColor) : null;
@@ -878,6 +973,8 @@ export async function updateCustomization(formData: FormData) {
       faviconFileId: faviconFileId,
       ...(emailImageUrl && { emailImageUrl: emailImageUrl }),
       emailImageFileId: emailImageFileId,
+      ...(menuIconUrl && { menuIconUrl: menuIconUrl }),
+      menuIconFileId: menuIconFileId,
     })
     .where(eq(customerCustomization.id, id));
 
@@ -914,14 +1011,14 @@ export async function updateCustomization(formData: FormData) {
 
 const removeImageSchema = z.object({
   customerId: z.coerce.number(),
-  type: z.enum(['logo', 'login', 'favicon', 'email']),
+  type: z.enum(['logo', 'login', 'favicon', 'email', 'menuIcon']),
 });
 
 const removeAllImagesSchema = z.object({
   customerId: z.coerce.number(),
 });
 
-export async function removeImage(data: { customerId: number; type: 'logo' | 'login' | 'favicon' | 'email' }) {
+export async function removeImage(data: { customerId: number; type: 'logo' | 'login' | 'favicon' | 'email' | 'menuIcon' }) {
   console.log(`[removeImage] START - Removing ${data.type} for customerId=${data.customerId}`);
   
   const validated = removeImageSchema.safeParse(data);
@@ -942,6 +1039,7 @@ export async function removeImage(data: { customerId: number; type: 'logo' | 'lo
     login: { urlField: 'loginImageUrl' as const, fileIdField: 'loginImageFileId' as const },
     favicon: { urlField: 'faviconUrl' as const, fileIdField: 'faviconFileId' as const },
     email: { urlField: 'emailImageUrl' as const, fileIdField: 'emailImageFileId' as const },
+    menuIcon: { urlField: 'menuIconUrl' as const, fileIdField: 'menuIconFileId' as const },
   };
 
   const { urlField, fileIdField } = fieldMap[type];
