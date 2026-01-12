@@ -219,7 +219,7 @@ export async function setLinkValidityDates(
   validUntil: string,
   autoRenew: boolean = true
 ): Promise<void> {
-  await sql`
+  await getSql()`
     UPDATE iso_mdr_links
     SET valid_from = ${validFrom}::date, 
         valid_until = ${validUntil}::date,
@@ -249,7 +249,7 @@ export async function applyPendingVersion(linkId: string): Promise<void> {
     RETURNING id
   `;
 
-  await sql`
+  await getSql()`
     UPDATE iso_mdr_links
     SET pending_update = false, 
         pending_version_id = null,
@@ -260,7 +260,7 @@ export async function applyPendingVersion(linkId: string): Promise<void> {
     WHERE id = ${linkId}::uuid
   `;
 
-  await sql`
+  await getSql()`
     INSERT INTO iso_notifications (customer_id, type, title, message, iso_mdr_link_id)
     VALUES (
       ${link.customer_id}::bigint,
