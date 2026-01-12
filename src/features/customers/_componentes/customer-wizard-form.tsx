@@ -976,7 +976,7 @@ export default function CustomerWizardForm({
     }
   };
 
-  const handleRemoveImage = async (type: 'logo' | 'login' | 'favicon' | 'email') => {
+  const handleRemoveImage = async (type: 'logo' | 'login' | 'favicon' | 'email' | 'menuIcon') => {
     if (!newCustomerId) {
       toast.error("ID do cliente não encontrado");
       return;
