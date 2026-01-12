@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function SignInPage() {
   const user = await getCurrentUser();
-  
+
   if (user) {
     redirect("/");
   }
@@ -20,7 +20,7 @@ export default async function SignInPage() {
   let tenant = cookieStore.get("tenant")?.value;
 
   const devTenant = process.env.DEV_TENANT;
-  
+
   if (devTenant && (!tenant || tenant === "0")) {
     tenant = devTenant;
   }
@@ -30,14 +30,14 @@ export default async function SignInPage() {
 
   if (!themeData || !nameTenant) {
     const portalSettings = await getPortalSettings();
-    
-    const loginImageUrl = portalSettings?.login_image_url || "/bg_login.jpeg";
+
+    const loginImageUrl = portalSettings?.login_image_url || "/bg_login.jpg";
     const logoUrl = portalSettings?.logo_url;
     const buttonColor = portalSettings?.login_button_color ? hslToHex(portalSettings.login_button_color) : "#3b82f6";
     const buttonTextColor = portalSettings?.login_button_text_color ? hslToHex(portalSettings.login_button_text_color) : "#ffffff";
     const titleColor = portalSettings?.login_title_color ? hslToHex(portalSettings.login_title_color) : "#ffffff";
     const textColor = portalSettings?.login_text_color ? hslToHex(portalSettings.login_text_color) : "#808080";
-    
+
     return (
       <div className="min-h-screen flex">
         <div className="hidden lg:block w-2/3 relative overflow-hidden bg-[#0a0a0a]">
@@ -51,7 +51,7 @@ export default async function SignInPage() {
             unoptimized={loginImageUrl.includes('.s3.')}
           />
         </div>
-        
+
         <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:flex-none lg:w-1/3 lg:px-12 xl:px-16 bg-[#0a0a0a]">
           <div className="w-full max-w-md mx-auto">
             <div className="mb-8 text-center">
@@ -70,7 +70,7 @@ export default async function SignInPage() {
               <h1 className="text-2xl font-semibold mb-2" style={{ color: titleColor }}>Consolle</h1>
               <p className="text-sm" style={{ color: textColor }}>Área Administrativa</p>
             </div>
-            <SignInForm 
+            <SignInForm
               customColors={{
                 buttonColor,
                 buttonTextColor,
