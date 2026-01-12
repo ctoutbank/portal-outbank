@@ -5,6 +5,8 @@ import { verifyToken } from '@/lib/auth';
 import { shouldMaskSensitiveData, isSuperAdmin } from '@/lib/permissions/check-permissions';
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 async function validateSimulatedUser(userId: number): Promise<boolean> {
   try {
     const { rows } = await sql`SELECT id, active FROM users WHERE id = ${userId} LIMIT 1`;

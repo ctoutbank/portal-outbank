@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { isAdminOrSuperAdmin } from "@/lib/permissions/check-permissions";
 import { syncMerchant } from "@/features/pricingSolicitation/server/integrations/dock/sync-merchant/main";
 
+export const dynamic = 'force-dynamic';
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(_request: NextRequest) {
   try {

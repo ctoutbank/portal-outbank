@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fornecedoresRepository } from '@/lib/db/fornecedores';
 import { FornecedorFormData } from '@/types/fornecedor';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{id: string}> }

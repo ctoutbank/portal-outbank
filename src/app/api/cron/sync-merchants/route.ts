@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncMerchant } from "@/features/pricingSolicitation/server/integrations/dock/sync-merchant/main";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     // Verificar secret do Vercel Cron

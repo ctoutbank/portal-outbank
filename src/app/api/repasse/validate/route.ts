@@ -6,6 +6,8 @@ import { verifyToken } from '@/lib/auth';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: {

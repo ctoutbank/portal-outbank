@@ -4,6 +4,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { isSuperAdmin, getUserMultiIsoAccess } from '@/lib/permissions/check-permissions';
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 async function validateIsoAccess(customerId: number, userId: number): Promise<boolean> {
   const superAdmin = await isSuperAdmin();
   if (superAdmin) return true;

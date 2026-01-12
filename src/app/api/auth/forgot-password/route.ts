@@ -5,6 +5,8 @@ import crypto from 'crypto';
 import { headers } from 'next/headers';
 import { sendPasswordResetEmail } from '@/app/utils/send-email';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

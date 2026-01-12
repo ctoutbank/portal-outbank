@@ -4,6 +4,8 @@ import { requireTenantAccess } from "@/lib/subdomain-auth/guard";
 import { getTenantUsers } from "@/features/users/server/admin-users";
 import { getInheritedCommissions } from "@/lib/db/inherited-commissions";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const headersList = await headers();

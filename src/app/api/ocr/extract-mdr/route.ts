@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TextractClient, AnalyzeDocumentCommand, Block, Relationship } from '@aws-sdk/client-textract';
 
+export const dynamic = 'force-dynamic';
+
 function createTextractClient() {
   const region = process.env.AWS_REGION || 'us-east-1';
   const accessKeyId = process.env.AWS_ACCESS_KEY_ID || '';

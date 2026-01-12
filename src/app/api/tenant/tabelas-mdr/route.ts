@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isoMarginsRepository, LinkedMdrTable } from '@/lib/db/iso-margins';
 import { getCurrentUser } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 const MODALIDADES = ['debito', 'credito', 'credito2x', 'credito7x', 'voucher', 'pre', 'pix', 'antecipacao'] as const;
 const CHANNELS = ['pos', 'online'] as const;
 

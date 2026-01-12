@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateUserAccessBySubdomain } from "@/lib/subdomain-auth";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();

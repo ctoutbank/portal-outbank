@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 async function isAdminUser(userId: number): Promise<boolean> {
   const { rows } = await sql.query(`
     SELECT user_type FROM users WHERE id = $1

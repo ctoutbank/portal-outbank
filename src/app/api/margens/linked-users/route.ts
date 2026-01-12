@@ -4,6 +4,8 @@ import { users, userCustomers, profiles } from '../../../../../drizzle/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { getCurrentUserInfo, isSuperAdmin } from '@/lib/permissions/check-permissions';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const userInfo = await getCurrentUserInfo();

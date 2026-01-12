@@ -4,6 +4,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { isSuperAdmin } from '@/lib/permissions/check-permissions';
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function POST(_request: NextRequest): Promise<NextResponse> {
   try {

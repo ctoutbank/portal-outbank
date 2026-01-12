@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncMccFromDock } from "@/features/mcc/server/integrations/dock/sync-mcc/main";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     // Verificar secret do Vercel Cron

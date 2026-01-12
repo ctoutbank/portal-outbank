@@ -3,6 +3,8 @@ import { isoMarginsRepository, LinkedMdrTable } from '@/lib/db/iso-margins';
 import { getCurrentUser } from '@/lib/auth';
 import { isSuperAdmin, getUserMultiIsoAccess } from '@/lib/permissions/check-permissions';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ customerId: string }> }

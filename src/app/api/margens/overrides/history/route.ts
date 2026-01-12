@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { getCurrentUserInfo, isSuperAdmin, getUserMultiIsoAccess } from '@/lib/permissions/check-permissions';
 
+export const dynamic = 'force-dynamic';
+
 async function checkUserAccess(customerId: number): Promise<boolean> {
   const userInfo = await getCurrentUserInfo();
   if (!userInfo) return false;

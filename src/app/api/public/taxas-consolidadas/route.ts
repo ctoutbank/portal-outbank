@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 
+export const dynamic = 'force-dynamic';
+
 interface TaxaChannel {
   debito: { custo_base: string; margin_iso: string; taxa_final: string };
   credito: { custo_base: string; margin_iso: string; taxa_final: string };

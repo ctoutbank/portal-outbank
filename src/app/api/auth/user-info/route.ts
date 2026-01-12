@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const userInfo = await getCurrentUserInfo();

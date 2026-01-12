@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST() {
   try {
     console.log('🔄 Adicionando colunas email_image_url e email_image_file_id...');

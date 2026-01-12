@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
 import { hashPassword } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

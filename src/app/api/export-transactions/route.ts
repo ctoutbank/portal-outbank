@@ -1,6 +1,8 @@
 import { getTransactions } from "@/features/transactions/serverActions/transaction";
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
 

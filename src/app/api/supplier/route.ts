@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { fornecedoresRepository } from "@/lib/db/fornecedores";
 import { FornecedorFormData, FornecedorMDRForm } from "@/types/fornecedor";
 
+export const dynamic = 'force-dynamic';
+
 function getErrorMessage(error: unknown) {
     if (typeof error === 'string') return error;
     if (error instanceof Error) return error.message;

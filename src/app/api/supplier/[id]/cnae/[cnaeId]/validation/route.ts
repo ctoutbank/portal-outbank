@@ -3,6 +3,8 @@ import { sql } from '@vercel/postgres';
 import { getCurrentUser } from '@/lib/auth';
 import { isSuperAdmin, isAdminUser } from '@/lib/permissions/check-permissions';
 
+export const dynamic = 'force-dynamic';
+
 export type MdrStatus = 'rascunho' | 'pendente_validacao' | 'validada' | 'rejeitada' | 'inativa';
 
 interface ValidationResponse {

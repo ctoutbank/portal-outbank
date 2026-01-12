@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 
+export const dynamic = 'force-dynamic';
+
 const BANDEIRAS_VALIDAS = ['Master', 'Visa', 'Elo', 'Amex', 'Hipercard', 'Cabal'];
 const MODALIDADES_VALIDAS = ['debito', 'credito', 'credito_2x', 'credito_7x', 'voucher', 'pre', 'pix', 'antecipacao'];
 const CHANNELS_VALIDOS = ['pos', 'online'];

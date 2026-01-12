@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST() {
   try {
     console.log('🔄 Adicionando coluna mdr_id...');

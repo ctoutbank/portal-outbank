@@ -3,6 +3,8 @@ import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 import { getUserMarginsBreakdown } from '@/lib/db/margin-calculator';
 
+export const dynamic = 'force-dynamic';
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest): Promise<NextResponse> {
   try {

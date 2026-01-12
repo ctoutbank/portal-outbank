@@ -3,6 +3,8 @@ import { mdrRepository } from '@/lib/db/mdr';
 import { fornecedoresRepository } from '@/lib/db/fornecedores';
 import { Category } from '@/types/fornecedor';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; cnaeId: string }> }

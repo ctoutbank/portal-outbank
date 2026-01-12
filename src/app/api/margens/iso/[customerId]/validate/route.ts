@@ -4,6 +4,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { isSuperAdmin } from '@/lib/permissions/check-permissions';
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Verifica se o usuário tem acesso EXPLÍCITO a um ISO específico para validação MDR.
  * NÃO considera fullAccess - para validar tabelas MDR, o usuário deve estar

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 const CRON_SECRET = process.env.CRON_SECRET;
 const MINIMUM_REPASSE_VALUE = 100.00;
 const INVOICE_DEADLINE_DAY = 7;

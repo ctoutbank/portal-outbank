@@ -4,6 +4,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { isSuperAdmin } from '@/lib/permissions/check-permissions';
 import { sql } from '@vercel/postgres';
 
+export const dynamic = 'force-dynamic';
+
 async function hasIsoAccess(userId: number, customerId: number): Promise<boolean> {
   const { rows } = await sql.query(`
     SELECT 1 FROM users u

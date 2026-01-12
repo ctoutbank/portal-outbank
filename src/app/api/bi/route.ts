@@ -3,6 +3,8 @@ import { sql } from "@vercel/postgres";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 async function getUserCustomerAccess(userId: number): Promise<{ isSuperAdmin: boolean; customerIds: number[]; customerSlugs: string[] }> {
   const { rows: userInfo } = await sql.query(`SELECT user_type FROM users WHERE id = $1`, [userId]);
   const isSuperAdmin = userInfo[0]?.user_type === 'SUPER_ADMIN';

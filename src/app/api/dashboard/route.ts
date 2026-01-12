@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 import { getInheritedCommissions } from '@/lib/db/inherited-commissions';
 
+export const dynamic = 'force-dynamic';
+
 async function getUserTypeById(userId: number): Promise<string | null> {
   const { rows } = await sql.query(`SELECT user_type FROM users WHERE id = $1`, [userId]);
   return rows[0]?.user_type || null;
