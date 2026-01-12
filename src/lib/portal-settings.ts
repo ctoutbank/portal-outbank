@@ -1,10 +1,12 @@
 import { neon } from '@neondatabase/serverless';
 
 const getSql = () => {
-  if (!process.env.DATABASE_URL) {
+  const url = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.NEON_DATABASE_URL;
+  if (!url) {
+    console.error('❌ FATAL: Database URL is missing. Checked: DATABASE_URL, POSTGRES_URL, NEON_DATABASE_URL');
     throw new Error('DATABASE_URL not set');
   }
-  return neon(process.env.DATABASE_URL);
+  return neon(url);
 };
 
 export interface PortalSettings {
