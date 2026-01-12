@@ -31,7 +31,6 @@ import { cn } from "@/lib/utils";
 interface ProfilePageProps {
   profile: {
     id: number;
-    clerkId: string;
     firstName: string;
     lastName: string;
     email: string;
