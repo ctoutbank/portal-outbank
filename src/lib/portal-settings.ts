@@ -1,6 +1,11 @@
 import { neon } from '@neondatabase/serverless';
 
-const sql = neon(process.env.DATABASE_URL!);
+const getSql = () => {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL not set');
+  }
+  return neon(process.env.DATABASE_URL);
+};
 
 export interface PortalSettings {
   id: number;
@@ -17,6 +22,7 @@ export interface PortalSettings {
 
 export async function getPortalSettings(): Promise<PortalSettings | null> {
   try {
+    const sql = getSql();
     const result = await sql`SELECT * FROM portal_settings LIMIT 1`;
     return result[0] as PortalSettings || null;
   } catch (error) {
@@ -28,14 +34,14 @@ export async function getPortalSettings(): Promise<PortalSettings | null> {
 export function hslToHex(hsl: string | null | undefined): string {
   if (!hsl) return "#3b82f6";
   if (hsl.startsWith('#')) return hsl;
-  
+
   try {
     const parts = hsl.trim().split(/\s+/);
     if (parts.length !== 3) return "#3b82f6";
     const h = parseFloat(parts[0]) / 360;
     const s = parseFloat(parts[1]) / 100;
     const l = parseFloat(parts[2]) / 100;
-    
+
     const a = s * Math.min(l, 1 - l);
     const f = (n: number) => {
       const k = (n + h * 12) % 12;

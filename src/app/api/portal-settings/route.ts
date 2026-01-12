@@ -4,7 +4,12 @@ import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-const sql = neon(process.env.DATABASE_URL!);
+const getSql = () => {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL not set');
+  }
+  return neon(process.env.DATABASE_URL);
+};
 
 export async function GET() {
   try {
@@ -13,10 +18,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
+    const sql = getSql();
     const result = await sql`SELECT * FROM portal_settings LIMIT 1`;
-    
+
     const settings = result[0] || null;
-    
+
     return NextResponse.json({ settings }, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -50,6 +56,7 @@ export async function POST(request: NextRequest) {
       loginTextColor
     } = body;
 
+    const sql = getSql();
     const existing = await sql`SELECT id FROM portal_settings LIMIT 1`;
 
     if (existing.length > 0) {
