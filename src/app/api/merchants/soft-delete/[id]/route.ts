@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { merchants } from "../../../../../../drizzle/schema";
+import { merchants } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { checkPagePermission } from "@/lib/permissions/check-permissions";
 
