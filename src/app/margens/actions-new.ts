@@ -163,7 +163,7 @@ export async function getIsoList(simulatedUserId?: number | null): Promise<IsoMa
   return allConfigs.filter(c => allowedIds.includes(c.customerId));
 }
 
-export async function getUserRole(simulatedUserId?: number | null): Promise<'super_admin' | 'executivo' | 'core' | null> {
+export async function getUserRole(simulatedUserId?: number | null): Promise<'super_admin' | 'admin' | 'executivo' | 'core' | null> {
   const context = await validateSimulationAccess(simulatedUserId);
   if (!context) {
     return null;

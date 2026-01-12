@@ -336,6 +336,7 @@ export const profiles = pgTable("profiles", {
 	description: varchar({ length: 500 }),
 	isSalesAgent: boolean("is_sales_agent"),
 	restrictCustomerData: boolean("restrict_customer_data").default(false),
+	categoryType: varchar("category_type", { length: 20 }).default('OUTRO'),
 });
 
 export const shoppingItems = pgTable("shopping_items", {
