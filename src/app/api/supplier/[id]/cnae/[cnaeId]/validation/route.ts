@@ -15,7 +15,7 @@ interface ValidationResponse {
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; cnaeId: string }> }
-): Promise<NextResponse<ValidationResponse | { status: MdrStatus; history: any[] }>> {
+) {
   try {
     const { id: fornecedorId, cnaeId } = await params;
     const categoryId = parseInt(cnaeId);
@@ -35,6 +35,7 @@ export async function GET(
 
     if (!rows[0]) {
       return NextResponse.json({ 
+        success: false,
         error: 'Categoria não encontrada para este fornecedor' 
       }, { status: 404 });
     }
