@@ -3,8 +3,8 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { extractSubdomain, isTenantHost } from "@/lib/subdomain-auth/host";
 
-const DEV_BYPASS_ENABLED = 
-  process.env.NODE_ENV === "development" && 
+const DEV_BYPASS_ENABLED =
+  process.env.NODE_ENV === "development" &&
   process.env.DEV_BYPASS_AUTH === "true" &&
   !process.env.VERCEL;
 
@@ -34,6 +34,7 @@ const publicPaths = [
   "/api/auth/me",
   "/api/public",
   "/api/check-subdomain-auth",
+  "/api/debug-env",
   "/unauthorized",
   "/_next",
   "/favicon.ico",
@@ -68,23 +69,23 @@ export default async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
   const user = token ? await verifyJwt(token) : null;
   const userId = user?.userId || null;
-  
+
   if (isTenant && subdomain) {
     if (!userId && pathname === "/") {
       const signInUrl = new URL("/auth/sign-in", request.url);
       return NextResponse.redirect(signInUrl);
     }
-    
+
     if (userId && pathname === "/") {
       const dashboardUrl = new URL("/dashboard", request.url);
       return NextResponse.redirect(dashboardUrl);
     }
-    
+
     if (!isPublicRoute(pathname) && !userId) {
       const signInUrl = new URL("/auth/sign-in", request.url);
       return NextResponse.redirect(signInUrl);
     }
-    
+
     const tenantRouteMap: Record<string, string> = {
       "/": "/tenant",
       "/sign-in": "/tenant/auth/sign-in",
@@ -96,9 +97,9 @@ export default async function middleware(request: NextRequest) {
       "/dashboard": "/tenant/dashboard",
       "/unauthorized": "/tenant/unauthorized",
     };
-    
+
     const targetPath = tenantRouteMap[pathname];
-    
+
     if (targetPath) {
       const rewriteUrl = new URL(targetPath, request.url);
       rewriteUrl.search = request.nextUrl.search;
@@ -109,16 +110,16 @@ export default async function middleware(request: NextRequest) {
       });
       return response;
     }
-    
+
     const response = NextResponse.next();
     response.cookies.set("tenant", subdomain, {
       path: "/",
       httpOnly: false,
     });
-    
+
     return response;
   }
-  
+
   if (!isPublicRoute(pathname) && !userId) {
     const signInUrl = new URL("/auth/sign-in", request.url);
     const response = NextResponse.redirect(signInUrl);
@@ -127,7 +128,7 @@ export default async function middleware(request: NextRequest) {
     }
     return response;
   }
-  
+
   return NextResponse.next();
 }
 

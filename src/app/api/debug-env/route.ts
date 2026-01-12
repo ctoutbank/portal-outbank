@@ -8,6 +8,7 @@ export async function GET() {
         POSTGRES_URL: !!process.env.POSTGRES_URL,
         NEON_DATABASE_URL: !!process.env.NEON_DATABASE_URL,
         JWT_SECRET: !!process.env.JWT_SECRET,
+        CRON_SECRET: !!process.env.CRON_SECRET, // Adicionado para debug do cron
         NODE_ENV: process.env.NODE_ENV,
         VERCEL_ENV: process.env.VERCEL_ENV,
     };
