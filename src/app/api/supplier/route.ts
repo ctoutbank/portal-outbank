@@ -1,4 +1,4 @@
-'use server';
+
 
 import { sql } from '@vercel/postgres';
 import { NextRequest, NextResponse } from "next/server";
@@ -56,32 +56,32 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-       
+
         const body = await request.json() as unknown;
         const { fornecedor, mdr } = body as {
             fornecedor: FornecedorFormData;
             mdr?: FornecedorMDRForm;
-        } 
-        
+        }
+
 
         if (!fornecedor.nome || !fornecedor.cnpj || !fornecedor.email) {
-            
+
             return NextResponse.json({ error: "Nome, CNPJ e Email são obrigatórios." }, { status: 400 });
         }
-        
 
-        
 
-    const exists = await fornecedoresRepository.existsByCnpj(fornecedor.cnpj);
+
+
+        const exists = await fornecedoresRepository.existsByCnpj(fornecedor.cnpj);
         if (exists) {
             return NextResponse.json({ error: "Fornecedor com este CNPJ já existe." }, { status: 400 });
         }
-        
+
         const createdFornecedor = await fornecedoresRepository.create(fornecedor);
 
-    let createdMdr: unknown = null;
-        if(mdr && createdFornecedor.id){
-            try{
+        let createdMdr: unknown = null;
+        if (mdr && createdFornecedor.id) {
+            try {
                 const mdrResult = await sql.query(
                     `INSERT INTO mdr (
                         fornecedor_id,
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
                 );
                 createdMdr = mdrResult.rows[0];
 
-                if (mdr.mcc && Array.isArray(mdr.mcc) && mdr.mcc.length > 0 ){
+                if (mdr.mcc && Array.isArray(mdr.mcc) && mdr.mcc.length > 0) {
                     const values = mdr.mcc.map((categoyId, i) => `($1, $${i + 2})`).join(', ');
                     const categoryIds = mdr.mcc.map(id => parseInt(id as unknown as string, 10));
                     await sql.query(
@@ -115,18 +115,18 @@ export async function POST(request: NextRequest) {
                         [createdFornecedor.id, ...categoryIds]
                     );
                 }
-            } catch (mdrError: unknown){
+            } catch (mdrError: unknown) {
                 const msg = getErrorMessage(mdrError);
                 console.error("Error creating MDR:", msg);
                 return NextResponse.json({
                     fornecedor: createdFornecedor,
                     warning: "Fornecedor criado, mas houve um erro ao criar o MDR. " + msg
-                }, { status: 201});
+                }, { status: 201 });
             }
         }
 
-        
-        return NextResponse.json({fornecedor: createdFornecedor, mdr: createdMdr, message: createdMdr? "Fornecedor e MDR criados com sucesso" : "Fonecedor: Status OK"}, { status: 201 });
+
+        return NextResponse.json({ fornecedor: createdFornecedor, mdr: createdMdr, message: createdMdr ? "Fornecedor e MDR criados com sucesso" : "Fonecedor: Status OK" }, { status: 201 });
     } catch (error: unknown) {
         const message = getErrorMessage(error);
         if (message.includes('duplicate key value')) {
