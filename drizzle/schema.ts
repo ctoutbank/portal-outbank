@@ -839,6 +839,11 @@ export const users = pgTable("users", {
 	email: varchar({ length: 50 }),
 	initialPassword: text("initial_password"),
 	isInvisible: boolean("is_invisible").default(false),
+	userType: varchar("user_type", { length: 50 }),
+	canViewSensitiveData: boolean("can_view_sensitive_data").default(false),
+	firstName: varchar("first_name", { length: 100 }),
+	lastName: varchar("last_name", { length: 100 }),
+	imageUrl: varchar("image_url", { length: 500 }),
 }, (table) => [
 	foreignKey({
 			columns: [table.idCustomer],
