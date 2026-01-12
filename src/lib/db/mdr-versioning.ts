@@ -3,10 +3,11 @@ import { neon } from '@neondatabase/serverless';
 
 
 function getSql() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL not set');
+  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  if (!connectionString) {
+    throw new Error('DATABASE_URL or POSTGRES_URL not set');
   }
-  return neon(process.env.DATABASE_URL);
+  return neon(connectionString);
 }
 
 export interface MdrVersion {

@@ -5,20 +5,20 @@ import { db } from '@/lib/db';
 import { users } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 
-const DEV_BYPASS_ENABLED = 
-  process.env.NODE_ENV === "development" && 
+const DEV_BYPASS_ENABLED =
+  process.env.NODE_ENV === "development" &&
   process.env.DEV_BYPASS_AUTH === "true" &&
   !process.env.VERCEL;
 
 const DEV_FALLBACK_SECRET = 'dev-only-secret-do-not-use-in-production-32bytes';
 
 function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET;
+  const secret = process.env.JWT_SECRET || process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
   if (!secret) {
     if (DEV_BYPASS_ENABLED) {
       return new TextEncoder().encode(DEV_FALLBACK_SECRET);
     }
-    throw new Error('JWT_SECRET environment variable is required');
+    throw new Error('JWT_SECRET (or AUTH_SECRET/NEXTAUTH_SECRET) environment variable is required');
   }
   return new TextEncoder().encode(secret);
 }
@@ -29,7 +29,7 @@ export const REMEMBER_ME_DURATION = 24 * 60 * 60;
 export function getSessionCookieConfig(rememberMe: boolean = false, isHttps: boolean = false) {
   const duration = rememberMe ? REMEMBER_ME_DURATION : SESSION_DURATION;
   const isSecure = process.env.NODE_ENV === 'production' || !!process.env.VERCEL || isHttps;
-  
+
   return {
     httpOnly: true,
     secure: isSecure,
@@ -70,7 +70,7 @@ export async function createToken(user: SessionUser, expiresIn: number = SESSION
     .setExpirationTime(Math.floor(Date.now() / 1000) + expiresIn)
     .setIssuedAt()
     .sign(secret);
-  
+
   return token;
 }
 
@@ -78,7 +78,7 @@ export async function verifyToken(token: string): Promise<SessionUser | null> {
   try {
     const secret = getJwtSecret();
     const { payload } = await jwtVerify(token, secret);
-    
+
     return {
       id: payload.userId as number,
       email: payload.email as string,
@@ -96,9 +96,9 @@ export async function createSession(user: SessionUser, rememberMe: boolean = fal
   const duration = rememberMe ? REMEMBER_ME_DURATION : SESSION_DURATION;
   const token = await createToken(user, duration);
   const cookieStore = await cookies();
-  
+
   const isSecure = process.env.NODE_ENV === 'production' || !!process.env.VERCEL || isHttps;
-  
+
   cookieStore.set('auth_token', token, {
     httpOnly: true,
     secure: isSecure,
@@ -116,11 +116,11 @@ export async function destroySession(): Promise<void> {
 export async function auth(): Promise<{ userId: number | null }> {
   const cookieStore = await cookies();
   const token = cookieStore.get('auth_token')?.value;
-  
+
   if (!token) {
     return { userId: null };
   }
-  
+
   const user = await verifyToken(token);
   return { userId: user?.id || null };
 }
@@ -128,11 +128,11 @@ export async function auth(): Promise<{ userId: number | null }> {
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('auth_token')?.value;
-  
+
   if (!token) {
     return null;
   }
-  
+
   return verifyToken(token);
 }
 
@@ -142,6 +142,6 @@ export async function getUserByEmail(email: string) {
     .from(users)
     .where(eq(users.email, email))
     .limit(1);
-  
+
   return result[0] || null;
 }
