@@ -32,19 +32,23 @@ export type UserWithClerk = {
   slug: string | null;
   dtinsert: string | null;
   dtupdate: string | null;
-  active: boolean | null;         // alterado
+  active: boolean | null;
   idClerk: string | null;
   idCustomer: number | null;
   idProfile: number | null;
-  fullAccess: boolean | null;     // alterado
+  fullAccess: boolean | null;
   idAddress: number | null;
   hashedPassword: string | null;
-  email: string | null;           // alterado
+  email: string | null;
   initialPassword: string | null;
+  isInvisible: boolean | null;
+  userType: string | null;
+  canViewSensitiveData: boolean | null;
+  imageUrl: string | null;
 
-  // Campos do Clerk
-  firstName?: string;
-  lastName?: string;
+  // Campos derivados do nome
+  firstName: string | null;
+  lastName: string | null;
 
   // Campos exigidos pelo formulário
   password?: string;
