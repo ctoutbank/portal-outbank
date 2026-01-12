@@ -148,7 +148,7 @@ export default async function UserDetailPage({ params }: PageProps) {
         breadcrumbItems={[
           { title: "Configurações", url: "/config" },
           { title: "Usuários", url: "/config/users" },
-          { title: user.name || "Editar Usuário" },
+          { title: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || "Editar Usuário" },
         ]}
         showBackButton={true}
         backHref="/config/users"
