@@ -27,7 +27,7 @@ export async function syncMccs(): Promise<{
 
   try {
     console.log("[SYNC MCC] Iniciando sincronização de MCCs...");
-    
+
     const dockMccs = await fetchAllDockMcc();
     console.log(`[SYNC MCC] Encontrados ${dockMccs.length} MCCs na Dock`);
 
@@ -39,12 +39,12 @@ export async function syncMccs(): Promise<{
         if (dbOperation === 'd') {
           // Deletar (soft delete)
           if (existingMcc) {
-            await deactivateMcc(dockMcc.code);
+            await deactivateMcc(existingMcc.id);
             stats.deactivated++;
           }
         } else if (existingMcc) {
           // Atualizar
-          await updateMcc(dockMcc.code, {
+          await updateMcc(existingMcc.id, {
             description: dockMcc.description,
             mccGroupId: dockMcc.mcc_group_id,
             availabilityDate: dockMcc.availability_date || null,
@@ -55,11 +55,15 @@ export async function syncMccs(): Promise<{
         } else {
           // Inserir
           await insertMcc({
-            code: dockMcc.code,
+            code: dockMcc.code.toString(),
             description: dockMcc.description,
             mccGroupId: dockMcc.mcc_group_id,
             availabilityDate: dockMcc.availability_date || null,
             databaseOperation: dbOperation,
+            categoria: "",
+            nivelRisco: "baixo",
+            tipoLiquidacao: "D30",
+            exigeAnaliseManual: false,
             isActive: true,
           });
           stats.inserted++;

@@ -122,7 +122,7 @@ export async function getPricingSolicitationById(
 ): Promise<PricingSolicitationForm | null> {
 
   console.log("getPricingSolicitationById", id);
-  
+
   try {
     const pricingSolicitation = await db.execute(sql`
       SELECT 
@@ -210,12 +210,12 @@ export async function getPricingSolicitationById(
 export async function insertPricingSolicitation(
   pricingSolicitation: PricingSolicitationForm
 ) {
-  const user = await currentUser();
+  const user = await getCurrentUser();
 
   const userDB = await db
     .select({ customersId: users.idCustomer })
     .from(users)
-    .where(eq(users.idClerk, user?.id || ""));
+    .where(eq(users.id, user?.id || 0));
 
   const customerId = await db
     .select({ id: customers.id })
@@ -323,9 +323,9 @@ export async function insertPricingSolicitation(
               : typeof productType.noCardTransactionAnticipationMdr === "number"
                 ? productType.noCardTransactionAnticipationMdr
                 : typeof productType.noCardTransactionAnticipationMdr ===
-                    "string"
+                  "string"
                   ? parseFloat(productType.noCardTransactionAnticipationMdr) ||
-                    0
+                  0
                   : 0;
 
           const transactionAnticipationMdrValue =
@@ -526,9 +526,9 @@ export async function updatePricingSolicitation(
               : typeof productType.noCardTransactionAnticipationMdr === "number"
                 ? productType.noCardTransactionAnticipationMdr
                 : typeof productType.noCardTransactionAnticipationMdr ===
-                    "string"
+                  "string"
                   ? parseFloat(productType.noCardTransactionAnticipationMdr) ||
-                    0
+                  0
                   : 0;
 
           const transactionAnticipationMdrValue =

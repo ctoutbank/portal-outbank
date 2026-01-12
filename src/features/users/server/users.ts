@@ -7,8 +7,8 @@ import { db } from "@/db/drizzle";
 import { getCurrentUser } from "@/lib/auth";
 import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 
-const DEV_BYPASS_ENABLED = 
-  process.env.NODE_ENV === "development" && 
+const DEV_BYPASS_ENABLED =
+  process.env.NODE_ENV === "development" &&
   process.env.DEV_BYPASS_AUTH === "true" &&
   !process.env.VERCEL;
 import { revalidatePath } from "next/cache";
@@ -24,6 +24,7 @@ import {
   file,
 } from "../../../../drizzle/schema";
 import { AddressSchema } from "../schema/schema";
+import { verifyPassword } from "@/lib/auth";
 
 interface ClerkUserData {
   id: string;
@@ -63,19 +64,19 @@ export type UserInsert = {
 
 export interface UserList {
   userObject:
-    | {
-        id: number;
-        firstName: string;
-        lastName: string;
-        email: string;
-        profileName: string;
-        profileDescription: string;
-        status: boolean;
-        customerName: string;
-        merchants: { id: number; name: string | null }[];
-        idClerk: string;
-      }[]
-    | null;
+  | {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    profileName: string;
+    profileDescription: string;
+    status: boolean;
+    customerName: string;
+    merchants: { id: number; name: string | null }[];
+    idClerk: string;
+  }[]
+  | null;
   totalCount: number;
 }
 
@@ -430,6 +431,8 @@ export async function getUserById(
       initialPassword: userDb[0].initialPassword,
       isInvisible: userDb[0].isInvisible,
       userType: userDb[0].userType,
+      canViewSensitiveData: userDb[0].canViewSensitiveData || false,
+      imageUrl: userDb[0].imageUrl || null,
     };
   }
 }
@@ -448,7 +451,7 @@ export async function getDDMerchants(customerId?: number): Promise<DD[]> {
 
   if (customerId == undefined || customerId == null) {
     const sessionUser = await getCurrentUser();
-    
+
     if (!sessionUser) {
       return [];
     }
@@ -494,7 +497,7 @@ export async function getDDCustomers(): Promise<DD[]> {
 
 export async function getUserGroupPermissions(
   userSlug: string,
- 
+
 ): Promise<string[]> {
   try {
     const result = await db.execute(sql`
@@ -519,8 +522,6 @@ export async function validateCurrentPassword(
   userId: string
 ): Promise<boolean> {
   try {
-    const { comparePassword } = await import("@/app/utils/password");
-    
     // Buscar usuário pelo id numérico ou idClerk
     const userResult = await db
       .select({ hashedPassword: users.hashedPassword })
@@ -532,7 +533,7 @@ export async function validateCurrentPassword(
       return false;
     }
 
-    return comparePassword(currentPassword, userResult[0].hashedPassword);
+    return verifyPassword(currentPassword, userResult[0].hashedPassword);
   } catch (error) {
     console.error("Erro ao validar senha:", error);
     return false;

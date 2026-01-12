@@ -25,13 +25,15 @@ async function hasExplicitIsoAccess(userId: number, customerId: number): Promise
     )
     LIMIT 1
   `, [userId, customerId]);
-  
+
   return rows.length > 0;
 }
 
 const VALID_TRANSITIONS: Record<MdrValidationStatus, MdrValidationStatus[]> = {
-  'rascunho': ['validada'],
+  'rascunho': ['validada', 'pendente_validacao'],
+  'pendente_validacao': ['validada', 'rejeitada', 'rascunho'],
   'validada': ['inativa'],
+  'rejeitada': ['rascunho'],
   'inativa': ['validada']
 };
 
@@ -105,7 +107,7 @@ export async function POST(
     }
 
     const superAdmin = await isSuperAdmin();
-    
+
     // Buscar permissão can_validate_mdr diretamente do banco de dados
     let canValidateMdr = false;
     if (!superAdmin) {
@@ -115,7 +117,7 @@ export async function POST(
       );
       canValidateMdr = userRows[0]?.can_validate_mdr === true;
     }
-    
+
     if (!superAdmin && !canValidateMdr) {
       return NextResponse.json({ error: 'Você não tem permissão para aprovar tabelas de taxas' }, { status: 403 });
     }
@@ -133,15 +135,15 @@ export async function POST(
       `SELECT status FROM iso_mdr_links WHERE id = $1 AND customer_id = $2`,
       [linkId, customerIdNum]
     );
-    
+
     if (!linkRows[0]) {
       return NextResponse.json({ error: 'Link não encontrado' }, { status: 404 });
     }
-    
+
     const currentStatus = (linkRows[0].status || 'rascunho') as MdrValidationStatus;
-    
+
     if (!isValidTransition(currentStatus, newStatus)) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: `Transição inválida: ${currentStatus} → ${newStatus}`,
         currentStatus,
         validTransitions: VALID_TRANSITIONS[currentStatus]
@@ -165,20 +167,20 @@ export async function POST(
         `SELECT fornecedor_category_id FROM iso_mdr_links WHERE id = $1`,
         [linkId]
       );
-      
+
       if (linkData[0]?.fornecedor_category_id) {
         await isoMarginsRepository.initializeIsoMdrMarginsFromMdr(
-          linkId, 
+          linkId,
           linkData[0].fornecedor_category_id
         );
       }
-      
+
       await isoMarginsRepository.generateCostSnapshots(linkId);
     } else if (newStatus === 'inativa' || newStatus === 'rascunho') {
       await isoMarginsRepository.deleteCostSnapshots(linkId);
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       message: `Status atualizado para ${newStatus}`
     });

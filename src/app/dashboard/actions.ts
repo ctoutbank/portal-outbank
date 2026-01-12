@@ -1,7 +1,8 @@
 "use server";
 
-import { db, merchants, payout, transactions, customers } from "@/lib/db";
+import { db } from "@/db/drizzle";
 import { and, count, sql, inArray, or, not, isNull } from "drizzle-orm";
+import { merchants, payout, transactions, customers } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { getMerchantModuleBadges } from "@/lib/modules/merchant-modules";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
@@ -49,7 +50,7 @@ function uuidToVarchar(field: unknown) {
 // Função auxiliar para obter os slugs dos ISOs permitidos do usuário
 async function getUserAllowedCustomerSlugs(): Promise<{ slugs: string[]; customerIds: number[] }> {
   const userInfo = await getCurrentUserInfo();
-  
+
   if (!userInfo || userInfo.allowedCustomers.length === 0) {
     console.log("[Dashboard] Usuário não tem ISOs vinculados");
     return { slugs: [], customerIds: [] };
@@ -58,18 +59,18 @@ async function getUserAllowedCustomerSlugs(): Promise<{ slugs: string[]; custome
   console.log(`[Dashboard] ISOs permitidos para o usuário: ${userInfo.allowedCustomers.join(', ')}`);
 
   const customerSlugsResult = await db
-    .select({ 
+    .select({
       id: customers.id,
-      slug: customers.slug 
+      slug: customers.slug
     })
     .from(customers)
     .where(inArray(customers.id, userInfo.allowedCustomers));
 
   const slugs = customerSlugsResult.map(c => c.slug).filter(Boolean) as string[];
   const customerIds = customerSlugsResult.map(c => c.id);
-  
+
   console.log(`[Dashboard] Slugs dos ISOs: ${slugs.join(', ')}`);
-  
+
   return { slugs, customerIds };
 }
 
@@ -84,7 +85,7 @@ async function getUserCacheKey(): Promise<string> {
 export async function getMerchantsStats() {
   try {
     const { slugs } = await getUserAllowedCustomerSlugs();
-    
+
     if (slugs.length === 0) {
       return { totalEstabelecimentos: 0 };
     }
@@ -112,7 +113,7 @@ export async function getMerchantsStats() {
 export async function getTransactionsStats() {
   try {
     const { slugs } = await getUserAllowedCustomerSlugs();
-    
+
     if (slugs.length === 0) {
       return { totalTransacoes: 0, totalBruto: 0 };
     }
@@ -125,19 +126,19 @@ export async function getTransactionsStats() {
       })
       .from(merchants)
       .where(inArray(merchants.slugCustomer, slugs));
-    
+
     console.log(`[Dashboard] Total de merchants dos ISOs: ${isoMerchants.length}`);
-    
+
     if (isoMerchants.length === 0) {
       return {
         totalTransacoes: 0,
         totalBruto: 0
       };
     }
-    
+
     // Extrair slugs dos merchants
     const merchantSlugs = isoMerchants.map(m => m.slug).filter(Boolean) as string[];
-    
+
     // Buscar transações por customer slugs ou merchant slugs
     const transactionsCount = await db
       .select({ count: count() })
@@ -182,7 +183,7 @@ export async function getTransactionsStats() {
 export async function getProfit() {
   try {
     const { slugs, customerIds } = await getUserAllowedCustomerSlugs();
-    
+
     if (slugs.length === 0 || customerIds.length === 0) {
       return { totalLucro: 0 };
     }
@@ -194,18 +195,18 @@ export async function getProfit() {
       })
       .from(merchants)
       .where(inArray(merchants.slugCustomer, slugs));
-    
+
     console.log(`[Dashboard] Total de merchants para lucro: ${isoMerchants.length}`);
-    
+
     if (isoMerchants.length === 0) {
       return {
         totalLucro: 0
       };
     }
-    
+
     // Extrair IDs dos merchants
     const merchantIds = isoMerchants.map(m => m.id);
-    
+
     // Buscar lucro por customer IDs ou merchant IDs
     const profitResult = await db
       .select({
@@ -240,9 +241,9 @@ export async function getProfit() {
 export async function getTopIsoMerchants(): Promise<MerchantData[]> {
   try {
     console.log("[Dashboard] Iniciando consulta getTopIsoMerchants");
-    
+
     const { slugs } = await getUserAllowedCustomerSlugs();
-    
+
     if (slugs.length === 0) {
       console.log("[Dashboard] Nenhum ISO permitido para o usuário");
       return [];
@@ -258,9 +259,9 @@ export async function getTopIsoMerchants(): Promise<MerchantData[]> {
       })
       .from(merchants)
       .where(inArray(merchants.slugCustomer, slugs));
-    
+
     console.log(`[Dashboard] Merchants dos ISOs: ${isoMerchants.length}`);
-    
+
     if (isoMerchants.length === 0) {
       console.log(`[Dashboard] Nenhum merchant encontrado para os ISOs`);
       return [];
@@ -270,7 +271,7 @@ export async function getTopIsoMerchants(): Promise<MerchantData[]> {
     const merchantIds = isoMerchants.map(m => m.id);
     const merchantSlugs = isoMerchants.map(m => m.slug).filter(Boolean) as string[];
     console.log(`[Dashboard] Total de merchants dos ISOs: ${merchantIds.length}`);
-    
+
     // 1. Buscar dados de transações - usando SOMENTE slugMerchant (não slugCustomer)
     // para ter apenas merchants específicos com transações diretamente relacionadas
     const transactionsBySlug = await db
@@ -288,7 +289,7 @@ export async function getTopIsoMerchants(): Promise<MerchantData[]> {
       )
       .groupBy(transactions.slugMerchant)
       .having(sql`${count()} > 0`); // Apenas grupos com pelo menos 1 transação
-    
+
     // 2. Buscar dados de payouts por merchants
     const payoutsByMerchant = await db
       .select({
@@ -304,37 +305,37 @@ export async function getTopIsoMerchants(): Promise<MerchantData[]> {
         )
       )
       .groupBy(payout.idMerchant);
-    
+
     console.log(`[Dashboard] Encontrados ${payoutsByMerchant.length} merchants com dados de payout`);
     console.log(`[Dashboard] Encontrados ${transactionsBySlug.length} merchants com dados de transações`);
-    
+
     // Construir mapa de merchant ID para slugs para facilitar associação
     const merchantIdToSlugMap = new Map();
     const merchantSlugToIdMap = new Map();
     const merchantIdToNameMap = new Map();
-    
+
     isoMerchants.forEach(m => {
       merchantIdToSlugMap.set(Number(m.id), m.slug);
       merchantSlugToIdMap.set(m.slug, Number(m.id));
       merchantIdToNameMap.set(Number(m.id), m.name || m.corporateName || `Merchant ID ${m.id}`);
     });
-    
+
     // Criar um mapa de valores por merchant combinando dados de diferentes fontes
     const merchantDataMap = new Map();
-    
+
     // Conjunto de merchants com dados reais
     const merchantsWithDataIds = new Set();
-    
+
     // Adicionar merchants com dados de transações
     transactionsBySlug.forEach(t => {
       const slugMerchant = t.slugMerchant?.toString();
       if (slugMerchant && merchantSlugToIdMap.has(slugMerchant)) {
         const merchantId = merchantSlugToIdMap.get(slugMerchant);
         const merchant = isoMerchants.find(m => Number(m.id) === merchantId);
-        
+
         if (merchant && Number(t.totalAmount) > 0 && t.totalCount > 0) {
           merchantsWithDataIds.add(merchantId);
-          
+
           merchantDataMap.set(merchantId, {
             id: merchantId,
             name: merchant.name || merchant.corporateName || `Merchant ID ${merchantId}`,
@@ -345,15 +346,15 @@ export async function getTopIsoMerchants(): Promise<MerchantData[]> {
         }
       }
     });
-    
+
     // Adicionar dados de payouts
     payoutsByMerchant.forEach(p => {
       const merchantId = Number(p.idMerchant);
       const merchant = isoMerchants.find(m => Number(m.id) === merchantId);
-      
+
       if (merchant && Number(p.totalBruto) > 0) {
         merchantsWithDataIds.add(merchantId);
-        
+
         if (merchantDataMap.has(merchantId)) {
           // Merchant já existe no mapa (de transações)
           const merchantData = merchantDataMap.get(merchantId);
@@ -373,13 +374,13 @@ export async function getTopIsoMerchants(): Promise<MerchantData[]> {
         }
       }
     });
-    
+
     // Converter o mapa para array e filtrar apenas merchants com dados reais significativos
     const merchantsWithData = Array.from(merchantDataMap.values())
       .filter(m => m.bruto > 10); // Filtrar apenas merchants com pelo menos R$10 de bruto
-    
+
     console.log(`[Dashboard] Dados reais obtidos para ${merchantsWithData.length} merchants`);
-    
+
     // Buscar módulos para cada merchant
     const merchantsWithModules = await Promise.all(
       merchantsWithData.map(async (merchant) => {
@@ -390,16 +391,16 @@ export async function getTopIsoMerchants(): Promise<MerchantData[]> {
         };
       })
     );
-    
+
     // Ordenar por bruto e pegar os 5 principais
     merchantsWithModules.sort((a, b) => b.bruto - a.bruto);
     const topMerchants = merchantsWithModules.slice(0, 5);
-    
+
     console.log(`[Dashboard] Retornando ${topMerchants.length} merchants com dados reais para o dashboard`);
     topMerchants.forEach(m => {
       console.log(`[Dashboard] ${m.name}: Bruto=${m.bruto}, Lucro=${m.lucro}, Crescimento=${m.crescimento}%`);
     });
-    
+
     return topMerchants;
   } catch (error) {
     console.error("Erro ao buscar os principais merchants do ISO:", error);
@@ -413,7 +414,7 @@ async function updateDashboardCache() {
   try {
     console.log("[Dashboard] Atualizando cache do dashboard...");
     const cacheKey = await getUserCacheKey();
-    
+
     // Executar todas as consultas em paralelo para melhor performance
     const [merchantsStats, transactionsStats, profitStats, topMerchants] = await Promise.all([
       getMerchantsStats(),
@@ -421,7 +422,7 @@ async function updateDashboardCache() {
       getProfit(),
       getTopIsoMerchants()
     ]);
-    
+
     const dashboardData: DashboardData = {
       totalEstabelecimentos: merchantsStats?.totalEstabelecimentos || 0,
       totalTransacoes: transactionsStats?.totalTransacoes || 0,
@@ -430,12 +431,12 @@ async function updateDashboardCache() {
       topMerchants: topMerchants,
       lastUpdate: new Date()
     };
-    
+
     dashboardCacheByUser.set(cacheKey, dashboardData);
     lastCacheUpdateByUser.set(cacheKey, new Date());
-    
+
     console.log(`[Dashboard] Cache atualizado para usuário ${cacheKey} em:`, new Date());
-    
+
     return dashboardData;
   } catch (error) {
     console.error("Erro ao atualizar cache do dashboard:", error);
@@ -460,22 +461,22 @@ export async function refreshDashboard() {
 export async function getDashboardData() {
   try {
     console.log("[Dashboard] Iniciando getDashboardData para o usuário");
-    
+
     const cacheKey = await getUserCacheKey();
     const now = new Date();
     const cachedData = dashboardCacheByUser.get(cacheKey);
     const lastUpdate = lastCacheUpdateByUser.get(cacheKey);
-    
+
     // Verificar se temos cache válido para este usuário
     if (
       cachedData &&
-      lastUpdate && 
+      lastUpdate &&
       (now.getTime() - lastUpdate.getTime() < CACHE_TTL_MS)
     ) {
       console.log(`[Dashboard] Retornando dados do cache para ${cacheKey} (última atualização:`, lastUpdate, ")");
       return cachedData;
     }
-    
+
     // Se não temos cache ou está expirado, atualizar
     return await updateDashboardCache() || {
       totalEstabelecimentos: 0,
@@ -488,16 +489,16 @@ export async function getDashboardData() {
   } catch (error) {
     console.error("[Dashboard] Erro ao obter dados do dashboard:", error);
     console.error(error);
-    
+
     // Tentar retornar cache existente mesmo expirado
     const cacheKey = await getUserCacheKey();
     const cachedData = dashboardCacheByUser.get(cacheKey);
-    
+
     if (cachedData) {
       console.log("[Dashboard] Retornando cache expirado devido a erro");
       return cachedData;
     }
-    
+
     // Último recurso - retornar dados vazios
     return {
       totalEstabelecimentos: 0,

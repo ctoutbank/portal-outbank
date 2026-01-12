@@ -8,14 +8,14 @@ import { IsoMarginConfig } from '@/lib/db/iso-margins';
 
 interface MargensWrapperProps {
   initialIsoConfigs: IsoMarginConfig[];
-  initialUserRole: 'super_admin' | 'executivo' | 'core' | null;
+  initialUserRole: 'super_admin' | 'admin' | 'executivo' | 'core' | null;
   initialIsSuperAdmin: boolean;
   initialIsSimulating?: boolean;
   initialSimulatedUserId?: number | null;
 }
 
-export function MargensWrapper({ 
-  initialIsoConfigs, 
+export function MargensWrapper({
+  initialIsoConfigs,
   initialUserRole,
   initialIsSuperAdmin,
   initialIsSimulating = false,
@@ -23,9 +23,9 @@ export function MargensWrapper({
 }: MargensWrapperProps) {
   const simulatedUserId = useSimulatedUserId();
   const previousSimulatedUserId = useRef<number | null>(initialSimulatedUserId);
-  
+
   const [isoConfigs, setIsoConfigs] = useState<IsoMarginConfig[]>(initialIsoConfigs);
-  const [userRole, setUserRole] = useState<'super_admin' | 'executivo' | 'core' | null>(initialUserRole);
+  const [userRole, setUserRole] = useState<'super_admin' | 'admin' | 'executivo' | 'core' | null>(initialUserRole);
   const [isSuperAdminForView, setIsSuperAdminForView] = useState(initialIsSuperAdmin);
   const [loading, setLoading] = useState(false);
   const [isSimulating, setIsSimulating] = useState(initialIsSimulating);
@@ -38,12 +38,12 @@ export function MargensWrapper({
         getUserRole(targetUserId),
         checkIsSuperAdminForView(targetUserId)
       ]);
-      
+
       setIsoConfigs(configs);
       setUserRole(role);
       setIsSuperAdminForView(superAdminStatus);
       setIsSimulating(targetUserId !== null);
-      
+
       console.log('[MargensWrapper] Data loaded:', {
         targetUserId,
         configsCount: configs.length,
@@ -65,13 +65,13 @@ export function MargensWrapper({
   useEffect(() => {
     const wasSimulating = previousSimulatedUserId.current !== null;
     const isNowSimulating = simulatedUserId !== null;
-    
+
     if (isNowSimulating) {
       loadData(simulatedUserId);
     } else if (wasSimulating) {
       loadData(null);
     }
-    
+
     previousSimulatedUserId.current = simulatedUserId;
   }, [simulatedUserId, loadData]);
 
@@ -87,8 +87,8 @@ export function MargensWrapper({
   }
 
   return (
-    <IsoList 
-      isoConfigs={isoConfigs} 
+    <IsoList
+      isoConfigs={isoConfigs}
       userRole={userRole}
       isSuperAdminForView={isSuperAdminForView}
       isSimulating={isSimulating}

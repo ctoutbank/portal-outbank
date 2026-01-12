@@ -24,18 +24,18 @@ export async function grantModuleConsent(data: ConsentData) {
   try {
     const sessionUser = await getCurrentUser();
     const headersList = await headers();
-    
+
     if (!sessionUser) {
       throw new Error("Usuário não autenticado");
     }
 
     const userEmail = sessionUser.email;
-    const ipAddress = headersList.get("x-forwarded-for") || 
-                     headersList.get("x-real-ip") || 
-                     data.ipAddress || 
-                     "unknown";
+    const ipAddress = headersList.get("x-forwarded-for") ||
+      headersList.get("x-real-ip") ||
+      data.ipAddress ||
+      "unknown";
     const userAgent = headersList.get("user-agent") || data.userAgent || "unknown";
-    
+
     // Buscar o registro merchant_modules
     const merchantModule = await db
       .select()
@@ -149,17 +149,17 @@ export async function grantModuleConsent(data: ConsentData) {
  */
 export async function revokeModuleConsent(merchantId: number, moduleId: number) {
   try {
-    const user = await currentUser();
+    const user = await getCurrentUser();
     const headersList = await headers();
 
     if (!user) {
       throw new Error("Usuário não autenticado");
     }
 
-    const userEmail = user.emailAddresses[0]?.emailAddress;
-    const ipAddress = headersList.get("x-forwarded-for") || 
-                     headersList.get("x-real-ip") || 
-                     "unknown";
+    const userEmail = user.email;
+    const ipAddress = headersList.get("x-forwarded-for") ||
+      headersList.get("x-real-ip") ||
+      "unknown";
     const userAgent = headersList.get("user-agent") || "unknown";
 
     // Buscar o registro merchant_modules
@@ -251,7 +251,7 @@ export async function revokeModuleConsent(merchantId: number, moduleId: number) 
 export async function getModuleConsentHistory(merchantId: number, moduleId?: number) {
   try {
     const conditions = [eq(moduleConsents.idMerchant, merchantId)];
-    
+
     if (moduleId) {
       conditions.push(eq(moduleConsents.idModule, moduleId));
     }

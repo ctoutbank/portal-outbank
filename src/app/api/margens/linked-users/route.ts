@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, users, userCustomers, profiles } from '@/lib/db';
+import { db } from '@/lib/db';
+import { users, userCustomers, profiles } from '../../../../../drizzle/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { getCurrentUserInfo, isSuperAdmin } from '@/lib/permissions/check-permissions';
 

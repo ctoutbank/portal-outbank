@@ -11,38 +11,38 @@ export default function FornecedoresPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [loading, setLoading] = useState(false);
-   
+
 
     const handleSave = async (formData: FornecedorFormData) => {
-        try{
-        setLoading(true);
-        const response = await fetch('/api/supplier/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
-        });
+        try {
+            setLoading(true);
+            const response = await fetch('/api/supplier/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
 
-        if (response.ok) {
-            // trigger list reload in child
-            setRefreshKey((k) => k + 1);
-            setIsModalOpen(false);
+            if (response.ok) {
+                // trigger list reload in child
+                setRefreshKey((k) => k + 1);
+                setIsModalOpen(false);
+            }
+        } catch (error) {
+            console.error("Error saving fornecedor:", error);
+        } finally {
+            setLoading(false);
         }
-    } catch (error) {
-        console.error("Error saving fornecedor:", error);
-    }   finally {
-        setLoading(false);
     }
-}
 
 
-    
+
 
     const handleDelete = async (id: string) => {
         try {
-        setLoading(true);
-        const response = await fetch(`/api/supplier/${id}`, {
-            method: 'DELETE',
-        });
+            setLoading(true);
+            const response = await fetch(`/api/supplier/${id}`, {
+                method: 'DELETE',
+            });
 
             if (response.ok) setRefreshKey((k) => k + 1);
         } catch (error) {
@@ -54,21 +54,21 @@ export default function FornecedoresPage() {
 
     const handleEdit = async (fornecedor: Fornecedor) => {
         try {
-         setLoading(true);
-         
-        const response = await fetch(`/api/supplier/${fornecedor.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(fornecedor),
-        });
+            setLoading(true);
 
-        if (response.ok) setRefreshKey((k) => k + 1);
-    } catch (error) {
-        console.error("Error editing fornecedor:", error);
-    } finally {
-        setLoading(false);
+            const response = await fetch(`/api/supplier/${fornecedor.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fornecedor),
+            });
+
+            if (response.ok) setRefreshKey((k) => k + 1);
+        } catch (error) {
+            console.error("Error editing fornecedor:", error);
+        } finally {
+            setLoading(false);
+        }
     }
-}
 
     return (
         <div className="p-6 space-y-6">
@@ -91,20 +91,19 @@ export default function FornecedoresPage() {
                             onClose={() => setIsModalOpen(false)}
                             title={'Adicionar Fornecedor'}
                         >
-                            {loading ? ( 
+                            {loading ? (
                                 <div> Carregando...</div>
                             ) : (
-                            <FornecedorForm
-                                onSubmit={async (data) => {
-                                    await handleSave(data);
-                                }}
-                                onCancel={() => setIsModalOpen(false)}
-                                isEditing={false}
-                                categories={[]}
-                            />
-                        
-                        )}
-                            
+                                <FornecedorForm
+                                    onSubmit={async (data) => {
+                                        await handleSave(data);
+                                    }}
+                                    onCancel={() => setIsModalOpen(false)}
+                                    isEditing={false}
+                                />
+
+                            )}
+
                         </FornecedorModal>
                     </div>
                 </div>
@@ -117,10 +116,10 @@ export default function FornecedoresPage() {
                             role="admin"
                             refreshKey={refreshKey}
                             onEdit={handleEdit}
-                            onDelete={handleDelete} 
+                            onDelete={handleDelete}
                             onAdd={function (): Promise<void> {
                                 throw new Error('Function not implemented.');
-                            } }                        />
+                            }} />
                     </div>
                 </div>
             </div>

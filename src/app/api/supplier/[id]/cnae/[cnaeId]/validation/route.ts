@@ -15,7 +15,7 @@ interface ValidationResponse {
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; cnaeId: string }> }
-) {
+): Promise<NextResponse<ValidationResponse | { status: MdrStatus; history: any[] } | { error: string }>> {
   try {
     const { id: fornecedorId, cnaeId } = await params;
     const categoryId = parseInt(cnaeId);
@@ -34,9 +34,8 @@ export async function GET(
     `, [fornecedorId, categoryId]);
 
     if (!rows[0]) {
-      return NextResponse.json({ 
-        success: false,
-        error: 'Categoria não encontrada para este fornecedor' 
+      return NextResponse.json({
+        error: 'Categoria não encontrada para este fornecedor'
       }, { status: 404 });
     }
 
@@ -69,9 +68,9 @@ export async function GET(
 
   } catch (error: any) {
     console.error('Erro ao buscar status de validação:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: false,
-      error: 'Erro ao buscar status de validação' 
+      error: 'Erro ao buscar status de validação'
     }, { status: 500 });
   }
 }
@@ -87,9 +86,9 @@ export async function POST(
 
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'Não autorizado' 
+        error: 'Não autorizado'
       }, { status: 401 });
     }
 
@@ -99,16 +98,16 @@ export async function POST(
     `, [fornecedorId, categoryId]);
 
     if (!fcRows[0]) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'Categoria não encontrada' 
+        error: 'Categoria não encontrada'
       }, { status: 404 });
     }
 
     const fcId = fcRows[0].id;
     const currentStatus = fcRows[0].status || 'rascunho';
     const hasMdr = !!fcRows[0].mdr_id;
-    
+
     let newStatus: MdrStatus;
     let message: string;
 
@@ -116,21 +115,21 @@ export async function POST(
       case 'submit':
         const canSubmit = await isSuperAdmin() || await isAdminUser();
         if (!canSubmit) {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: false,
-            error: 'Você não tem permissão para submeter tabelas para validação' 
+            error: 'Você não tem permissão para submeter tabelas para validação'
           }, { status: 403 });
         }
         if (!hasMdr) {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: false,
-            error: 'Não é possível submeter para validação sem MDR configurado' 
+            error: 'Não é possível submeter para validação sem MDR configurado'
           }, { status: 400 });
         }
         if (currentStatus !== 'rascunho' && currentStatus !== 'rejeitada') {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: false,
-            error: 'Apenas tabelas em rascunho ou rejeitadas podem ser submetidas' 
+            error: 'Apenas tabelas em rascunho ou rejeitadas podem ser submetidas'
           }, { status: 400 });
         }
         newStatus = 'pendente_validacao';
@@ -140,15 +139,15 @@ export async function POST(
       case 'approve':
         const isAdmin = await isSuperAdmin();
         if (!isAdmin) {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: false,
-            error: 'Apenas Super Admin pode aprovar tabelas' 
+            error: 'Apenas Super Admin pode aprovar tabelas'
           }, { status: 403 });
         }
         if (currentStatus !== 'pendente_validacao') {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: false,
-            error: 'Apenas tabelas pendentes podem ser aprovadas' 
+            error: 'Apenas tabelas pendentes podem ser aprovadas'
           }, { status: 400 });
         }
         newStatus = 'validada';
@@ -158,21 +157,21 @@ export async function POST(
       case 'reject':
         const isAdminReject = await isSuperAdmin();
         if (!isAdminReject) {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: false,
-            error: 'Apenas Super Admin pode rejeitar tabelas' 
+            error: 'Apenas Super Admin pode rejeitar tabelas'
           }, { status: 403 });
         }
         if (!reason) {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: false,
-            error: 'Motivo da rejeição é obrigatório' 
+            error: 'Motivo da rejeição é obrigatório'
           }, { status: 400 });
         }
         if (currentStatus !== 'pendente_validacao') {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: false,
-            error: 'Apenas tabelas pendentes podem ser rejeitadas' 
+            error: 'Apenas tabelas pendentes podem ser rejeitadas'
           }, { status: 400 });
         }
         newStatus = 'rejeitada';
@@ -182,15 +181,15 @@ export async function POST(
       case 'deactivate':
         const isAdminDeactivate = await isSuperAdmin();
         if (!isAdminDeactivate) {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: false,
-            error: 'Apenas Super Admin pode desativar tabelas' 
+            error: 'Apenas Super Admin pode desativar tabelas'
           }, { status: 403 });
         }
         if (currentStatus !== 'validada') {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: false,
-            error: 'Apenas tabelas validadas podem ser desativadas' 
+            error: 'Apenas tabelas validadas podem ser desativadas'
           }, { status: 400 });
         }
         newStatus = 'inativa';
@@ -200,15 +199,15 @@ export async function POST(
       case 'reactivate':
         const isAdminReactivate = await isSuperAdmin();
         if (!isAdminReactivate) {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: false,
-            error: 'Apenas Super Admin pode reativar tabelas' 
+            error: 'Apenas Super Admin pode reativar tabelas'
           }, { status: 403 });
         }
         if (currentStatus !== 'inativa') {
-          return NextResponse.json({ 
+          return NextResponse.json({
             success: false,
-            error: 'Apenas tabelas inativas podem ser reativadas' 
+            error: 'Apenas tabelas inativas podem ser reativadas'
           }, { status: 400 });
         }
         newStatus = 'validada';
@@ -216,9 +215,9 @@ export async function POST(
         break;
 
       default:
-        return NextResponse.json({ 
+        return NextResponse.json({
           success: false,
-          error: 'Ação inválida' 
+          error: 'Ação inválida'
         }, { status: 400 });
     }
 
@@ -247,9 +246,9 @@ export async function POST(
 
   } catch (error: any) {
     console.error('Erro ao atualizar status de validação:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: false,
-      error: 'Erro ao atualizar status de validação' 
+      error: 'Erro ao atualizar status de validação'
     }, { status: 500 });
   }
 }

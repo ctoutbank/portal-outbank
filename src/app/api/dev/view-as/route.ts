@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getCurrentUser } from "@/lib/auth";
-import { db, users } from "@/lib/db";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 const SIMULATED_USER_COOKIE = "dev_simulated_user_id";
@@ -10,13 +11,13 @@ async function verifyIsSuperAdmin(): Promise<boolean> {
   try {
     const sessionUser = await getCurrentUser();
     if (!sessionUser) return false;
-    
+
     const user = await db
       .select({ userType: users.userType })
       .from(users)
       .where(eq(users.id, sessionUser.id))
       .limit(1);
-    
+
     if (!user || user.length === 0) return false;
     return user[0].userType === "SUPER_ADMIN";
   } catch {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     if (!isSuperAdmin) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
     }
-    
+
     const body = await request.json();
     const { userId } = body;
 
@@ -62,7 +63,7 @@ export async function GET() {
     if (!isSuperAdmin) {
       return NextResponse.json({ isSimulating: false, userId: null });
     }
-    
+
     const cookieStore = await cookies();
     const simulatedUserId = cookieStore.get(SIMULATED_USER_COOKIE)?.value;
 
@@ -82,7 +83,7 @@ export async function DELETE() {
     if (!isSuperAdmin) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
     }
-    
+
     const cookieStore = await cookies();
     cookieStore.delete(SIMULATED_USER_COOKIE);
     return NextResponse.json({ success: true, message: "Simulation cleared" });

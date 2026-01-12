@@ -4,7 +4,8 @@ import { getUserProfile, getUserPermissionsSummary } from "@/features/users/serv
 import { ProfilePage } from "@/features/users/_components/profile-page";
 import { redirect } from "next/navigation";
 import { getPortalSettings } from "@/lib/portal-settings";
-import { db, customers } from "@/lib/db";
+import { db } from "@/lib/db";
+import { customers } from "@/lib/db";
 import { count, eq } from "drizzle-orm";
 
 export const revalidate = 0;
@@ -44,8 +45,8 @@ export default async function AccountPage() {
       />
 
       <BaseBody>
-        <ProfilePage 
-          profile={profile} 
+        <ProfilePage
+          profile={profile}
           permissionsSummary={permissionsSummary}
           portalLogoUrl={portalSettings?.logo_url}
           totalIsosInSystem={totalIsos}

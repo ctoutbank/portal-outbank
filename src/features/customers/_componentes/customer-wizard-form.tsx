@@ -58,7 +58,7 @@ export default function CustomerWizardForm({
     customer.id || null
   );
   const [isFirstStepComplete, setIsFirstStepComplete] = useState(!!customer.id);
-  const [users, setUsers] = useState<UserDetail[]>([]);
+  const [users, setUsers] = useState<Awaited<ReturnType<typeof getUsersByCustomerId>>>([]);
   const [isLoadingUsers] = useState(false);
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [userToEdit, setUserToEdit] = useState<UserDetailForm | null>(null);
@@ -112,11 +112,11 @@ export default function CustomerWizardForm({
     if (!hsl) return "#000000";
     // Se já é HEX, retornar como está
     if (hsl.startsWith('#')) return hsl;
-    
+
     try {
       const parts = hsl.trim().split(/\s+/);
       if (parts.length !== 3) return "#000000";
-      
+
       const h = parseFloat(parts[0]) / 360; // Converter de graus (0-360) para escala 0-1
       const s = parseFloat(parts[1]) / 100; // Converter de porcentagem para escala 0-1
       const l = parseFloat(parts[2]) / 100; // Converter de porcentagem para escala 0-1
@@ -152,7 +152,7 @@ export default function CustomerWizardForm({
       };
 
       const compressedFile = await imageCompression(file, options);
-      
+
       // Converter Blob para File mantendo o nome original
       return new File([compressedFile], file.name, {
         type: compressedFile.type || file.type,
@@ -178,10 +178,10 @@ export default function CustomerWizardForm({
   function updateFaviconInDOM(url: string | null | undefined) {
     if (typeof window === 'undefined') return;
     if (!url) return;
-    
+
     const newUrl = addCacheBustingToUrl(url);
     const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
-    
+
     if (favicon) {
       favicon.href = newUrl;
     } else {
@@ -190,7 +190,7 @@ export default function CustomerWizardForm({
       link.href = newUrl;
       document.head.appendChild(link);
     }
-    
+
     // Forçar reload do favicon em alguns navegadores
     const link2 = document.createElement('link');
     link2.rel = 'icon';
@@ -211,7 +211,7 @@ export default function CustomerWizardForm({
     const root = document.documentElement;
     const html = document.documentElement;
     const body = document.body;
-    
+
     if (primaryHsl) {
       const primaryHex = hslToHex(primaryHsl);
       // Atualizar múltiplos seletores com !important via style
@@ -219,14 +219,14 @@ export default function CustomerWizardForm({
       html.style.setProperty('--tenant-primary', primaryHex, 'important');
       if (body) body.style.setProperty('--tenant-primary', primaryHex, 'important');
     }
-    
+
     if (secondaryHsl) {
       const secondaryHex = hslToHex(secondaryHsl);
       root.style.setProperty('--tenant-secondary', secondaryHex, 'important');
       html.style.setProperty('--tenant-secondary', secondaryHex, 'important');
       if (body) body.style.setProperty('--tenant-secondary', secondaryHex, 'important');
     }
-    
+
     // Disparar evento customizado para componentes React
     window.dispatchEvent(new CustomEvent('theme-updated', {
       detail: { primary: primaryHsl, secondary: secondaryHsl }
@@ -237,12 +237,12 @@ export default function CustomerWizardForm({
   function updateBackgroundImageInDOM(url: string | null | undefined) {
     if (typeof window === 'undefined') return;
     if (!url) return;
-    
+
     const newUrl = addCacheBustingToUrl(url);
     const body = document.body;
     const html = document.documentElement;
     const rootBox = document.querySelector('.clerk-rootBox') as HTMLElement;
-    
+
     // Atualizar body
     if (body) {
       body.style.backgroundImage = `url('${newUrl}')`;
@@ -251,21 +251,21 @@ export default function CustomerWizardForm({
       body.style.backgroundRepeat = 'no-repeat';
       body.style.backgroundAttachment = 'fixed';
     }
-    
+
     // Atualizar html
     if (html) {
       html.style.backgroundImage = `url('${newUrl}')`;
       html.style.backgroundSize = 'cover';
       html.style.backgroundPosition = 'center';
     }
-    
+
     // Atualizar Clerk rootBox se existir
     if (rootBox) {
       rootBox.style.backgroundImage = `url('${newUrl}')`;
       rootBox.style.backgroundSize = 'cover';
       rootBox.style.backgroundPosition = 'center';
     }
-    
+
     // Forçar reload da imagem via JavaScript
     const img = new window.Image();
     img.src = newUrl;
@@ -278,21 +278,21 @@ export default function CustomerWizardForm({
   function updateLogoInDOM(url: string | null | undefined) {
     if (typeof window === 'undefined') return;
     if (!url) return;
-    
+
     const newUrl = addCacheBustingToUrl(url);
-    
+
     // Atualizar todas as imagens com logo
     const logoImages = document.querySelectorAll('img[src*="logo"], img[alt*="logo"], img[alt*="Logo"]');
     logoImages.forEach((img) => {
       (img as HTMLImageElement).src = newUrl;
     });
-    
+
     // Atualizar backgroundImage que usa logo
     const logoBackgrounds = document.querySelectorAll('[style*="background-image"][style*="logo"]');
     logoBackgrounds.forEach((el) => {
       (el as HTMLElement).style.backgroundImage = `url('${newUrl}')`;
     });
-    
+
     // Forçar reload da imagem via JavaScript
     const img = new window.Image();
     img.src = newUrl;
@@ -305,15 +305,15 @@ export default function CustomerWizardForm({
   function updateEmailImageInDOM(url: string | null | undefined) {
     if (typeof window === 'undefined') return;
     if (!url) return;
-    
+
     const newUrl = addCacheBustingToUrl(url);
-    
+
     // Atualizar imagens de email (se houver elementos específicos)
     const emailImages = document.querySelectorAll('img[src*="email"], img[alt*="email"], img[alt*="Email"]');
     emailImages.forEach((img) => {
       (img as HTMLImageElement).src = newUrl;
     });
-    
+
     // Forçar reload da imagem via JavaScript
     const img = new window.Image();
     img.src = newUrl;
@@ -343,7 +343,7 @@ export default function CustomerWizardForm({
             };
             await updateCustomer(updatedData);
             successes.push("Informações básicas atualizadas");
-            
+
             if (iso.subdomain && iso.subdomain.trim() !== "") {
               const formData = new FormData();
               const customerId = newCustomerId || customer?.id;
@@ -357,7 +357,7 @@ export default function CustomerWizardForm({
                 formData.append("loginTitleColor", loginTitleColorHex || "#ffffff");
                 formData.append("loginTextColor", loginTextColorHex || "#d1d5db");
               }
-              
+
               if (customizationData?.id) {
                 formData.append("id", customizationData.id.toString());
                 await updateCustomization(formData);
@@ -437,7 +437,7 @@ export default function CustomerWizardForm({
 
             const validationResult = CustomizationSchema.safeParse(validationData);
             if (validationResult.success) {
-              const result = customizationData 
+              const result = customizationData
                 ? await updateCustomization(formData)
                 : await saveCustomization(formData);
 
@@ -465,23 +465,23 @@ export default function CustomerWizardForm({
                 if (result.customization.faviconUrl) {
                   updateFaviconInDOM(result.customization.faviconUrl);
                 }
-                
+
                 // 2. Atualizar logo
                 if (result.customization.imageUrl) {
                   updateLogoInDOM(result.customization.imageUrl);
                 }
-                
+
                 // 3. Atualizar cores CSS variables
                 updateColorsInDOM(
                   result.customization.primaryColor ?? undefined,
                   result.customization.secondaryColor ?? undefined
                 );
-                
+
                 // 4. Atualizar background image (login)
                 if (result.customization.loginImageUrl) {
                   updateBackgroundImageInDOM(result.customization.loginImageUrl);
                 }
-                
+
                 // 5. Atualizar email image
                 if (result.customization.emailImageUrl) {
                   updateEmailImageInDOM(result.customization.emailImageUrl);
@@ -540,43 +540,43 @@ export default function CustomerWizardForm({
   const [isLoading, setIsLoading] = useState(false);
   const [isSavingCustomization, setIsSavingCustomization] = useState(false);
   const [isRemovingImage, setIsRemovingImage] = useState(false);
-  
+
   // Estados para modais de confirmação
   const [confirmRemoveImageOpen, setConfirmRemoveImageOpen] = useState(false);
   const [confirmRemoveAllImagesOpen, setConfirmRemoveAllImagesOpen] = useState(false);
   const [pendingRemoveImageType, setPendingRemoveImageType] = useState<'logo' | 'login' | 'favicon' | 'email' | null>(null);
-  
+
   // ✅ Estado controlado para cores (atualização instantânea)
   const [primaryColorHex, setPrimaryColorHex] = useState<string>(
-    customizationData?.primaryColor 
-      ? hslToHex(customizationData.primaryColor) 
+    customizationData?.primaryColor
+      ? hslToHex(customizationData.primaryColor)
       : "#000000"
   );
   const [secondaryColorHex, setSecondaryColorHex] = useState<string>(
-    customizationData?.secondaryColor 
-      ? hslToHex(customizationData.secondaryColor) 
+    customizationData?.secondaryColor
+      ? hslToHex(customizationData.secondaryColor)
       : "#ffffff"
   );
-  
+
   // Estados para cores da página de login
   const [loginButtonColorHex, setLoginButtonColorHex] = useState<string>(
-    customizationData?.loginButtonColor 
-      ? hslToHex(customizationData.loginButtonColor) 
+    customizationData?.loginButtonColor
+      ? hslToHex(customizationData.loginButtonColor)
       : "#3b82f6"
   );
   const [loginButtonTextColorHex, setLoginButtonTextColorHex] = useState<string>(
-    customizationData?.loginButtonTextColor 
-      ? hslToHex(customizationData.loginButtonTextColor) 
+    customizationData?.loginButtonTextColor
+      ? hslToHex(customizationData.loginButtonTextColor)
       : "#ffffff"
   );
   const [loginTitleColorHex, setLoginTitleColorHex] = useState<string>(
-    customizationData?.loginTitleColor 
-      ? hslToHex(customizationData.loginTitleColor) 
+    customizationData?.loginTitleColor
+      ? hslToHex(customizationData.loginTitleColor)
       : "#ffffff"
   );
   const [loginTextColorHex, setLoginTextColorHex] = useState<string>(
-    customizationData?.loginTextColor 
-      ? hslToHex(customizationData.loginTextColor) 
+    customizationData?.loginTextColor
+      ? hslToHex(customizationData.loginTextColor)
       : "#d1d5db"
   );
 
@@ -641,18 +641,18 @@ export default function CustomerWizardForm({
   // ✅ useEffect para atualizar DOM automaticamente quando customizationData mudar
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     // Atualizar favicon
     if (customizationData?.faviconUrl) {
       updateFaviconInDOM(customizationData.faviconUrl);
     }
-    
+
     // Atualizar cores
     updateColorsInDOM(
       customizationData?.primaryColor ?? undefined,
       customizationData?.secondaryColor ?? undefined
     );
-    
+
     // Atualizar background image
     if (customizationData?.loginImageUrl) {
       updateBackgroundImageInDOM(customizationData.loginImageUrl);
@@ -672,7 +672,7 @@ export default function CustomerWizardForm({
       }
 
       setImageFileName(file.name);
-      
+
       const MAX_SIZE = 3 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
         setImageError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 3MB`);
@@ -685,7 +685,7 @@ export default function CustomerWizardForm({
       try {
         // ✅ Comprimir imagem se necessário (máximo 0.8MB)
         const compressedFile = await compressImage(file, 0.8);
-        
+
         // Atualizar o input com o arquivo comprimido
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(compressedFile);
@@ -722,7 +722,7 @@ export default function CustomerWizardForm({
       }
 
       setLoginImageFileName(file.name);
-      
+
       const MAX_SIZE = 3 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
         setLoginImageError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 3MB`);
@@ -735,7 +735,7 @@ export default function CustomerWizardForm({
       try {
         // ✅ Comprimir imagem se necessário (máximo 0.8MB)
         const compressedFile = await compressImage(file, 0.8);
-        
+
         // Atualizar o input com o arquivo comprimido
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(compressedFile);
@@ -772,7 +772,7 @@ export default function CustomerWizardForm({
       }
 
       setFaviconFileName(file.name);
-      
+
       const MAX_SIZE = 3 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
         setFaviconError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 3MB`);
@@ -785,7 +785,7 @@ export default function CustomerWizardForm({
       try {
         // ✅ Comprimir imagem se necessário (máximo 0.5MB para favicon)
         const compressedFile = await compressImage(file, 0.5);
-        
+
         // Atualizar o input com o arquivo comprimido
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(compressedFile);
@@ -822,7 +822,7 @@ export default function CustomerWizardForm({
       }
 
       setEmailImageFileName(file.name);
-      
+
       const MAX_SIZE = 3 * 1024 * 1024;
       if (file.size > MAX_SIZE) {
         setEmailImageError(`❌ Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo permitido: 3MB`);
@@ -835,7 +835,7 @@ export default function CustomerWizardForm({
       try {
         // ✅ Comprimir imagem se necessário (máximo 0.8MB)
         const compressedFile = await compressImage(file, 0.8);
-        
+
         // Atualizar o input com o arquivo comprimido
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(compressedFile);
@@ -871,14 +871,14 @@ export default function CustomerWizardForm({
         formData.append("loginButtonTextColor", "#ffffff");
         formData.append("loginTitleColor", "#ffffff");
         formData.append("loginTextColor", "#d1d5db");
-        
+
         if (customizationData?.id) {
           formData.append("id", customizationData.id.toString());
           await updateCustomization(formData);
         } else {
           await saveCustomization(formData);
         }
-        
+
         router.refresh();
       } catch (error) {
         console.error("Erro ao salvar subdomain:", error);
@@ -886,7 +886,7 @@ export default function CustomerWizardForm({
         toast.error(errorMessage);
       }
     }
-    
+
     setNewCustomerId(id);
     setIsFirstStepComplete(true);
     loadUsers(id);
@@ -921,7 +921,7 @@ export default function CustomerWizardForm({
     setIsRemovingImage(true);
     try {
       const result = await removeImage({ customerId: newCustomerId, type });
-      
+
       if (result.success && result.customization) {
         setCustomizationData({
           imageUrl: result.customization.imageUrl ?? undefined,
@@ -978,7 +978,7 @@ export default function CustomerWizardForm({
     setIsRemovingImage(true);
     try {
       const result = await removeAllImages({ customerId: newCustomerId });
-      
+
       if (result.success && result.customization) {
         setCustomizationData({
           imageUrl: result.customization.imageUrl ?? undefined,
@@ -1063,7 +1063,7 @@ export default function CustomerWizardForm({
   };
 
   console.log("CUSTOMERID", newCustomerId);
-  
+
   const [iso, setIso] = useState<{
     name: string;
     subdomain: string;
@@ -1075,7 +1075,7 @@ export default function CustomerWizardForm({
   useEffect(() => {
     const initialSubdomain = customizationData?.subdomain || "";
     const initialName = customer?.name || "";
-    
+
     setIso({
       name: initialName,
       subdomain: initialSubdomain,
@@ -1129,7 +1129,7 @@ export default function CustomerWizardForm({
                             settlementManagementType: customer?.settlementManagementType || "",
                           };
                           const updatedId = await updateCustomer(updatedData);
-                          
+
                           if (iso.subdomain && iso.subdomain.trim() !== "") {
                             const formData = new FormData();
                             formData.append("customerId", updatedId.toString());
@@ -1140,7 +1140,7 @@ export default function CustomerWizardForm({
                             formData.append("loginButtonTextColor", loginButtonTextColorHex || "#ffffff");
                             formData.append("loginTitleColor", loginTitleColorHex || "#ffffff");
                             formData.append("loginTextColor", loginTextColorHex || "#d1d5db");
-                            
+
                             try {
                               if (customizationData?.id) {
                                 formData.append("id", customizationData.id.toString());
@@ -1172,7 +1172,7 @@ export default function CustomerWizardForm({
                           };
                           const newId = await insertCustomerFormAction(customerDataFixed);
                           toast.success("ISO criado com sucesso");
-                          
+
                           if (newId !== null && newId !== undefined) {
                             await handleFirstStepComplete(newId);
                             router.replace(`/customers/${newId}`, { scroll: false });
@@ -1202,7 +1202,7 @@ export default function CustomerWizardForm({
 
         {/* Seção 2: Personalização Visual */}
         <Collapsible open={section2Open && isFirstStepComplete} onOpenChange={(open) => isFirstStepComplete && setSection2Open(open)} className="border rounded-lg">
-          <CollapsibleTrigger 
+          <CollapsibleTrigger
             className="w-full px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!isFirstStepComplete}
           >
@@ -1280,7 +1280,7 @@ export default function CustomerWizardForm({
                   // ✅ ATUALIZAÇÃO OTIMISTA: assume sucesso e atualiza UI imediatamente
                   const primaryColorInput = formData.get("primaryColor") as string;
                   const secondaryColorInput = formData.get("secondaryColor") as string;
-                  
+
                   // Atualizar previews otimisticamente
                   const optimisticUpdate = {
                     ...customizationData,
@@ -1292,33 +1292,33 @@ export default function CustomerWizardForm({
                     id: customizationData?.id ?? 0,
                     subdomain: customizationData?.subdomain,
                   };
-                  
+
                   setCustomizationData(optimisticUpdate);
-                  
+
                   // ✅ ATUALIZAÇÃO INSTANTÂNEA OTIMISTA: Atualizar DOM imediatamente antes de salvar
                   // Isso garante feedback visual instantâneo
                   if (faviconPreview || customizationData?.faviconUrl) {
                     updateFaviconInDOM(faviconPreview || customizationData?.faviconUrl);
                   }
-                  
+
                   if (primaryColorInput || customizationData?.primaryColor) {
                     const primaryHsl = primaryColorInput ? hexToHslForUpdate(primaryColorInput) : customizationData?.primaryColor;
                     const secondaryHsl = secondaryColorInput ? hexToHslForUpdate(secondaryColorInput) : customizationData?.secondaryColor;
                     updateColorsInDOM(primaryHsl, secondaryHsl);
                   }
-                  
+
                   if (loginImagePreview || customizationData?.loginImageUrl) {
                     updateBackgroundImageInDOM(loginImagePreview || customizationData?.loginImageUrl);
                   }
 
                   try {
                     // Timeout para evitar travamentos (30 segundos)
-                    const timeoutPromise = new Promise((_, reject) => 
+                    const timeoutPromise = new Promise((_, reject) =>
                       setTimeout(() => reject(new Error("Timeout: Operação demorou muito tempo. Tente novamente.")), 30000)
                     );
 
                     let result;
-                    const savePromise = customizationData 
+                    const savePromise = customizationData
                       ? updateCustomization(formData)
                       : saveCustomization(formData);
 
@@ -1337,7 +1337,7 @@ export default function CustomerWizardForm({
                         faviconUrl: result.customization.faviconUrl ?? undefined,
                         emailImageUrl: result.customization.emailImageUrl ?? undefined,
                       });
-                      
+
                       // ✅ Atualizar estados de cores hex
                       if (result.customization.primaryColor) {
                         setPrimaryColorHex(hslToHex(result.customization.primaryColor));
@@ -1345,40 +1345,40 @@ export default function CustomerWizardForm({
                       if (result.customization.secondaryColor) {
                         setSecondaryColorHex(hslToHex(result.customization.secondaryColor));
                       }
-                      
+
                       // ✅ ATUALIZAÇÃO INSTANTÂNEA: Atualizar DOM imediatamente
                       // 1. Atualizar favicon
                       if (result.customization.faviconUrl) {
                         updateFaviconInDOM(result.customization.faviconUrl);
                       }
-                      
+
                       // 2. Atualizar logo
                       if (result.customization.imageUrl) {
                         updateLogoInDOM(result.customization.imageUrl);
                       }
-                      
+
                       // 3. Atualizar cores CSS variables
                       updateColorsInDOM(
                         result.customization.primaryColor ?? undefined,
                         result.customization.secondaryColor ?? undefined
                       );
-                      
+
                       // 4. Atualizar background image (login)
                       if (result.customization.loginImageUrl) {
                         updateBackgroundImageInDOM(result.customization.loginImageUrl);
                       }
-                      
+
                       // 5. Atualizar email image
                       if (result.customization.emailImageUrl) {
                         updateEmailImageInDOM(result.customization.emailImageUrl);
                       }
-                      
+
                       // Limpar previews
                       setImagePreview(null);
                       setLoginImagePreview(null);
                       setFaviconPreview(null);
                       setEmailImagePreview(null);
-                      
+
                       // ✅ Limpar inputs de arquivo (para permitir re-upload da mesma imagem)
                       // Usa a referência do formulário capturada no início
                       if (form) {
@@ -1387,7 +1387,7 @@ export default function CustomerWizardForm({
                           (input as HTMLInputElement).value = '';
                         });
                       }
-                      
+
                       if (result.customization.imageUrl) {
                         const filename = result.customization.imageUrl.split('/').pop() || 'logo atual';
                         setImageFileName(filename);
@@ -1407,14 +1407,14 @@ export default function CustomerWizardForm({
                     }
 
                     toast.success("Customização salva com sucesso!");
-                    
+
                     // NÃO faz router.refresh() para não sobrescrever atualizações otimistas
                     // O estado já foi atualizado acima e o DOM foi atualizado instantaneamente
                   } catch (error) {
                     console.error("Erro ao salvar a customização", error);
                     const errorMessage = error instanceof Error ? error.message : "Erro ao salvar a customização";
                     toast.error(errorMessage);
-                    
+
                     // Reverte atualização otimista em caso de erro apenas se necessário
                     // Não faz router.refresh() para não perder o estado atual
                   } finally {
@@ -1424,682 +1424,682 @@ export default function CustomerWizardForm({
                       setIsSavingCustomization(false);
                     }, 100);
                   }
-            }}
-            className="space-y-6"
-          >
-            <Card className="border-1">
-              {isFirstStepComplete && (
-                <>
-                  <CardContent>
-                    {/* LINHA 1: CORES */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                      {/* Cor Primária */}
-                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                        <label className="block text-sm font-medium text-white mb-4">
-                          <div className="flex items-center gap-1">
-                            <span>Cor Primária</span>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    type="button"
-                                    className="text-white p-1"
-                                  >
-                                    <Info className="w-4 h-4 text-gray-400" />
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">
-                                  <p>
-                                    A cor primária deve ser uma cor escura.
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        </label>
-                        <div className="flex items-center gap-3">
-                          <div className="relative w-[60px] h-12">
-                            <input
-                              type="color"
-                              name="primaryColor"
-                              value={primaryColorHex}
-                              onChange={(e) => {
-                                const hexColor = e.target.value;
-                                setPrimaryColorHex(hexColor);
-                                setCustomizationData(prev => ({
-                                  ...prev,
-                                  primaryColor: hexToHslForUpdate(hexColor),
-                                  id: prev?.id ?? 0,
-                                  subdomain: prev?.subdomain,
-                                  secondaryColor: prev?.secondaryColor,
-                                  imageUrl: prev?.imageUrl,
-                                  loginImageUrl: prev?.loginImageUrl,
-                                  faviconUrl: prev?.faviconUrl,
-                                  emailImageUrl: prev?.emailImageUrl,
-                                }));
-                              }}
-                              className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
-                            />
-                          </div>
-                          <input
-                            type="text"
-                            value={primaryColorHex}
-                            onChange={(e) => {
-                              const hexColor = e.target.value;
-                              setPrimaryColorHex(hexColor);
-                              if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                setCustomizationData(prev => ({
-                                  ...prev,
-                                  primaryColor: hexToHslForUpdate(hexColor),
-                                  id: prev?.id ?? 0,
-                                  subdomain: prev?.subdomain,
-                                  secondaryColor: prev?.secondaryColor,
-                                  imageUrl: prev?.imageUrl,
-                                  loginImageUrl: prev?.loginImageUrl,
-                                  faviconUrl: prev?.faviconUrl,
-                                  emailImageUrl: prev?.emailImageUrl,
-                                }));
-                              }
-                            }}
-                            className="flex-1 rounded-md border border-[#2a2a2a] h-12 px-4 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                            placeholder="#000000"
-                          />
-                          <div
-                            className="w-[100px] h-12 rounded-md border border-[#2a2a2a] flex-shrink-0"
-                            style={{ backgroundColor: primaryColorHex }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Cor Secundária */}
-                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                        <label className="block text-sm font-medium text-white mb-4">
-                          Cor Secundária
-                        </label>
-                        <div className="flex items-center gap-3">
-                          <div className="relative w-[60px] h-12">
-                            <input
-                              type="color"
-                              name="secondaryColor"
-                              value={secondaryColorHex}
-                              onChange={(e) => {
-                                const hexColor = e.target.value;
-                                setSecondaryColorHex(hexColor);
-                                setCustomizationData(prev => ({
-                                  ...prev,
-                                  secondaryColor: hexToHslForUpdate(hexColor),
-                                  id: prev?.id ?? 0,
-                                  subdomain: prev?.subdomain,
-                                  primaryColor: prev?.primaryColor,
-                                  imageUrl: prev?.imageUrl,
-                                  loginImageUrl: prev?.loginImageUrl,
-                                  faviconUrl: prev?.faviconUrl,
-                                  emailImageUrl: prev?.emailImageUrl,
-                                }));
-                              }}
-                              className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
-                            />
-                          </div>
-                          <input
-                            type="text"
-                            value={secondaryColorHex}
-                            onChange={(e) => {
-                              const hexColor = e.target.value;
-                              setSecondaryColorHex(hexColor);
-                              if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                setCustomizationData(prev => ({
-                                  ...prev,
-                                  secondaryColor: hexToHslForUpdate(hexColor),
-                                  id: prev?.id ?? 0,
-                                  subdomain: prev?.subdomain,
-                                  primaryColor: prev?.primaryColor,
-                                  imageUrl: prev?.imageUrl,
-                                  loginImageUrl: prev?.loginImageUrl,
-                                  faviconUrl: prev?.faviconUrl,
-                                  emailImageUrl: prev?.emailImageUrl,
-                                }));
-                              }
-                            }}
-                            className="flex-1 rounded-md border border-[#2a2a2a] h-12 px-4 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                            placeholder="#ffffff"
-                          />
-                          <div
-                            className="w-[100px] h-12 rounded-md border border-[#2a2a2a] flex-shrink-0"
-                            style={{ backgroundColor: secondaryColorHex }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* LINHA 1.5: CORES DA PÁGINA DE LOGIN */}
-                    <div className="mb-6">
-                      <h4 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
-                        <Palette className="w-4 h-4" />
-                        Cores da Página de Login
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {/* Cor do Botão */}
-                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                          <div className="flex items-center justify-between mb-4">
-                            <label className="text-sm font-medium text-white">
-                              Cor do Botão
+                }}
+                className="space-y-6"
+              >
+                <Card className="border-1">
+                  {isFirstStepComplete && (
+                    <>
+                      <CardContent>
+                        {/* LINHA 1: CORES */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                          {/* Cor Primária */}
+                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                            <label className="block text-sm font-medium text-white mb-4">
+                              <div className="flex items-center gap-1">
+                                <span>Cor Primária</span>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button
+                                        type="button"
+                                        className="text-white p-1"
+                                      >
+                                        <Info className="w-4 h-4 text-gray-400" />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      <p>
+                                        A cor primária deve ser uma cor escura.
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
                             </label>
-                            <div
-                              className="w-6 h-6 rounded border border-[#2a2a2a]"
-                              style={{ backgroundColor: loginButtonColorHex }}
-                            />
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="relative w-[50px] h-10">
+                            <div className="flex items-center gap-3">
+                              <div className="relative w-[60px] h-12">
+                                <input
+                                  type="color"
+                                  name="primaryColor"
+                                  value={primaryColorHex}
+                                  onChange={(e) => {
+                                    const hexColor = e.target.value;
+                                    setPrimaryColorHex(hexColor);
+                                    setCustomizationData(prev => ({
+                                      ...prev,
+                                      primaryColor: hexToHslForUpdate(hexColor),
+                                      id: prev?.id ?? 0,
+                                      subdomain: prev?.subdomain,
+                                      secondaryColor: prev?.secondaryColor,
+                                      imageUrl: prev?.imageUrl,
+                                      loginImageUrl: prev?.loginImageUrl,
+                                      faviconUrl: prev?.faviconUrl,
+                                      emailImageUrl: prev?.emailImageUrl,
+                                    }));
+                                  }}
+                                  className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                />
+                              </div>
                               <input
-                                type="color"
-                                name="loginButtonColor"
-                                value={loginButtonColorHex}
+                                type="text"
+                                value={primaryColorHex}
                                 onChange={(e) => {
                                   const hexColor = e.target.value;
-                                  setLoginButtonColorHex(hexColor);
-                                  setCustomizationData(prev => ({
-                                    ...prev,
-                                    loginButtonColor: hexToHslForUpdate(hexColor),
-                                    id: prev?.id ?? 0,
-                                  }));
+                                  setPrimaryColorHex(hexColor);
+                                  if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                    setCustomizationData(prev => ({
+                                      ...prev,
+                                      primaryColor: hexToHslForUpdate(hexColor),
+                                      id: prev?.id ?? 0,
+                                      subdomain: prev?.subdomain,
+                                      secondaryColor: prev?.secondaryColor,
+                                      imageUrl: prev?.imageUrl,
+                                      loginImageUrl: prev?.loginImageUrl,
+                                      faviconUrl: prev?.faviconUrl,
+                                      emailImageUrl: prev?.emailImageUrl,
+                                    }));
+                                  }
                                 }}
-                                className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                className="flex-1 rounded-md border border-[#2a2a2a] h-12 px-4 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                placeholder="#000000"
+                              />
+                              <div
+                                className="w-[100px] h-12 rounded-md border border-[#2a2a2a] flex-shrink-0"
+                                style={{ backgroundColor: primaryColorHex }}
                               />
                             </div>
-                            <input
-                              type="text"
-                              value={loginButtonColorHex}
-                              onChange={(e) => {
-                                const hexColor = e.target.value;
-                                setLoginButtonColorHex(hexColor);
-                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                  setCustomizationData(prev => ({
-                                    ...prev,
-                                    loginButtonColor: hexToHslForUpdate(hexColor),
-                                    id: prev?.id ?? 0,
-                                  }));
-                                }
-                              }}
-                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                              placeholder="#3b82f6"
-                            />
                           </div>
-                        </div>
 
-                        {/* Cor do Texto do Botão */}
-                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                          <div className="flex items-center justify-between mb-4">
-                            <label className="text-sm font-medium text-white">
-                              Texto do Botão
+                          {/* Cor Secundária */}
+                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                            <label className="block text-sm font-medium text-white mb-4">
+                              Cor Secundária
                             </label>
-                            <div
-                              className="w-6 h-6 rounded border border-[#2a2a2a]"
-                              style={{ backgroundColor: loginButtonTextColorHex }}
-                            />
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="relative w-[50px] h-10">
+                            <div className="flex items-center gap-3">
+                              <div className="relative w-[60px] h-12">
+                                <input
+                                  type="color"
+                                  name="secondaryColor"
+                                  value={secondaryColorHex}
+                                  onChange={(e) => {
+                                    const hexColor = e.target.value;
+                                    setSecondaryColorHex(hexColor);
+                                    setCustomizationData(prev => ({
+                                      ...prev,
+                                      secondaryColor: hexToHslForUpdate(hexColor),
+                                      id: prev?.id ?? 0,
+                                      subdomain: prev?.subdomain,
+                                      primaryColor: prev?.primaryColor,
+                                      imageUrl: prev?.imageUrl,
+                                      loginImageUrl: prev?.loginImageUrl,
+                                      faviconUrl: prev?.faviconUrl,
+                                      emailImageUrl: prev?.emailImageUrl,
+                                    }));
+                                  }}
+                                  className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                />
+                              </div>
                               <input
-                                type="color"
-                                name="loginButtonTextColor"
-                                value={loginButtonTextColorHex}
+                                type="text"
+                                value={secondaryColorHex}
                                 onChange={(e) => {
                                   const hexColor = e.target.value;
-                                  setLoginButtonTextColorHex(hexColor);
-                                  setCustomizationData(prev => ({
-                                    ...prev,
-                                    loginButtonTextColor: hexToHslForUpdate(hexColor),
-                                    id: prev?.id ?? 0,
-                                  }));
+                                  setSecondaryColorHex(hexColor);
+                                  if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                    setCustomizationData(prev => ({
+                                      ...prev,
+                                      secondaryColor: hexToHslForUpdate(hexColor),
+                                      id: prev?.id ?? 0,
+                                      subdomain: prev?.subdomain,
+                                      primaryColor: prev?.primaryColor,
+                                      imageUrl: prev?.imageUrl,
+                                      loginImageUrl: prev?.loginImageUrl,
+                                      faviconUrl: prev?.faviconUrl,
+                                      emailImageUrl: prev?.emailImageUrl,
+                                    }));
+                                  }
                                 }}
-                                className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                className="flex-1 rounded-md border border-[#2a2a2a] h-12 px-4 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                placeholder="#ffffff"
+                              />
+                              <div
+                                className="w-[100px] h-12 rounded-md border border-[#2a2a2a] flex-shrink-0"
+                                style={{ backgroundColor: secondaryColorHex }}
                               />
                             </div>
-                            <input
-                              type="text"
-                              value={loginButtonTextColorHex}
-                              onChange={(e) => {
-                                const hexColor = e.target.value;
-                                setLoginButtonTextColorHex(hexColor);
-                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                  setCustomizationData(prev => ({
-                                    ...prev,
-                                    loginButtonTextColor: hexToHslForUpdate(hexColor),
-                                    id: prev?.id ?? 0,
-                                  }));
-                                }
-                              }}
-                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                              placeholder="#ffffff"
-                            />
                           </div>
                         </div>
 
-                        {/* Cor do Título */}
-                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                          <div className="flex items-center justify-between mb-4">
-                            <label className="text-sm font-medium text-white">
-                              Cor do Título
+                        {/* LINHA 1.5: CORES DA PÁGINA DE LOGIN */}
+                        <div className="mb-6">
+                          <h4 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                            <Palette className="w-4 h-4" />
+                            Cores da Página de Login
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {/* Cor do Botão */}
+                            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                              <div className="flex items-center justify-between mb-4">
+                                <label className="text-sm font-medium text-white">
+                                  Cor do Botão
+                                </label>
+                                <div
+                                  className="w-6 h-6 rounded border border-[#2a2a2a]"
+                                  style={{ backgroundColor: loginButtonColorHex }}
+                                />
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-[50px] h-10">
+                                  <input
+                                    type="color"
+                                    name="loginButtonColor"
+                                    value={loginButtonColorHex}
+                                    onChange={(e) => {
+                                      const hexColor = e.target.value;
+                                      setLoginButtonColorHex(hexColor);
+                                      setCustomizationData(prev => ({
+                                        ...prev,
+                                        loginButtonColor: hexToHslForUpdate(hexColor),
+                                        id: prev?.id ?? 0,
+                                      }));
+                                    }}
+                                    className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                  />
+                                </div>
+                                <input
+                                  type="text"
+                                  value={loginButtonColorHex}
+                                  onChange={(e) => {
+                                    const hexColor = e.target.value;
+                                    setLoginButtonColorHex(hexColor);
+                                    if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                      setCustomizationData(prev => ({
+                                        ...prev,
+                                        loginButtonColor: hexToHslForUpdate(hexColor),
+                                        id: prev?.id ?? 0,
+                                      }));
+                                    }
+                                  }}
+                                  className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                  placeholder="#3b82f6"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Cor do Texto do Botão */}
+                            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                              <div className="flex items-center justify-between mb-4">
+                                <label className="text-sm font-medium text-white">
+                                  Texto do Botão
+                                </label>
+                                <div
+                                  className="w-6 h-6 rounded border border-[#2a2a2a]"
+                                  style={{ backgroundColor: loginButtonTextColorHex }}
+                                />
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-[50px] h-10">
+                                  <input
+                                    type="color"
+                                    name="loginButtonTextColor"
+                                    value={loginButtonTextColorHex}
+                                    onChange={(e) => {
+                                      const hexColor = e.target.value;
+                                      setLoginButtonTextColorHex(hexColor);
+                                      setCustomizationData(prev => ({
+                                        ...prev,
+                                        loginButtonTextColor: hexToHslForUpdate(hexColor),
+                                        id: prev?.id ?? 0,
+                                      }));
+                                    }}
+                                    className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                  />
+                                </div>
+                                <input
+                                  type="text"
+                                  value={loginButtonTextColorHex}
+                                  onChange={(e) => {
+                                    const hexColor = e.target.value;
+                                    setLoginButtonTextColorHex(hexColor);
+                                    if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                      setCustomizationData(prev => ({
+                                        ...prev,
+                                        loginButtonTextColor: hexToHslForUpdate(hexColor),
+                                        id: prev?.id ?? 0,
+                                      }));
+                                    }
+                                  }}
+                                  className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                  placeholder="#ffffff"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Cor do Título */}
+                            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                              <div className="flex items-center justify-between mb-4">
+                                <label className="text-sm font-medium text-white">
+                                  Cor do Título
+                                </label>
+                                <div
+                                  className="w-6 h-6 rounded border border-[#2a2a2a]"
+                                  style={{ backgroundColor: loginTitleColorHex }}
+                                />
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-[50px] h-10">
+                                  <input
+                                    type="color"
+                                    name="loginTitleColor"
+                                    value={loginTitleColorHex}
+                                    onChange={(e) => {
+                                      const hexColor = e.target.value;
+                                      setLoginTitleColorHex(hexColor);
+                                      setCustomizationData(prev => ({
+                                        ...prev,
+                                        loginTitleColor: hexToHslForUpdate(hexColor),
+                                        id: prev?.id ?? 0,
+                                      }));
+                                    }}
+                                    className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                  />
+                                </div>
+                                <input
+                                  type="text"
+                                  value={loginTitleColorHex}
+                                  onChange={(e) => {
+                                    const hexColor = e.target.value;
+                                    setLoginTitleColorHex(hexColor);
+                                    if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                      setCustomizationData(prev => ({
+                                        ...prev,
+                                        loginTitleColor: hexToHslForUpdate(hexColor),
+                                        id: prev?.id ?? 0,
+                                      }));
+                                    }
+                                  }}
+                                  className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                  placeholder="#ffffff"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Cor do Texto */}
+                            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                              <div className="flex items-center justify-between mb-4">
+                                <label className="text-sm font-medium text-white">
+                                  Cor do Texto
+                                </label>
+                                <div
+                                  className="w-6 h-6 rounded border border-[#2a2a2a]"
+                                  style={{ backgroundColor: loginTextColorHex }}
+                                />
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-[50px] h-10">
+                                  <input
+                                    type="color"
+                                    name="loginTextColor"
+                                    value={loginTextColorHex}
+                                    onChange={(e) => {
+                                      const hexColor = e.target.value;
+                                      setLoginTextColorHex(hexColor);
+                                      setCustomizationData(prev => ({
+                                        ...prev,
+                                        loginTextColor: hexToHslForUpdate(hexColor),
+                                        id: prev?.id ?? 0,
+                                      }));
+                                    }}
+                                    className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                  />
+                                </div>
+                                <input
+                                  type="text"
+                                  value={loginTextColorHex}
+                                  onChange={(e) => {
+                                    const hexColor = e.target.value;
+                                    setLoginTextColorHex(hexColor);
+                                    if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                      setCustomizationData(prev => ({
+                                        ...prev,
+                                        loginTextColor: hexToHslForUpdate(hexColor),
+                                        id: prev?.id ?? 0,
+                                      }));
+                                    }
+                                  }}
+                                  className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                  placeholder="#d1d5db"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* LINHA 2: 3 CARDS DE IMAGENS */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                          {/* Card 1: Logotipo Principal */}
+                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                            <label className="text-sm font-medium text-white mb-1">
+                              Imagem ou Logotipo
                             </label>
-                            <div
-                              className="w-6 h-6 rounded border border-[#2a2a2a]"
-                              style={{ backgroundColor: loginTitleColorHex }}
-                            />
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="relative w-[50px] h-10">
-                              <input
-                                type="color"
-                                name="loginTitleColor"
-                                value={loginTitleColorHex}
-                                onChange={(e) => {
-                                  const hexColor = e.target.value;
-                                  setLoginTitleColorHex(hexColor);
-                                  setCustomizationData(prev => ({
-                                    ...prev,
-                                    loginTitleColor: hexToHslForUpdate(hexColor),
-                                    id: prev?.id ?? 0,
-                                  }));
-                                }}
-                                className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
-                              />
-                            </div>
-                            <input
-                              type="text"
-                              value={loginTitleColorHex}
-                              onChange={(e) => {
-                                const hexColor = e.target.value;
-                                setLoginTitleColorHex(hexColor);
-                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                  setCustomizationData(prev => ({
-                                    ...prev,
-                                    loginTitleColor: hexToHslForUpdate(hexColor),
-                                    id: prev?.id ?? 0,
-                                  }));
-                                }
-                              }}
-                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                              placeholder="#ffffff"
-                            />
-                          </div>
-                        </div>
+                            <p className="text-xs text-gray-400 mb-4">
+                              SVG (preferencial), PNG ou JPG • Proporção 3:1 a 4:1 • 448×160px (2×) ou 672×240px (3×) • Máx. 100KB
+                            </p>
 
-                        {/* Cor do Texto */}
-                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                          <div className="flex items-center justify-between mb-4">
-                            <label className="text-sm font-medium text-white">
-                              Cor do Texto
+                            <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors ${(imagePreview || customizationData?.imageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                              {imagePreview ? (
+                                <img src={imagePreview} alt="Preview" className="max-w-full max-h-[180px] object-contain" />
+                              ) : customizationData?.imageUrl ? (
+                                <img src={addCacheBustingToUrl(customizationData.imageUrl)} alt="Logo atual" className="max-w-full max-h-[180px] object-contain" key={customizationData.imageUrl} />
+                              ) : (
+                                <div className="text-center text-[#606060]">
+                                  <div className="text-5xl mb-2 opacity-50">🖼️</div>
+                                  <div className="text-xs">Nenhuma imagem selecionada</div>
+                                </div>
+                              )}
+                            </div>
+
+                            {imageError && (
+                              <p className="text-xs text-orange-600 font-medium mb-2">
+                                {imageError}
+                              </p>
+                            )}
+
+                            <div className="relative mb-3">
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/svg+xml"
+                                name="image"
+                                id="image"
+                                onChange={handleImageChange}
+                                className="hidden"
+                              />
+                              <label
+                                htmlFor="image"
+                                className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                              >
+                                <span>📁</span>
+                                <span>Selecionar arquivo</span>
+                              </label>
+                            </div>
+
+                            {imageFileName && (
+                              <p className="text-xs text-green-600 font-medium mb-3">
+                                ✓ Arquivo selecionado: {imageFileName}
+                              </p>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImageRequest('logo')}
+                              disabled={isRemovingImage || (!imagePreview && !customizationData?.imageUrl)}
+                              className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                            >
+                              <span>🗑️</span>
+                              <span>{isRemovingImage ? "Removendo..." : "Remover logo"}</span>
+                            </button>
+                          </div>
+
+                          {/* Card 2: Logo para Email e Relatórios */}
+                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                            <label className="text-sm font-medium text-white mb-1">
+                              Logo para Email e Relatórios
                             </label>
-                            <div
-                              className="w-6 h-6 rounded border border-[#2a2a2a]"
-                              style={{ backgroundColor: loginTextColorHex }}
-                            />
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="relative w-[50px] h-10">
+                            <p className="text-xs text-gray-400 mb-4">
+                              SVG (preferencial), PNG ou JPG • Recomendado: logo com fundo transparente ou versão adequada para fundo branco • Máx. 3MB
+                            </p>
+
+                            <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors ${(emailImagePreview || customizationData?.emailImageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                              {emailImagePreview ? (
+                                <img src={emailImagePreview} alt="Preview" className="max-w-full max-h-[180px] object-contain" />
+                              ) : customizationData?.emailImageUrl ? (
+                                <img src={addCacheBustingToUrl(customizationData.emailImageUrl)} alt="Logo de email atual" className="max-w-full max-h-[180px] object-contain" key={customizationData.emailImageUrl} />
+                              ) : (
+                                <div className="text-center text-[#606060]">
+                                  <div className="text-5xl mb-2 opacity-50">📧</div>
+                                  <div className="text-xs">Nenhuma imagem selecionada</div>
+                                </div>
+                              )}
+                            </div>
+
+                            {emailImageError && (
+                              <p className="text-xs text-orange-600 font-medium mb-2">
+                                {emailImageError}
+                              </p>
+                            )}
+
+                            <div className="relative mb-3">
                               <input
-                                type="color"
-                                name="loginTextColor"
-                                value={loginTextColorHex}
-                                onChange={(e) => {
-                                  const hexColor = e.target.value;
-                                  setLoginTextColorHex(hexColor);
-                                  setCustomizationData(prev => ({
-                                    ...prev,
-                                    loginTextColor: hexToHslForUpdate(hexColor),
-                                    id: prev?.id ?? 0,
-                                  }));
-                                }}
-                                className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/svg+xml"
+                                name="emailImage"
+                                id="emailImage"
+                                onChange={handleEmailImageChange}
+                                className="hidden"
                               />
+                              <label
+                                htmlFor="emailImage"
+                                className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                              >
+                                <span>📁</span>
+                                <span>Selecionar arquivo</span>
+                              </label>
                             </div>
-                            <input
-                              type="text"
-                              value={loginTextColorHex}
-                              onChange={(e) => {
-                                const hexColor = e.target.value;
-                                setLoginTextColorHex(hexColor);
-                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                  setCustomizationData(prev => ({
-                                    ...prev,
-                                    loginTextColor: hexToHslForUpdate(hexColor),
-                                    id: prev?.id ?? 0,
-                                  }));
-                                }
-                              }}
-                              className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                              placeholder="#d1d5db"
-                            />
+
+                            {emailImageFileName && (
+                              <p className="text-xs text-green-600 font-medium mb-3">
+                                ✓ Arquivo selecionado: {emailImageFileName}
+                              </p>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImageRequest('email')}
+                              disabled={isRemovingImage || (!emailImagePreview && !customizationData?.emailImageUrl)}
+                              className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                            >
+                              <span>🗑️</span>
+                              <span>{isRemovingImage ? "Removendo..." : "Remover logo de email"}</span>
+                            </button>
+                          </div>
+
+                          {/* Card 3: Favicon */}
+                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                            <label className="text-sm font-medium text-white mb-1">
+                              Favicon
+                            </label>
+                            <p className="text-xs text-gray-400 mb-4">
+                              ICO ou PNG • 32×32px ou 16×16px • Quadrado • Máx. 100KB
+                            </p>
+
+                            <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[120px] flex items-center justify-center mb-4 transition-colors ${(faviconPreview || customizationData?.faviconUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                              {faviconPreview ? (
+                                <div className="flex gap-4 items-center">
+                                  <div className="flex flex-col items-center gap-1">
+                                    <img src={faviconPreview} alt="Favicon 16x16" width={16} height={16} className="border border-[#2a2a2a]" />
+                                    <span className="text-xs text-gray-400">16×16</span>
+                                  </div>
+                                  <div className="flex flex-col items-center gap-1">
+                                    <img src={faviconPreview} alt="Favicon 32x32" width={32} height={32} className="border border-[#2a2a2a]" />
+                                    <span className="text-xs text-gray-400">32×32</span>
+                                  </div>
+                                </div>
+                              ) : customizationData?.faviconUrl ? (
+                                <div className="flex gap-4 items-center">
+                                  <div className="flex flex-col items-center gap-1">
+                                    <img src={addCacheBustingToUrl(customizationData.faviconUrl)} alt="Favicon 16x16" width={16} height={16} className="border border-[#2a2a2a]" key={`${customizationData.faviconUrl}-16`} />
+                                    <span className="text-xs text-gray-400">16×16</span>
+                                  </div>
+                                  <div className="flex flex-col items-center gap-1">
+                                    <img src={addCacheBustingToUrl(customizationData.faviconUrl)} alt="Favicon 32x32" width={32} height={32} className="border border-[#2a2a2a]" key={`${customizationData.faviconUrl}-32`} />
+                                    <span className="text-xs text-gray-400">32×32</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-center text-[#606060]">
+                                  <div className="text-5xl mb-2 opacity-50">⭐</div>
+                                  <div className="text-xs">Nenhum ícone selecionado</div>
+                                </div>
+                              )}
+                            </div>
+
+                            {faviconError && (
+                              <p className="text-xs text-orange-600 font-medium mb-2">
+                                {faviconError}
+                              </p>
+                            )}
+
+                            <div className="relative mb-3">
+                              <input
+                                type="file"
+                                accept="image/x-icon,image/vnd.microsoft.icon,image/ico,image/png"
+                                name="favicon"
+                                id="favicon"
+                                onChange={handleFaviconChange}
+                                className="hidden"
+                              />
+                              <label
+                                htmlFor="favicon"
+                                className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                              >
+                                <span>📁</span>
+                                <span>Selecionar arquivo</span>
+                              </label>
+                            </div>
+
+                            {faviconFileName && (
+                              <p className="text-xs text-green-600 font-medium mb-3">
+                                ✓ Arquivo selecionado: {faviconFileName}
+                              </p>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImageRequest('favicon')}
+                              disabled={isRemovingImage || (!faviconPreview && !customizationData?.faviconUrl)}
+                              className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                            >
+                              <span>🗑️</span>
+                              <span>{isRemovingImage ? "Removendo..." : "Remover favicon"}</span>
+                            </button>
                           </div>
                         </div>
-                      </div>
-                    </div>
 
-                    {/* LINHA 2: 3 CARDS DE IMAGENS */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                      {/* Card 1: Logotipo Principal */}
-                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
-                        <label className="text-sm font-medium text-white mb-1">
-                          Imagem ou Logotipo
-                        </label>
-                        <p className="text-xs text-gray-400 mb-4">
-                          SVG (preferencial), PNG ou JPG • Proporção 3:1 a 4:1 • 448×160px (2×) ou 672×240px (3×) • Máx. 100KB
-                        </p>
-                        
-                        <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors ${(imagePreview || customizationData?.imageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
-                          {imagePreview ? (
-                            <img src={imagePreview} alt="Preview" className="max-w-full max-h-[180px] object-contain" />
-                          ) : customizationData?.imageUrl ? (
-                            <img src={addCacheBustingToUrl(customizationData.imageUrl)} alt="Logo atual" className="max-w-full max-h-[180px] object-contain" key={customizationData.imageUrl} />
-                          ) : (
-                            <div className="text-center text-[#606060]">
-                              <div className="text-5xl mb-2 opacity-50">🖼️</div>
-                              <div className="text-xs">Nenhuma imagem selecionada</div>
+                        {/* LINHA 3: IMAGEM DE FUNDO DO LOGIN */}
+                        <div className="w-full md:w-1/3 mb-10">
+                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                            <label className="text-sm font-medium text-white mb-1">
+                              Imagem de Fundo do Login
+                            </label>
+                            <p className="text-xs text-gray-400 mb-4">
+                              WebP (preferencial) ou JPG/PNG • 1600×1200px (4:3) ou 1920×1440px • Conteúdo centralizado • Máx. 3MB
+                            </p>
+
+                            <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors overflow-hidden ${(loginImagePreview || customizationData?.loginImageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                              {loginImagePreview ? (
+                                <img src={loginImagePreview} alt="Preview" className="w-full h-48 object-cover" />
+                              ) : customizationData?.loginImageUrl ? (
+                                <img src={addCacheBustingToUrl(customizationData.loginImageUrl)} alt="Imagem de fundo atual" className="w-full h-48 object-cover" key={customizationData.loginImageUrl} />
+                              ) : (
+                                <div className="text-center text-[#606060]">
+                                  <div className="text-5xl mb-2 opacity-50">🖼️</div>
+                                  <div className="text-xs">Nenhuma imagem selecionada</div>
+                                </div>
+                              )}
                             </div>
-                          )}
+
+                            {loginImageError && (
+                              <p className="text-xs text-orange-600 font-medium mb-2">
+                                {loginImageError}
+                              </p>
+                            )}
+
+                            <div className="relative mb-3">
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/webp"
+                                name="loginImage"
+                                id="loginImage"
+                                onChange={handleLoginImageChange}
+                                className="hidden"
+                              />
+                              <label
+                                htmlFor="loginImage"
+                                className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                              >
+                                <span>📁</span>
+                                <span>Selecionar arquivo</span>
+                              </label>
+                            </div>
+
+                            {loginImageFileName && (
+                              <p className="text-xs text-green-600 font-medium mb-3">
+                                ✓ Arquivo selecionado: {loginImageFileName}
+                              </p>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImageRequest('login')}
+                              disabled={isRemovingImage || (!loginImagePreview && !customizationData?.loginImageUrl)}
+                              className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                            >
+                              <span>🗑️</span>
+                              <span>{isRemovingImage ? "Removendo..." : "Remover imagem de login"}</span>
+                            </button>
+                          </div>
                         </div>
 
-                        {imageError && (
-                          <p className="text-xs text-orange-600 font-medium mb-2">
-                            {imageError}
-                          </p>
+                        {/* Botão Remover Todas as Imagens */}
+                        {(customizationData?.imageUrl || customizationData?.loginImageUrl || customizationData?.faviconUrl || customizationData?.emailImageUrl) && (
+                          <div className="mb-6">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
+                              onClick={handleRemoveAllImagesRequest}
+                              disabled={isRemovingImage}
+                            >
+                              {isRemovingImage ? "Removendo..." : "Remover todas as imagens"}
+                            </Button>
+                          </div>
                         )}
 
-                        <div className="relative mb-3">
+                        {/* Campos ocultos */}
+                        {customizationData?.id && (
                           <input
-                            type="file"
-                            accept="image/jpeg,image/jpg,image/png,image/svg+xml"
-                            name="image"
-                            id="image"
-                            onChange={handleImageChange}
-                            className="hidden"
+                            type="hidden"
+                            name="id"
+                            value={customizationData.id}
                           />
-                          <label
-                            htmlFor="image"
-                            className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
-                          >
-                            <span>📁</span>
-                            <span>Selecionar arquivo</span>
-                          </label>
-                        </div>
-
-                        {imageFileName && (
-                          <p className="text-xs text-green-600 font-medium mb-3">
-                            ✓ Arquivo selecionado: {imageFileName}
-                          </p>
                         )}
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImageRequest('logo')}
-                          disabled={isRemovingImage || (!imagePreview && !customizationData?.imageUrl)}
-                          className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
-                        >
-                          <span>🗑️</span>
-                          <span>{isRemovingImage ? "Removendo..." : "Remover logo"}</span>
-                        </button>
-                      </div>
-
-                      {/* Card 2: Logo para Email e Relatórios */}
-                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
-                        <label className="text-sm font-medium text-white mb-1">
-                          Logo para Email e Relatórios
-                        </label>
-                        <p className="text-xs text-gray-400 mb-4">
-                          SVG (preferencial), PNG ou JPG • Recomendado: logo com fundo transparente ou versão adequada para fundo branco • Máx. 3MB
-                        </p>
-                        
-                        <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors ${(emailImagePreview || customizationData?.emailImageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
-                          {emailImagePreview ? (
-                            <img src={emailImagePreview} alt="Preview" className="max-w-full max-h-[180px] object-contain" />
-                          ) : customizationData?.emailImageUrl ? (
-                            <img src={addCacheBustingToUrl(customizationData.emailImageUrl)} alt="Logo de email atual" className="max-w-full max-h-[180px] object-contain" key={customizationData.emailImageUrl} />
-                          ) : (
-                            <div className="text-center text-[#606060]">
-                              <div className="text-5xl mb-2 opacity-50">📧</div>
-                              <div className="text-xs">Nenhuma imagem selecionada</div>
-                            </div>
-                          )}
-                        </div>
-
-                        {emailImageError && (
-                          <p className="text-xs text-orange-600 font-medium mb-2">
-                            {emailImageError}
-                          </p>
-                        )}
-
-                        <div className="relative mb-3">
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/jpg,image/png,image/svg+xml"
-                            name="emailImage"
-                            id="emailImage"
-                            onChange={handleEmailImageChange}
-                            className="hidden"
-                          />
-                          <label
-                            htmlFor="emailImage"
-                            className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
-                          >
-                            <span>📁</span>
-                            <span>Selecionar arquivo</span>
-                          </label>
-                        </div>
-
-                        {emailImageFileName && (
-                          <p className="text-xs text-green-600 font-medium mb-3">
-                            ✓ Arquivo selecionado: {emailImageFileName}
-                          </p>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImageRequest('email')}
-                          disabled={isRemovingImage || (!emailImagePreview && !customizationData?.emailImageUrl)}
-                          className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
-                        >
-                          <span>🗑️</span>
-                          <span>{isRemovingImage ? "Removendo..." : "Remover logo de email"}</span>
-                        </button>
-                      </div>
-
-                      {/* Card 3: Favicon */}
-                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
-                        <label className="text-sm font-medium text-white mb-1">
-                          Favicon
-                        </label>
-                        <p className="text-xs text-gray-400 mb-4">
-                          ICO ou PNG • 32×32px ou 16×16px • Quadrado • Máx. 100KB
-                        </p>
-                        
-                        <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[120px] flex items-center justify-center mb-4 transition-colors ${(faviconPreview || customizationData?.faviconUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
-                          {faviconPreview ? (
-                            <div className="flex gap-4 items-center">
-                              <div className="flex flex-col items-center gap-1">
-                                <img src={faviconPreview} alt="Favicon 16x16" width={16} height={16} className="border border-[#2a2a2a]" />
-                                <span className="text-xs text-gray-400">16×16</span>
-                              </div>
-                              <div className="flex flex-col items-center gap-1">
-                                <img src={faviconPreview} alt="Favicon 32x32" width={32} height={32} className="border border-[#2a2a2a]" />
-                                <span className="text-xs text-gray-400">32×32</span>
-                              </div>
-                            </div>
-                          ) : customizationData?.faviconUrl ? (
-                            <div className="flex gap-4 items-center">
-                              <div className="flex flex-col items-center gap-1">
-                                <img src={addCacheBustingToUrl(customizationData.faviconUrl)} alt="Favicon 16x16" width={16} height={16} className="border border-[#2a2a2a]" key={`${customizationData.faviconUrl}-16`} />
-                                <span className="text-xs text-gray-400">16×16</span>
-                              </div>
-                              <div className="flex flex-col items-center gap-1">
-                                <img src={addCacheBustingToUrl(customizationData.faviconUrl)} alt="Favicon 32x32" width={32} height={32} className="border border-[#2a2a2a]" key={`${customizationData.faviconUrl}-32`} />
-                                <span className="text-xs text-gray-400">32×32</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-center text-[#606060]">
-                              <div className="text-5xl mb-2 opacity-50">⭐</div>
-                              <div className="text-xs">Nenhum ícone selecionado</div>
-                            </div>
-                          )}
-                        </div>
-
-                        {faviconError && (
-                          <p className="text-xs text-orange-600 font-medium mb-2">
-                            {faviconError}
-                          </p>
-                        )}
-
-                        <div className="relative mb-3">
-                          <input
-                            type="file"
-                            accept="image/x-icon,image/vnd.microsoft.icon,image/ico,image/png"
-                            name="favicon"
-                            id="favicon"
-                            onChange={handleFaviconChange}
-                            className="hidden"
-                          />
-                          <label
-                            htmlFor="favicon"
-                            className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
-                          >
-                            <span>📁</span>
-                            <span>Selecionar arquivo</span>
-                          </label>
-                        </div>
-
-                        {faviconFileName && (
-                          <p className="text-xs text-green-600 font-medium mb-3">
-                            ✓ Arquivo selecionado: {faviconFileName}
-                          </p>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImageRequest('favicon')}
-                          disabled={isRemovingImage || (!faviconPreview && !customizationData?.faviconUrl)}
-                          className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
-                        >
-                          <span>🗑️</span>
-                          <span>{isRemovingImage ? "Removendo..." : "Remover favicon"}</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* LINHA 3: IMAGEM DE FUNDO DO LOGIN */}
-                    <div className="w-full md:w-1/3 mb-10">
-                      <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
-                        <label className="text-sm font-medium text-white mb-1">
-                          Imagem de Fundo do Login
-                        </label>
-                        <p className="text-xs text-gray-400 mb-4">
-                          WebP (preferencial) ou JPG/PNG • 1600×1200px (4:3) ou 1920×1440px • Conteúdo centralizado • Máx. 3MB
-                        </p>
-                        
-                        <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors overflow-hidden ${(loginImagePreview || customizationData?.loginImageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
-                          {loginImagePreview ? (
-                            <img src={loginImagePreview} alt="Preview" className="w-full h-48 object-cover" />
-                          ) : customizationData?.loginImageUrl ? (
-                            <img src={addCacheBustingToUrl(customizationData.loginImageUrl)} alt="Imagem de fundo atual" className="w-full h-48 object-cover" key={customizationData.loginImageUrl} />
-                          ) : (
-                            <div className="text-center text-[#606060]">
-                              <div className="text-5xl mb-2 opacity-50">🖼️</div>
-                              <div className="text-xs">Nenhuma imagem selecionada</div>
-                            </div>
-                          )}
-                        </div>
-
-                        {loginImageError && (
-                          <p className="text-xs text-orange-600 font-medium mb-2">
-                            {loginImageError}
-                          </p>
-                        )}
-
-                        <div className="relative mb-3">
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/jpg,image/png,image/webp"
-                            name="loginImage"
-                            id="loginImage"
-                            onChange={handleLoginImageChange}
-                            className="hidden"
-                          />
-                          <label
-                            htmlFor="loginImage"
-                            className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
-                          >
-                            <span>📁</span>
-                            <span>Selecionar arquivo</span>
-                          </label>
-                        </div>
-
-                        {loginImageFileName && (
-                          <p className="text-xs text-green-600 font-medium mb-3">
-                            ✓ Arquivo selecionado: {loginImageFileName}
-                          </p>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImageRequest('login')}
-                          disabled={isRemovingImage || (!loginImagePreview && !customizationData?.loginImageUrl)}
-                          className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
-                        >
-                          <span>🗑️</span>
-                          <span>{isRemovingImage ? "Removendo..." : "Remover imagem de login"}</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Botão Remover Todas as Imagens */}
-                    {(customizationData?.imageUrl || customizationData?.loginImageUrl || customizationData?.faviconUrl || customizationData?.emailImageUrl) && (
-                      <div className="mb-6">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
-                          onClick={handleRemoveAllImagesRequest}
-                          disabled={isRemovingImage}
-                        >
-                          {isRemovingImage ? "Removendo..." : "Remover todas as imagens"}
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Campos ocultos */}
-                    {customizationData?.id && (
-                      <input
-                        type="hidden"
-                        name="id"
-                        value={customizationData.id}
-                      />
-                    )}
-                    <input
-                      type="hidden"
-                      name="customerId"
-                      value={newCustomerId || ""}
-                    />
-                    <input
-                      type="hidden"
-                      name="subdomain"
-                      value={iso.subdomain || customizationData?.subdomain || ""}
-                    />
-                  </CardContent>
-                </>
-              )}
-                <div className="flex justify-end space-x-2 mt-4 pr-3">
-                  <Button
-                    type="submit"
-                    className="mt-6 p-2 cursor-pointer"
-                    disabled={isSavingCustomization}
-                  >
-                    {isSavingCustomization
-                      ? "Salvando..."
-                      : "Salvar Personalização"}
-                  </Button>
-                </div>
-              </Card>
-            </form>
+                        <input
+                          type="hidden"
+                          name="customerId"
+                          value={newCustomerId || ""}
+                        />
+                        <input
+                          type="hidden"
+                          name="subdomain"
+                          value={iso.subdomain || customizationData?.subdomain || ""}
+                        />
+                      </CardContent>
+                    </>
+                  )}
+                  <div className="flex justify-end space-x-2 mt-4 pr-3">
+                    <Button
+                      type="submit"
+                      className="mt-6 p-2 cursor-pointer"
+                      disabled={isSavingCustomization}
+                    >
+                      {isSavingCustomization
+                        ? "Salvando..."
+                        : "Salvar Personalização"}
+                    </Button>
+                  </div>
+                </Card>
+              </form>
             )}
             {!isFirstStepComplete && (
               <div className="text-center py-8 text-muted-foreground">
@@ -2111,7 +2111,7 @@ export default function CustomerWizardForm({
 
         {/* Seção 3: Gestão de Usuários */}
         <Collapsible open={section3Open && isFirstStepComplete} onOpenChange={(open) => isFirstStepComplete && setSection3Open(open)} className="border rounded-lg">
-          <CollapsibleTrigger 
+          <CollapsibleTrigger
             className="w-full px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!isFirstStepComplete}
           >
@@ -2203,13 +2203,13 @@ export default function CustomerWizardForm({
         onOpenChange={setConfirmRemoveImageOpen}
         title="Remover Imagem"
         description={
-          pendingRemoveImageType === 'logo' 
-            ? "Tem certeza que deseja remover o logo?" 
+          pendingRemoveImageType === 'logo'
+            ? "Tem certeza que deseja remover o logo?"
             : pendingRemoveImageType === 'login'
-            ? "Tem certeza que deseja remover a imagem de fundo do login?"
-            : pendingRemoveImageType === 'favicon'
-            ? "Tem certeza que deseja remover o favicon?"
-            : "Tem certeza que deseja remover a logo de email?"
+              ? "Tem certeza que deseja remover a imagem de fundo do login?"
+              : pendingRemoveImageType === 'favicon'
+                ? "Tem certeza que deseja remover o favicon?"
+                : "Tem certeza que deseja remover a logo de email?"
         }
         confirmText="Remover"
         cancelText="Cancelar"

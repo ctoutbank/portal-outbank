@@ -226,6 +226,7 @@ export async function getUserDetail(
       fullAccess: user.fullAccess || false,
       canViewSensitiveData: user.canViewSensitiveData || false,
       customerName,
+      imageUrl: null,
     };
 
     return userDetailForm;
@@ -296,9 +297,9 @@ export async function revealInitialPassword(userId: number): Promise<{
     }
 
     if (!user.initialPassword) {
-      return { 
-        success: false, 
-        error: "O usuário já alterou sua senha. A senha inicial não está mais disponível." 
+      return {
+        success: false,
+        error: "O usuário já alterou sua senha. A senha inicial não está mais disponível."
       };
     }
 
@@ -391,7 +392,7 @@ export async function deleteUser(id: number): Promise<boolean> {
     if (!canDelete) {
       throw new Error("Apenas Super Admin pode deletar usuários");
     }
-    
+
     // Verificar se o usuário existe
     const existingUser = await db.select().from(users).where(eq(users.id, id));
 
@@ -468,12 +469,12 @@ export async function deleteUser(id: number): Promise<boolean> {
     return true;
   } catch (error: any) {
     console.error("[deleteUser] ❌ Erro ao excluir usuário:", error);
-    
+
     // Verificar se é erro de foreign key constraint
     if (error?.code === '23503' || error?.message?.includes('foreign key constraint')) {
       throw new Error("Não é possível excluir este usuário pois ele possui relacionamentos com outros registros. Remova os relacionamentos primeiro.");
     }
-    
+
     // Relançar o erro para que o componente possa tratá-lo
     throw error;
   }
@@ -652,7 +653,7 @@ export async function resetUserPassword(userId: number): Promise<{
 
     // 7. Revalidar caminhos
     revalidatePath("/customers");
-    
+
     return {
       success: true,
       password: newPassword,
@@ -720,7 +721,7 @@ async function migrateCoreMarginsIfNeeded(customerId: number): Promise<void> {
 
     // Transferir margin_core para margin_outbank e zerar margin_core
     const newMarginOutbank = currentMarginOutbank + currentMarginCore;
-    
+
     await sqlVercel.query(`
       UPDATE iso_margin_config 
       SET margin_core = '0', 
@@ -750,7 +751,7 @@ export async function saveUserIsoCommissionLinks(
       .select()
       .from(userCustomers)
       .where(eq(userCustomers.idUser, userId));
-    
+
     // Detectar mudanças de CORE para outro tipo (para migração de margens)
     const coreToOtherChanges: number[] = [];
 
@@ -799,7 +800,7 @@ export async function saveUserIsoCommissionLinks(
         // Atualizar commission_type do vínculo existente
         await db
           .update(userCustomers)
-          .set({ 
+          .set({
             commissionType: link.commissionType,
             active: true,
           })

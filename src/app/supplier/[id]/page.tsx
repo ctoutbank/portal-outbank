@@ -27,7 +27,7 @@ interface CategoryWithMdr {
   mdr_data?: Record<string, string | null> | null;
 }
 
-interface FornecedorWithCategories extends Fornecedor {
+interface FornecedorWithCategories extends Omit<Fornecedor, 'categories'> {
   categories: CategoryWithMdr[];
 }
 
@@ -42,7 +42,7 @@ export default function FornecedorDetailsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('adquirencia');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,7 +52,7 @@ export default function FornecedorDetailsPage() {
     async function fetchData() {
       try {
         setLoading(true);
-        
+
         const supplierRes = await fetch(`/api/supplier/${params.id}`);
         if (!supplierRes.ok) {
           toast.error('Fornecedor não encontrado');
@@ -112,14 +112,14 @@ export default function FornecedorDetailsPage() {
     if (!fornecedor?.categories || !Array.isArray(fornecedor.categories)) {
       return [];
     }
-    
+
     return fornecedor.categories.map((cat) => {
       const completionInfo = getMdrCompletionStatus(
         cat.mdr_data,
         toBoolean(cat.suporta_pos),
         toBoolean(cat.suporta_online)
       );
-      
+
       return {
         id: cat.id,
         codigo: cat.cnae || '',
@@ -145,7 +145,7 @@ export default function FornecedorDetailsPage() {
 
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(c => 
+      result = result.filter(c =>
         (c.nome || '').toLowerCase().includes(term) ||
         (c.codigo || '').toLowerCase().includes(term) ||
         String(c.mcc || '').toLowerCase().includes(term)
@@ -171,7 +171,7 @@ export default function FornecedorDetailsPage() {
   }, [allCnaes, statusFilter, searchTerm]);
 
   const totalPages = Math.ceil(filteredCnaes.length / itemsPerPage);
-  
+
   const paginatedCnaes = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredCnaes.slice(startIndex, startIndex + itemsPerPage);
@@ -219,7 +219,7 @@ export default function FornecedorDetailsPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <BaseHeader 
+      <BaseHeader
         breadcrumbItems={[
           { title: 'Fornecedores', url: '/supplier' },
           { title: fornecedor.nome }
@@ -248,11 +248,10 @@ export default function FornecedorDetailsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-1 py-4 border-b-2 font-medium text-sm transition cursor-pointer ${
-                    activeTab === tab.id
+                  className={`flex items-center gap-2 px-1 py-4 border-b-2 font-medium text-sm transition cursor-pointer ${activeTab === tab.id
                       ? 'border-white text-white'
                       : 'border-transparent text-[#5C5C5C] hover:text-white'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   {tab.label}
@@ -286,11 +285,10 @@ export default function FornecedorDetailsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#5C5C5C] mb-1">Status</label>
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-[6px] ${
-                  fornecedor.ativo 
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-[6px] ${fornecedor.ativo
                     ? 'bg-green-900 text-green-200'
                     : 'bg-red-900 text-red-200'
-                }`}>
+                  }`}>
                   {fornecedor.ativo ? 'ATIVO' : 'INATIVO'}
                 </span>
               </div>
@@ -330,7 +328,7 @@ export default function FornecedorDetailsPage() {
                   Lista de MCCs vinculados a este fornecedor
                 </p>
               </div>
-              
+
               <div className="px-6 py-4 border-b border-[rgba(255,255,255,0.1)] flex flex-wrap gap-4">
                 <div className="relative flex-1 min-w-[250px]">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#616161] z-10" />
@@ -342,7 +340,7 @@ export default function FornecedorDetailsPage() {
                     className="pl-10 pr-4 h-[42px] bg-[#212121] border border-[#2E2E2E] rounded-[6px] text-white placeholder:text-[#616161] focus-visible:ring-2 focus-visible:ring-white"
                   />
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <Filter className="w-4 h-4 text-[#616161]" />
                   <select
@@ -382,7 +380,7 @@ export default function FornecedorDetailsPage() {
                     {paginatedCnaes.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-8 text-center text-[#5C5C5C]">
-                          {searchTerm || statusFilter !== 'all' 
+                          {searchTerm || statusFilter !== 'all'
                             ? 'Nenhum MCC encontrado com os filtros aplicados'
                             : 'Nenhum MCC associado a este fornecedor'}
                         </td>
@@ -391,8 +389,8 @@ export default function FornecedorDetailsPage() {
                       paginatedCnaes.map((cnae) => (
                         <tr key={cnae.id} className="hover:bg-[#1D1D1D] transition cursor-pointer" onClick={() => router.push(`/supplier/${params.id}/cnae/${cnae.id}`)}>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <MdrCompletionBadge 
-                              status={cnae.completionStatus} 
+                            <MdrCompletionBadge
+                              status={cnae.completionStatus}
                               percentage={cnae.completionPercentage}
                               showPercentage={cnae.completionStatus === 'incompleta'}
                             />
@@ -420,7 +418,7 @@ export default function FornecedorDetailsPage() {
                   </tbody>
                 </table>
               </div>
-              
+
               {filteredCnaes.length > 0 && (
                 <div className="px-6 py-4 border-t border-[rgba(255,255,255,0.1)] flex justify-between items-center">
                   <div className="flex items-center gap-4">

@@ -79,14 +79,14 @@ export default async function UserDetailPage({ params }: PageProps) {
   let customers: Awaited<ReturnType<typeof getAvailableCustomers>>;
   let adminCustomers: Awaited<ReturnType<typeof getAdminCustomers>> = [];
   let isoCommissionLinks: Awaited<ReturnType<typeof getUserIsoCommissionLinks>> = [];
-  
+
   try {
     [user, profiles, customers] = await Promise.all([
       getUserDetail(userId),
       getAllProfiles(),
       getAvailableCustomers(),
     ]);
-    
+
     // Buscar ISOs autorizados separadamente com tratamento de erro robusto
     try {
       adminCustomers = await getAdminCustomers(userId);
@@ -148,7 +148,7 @@ export default async function UserDetailPage({ params }: PageProps) {
         breadcrumbItems={[
           { title: "Configurações", url: "/config" },
           { title: "Usuários", url: "/config/users" },
-          { title: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || "Editar Usuário" },
+          { title: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : "Editar Usuário" },
         ]}
         showBackButton={true}
         backHref="/config/users"

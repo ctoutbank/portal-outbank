@@ -22,7 +22,6 @@ export type CustomerCustomization = {
   loginImageUrl: string | null;
   faviconUrl: string | null;
   emailImageUrl: string | null;
-  menuIconUrl: string | null;
   customerId: number | null;
 };
 
@@ -922,7 +921,7 @@ const removeAllImagesSchema = z.object({
   customerId: z.coerce.number(),
 });
 
-export async function removeImage(data: { customerId: number; type: 'logo' | 'login' | 'favicon' | 'email' | 'menuIcon' }) {
+export async function removeImage(data: { customerId: number; type: 'logo' | 'login' | 'favicon' | 'email' }) {
   console.log(`[removeImage] START - Removing ${data.type} for customerId=${data.customerId}`);
   
   const validated = removeImageSchema.safeParse(data);
@@ -943,7 +942,6 @@ export async function removeImage(data: { customerId: number; type: 'logo' | 'lo
     login: { urlField: 'loginImageUrl' as const, fileIdField: 'loginImageFileId' as const },
     favicon: { urlField: 'faviconUrl' as const, fileIdField: 'faviconFileId' as const },
     email: { urlField: 'emailImageUrl' as const, fileIdField: 'emailImageFileId' as const },
-    menuIcon: { urlField: 'menuIconUrl' as const, fileIdField: 'menuIconFileId' as const },
   };
 
   const { urlField, fileIdField } = fieldMap[type];
@@ -1043,7 +1041,6 @@ export async function removeAllImages(data: { customerId: number }) {
     existingCustomization.loginImageUrl,
     existingCustomization.faviconUrl,
     existingCustomization.emailImageUrl,
-    existingCustomization.menuIconUrl,
   ].filter(Boolean) as string[];
 
   for (const url of urlsToDelete) {
@@ -1090,8 +1087,6 @@ export async function removeAllImages(data: { customerId: number }) {
       faviconFileId: null,
       emailImageUrl: null,
       emailImageFileId: null,
-      menuIconUrl: null,
-      menuIconFileId: null,
     })
     .where(eq(customerCustomization.customerId, customerId));
 

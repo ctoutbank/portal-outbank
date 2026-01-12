@@ -20,6 +20,9 @@ export interface MccData {
   isActive: boolean;
   exigeAnaliseManual: boolean;
   observacoesRegulatorias: string | null;
+  mccGroupId: string | null;
+  availabilityDate: string | null;
+  databaseOperation: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -66,9 +69,9 @@ export async function getMccs(
   sortOrder: "asc" | "desc" = "asc"
 ) {
   const offset = (page - 1) * pageSize;
-  
+
   const conditions = [];
-  
+
   if (search) {
     conditions.push(
       or(
@@ -78,7 +81,7 @@ export async function getMccs(
       )!
     );
   }
-  
+
   if (categoria) {
     conditions.push(eq(mcc.categoria, categoria));
   }
@@ -152,6 +155,9 @@ export interface CreateMccInput {
   isActive?: boolean;
   exigeAnaliseManual?: boolean;
   observacoesRegulatorias?: string;
+  mccGroupId?: string | null;
+  availabilityDate?: string | null;
+  databaseOperation?: string | null;
 }
 
 export async function createMcc(data: CreateMccInput): Promise<{ success: boolean; data?: MccData; error?: string }> {
@@ -173,6 +179,9 @@ export async function createMcc(data: CreateMccInput): Promise<{ success: boolea
         isActive: data.isActive ?? true,
         exigeAnaliseManual: data.exigeAnaliseManual ?? false,
         observacoesRegulatorias: data.observacoesRegulatorias || null,
+        mccGroupId: data.mccGroupId || null,
+        availabilityDate: data.availabilityDate || null,
+        databaseOperation: data.databaseOperation || null,
       })
       .returning();
 
@@ -192,6 +201,9 @@ export interface UpdateMccInput {
   isActive?: boolean;
   exigeAnaliseManual?: boolean;
   observacoesRegulatorias?: string;
+  mccGroupId?: string | null;
+  availabilityDate?: string | null;
+  databaseOperation?: string | null;
 }
 
 export async function updateMcc(
@@ -242,6 +254,8 @@ export async function deleteMcc(id: number): Promise<{ success: boolean; error?:
   }
 }
 
+
+
 export async function toggleMccStatus(id: number): Promise<{ success: boolean; data?: MccData; error?: string }> {
   try {
     const existing = await getMccById(id);
@@ -265,49 +279,37 @@ export async function toggleMccStatus(id: number): Promise<{ success: boolean; d
   }
 }
 
-// Funções para sincronização com Dock
+export async function insertMcc(data: Omit<InsertMcc, 'id' | 'createdAt' | 'updatedAt'>): Promise<{ success: boolean; data?: MccData; error?: string }> {
+  try {
+    const result = await db
+      .insert(mcc)
+      .values({
+        ...data,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .returning();
 
-export interface InsertMccDockInput {
-  code: string;
-  description: string;
-  mccGroupId?: number | null;
-  availabilityDate?: string | null;
-  databaseOperation?: string;
-  isActive?: boolean;
+    return { success: true, data: result[0] as MccData };
+  } catch (error) {
+    console.error("Erro ao inserir MCC:", error);
+    return { success: false, error: "Erro ao inserir MCC" };
+  }
 }
 
-/**
- * Insere um MCC (usado na sincronização com Dock)
- */
-export async function insertMcc(data: InsertMccDockInput): Promise<SelectMcc> {
-  const result = await db
-    .insert(mcc)
-    .values({
-      code: data.code,
-      description: data.description,
-      categoria: "Dock Sync", // Categoria padrão para MCCs sincronizados
-      nivelRisco: "baixo",
-      tipoLiquidacao: "D2",
-      isActive: data.isActive ?? true,
-      exigeAnaliseManual: false,
-    })
-    .returning();
+export async function deactivateMcc(id: number): Promise<{ success: boolean; error?: string }> {
+  try {
+    await db
+      .update(mcc)
+      .set({
+        isActive: false,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(mcc.id, id));
 
-  return result[0];
-}
-
-/**
- * Desativa um MCC por código (soft delete - usado na sincronização com Dock)
- */
-export async function deactivateMcc(code: string): Promise<SelectMcc | null> {
-  const result = await db
-    .update(mcc)
-    .set({
-      isActive: false,
-      updatedAt: new Date().toISOString(),
-    })
-    .where(eq(mcc.code, code))
-    .returning();
-
-  return result[0] || null;
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao desativar MCC:", error);
+    return { success: false, error: "Erro ao desativar MCC" };
+  }
 }

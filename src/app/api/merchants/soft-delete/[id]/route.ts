@@ -1,7 +1,8 @@
 "use server";
 
-import { db, merchants } from "@/lib/db";
+import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
+import { merchants } from "../../../../../../drizzle/schema";
 import { NextResponse } from "next/server";
 import { checkPagePermission } from "@/lib/permissions/check-permissions";
 

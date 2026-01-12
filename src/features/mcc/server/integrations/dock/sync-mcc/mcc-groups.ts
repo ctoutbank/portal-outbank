@@ -27,7 +27,7 @@ export async function syncMccGroups(): Promise<{
 
   try {
     console.log("[SYNC MCC] Iniciando sincronização de MCC Groups...");
-    
+
     const dockGroups = await fetchAllDockMccGroups();
     console.log(`[SYNC MCC] Encontrados ${dockGroups.length} grupos MCC na Dock`);
 
@@ -54,7 +54,7 @@ export async function syncMccGroups(): Promise<{
         } else {
           // Inserir
           await insertMccGroup({
-            id: dockGroup.id,
+            code: dockGroup.id.toString(),
             description: dockGroup.description,
             availabilityDate: dockGroup.availability_date || null,
             databaseOperation: dbOperation,

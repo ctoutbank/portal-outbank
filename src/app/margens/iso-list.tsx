@@ -41,14 +41,14 @@ function saveIsoAccess(customerId: number): void {
 
 interface IsoListProps {
   isoConfigs: IsoMarginConfig[];
-  userRole: 'super_admin' | 'executivo' | 'core' | null;
+  userRole: 'super_admin' | 'admin' | 'executivo' | 'core' | null;
   isSuperAdminForView?: boolean;
   isSimulating?: boolean;
   simulatedUserId?: number | null;
 }
 
-export function IsoList({ 
-  isoConfigs, 
+export function IsoList({
+  isoConfigs,
   userRole,
   isSuperAdminForView = false,
   isSimulating = false,
@@ -75,7 +75,7 @@ export function IsoList({
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(c => 
+      result = result.filter(c =>
         c.customerName.toLowerCase().includes(term) ||
         c.customerSlug.toLowerCase().includes(term)
       );
@@ -130,9 +130,9 @@ export function IsoList({
     if (userRole === 'core') {
       return parseFloat(config.marginCore) > 0;
     }
-    return parseFloat(config.marginOutbank) > 0 || 
-           parseFloat(config.marginExecutivo) > 0 || 
-           parseFloat(config.marginCore) > 0;
+    return parseFloat(config.marginOutbank) > 0 ||
+      parseFloat(config.marginExecutivo) > 0 ||
+      parseFloat(config.marginCore) > 0;
   };
 
   const getUserMargin = (config: IsoMarginConfig) => {
@@ -166,7 +166,7 @@ export function IsoList({
           </div>
         </div>
       )}
-      
+
       <div className="space-y-6">
         {!isNonAdmin && (
           <div className="grid gap-4 md:grid-cols-3">
@@ -180,7 +180,7 @@ export function IsoList({
                 <p className="text-xs text-muted-foreground">Total de ISOs cadastrados</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs font-medium">Configurados</CardTitle>
@@ -191,7 +191,7 @@ export function IsoList({
                 <p className="text-xs text-muted-foreground">ISOs com tabelas vinculadas</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xs font-medium">Pendentes</CardTitle>
@@ -215,7 +215,7 @@ export function IsoList({
               className="pl-10 h-[42px] bg-[#424242] border border-[#353535] rounded-[6px] text-[#E0E0E0] placeholder:text-[#E0E0E0] focus-visible:ring-2 focus-visible:ring-[#555555] focus-visible:border-[#555555]"
             />
           </div>
-          
+
           {!isNonAdmin && (
             <div className="flex gap-2">
               <Button
@@ -250,86 +250,86 @@ export function IsoList({
           {paginatedConfigs
             .filter(config => config.customerId !== null && config.customerId !== undefined)
             .map((config, index) => (
-            <Link 
-              key={config.customerId || `iso-${index}`} 
-              href={`/margens/${config.customerId}`}
-              onClick={() => handleIsoClick(config.customerId)}
-            >
-              <Card className="border border-[rgba(255,255,255,0.1)] rounded-[6px] hover:border-[#ff9800]/50 transition-all cursor-pointer group bg-[#1D1D1D]">
-                <CardContent className="py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-[#2E2E2E] rounded-lg">
-                        <Building2 className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-medium text-white">{config.customerName}</h3>
-                        <p className="text-sm text-[#616161]">{config.customerSlug}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                      {hasMargins(config) ? (
-                        <div className="flex items-center gap-4 text-sm">
-                          {isNonAdmin ? (
-                            <div className="text-center">
-                              <p className="text-[#616161] text-xs">Sua Margem</p>
-                              <p className="text-white font-medium">{getUserMargin(config)}%</p>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="text-center">
-                                <p className="text-[#616161] text-xs">Outbank</p>
-                                <p className="text-white font-medium">{config.marginOutbank}%</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-[#616161] text-xs">Executivo</p>
-                                <p className="text-white font-medium">{config.marginExecutivo}%</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-[#616161] text-xs">CORE</p>
-                                <p className="text-white font-medium">{config.marginCore}%</p>
-                              </div>
-                            </>
-                          )}
+              <Link
+                key={config.customerId || `iso-${index}`}
+                href={`/margens/${config.customerId}`}
+                onClick={() => handleIsoClick(config.customerId)}
+              >
+                <Card className="border border-[rgba(255,255,255,0.1)] rounded-[6px] hover:border-[#ff9800]/50 transition-all cursor-pointer group bg-[#1D1D1D]">
+                  <CardContent className="py-3 px-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-[#2E2E2E] rounded-lg">
+                          <Building2 className="w-6 h-6 text-white" />
                         </div>
-                      ) : (
-                        <span className="text-[#616161] text-sm">{isNonAdmin ? 'Margem não configurada' : 'Margens não configuradas'}</span>
-                      )}
+                        <div>
+                          <h3 className="text-lg font-medium text-white">{config.customerName}</h3>
+                          <p className="text-sm text-[#616161]">{config.customerSlug}</p>
+                        </div>
+                      </div>
 
-                      <div className="flex items-center gap-3">
-                        {!isNonAdmin && config.validatedTablesCount > 0 && (
-                          <Badge 
-                            variant="outline" 
-                            className="border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
-                          >
-                            {config.validatedTablesCount} validada{config.validatedTablesCount !== 1 ? 's' : ''}
-                          </Badge>
+                      <div className="flex items-center gap-6">
+                        {hasMargins(config) ? (
+                          <div className="flex items-center gap-4 text-sm">
+                            {isNonAdmin ? (
+                              <div className="text-center">
+                                <p className="text-[#616161] text-xs">Sua Margem</p>
+                                <p className="text-white font-medium">{getUserMargin(config)}%</p>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="text-center">
+                                  <p className="text-[#616161] text-xs">Outbank</p>
+                                  <p className="text-white font-medium">{config.marginOutbank}%</p>
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-[#616161] text-xs">Executivo</p>
+                                  <p className="text-white font-medium">{config.marginExecutivo}%</p>
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-[#616161] text-xs">CORE</p>
+                                  <p className="text-white font-medium">{config.marginCore}%</p>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[#616161] text-sm">{isNonAdmin ? 'Margem não configurada' : 'Margens não configuradas'}</span>
                         )}
-                        {!isNonAdmin && config.draftTablesCount > 0 && (
-                          <Badge 
-                            variant="outline" 
-                            className="border-yellow-500/50 text-yellow-400 bg-yellow-500/10"
-                          >
-                            {config.draftTablesCount} rascunho{config.draftTablesCount !== 1 ? 's' : ''}
-                          </Badge>
-                        )}
-                        {!isNonAdmin && config.linkedTablesCount === 0 && (
-                          <Badge 
-                            variant="outline" 
-                            className="border-orange-500/50 text-orange-400 bg-orange-500/10"
-                          >
-                            Sem tabelas
-                          </Badge>
-                        )}
-                        <ChevronRight className="w-5 h-5 text-[#616161]" />
+
+                        <div className="flex items-center gap-3">
+                          {!isNonAdmin && config.validatedTablesCount > 0 && (
+                            <Badge
+                              variant="outline"
+                              className="border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
+                            >
+                              {config.validatedTablesCount} validada{config.validatedTablesCount !== 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                          {!isNonAdmin && config.draftTablesCount > 0 && (
+                            <Badge
+                              variant="outline"
+                              className="border-yellow-500/50 text-yellow-400 bg-yellow-500/10"
+                            >
+                              {config.draftTablesCount} rascunho{config.draftTablesCount !== 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                          {!isNonAdmin && config.linkedTablesCount === 0 && (
+                            <Badge
+                              variant="outline"
+                              className="border-orange-500/50 text-orange-400 bg-orange-500/10"
+                            >
+                              Sem tabelas
+                            </Badge>
+                          )}
+                          <ChevronRight className="w-5 h-5 text-[#616161]" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
 
           {filteredConfigs.length === 0 && (
             <div className="w-full p-4 text-center border border-[rgba(255,255,255,0.1)] rounded-[6px] bg-[#1D1D1D]">

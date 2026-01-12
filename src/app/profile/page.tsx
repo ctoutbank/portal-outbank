@@ -2,14 +2,15 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import BaseHeader from "@/components/layout/base-header";
 import { ProfileForm } from "@/components/profile/profile-form";
-import { db, users, profiles } from "@/lib/db";
+import { db } from "@/lib/db";
+import { users, profiles } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 export const dynamic = 'force-dynamic';
 
 export default async function ProfilePage() {
   const sessionUser = await getCurrentUser();
-  
+
   if (!sessionUser) {
     redirect("/auth/sign-in");
   }
@@ -38,10 +39,10 @@ export default async function ProfilePage() {
         breadcrumbItems={[{ title: "Meu Perfil" }]}
         showBackButton
       />
-      
+
       <main className="container mx-auto px-4 py-6 max-w-2xl">
-        <ProfileForm 
-          email={userData.email || ""} 
+        <ProfileForm
+          email={userData.email || ""}
           profileName={userData.profileName || "Usuário"}
         />
       </main>

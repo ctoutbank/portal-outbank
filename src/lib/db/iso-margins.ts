@@ -15,7 +15,7 @@ export interface IsoMarginConfig {
   updatedAt: Date;
 }
 
-export type MdrValidationStatus = 'rascunho' | 'validada' | 'inativa';
+export type MdrValidationStatus = 'rascunho' | 'pendente_validacao' | 'validada' | 'rejeitada' | 'inativa';
 
 export interface MdrTableWithCost {
   id: string;
@@ -152,11 +152,11 @@ class IsoMarginsRepository {
   async upsertIsoConfig(customerId: number, data: { marginOutbank?: string; marginExecutivo?: string; marginCore?: string }): Promise<IsoMarginConfig> {
     // Normalizar valores: trocar vírgula por ponto para evitar problemas com parseFloat
     const normalizeMargin = (value?: string) => value?.replace(',', '.') || undefined;
-    
+
     const marginOutbank = normalizeMargin(data.marginOutbank);
     const marginExecutivo = normalizeMargin(data.marginExecutivo);
     const marginCore = normalizeMargin(data.marginCore);
-    
+
     const { rows: existing } = await sql.query(`SELECT id FROM iso_margin_config WHERE customer_id = $1`, [customerId]);
 
     if (existing[0]) {
@@ -257,7 +257,7 @@ class IsoMarginsRepository {
 
   async getLinkedMdrTables(customerId: number, includeAllStatuses: boolean = false): Promise<LinkedMdrTable[]> {
     const statusFilter = includeAllStatuses ? '' : "AND iml.status = 'validada'";
-    
+
     const { rows } = await sql.query(`
       SELECT 
         iml.id as link_id,
@@ -332,24 +332,24 @@ class IsoMarginsRepository {
   }
 
   async updateLinkStatus(
-    customerId: number, 
-    linkId: string, 
-    newStatus: MdrValidationStatus, 
-    userId: number, 
+    customerId: number,
+    linkId: string,
+    newStatus: MdrValidationStatus,
+    userId: number,
     reason?: string
   ): Promise<void> {
     const { rows: linkRows } = await sql.query(
       `SELECT id, status, fornecedor_category_id FROM iso_mdr_links WHERE id = $1::uuid AND customer_id = $2::bigint`,
       [linkId, customerId]
     );
-    
+
     if (!linkRows[0]) {
       throw new Error('Link não encontrado');
     }
-    
+
     const previousStatus = linkRows[0].status || 'rascunho';
     const fornecedorCategoryId = linkRows[0].fornecedor_category_id;
-    
+
     await sql.query(`
       UPDATE iso_mdr_links 
       SET status = $1::text, 
@@ -360,7 +360,7 @@ class IsoMarginsRepository {
           updated_at = NOW()
       WHERE id = $4::uuid
     `, [newStatus, userId, reason, linkId]);
-    
+
     await sql.query(`
       INSERT INTO iso_mdr_validation_history 
         (iso_mdr_link_id, customer_id, fornecedor_category_id, previous_status, new_status, changed_by, reason)
@@ -392,17 +392,17 @@ class IsoMarginsRepository {
       LEFT JOIN users u ON h.changed_by = u.id
       WHERE h.customer_id = $1
     `;
-    
+
     const params: any[] = [customerId];
     if (linkId) {
       query += ` AND h.iso_mdr_link_id = $2`;
       params.push(linkId);
     }
-    
+
     query += ` ORDER BY h.changed_at DESC LIMIT 100`;
-    
+
     const { rows } = await sql.query(query, params);
-    
+
     return rows.map(row => ({
       id: row.id,
       linkId: row.link_id,
@@ -429,21 +429,21 @@ class IsoMarginsRepository {
       SELECT id FROM iso_mdr_links 
       WHERE customer_id = $1 AND fornecedor_category_id = $2
     `, [customerId, fornecedorCategoryId]);
-    
+
     const linkId = rows[0]?.id;
-    
+
     if (linkId) {
       await sql.query(`
         DELETE FROM iso_mdr_validation_history 
         WHERE iso_mdr_link_id = $1
       `, [linkId]);
     }
-    
+
     await sql.query(`
       DELETE FROM iso_mdr_links 
       WHERE customer_id = $1 AND fornecedor_category_id = $2
     `, [customerId, fornecedorCategoryId]);
-    
+
     await sql.query(`
       DELETE FROM iso_mdr_overrides 
       WHERE customer_id = $1 AND fornecedor_category_id = $2
@@ -462,7 +462,7 @@ class IsoMarginsRepository {
   }
 
   // ===== ISO MDR MARGINS CRUD =====
-  
+
   async getIsoMdrMargins(isoMdrLinkId: string): Promise<IsoMdrMargin[]> {
     const { rows } = await sql.query(`
       SELECT id, iso_mdr_link_id, bandeira, modalidade, margin_iso, created_at, updated_at
@@ -470,7 +470,7 @@ class IsoMarginsRepository {
       WHERE iso_mdr_link_id = $1
       ORDER BY bandeira, modalidade
     `, [isoMdrLinkId]);
-    
+
     return rows.map(row => ({
       id: row.id,
       isoMdrLinkId: row.iso_mdr_link_id,
@@ -484,19 +484,19 @@ class IsoMarginsRepository {
 
   async createIsoMdrMargins(isoMdrLinkId: string, margins: Array<{ bandeira: string; modalidade: string; marginIso?: string }>): Promise<void> {
     if (margins.length === 0) return;
-    
+
     const values = margins.map((m, i) => {
       const offset = i * 4;
       return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4})`;
     }).join(', ');
-    
+
     const params = margins.flatMap(m => [
       isoMdrLinkId,
       m.bandeira,
       m.modalidade,
       m.marginIso || '0'
     ]);
-    
+
     await sql.query(`
       INSERT INTO iso_mdr_margins (iso_mdr_link_id, bandeira, modalidade, margin_iso)
       VALUES ${values}
@@ -508,11 +508,11 @@ class IsoMarginsRepository {
   async updateIsoMdrMargin(marginId: string, marginIso: string): Promise<void> {
     const normalizedValue = marginIso.replace(',', '.');
     const numValue = parseFloat(normalizedValue);
-    
+
     if (isNaN(numValue) || numValue < 0) {
       throw new Error('Margem ISO deve ser um número maior ou igual a zero');
     }
-    
+
     await sql.query(`
       UPDATE iso_mdr_margins 
       SET margin_iso = $1, updated_at = NOW()
@@ -523,11 +523,11 @@ class IsoMarginsRepository {
   async upsertIsoMdrMargin(isoMdrLinkId: string, bandeira: string, modalidade: string, marginIso: string): Promise<void> {
     const normalizedValue = marginIso.replace(',', '.');
     const numValue = parseFloat(normalizedValue);
-    
+
     if (isNaN(numValue) || numValue < 0) {
       throw new Error('Margem ISO deve ser um número maior ou igual a zero');
     }
-    
+
     await sql.query(`
       INSERT INTO iso_mdr_margins (iso_mdr_link_id, bandeira, modalidade, margin_iso)
       VALUES ($1, $2, $3, $4)
@@ -547,19 +547,19 @@ class IsoMarginsRepository {
       JOIN mdr m ON fc.mdr_id = m.id
       WHERE fc.id = $1
     `, [fornecedorCategoryId]);
-    
+
     if (!rows[0]?.bandeiras) return;
-    
+
     const bandeiras = rows[0].bandeiras.split(',').map((b: string) => b.trim()).filter(Boolean);
     const modalidades = ['debito', 'credito', 'credito2x', 'credito7x', 'voucher', 'pre', 'pix'];
-    
+
     const margins: Array<{ bandeira: string; modalidade: string }> = [];
     for (const bandeira of bandeiras) {
       for (const modalidade of modalidades) {
         margins.push({ bandeira, modalidade });
       }
     }
-    
+
     if (margins.length > 0) {
       await this.createIsoMdrMargins(isoMdrLinkId, margins);
     }
@@ -610,10 +610,10 @@ class IsoMarginsRepository {
     `, [customerId]);
 
     const linkedTables: LinkedMdrTableWithIsoMargin[] = [];
-    
+
     for (const row of rows) {
       const isoMargins = await this.getIsoMdrMargins(row.link_id);
-      
+
       linkedTables.push({
         id: row.fornecedor_category_id,
         linkId: row.link_id,
@@ -651,7 +651,7 @@ class IsoMarginsRepository {
         isoMargins
       });
     }
-    
+
     return linkedTables;
   }
 
@@ -692,7 +692,7 @@ class IsoMarginsRepository {
       const key = `${modalidade}${channel}` as keyof typeof row;
       const rawValue = row[key];
       if (!rawValue) return 0;
-      
+
       // Se for uma string com vírgulas, é um array de valores por bandeira
       const valuesStr = String(rawValue);
       if (valuesStr.includes(',')) {
@@ -707,13 +707,13 @@ class IsoMarginsRepository {
 
     for (let bandeiraIndex = 0; bandeiraIndex < bandeiras.length; bandeiraIndex++) {
       const bandeira = bandeiras[bandeiraIndex];
-      
+
       for (const modalidade of modalidades) {
         for (const channel of channels) {
           const mdrValue = getMdrValueForBandeira(modalidade, channel, bandeiraIndex);
           // Custo base = custo dock (fornecedor) + margem outbank + margem executivo + margem core
           const custoBase = mdrValue + margemConsolidada;
-          
+
           const isoMargin = isoMargins.find(
             m => m.bandeira === bandeira && m.modalidade === `${modalidade}_${channel}`
           );
@@ -741,12 +741,12 @@ class IsoMarginsRepository {
       // PIX custo base = custo dock + margens
       const pixPosCustoBase = pixPosRaw + margemConsolidada;
       const pixOnlineCustoBase = pixOnlineRaw + margemConsolidada;
-      
+
       const isoMarginPixPos = isoMargins.find(m => m.bandeira === bandeira && m.modalidade === 'pix_pos');
       const isoMarginPixOnline = isoMargins.find(m => m.bandeira === bandeira && m.modalidade === 'pix_online');
       const marginIsoPixPos = parseFloat(isoMarginPixPos?.marginIso || '0') || 0;
       const marginIsoPixOnline = parseFloat(isoMarginPixOnline?.marginIso || '0') || 0;
-      
+
       await sql.query(`
         INSERT INTO iso_mdr_cost_snapshots 
           (iso_mdr_link_id, bandeira, modalidade, channel, custo_base, margin_iso, taxa_final, snapshot_at)
@@ -856,7 +856,7 @@ class IsoMarginsRepository {
     const result = [];
     for (const row of rows) {
       const snapshots = await this.getCostSnapshots(row.link_id);
-      
+
       result.push({
         linkId: row.link_id,
         isoNome: row.iso_nome,
@@ -934,13 +934,13 @@ class IsoMarginsRepository {
     `, [customerId]);
 
     const result = [];
-    
+
     for (const row of rows) {
       const snapshots = await this.getCostSnapshots(row.link_id);
       const bandeirasLista = (row.bandeiras || '').split(',').map((b: string) => b.trim()).filter(Boolean);
 
       const getConsolidatedValue = (bandeira: string, modalidade: string, channel: string) => {
-        const snapshot = snapshots.find(s => 
+        const snapshot = snapshots.find(s =>
           s.bandeira === bandeira && s.modalidade === modalidade && s.channel === channel
         );
         return { taxaConsolidada: snapshot?.custoBase || '0.0000' };
@@ -953,7 +953,7 @@ class IsoMarginsRepository {
       };
 
       const getAntecipacaoValue = (channel: 'pos' | 'online') => {
-        const snapshot = snapshots.find(s => 
+        const snapshot = snapshots.find(s =>
           s.bandeira === 'ALL' && s.modalidade === 'antecipacao' && s.channel === channel
         );
         return { taxaConsolidada: snapshot?.custoBase || '0.0000' };

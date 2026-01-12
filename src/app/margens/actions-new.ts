@@ -17,26 +17,26 @@ export async function getEffectiveUserId(): Promise<EffectiveUserContext> {
   try {
     const cookieStore = await cookies();
     const simulatedUserIdCookie = cookieStore.get(SIMULATED_USER_COOKIE)?.value;
-    
+
     if (!simulatedUserIdCookie) {
       return { targetUserId: null, isSimulating: false };
     }
-    
+
     const simulatedUserId = parseInt(simulatedUserIdCookie, 10);
     if (isNaN(simulatedUserId)) {
       return { targetUserId: null, isSimulating: false };
     }
-    
+
     const realUserIsSuperAdmin = await isSuperAdmin();
     if (!realUserIsSuperAdmin) {
       return { targetUserId: null, isSimulating: false };
     }
-    
+
     const isSimulatedUserActive = await isUserActiveById(simulatedUserId);
     if (!isSimulatedUserActive) {
       return { targetUserId: null, isSimulating: false };
     }
-    
+
     return { targetUserId: simulatedUserId, isSimulating: true };
   } catch (error) {
     return { targetUserId: null, isSimulating: false };
@@ -51,18 +51,18 @@ export async function getSimulatedUserPermissions(): Promise<{
   category: string | null;
 } | null> {
   const { targetUserId, isSimulating } = await getEffectiveUserId();
-  
+
   if (!isSimulating || !targetUserId) {
     return null;
   }
-  
+
   const [authorizedMenus, category] = await Promise.all([
     getUserAuthorizedMenusById(targetUserId),
     getUserCategoryById(targetUserId)
   ]);
-  
+
   const isAdmin = category === 'ISO_ADMIN';
-  
+
   return {
     authorizedMenus: authorizedMenus || [],
     isCore: category === 'CORE',
@@ -137,11 +137,11 @@ export async function getIsoList(simulatedUserId?: number | null): Promise<IsoMa
 
     const allowedIds = await getUserMultiIsoAccess(context.targetUserId);
     console.log(`[getIsoList] Simulating user ${context.targetUserId}, Allowed ISOs: ${allowedIds.join(', ')}`);
-    
+
     if (allowedIds.length === 0) {
       return [];
     }
-    
+
     const allConfigs = await isoMarginsRepository.listIsoConfigs();
     return allConfigs.filter(c => allowedIds.includes(c.customerId));
   }
@@ -154,16 +154,16 @@ export async function getIsoList(simulatedUserId?: number | null): Promise<IsoMa
 
   const allowedIds = await getUserMultiIsoAccess(context.targetUserId);
   console.log(`[getIsoList] Real user ${context.targetUserId}, Allowed ISOs: ${allowedIds.join(', ')}`);
-  
+
   if (allowedIds.length === 0) {
     return [];
   }
-  
+
   const allConfigs = await isoMarginsRepository.listIsoConfigs();
   return allConfigs.filter(c => allowedIds.includes(c.customerId));
 }
 
-export async function getUserRole(simulatedUserId?: number | null): Promise<'super_admin' | 'executivo' | 'core' | null> {
+export async function getUserRole(simulatedUserId?: number | null): Promise<'super_admin' | 'admin' | 'executivo' | 'core' | null> {
   const context = await validateSimulationAccess(simulatedUserId);
   if (!context) {
     return null;
@@ -204,56 +204,56 @@ export async function getIsoDetail(customerId: number, simulatedUserId?: number 
 } | null> {
   const hasAccess = await validateIsoAccess(customerId, simulatedUserId);
   if (!hasAccess) return null;
-  
+
   const [config, linkedTables] = await Promise.all([
     isoMarginsRepository.getIsoConfig(customerId),
     isoMarginsRepository.getLinkedMdrTables(customerId, true)
   ]);
-  
+
   return { config, linkedTables };
 }
 
 export async function updateIsoMargins(
-  customerId: number, 
+  customerId: number,
   data: { marginOutbank?: string; marginExecutivo?: string; marginCore?: string }
 ): Promise<IsoMarginConfig> {
   const superAdmin = await isSuperAdmin();
-  
+
   const filterDefinedFields = (obj: Record<string, any>) => {
     return Object.fromEntries(
       Object.entries(obj).filter(([_, value]) => value !== undefined)
     );
   };
-  
+
   if (superAdmin) {
     const filteredData = filterDefinedFields(data);
     return isoMarginsRepository.upsertIsoConfig(customerId, filteredData);
   }
-  
+
   const user = await getCurrentUser();
   if (!user) {
     throw new Error('Usuário não autenticado');
   }
-  
+
   const userRole = await getUserRole();
-  
+
   if (userRole === 'executivo') {
     throw new Error('Usuários Executivo não podem editar margens');
   }
-  
+
   if (userRole === 'core') {
     const allowedIds = await getUserMultiIsoAccess(user.id);
     if (!allowedIds.includes(customerId)) {
       throw new Error('Você não tem acesso a este ISO');
     }
-    
+
     if (data.marginCore === undefined) {
       throw new Error('Valor da margem é obrigatório');
     }
     const coreOnlyData = { marginCore: data.marginCore };
     return isoMarginsRepository.upsertIsoConfig(customerId, coreOnlyData);
   }
-  
+
   throw new Error('Você não tem permissão para editar margens');
 }
 
@@ -262,7 +262,7 @@ export async function getAvailableTables(fornecedorId?: string): Promise<MdrTabl
   if (!superAdmin) {
     return [];
   }
-  
+
   return isoMarginsRepository.getAvailableMdrTables(fornecedorId);
 }
 
@@ -271,7 +271,7 @@ export async function linkTableToIso(customerId: number, fornecedorCategoryId: s
   if (!superAdmin) {
     throw new Error('Apenas Super Admin pode vincular tabelas');
   }
-  
+
   await isoMarginsRepository.linkMdrTable(customerId, fornecedorCategoryId);
 }
 
@@ -280,7 +280,7 @@ export async function unlinkTableFromIso(customerId: number, fornecedorCategoryI
   if (!superAdmin) {
     throw new Error('Apenas Super Admin pode desvincular tabelas');
   }
-  
+
   await isoMarginsRepository.unlinkMdrTable(customerId, fornecedorCategoryId);
 }
 
@@ -295,16 +295,16 @@ export async function getFornecedoresList(): Promise<Array<{ id: string; nome: s
 export async function getCanValidateMdr(): Promise<boolean> {
   const superAdmin = await isSuperAdmin();
   if (superAdmin) return true;
-  
+
   const user = await getCurrentUser();
   if (!user) return false;
-  
+
   const { sql } = await import('@vercel/postgres');
-  
+
   const { rows } = await sql.query(`
     SELECT can_validate_mdr FROM users WHERE id = $1
   `, [user.id]);
-  
+
   return rows[0]?.can_validate_mdr === true;
 }
 
@@ -319,14 +319,14 @@ async function validateIsoAccess(customerId: number, simulatedUserId?: number | 
   if (context.isSimulating) {
     const simulatedIsSuperAdmin = await isSuperAdminById(context.targetUserId);
     if (simulatedIsSuperAdmin) return true;
-    
+
     const allowedIds = await getUserMultiIsoAccess(context.targetUserId);
     return allowedIds.includes(customerId);
   }
 
   const superAdmin = await isSuperAdmin();
   if (superAdmin) return true;
-  
+
   const allowedIds = await getUserMultiIsoAccess(context.targetUserId);
   return allowedIds.includes(customerId);
 }
@@ -367,7 +367,7 @@ export async function validateMdrTable(
     }
     throw error;
   }
-  
+
   if (!linkRows[0]) {
     return { success: false, error: 'Link não encontrado' };
   }
@@ -384,10 +384,10 @@ export async function validateMdrTable(
       `SELECT fornecedor_category_id FROM iso_mdr_links WHERE id = $1::uuid`,
       [linkId]
     );
-    
+
     if (linkData[0]?.fornecedor_category_id) {
       await isoMarginsRepository.initializeIsoMdrMarginsFromMdr(
-        linkId, 
+        linkId,
         linkData[0].fornecedor_category_id
       );
     }

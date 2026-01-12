@@ -38,16 +38,16 @@ interface IsoDetailPageProps {
   linkedTables: LinkedMdrTable[];
   availableTables: MdrTableWithCost[];
   fornecedores: Array<{ id: string; nome: string }>;
-  userRole: 'super_admin' | 'executivo' | 'core' | null;
+  userRole: 'super_admin' | 'admin' | 'executivo' | 'core' | null;
   canValidateMdr: boolean;
   isSuperAdmin: boolean;
   isSimulating?: boolean;
 }
 
-export function IsoDetailPage({ 
-  customerId, 
-  config, 
-  linkedTables: initialLinkedTables, 
+export function IsoDetailPage({
+  customerId,
+  config,
+  linkedTables: initialLinkedTables,
   availableTables,
   fornecedores,
   userRole,
@@ -64,7 +64,7 @@ export function IsoDetailPage({
   const [selectedFornecedor, setSelectedFornecedor] = useState<string>('ALL_SUPPLIERS');
   const [tableSearch, setTableSearch] = useState('');
   const [expandedMccs, setExpandedMccs] = useState<Set<string>>(new Set());
-  
+
   const [linkedUsers, setLinkedUsers] = useState<Array<{
     id: number;
     userId: number;
@@ -138,10 +138,10 @@ export function IsoDetailPage({
   };
 
   const getOverride = (fornecedorCategoryId: string, bandeira: string, produto: string, canal: string): MdrOverride | undefined => {
-    return overrides.find(o => 
-      o.fornecedorCategoryId === fornecedorCategoryId && 
-      o.bandeira === bandeira && 
-      o.produto === produto && 
+    return overrides.find(o =>
+      o.fornecedorCategoryId === fornecedorCategoryId &&
+      o.bandeira === bandeira &&
+      o.produto === produto &&
       o.canal === canal
     );
   };
@@ -256,20 +256,20 @@ export function IsoDetailPage({
   const availableToLink = useMemo(() => {
     const linkedIds = new Set(linkedTables.map(t => t.fornecedorCategoryId));
     let filtered = availableTables.filter(t => !linkedIds.has(t.fornecedorCategoryId) && t.hasMdr);
-    
+
     if (selectedFornecedor && selectedFornecedor !== 'ALL_SUPPLIERS') {
       filtered = filtered.filter(t => t.fornecedorId === selectedFornecedor);
     }
-    
+
     if (tableSearch) {
       const term = tableSearch.toLowerCase();
-      filtered = filtered.filter(t => 
+      filtered = filtered.filter(t =>
         t.mcc.toLowerCase().includes(term) ||
         t.cnae.toLowerCase().includes(term) ||
         t.categoryName.toLowerCase().includes(term)
       );
     }
-    
+
     return filtered;
   }, [availableTables, linkedTables, selectedFornecedor, tableSearch]);
 
@@ -281,7 +281,7 @@ export function IsoDetailPage({
         return;
       }
     }
-    
+
     setSaving(true);
     try {
       await updateIsoMargins(customerId, {
@@ -328,7 +328,7 @@ export function IsoDetailPage({
   };
 
   const handleStatusChange = (linkId: string, newStatus: MdrStatus) => {
-    setLinkedTables(prev => prev.map(t => 
+    setLinkedTables(prev => prev.map(t =>
       t.linkId === linkId ? { ...t, status: newStatus } : t
     ));
     setValidationModal(null);
@@ -448,8 +448,8 @@ export function IsoDetailPage({
                   <Label className="text-[#616161] text-xs uppercase tracking-wide opacity-0">Ação</Label>
                   {/* Botão de salvar - Super Admin e Core podem salvar, Executivo não */}
                   {(isSuperAdmin || userRole === 'core') && (
-                    <Button 
-                      onClick={() => handleSaveMargins()} 
+                    <Button
+                      onClick={() => handleSaveMargins()}
                       disabled={saving}
                       className="mt-1 w-full h-10 bg-[#2E2E2E] hover:bg-[#3a3a3a] text-white font-medium border border-[#3a3a3a]"
                     >
@@ -487,15 +487,15 @@ export function IsoDetailPage({
                             {availableUsers
                               .filter(user => user.categoryType === 'EXECUTIVO' || user.categoryType === 'CORE')
                               .map(user => (
-                              <SelectItem key={user.id} value={String(user.id)} className="text-white">
-                                <div className="flex items-center gap-2">
-                                  <span>{user.name || user.email}</span>
-                                  <Badge className="text-[10px] bg-[#2E2E2E] text-[#808080]">
-                                    {user.categoryType === 'EXECUTIVO' ? 'Executivo' : 'Core'}
-                                  </Badge>
-                                </div>
-                              </SelectItem>
-                            ))}
+                                <SelectItem key={user.id} value={String(user.id)} className="text-white">
+                                  <div className="flex items-center gap-2">
+                                    <span>{user.name || user.email}</span>
+                                    <Badge className="text-[10px] bg-[#2E2E2E] text-[#808080]">
+                                      {user.categoryType === 'EXECUTIVO' ? 'Executivo' : 'Core'}
+                                    </Badge>
+                                  </div>
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                         {availableUsers.filter(u => u.categoryType === 'EXECUTIVO' || u.categoryType === 'CORE').length === 0 && (
@@ -521,15 +521,15 @@ export function IsoDetailPage({
                         })()}
                       </div>
                       <DialogFooter className="mt-4">
-                        <Button 
+                        <Button
                           variant="outline"
                           onClick={() => setShowAddUserDialog(false)}
                           className="border-[#2E2E2E] text-white hover:bg-[#2E2E2E]"
                         >
                           Cancelar
                         </Button>
-                        <Button 
-                          onClick={handleLinkUser} 
+                        <Button
+                          onClick={handleLinkUser}
                           disabled={savingUser || !selectedUser}
                           className="bg-[#2E2E2E] hover:bg-[#3a3a3a] text-white border border-[#3a3a3a]"
                         >
@@ -552,8 +552,8 @@ export function IsoDetailPage({
                     {linkedUsers.map(user => {
                       const inheritedPercent = getInheritedPercent(user.categoryType);
                       return (
-                        <div 
-                          key={user.userId} 
+                        <div
+                          key={user.userId}
                           className="flex items-center justify-between p-3 bg-[#0a0a0a] rounded-lg border border-[#2E2E2E]"
                         >
                           <div className="flex items-center gap-3">
@@ -599,589 +599,589 @@ export function IsoDetailPage({
       </Card>
 
       {isSuperAdmin && (
-      <Card className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-white flex items-center gap-2">
-            <Layers className="w-5 h-5" />
-            Tabelas MDR Vinculadas ({linkedTables.length})
-          </CardTitle>
-          {isSuperAdmin && (
-            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-              <DialogTrigger asChild>
-                <Button className="bg-[#ff9800] hover:bg-[#f57c00] text-black">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Vincular Tabela
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-[#171717] border-[#2E2E2E] max-w-3xl max-h-[80vh]">
-                <DialogHeader>
-                  <DialogTitle className="text-white">Vincular Tabela MDR</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="flex gap-4">
-                    <div className="flex-1">
-                      <Label className="text-[#616161]">Fornecedor</Label>
-                      <Select value={selectedFornecedor} onValueChange={setSelectedFornecedor}>
-                        <SelectTrigger className="bg-[#0a0a0a] border-[#2E2E2E] text-white">
-                          <SelectValue placeholder="Todos os fornecedores" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#171717] border-[#2E2E2E]">
-                          <SelectItem value="ALL_SUPPLIERS">Todos os fornecedores</SelectItem>
-                          {fornecedores.map(f => (
-                            <SelectItem key={f.id} value={f.id || `fornecedor-${f.nome}`}>{f.nome}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex-1 relative">
-                      <Label className="text-[#616161]">Buscar</Label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#616161]" />
-                        <Input
-                          value={tableSearch}
-                          onChange={(e) => setTableSearch(e.target.value)}
-                          className="pl-10 bg-[#0a0a0a] border-[#2E2E2E] text-white"
-                          placeholder="MCC, CNAE ou descrição"
-                        />
+        <Card className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-white flex items-center gap-2">
+              <Layers className="w-5 h-5" />
+              Tabelas MDR Vinculadas ({linkedTables.length})
+            </CardTitle>
+            {isSuperAdmin && (
+              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                <DialogTrigger asChild>
+                  <Button className="bg-[#ff9800] hover:bg-[#f57c00] text-black">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Vincular Tabela
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-[#171717] border-[#2E2E2E] max-w-3xl max-h-[80vh]">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">Vincular Tabela MDR</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <Label className="text-[#616161]">Fornecedor</Label>
+                        <Select value={selectedFornecedor} onValueChange={setSelectedFornecedor}>
+                          <SelectTrigger className="bg-[#0a0a0a] border-[#2E2E2E] text-white">
+                            <SelectValue placeholder="Todos os fornecedores" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#171717] border-[#2E2E2E]">
+                            <SelectItem value="ALL_SUPPLIERS">Todos os fornecedores</SelectItem>
+                            {fornecedores.map(f => (
+                              <SelectItem key={f.id} value={f.id || `fornecedor-${f.nome}`}>{f.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex-1 relative">
+                        <Label className="text-[#616161]">Buscar</Label>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#616161]" />
+                          <Input
+                            value={tableSearch}
+                            onChange={(e) => setTableSearch(e.target.value)}
+                            className="pl-10 bg-[#0a0a0a] border-[#2E2E2E] text-white"
+                            placeholder="MCC, CNAE ou descrição"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="max-h-96 overflow-y-auto space-y-2">
-                    {availableToLink.length === 0 ? (
-                      <p className="text-center text-[#616161] py-8">
-                        Nenhuma tabela disponível para vincular
-                      </p>
-                    ) : (
-                      availableToLink.map(table => (
-                        <div 
-                          key={table.fornecedorCategoryId}
-                          className="flex items-center justify-between p-3 bg-[#0a0a0a] rounded-lg border border-[#2E2E2E] hover:border-[#3E3E3E]"
-                        >
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="border-[#ff9800] text-[#ff9800] text-xs">
-                                MCC {table.mcc}
-                              </Badge>
-                              <span className="text-white text-xs">{table.categoryName}</span>
-                            </div>
-                            <p className="text-xs text-[#616161] mt-3">
-                              {isSuperAdmin ? `${table.fornecedorNome} | ` : ''}CNAE: {table.cnae}
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => handleLinkTable(table.fornecedorCategoryId)}
-                            className="bg-emerald-600 hover:bg-emerald-700"
+
+                    <div className="max-h-96 overflow-y-auto space-y-2">
+                      {availableToLink.length === 0 ? (
+                        <p className="text-center text-[#616161] py-8">
+                          Nenhuma tabela disponível para vincular
+                        </p>
+                      ) : (
+                        availableToLink.map(table => (
+                          <div
+                            key={table.fornecedorCategoryId}
+                            className="flex items-center justify-between p-3 bg-[#0a0a0a] rounded-lg border border-[#2E2E2E] hover:border-[#3E3E3E]"
                           >
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))
-                    )}
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="border-[#ff9800] text-[#ff9800] text-xs">
+                                  MCC {table.mcc}
+                                </Badge>
+                                <span className="text-white text-xs">{table.categoryName}</span>
+                              </div>
+                              <p className="text-xs text-[#616161] mt-3">
+                                {isSuperAdmin ? `${table.fornecedorNome} | ` : ''}CNAE: {table.cnae}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => handleLinkTable(table.fornecedorCategoryId)}
+                              className="bg-emerald-600 hover:bg-emerald-700"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-        </CardHeader>
-        <CardContent>
-          {linkedTables.length === 0 ? (
-            <div className="text-center py-12 text-[#616161]">
-              <Layers className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhuma tabela MDR vinculada a este ISO</p>
-              {isSuperAdmin && (
-                <p className="text-sm mt-2">Clique em "Vincular Tabela" para adicionar</p>
-              )}
-            </div>
-          ) : (
-            <Tabs defaultValue="pos" className="w-full">
-              <TabsList className="bg-[#0a0a0a] border border-[#2E2E2E]">
-                <TabsTrigger value="pos" className="data-[state=active]:bg-[#2E2E2E]">POS</TabsTrigger>
-                <TabsTrigger value="online" className="data-[state=active]:bg-[#2E2E2E]">Online</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="pos" className="mt-4">
-                <div className="space-y-3">
-                  {linkedTables.map(table => {
-                    const isExpanded = expandedMccs.has(table.fornecedorCategoryId);
-                    const bandeiras = parseBandeiras(table.bandeiras);
-                    
-                    return (
-                      <div key={table.fornecedorCategoryId} className="border border-[#2E2E2E] rounded-lg overflow-hidden">
-                        <div 
-                          className="flex items-center justify-between p-3 bg-[#0a0a0a] hover:bg-[#1a1a1a] cursor-pointer"
-                          onClick={() => toggleMccExpanded(table.fornecedorCategoryId)}
-                        >
-                          <div className="flex items-center gap-3">
-                            {isExpanded ? (
-                              <ChevronDown className="w-4 h-4 text-[#616161]" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4 text-[#616161]" />
-                            )}
-                            <Badge variant="outline" className="border-[#ff9800] text-[#ff9800]">
-                              {table.mcc}
-                            </Badge>
-                            <span className="text-white text-sm">{table.categoryName}</span>
-                            <span className="text-xs text-[#616161]">({isSuperAdmin ? `${table.fornecedorNome} | ` : ''}{bandeiras.length} bandeiras)</span>
-                            <MdrStatusBadge status={(table.status as MdrStatus) || 'rascunho'} size="sm" />
+                </DialogContent>
+              </Dialog>
+            )}
+          </CardHeader>
+          <CardContent>
+            {linkedTables.length === 0 ? (
+              <div className="text-center py-12 text-[#616161]">
+                <Layers className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Nenhuma tabela MDR vinculada a este ISO</p>
+                {isSuperAdmin && (
+                  <p className="text-sm mt-2">Clique em "Vincular Tabela" para adicionar</p>
+                )}
+              </div>
+            ) : (
+              <Tabs defaultValue="pos" className="w-full">
+                <TabsList className="bg-[#0a0a0a] border border-[#2E2E2E]">
+                  <TabsTrigger value="pos" className="data-[state=active]:bg-[#2E2E2E]">POS</TabsTrigger>
+                  <TabsTrigger value="online" className="data-[state=active]:bg-[#2E2E2E]">Online</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="pos" className="mt-4">
+                  <div className="space-y-3">
+                    {linkedTables.map(table => {
+                      const isExpanded = expandedMccs.has(table.fornecedorCategoryId);
+                      const bandeiras = parseBandeiras(table.bandeiras);
+
+                      return (
+                        <div key={table.fornecedorCategoryId} className="border border-[#2E2E2E] rounded-lg overflow-hidden">
+                          <div
+                            className="flex items-center justify-between p-3 bg-[#0a0a0a] hover:bg-[#1a1a1a] cursor-pointer"
+                            onClick={() => toggleMccExpanded(table.fornecedorCategoryId)}
+                          >
+                            <div className="flex items-center gap-3">
+                              {isExpanded ? (
+                                <ChevronDown className="w-4 h-4 text-[#616161]" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-[#616161]" />
+                              )}
+                              <Badge variant="outline" className="border-[#ff9800] text-[#ff9800]">
+                                {table.mcc}
+                              </Badge>
+                              <span className="text-white text-sm">{table.categoryName}</span>
+                              <span className="text-xs text-[#616161]">({isSuperAdmin ? `${table.fornecedorNome} | ` : ''}{bandeiras.length} bandeiras)</span>
+                              <MdrStatusBadge status={(table.status as MdrStatus) || 'rascunho'} size="sm" />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {canValidateMdr && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => { e.stopPropagation(); openValidationModal(table); }}
+                                  className="text-[#808080] hover:text-white hover:bg-[#2E2E2E]"
+                                >
+                                  <Shield className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {isSuperAdmin && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => { e.stopPropagation(); handleUnlinkTable(table.fornecedorCategoryId); }}
+                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {canValidateMdr && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => { e.stopPropagation(); openValidationModal(table); }}
-                                className="text-[#808080] hover:text-white hover:bg-[#2E2E2E]"
-                              >
-                                <Shield className="w-4 h-4" />
-                              </Button>
-                            )}
-                            {isSuperAdmin && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => { e.stopPropagation(); handleUnlinkTable(table.fornecedorCategoryId); }}
-                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {isExpanded && (
-                          <div className="bg-[#0f0f0f]">
-                            <div className="overflow-x-auto">
-                              <table className="w-full min-w-[900px] border-collapse">
-                                <thead>
-                                  <tr className="border-b border-[#2a2a2a]">
-                                    <th className="sticky left-0 z-10 bg-[#0a0a0a] text-sm font-medium text-white p-3 text-left border-r border-[#2a2a2a] min-w-[100px]">
-                                      Bandeiras
-                                    </th>
-                                    <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Débito</th>
-                                    <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Crédito à vista</th>
-                                    <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Crédito 2-6x</th>
-                                    <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Crédito 7-12x</th>
-                                    <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Pré-pago</th>
-                                    <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Voucher</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {bandeiras.map((bandeira, idx) => (
-                                    <tr key={`pos-${table.fornecedorCategoryId}-${idx}`} className="border-b border-[#1f1f1f]">
-                                      <td className="sticky left-0 z-10 bg-[#0a0a0a] text-white px-3 py-2 text-left border-r border-[#1f1f1f] font-medium text-sm">
-                                        {bandeira}
-                                      </td>
-                                      <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
-                                        <EditableRateCell
-                                          customerId={customerId}
-                                          fornecedorCategoryId={table.fornecedorCategoryId}
-                                          bandeira={bandeira}
-                                          produto="debito"
-                                          canal="pos"
-                                          custoBase={parseRate(table.debitoPos, idx)}
-                                          taxaFinalCalculada={calculateFinalRate(table.debitoPos, idx)}
-                                          override={getOverride(table.fornecedorCategoryId, bandeira, 'debito', 'pos')}
-                                          canEdit={canEditRates}
-                                          isSuperAdmin={isSuperAdmin}
-                                          isCore={isCore}
-                                          marginOutbank={parseFloat(marginOutbank) || 0}
-                                          marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                          marginCore={parseFloat(marginCore) || 0}
-                                          onOverrideChange={loadOverrides}
-                                        />
-                                      </td>
-                                      <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
-                                        <EditableRateCell
-                                          customerId={customerId}
-                                          fornecedorCategoryId={table.fornecedorCategoryId}
-                                          bandeira={bandeira}
-                                          produto="credito"
-                                          canal="pos"
-                                          custoBase={parseRate(table.creditoPos, idx)}
-                                          taxaFinalCalculada={calculateFinalRate(table.creditoPos, idx)}
-                                          override={getOverride(table.fornecedorCategoryId, bandeira, 'credito', 'pos')}
-                                          canEdit={canEditRates}
-                                          isSuperAdmin={isSuperAdmin}
-                                          isCore={isCore}
-                                          marginOutbank={parseFloat(marginOutbank) || 0}
-                                          marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                          marginCore={parseFloat(marginCore) || 0}
-                                          onOverrideChange={loadOverrides}
-                                        />
-                                      </td>
-                                      <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
-                                        <EditableRateCell
-                                          customerId={customerId}
-                                          fornecedorCategoryId={table.fornecedorCategoryId}
-                                          bandeira={bandeira}
-                                          produto="credito2x"
-                                          canal="pos"
-                                          custoBase={parseRate(table.credito2xPos, idx)}
-                                          taxaFinalCalculada={calculateFinalRate(table.credito2xPos, idx)}
-                                          override={getOverride(table.fornecedorCategoryId, bandeira, 'credito2x', 'pos')}
-                                          canEdit={canEditRates}
-                                          isSuperAdmin={isSuperAdmin}
-                                          isCore={isCore}
-                                          marginOutbank={parseFloat(marginOutbank) || 0}
-                                          marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                          marginCore={parseFloat(marginCore) || 0}
-                                          onOverrideChange={loadOverrides}
-                                        />
-                                      </td>
-                                      <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
-                                        <EditableRateCell
-                                          customerId={customerId}
-                                          fornecedorCategoryId={table.fornecedorCategoryId}
-                                          bandeira={bandeira}
-                                          produto="credito7x"
-                                          canal="pos"
-                                          custoBase={parseRate(table.credito7xPos, idx)}
-                                          taxaFinalCalculada={calculateFinalRate(table.credito7xPos, idx)}
-                                          override={getOverride(table.fornecedorCategoryId, bandeira, 'credito7x', 'pos')}
-                                          canEdit={canEditRates}
-                                          isSuperAdmin={isSuperAdmin}
-                                          isCore={isCore}
-                                          marginOutbank={parseFloat(marginOutbank) || 0}
-                                          marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                          marginCore={parseFloat(marginCore) || 0}
-                                          onOverrideChange={loadOverrides}
-                                        />
-                                      </td>
-                                      <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
-                                        <EditableRateCell
-                                          customerId={customerId}
-                                          fornecedorCategoryId={table.fornecedorCategoryId}
-                                          bandeira={bandeira}
-                                          produto="pre"
-                                          canal="pos"
-                                          custoBase={parseRate(table.prePos, idx)}
-                                          taxaFinalCalculada={calculateFinalRate(table.prePos, idx)}
-                                          override={getOverride(table.fornecedorCategoryId, bandeira, 'pre', 'pos')}
-                                          canEdit={canEditRates}
-                                          isSuperAdmin={isSuperAdmin}
-                                          isCore={isCore}
-                                          marginOutbank={parseFloat(marginOutbank) || 0}
-                                          marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                          marginCore={parseFloat(marginCore) || 0}
-                                          onOverrideChange={loadOverrides}
-                                        />
-                                      </td>
-                                      <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
-                                        <EditableRateCell
-                                          customerId={customerId}
-                                          fornecedorCategoryId={table.fornecedorCategoryId}
-                                          bandeira={bandeira}
-                                          produto="voucher"
-                                          canal="pos"
-                                          custoBase={parseRate(table.voucherPos, idx)}
-                                          taxaFinalCalculada={calculateFinalRate(table.voucherPos, idx)}
-                                          override={getOverride(table.fornecedorCategoryId, bandeira, 'voucher', 'pos')}
-                                          canEdit={canEditRates}
-                                          isSuperAdmin={isSuperAdmin}
-                                          isCore={isCore}
-                                          marginOutbank={parseFloat(marginOutbank) || 0}
-                                          marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                          marginCore={parseFloat(marginCore) || 0}
-                                          onOverrideChange={loadOverrides}
-                                        />
-                                      </td>
+
+                          {isExpanded && (
+                            <div className="bg-[#0f0f0f]">
+                              <div className="overflow-x-auto">
+                                <table className="w-full min-w-[900px] border-collapse">
+                                  <thead>
+                                    <tr className="border-b border-[#2a2a2a]">
+                                      <th className="sticky left-0 z-10 bg-[#0a0a0a] text-sm font-medium text-white p-3 text-left border-r border-[#2a2a2a] min-w-[100px]">
+                                        Bandeiras
+                                      </th>
+                                      <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Débito</th>
+                                      <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Crédito à vista</th>
+                                      <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Crédito 2-6x</th>
+                                      <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Crédito 7-12x</th>
+                                      <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Pré-pago</th>
+                                      <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Voucher</th>
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 p-4 border-t border-[#2a2a2a]">
-                              <div className="bg-[#0a0a0a] rounded-lg p-3 border border-[#2a2a2a]">
-                                <div className="text-xs text-[#616161] mb-2">PIX</div>
-                                <EditableRateCell
-                                  customerId={customerId}
-                                  fornecedorCategoryId={table.fornecedorCategoryId}
-                                  bandeira="PIX"
-                                  produto="pix"
-                                  canal="pos"
-                                  custoBase={parseRate(table.custoPixPos, 0)}
-                                  taxaFinalCalculada={calculateFinalRate(table.custoPixPos, 0)}
-                                  override={getOverride(table.fornecedorCategoryId, 'PIX', 'pix', 'pos')}
-                                  canEdit={canEditRates}
-                                  isSuperAdmin={isSuperAdmin}
-                                  marginOutbank={parseFloat(marginOutbank) || 0}
-                                  marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                  marginCore={parseFloat(marginCore) || 0}
-                                  onOverrideChange={loadOverrides}
-                                />
+                                  </thead>
+                                  <tbody>
+                                    {bandeiras.map((bandeira, idx) => (
+                                      <tr key={`pos-${table.fornecedorCategoryId}-${idx}`} className="border-b border-[#1f1f1f]">
+                                        <td className="sticky left-0 z-10 bg-[#0a0a0a] text-white px-3 py-2 text-left border-r border-[#1f1f1f] font-medium text-sm">
+                                          {bandeira}
+                                        </td>
+                                        <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
+                                          <EditableRateCell
+                                            customerId={customerId}
+                                            fornecedorCategoryId={table.fornecedorCategoryId}
+                                            bandeira={bandeira}
+                                            produto="debito"
+                                            canal="pos"
+                                            custoBase={parseRate(table.debitoPos, idx)}
+                                            taxaFinalCalculada={calculateFinalRate(table.debitoPos, idx)}
+                                            override={getOverride(table.fornecedorCategoryId, bandeira, 'debito', 'pos')}
+                                            canEdit={canEditRates}
+                                            isSuperAdmin={isSuperAdmin}
+                                            isCore={isCore}
+                                            marginOutbank={parseFloat(marginOutbank) || 0}
+                                            marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                            marginCore={parseFloat(marginCore) || 0}
+                                            onOverrideChange={loadOverrides}
+                                          />
+                                        </td>
+                                        <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
+                                          <EditableRateCell
+                                            customerId={customerId}
+                                            fornecedorCategoryId={table.fornecedorCategoryId}
+                                            bandeira={bandeira}
+                                            produto="credito"
+                                            canal="pos"
+                                            custoBase={parseRate(table.creditoPos, idx)}
+                                            taxaFinalCalculada={calculateFinalRate(table.creditoPos, idx)}
+                                            override={getOverride(table.fornecedorCategoryId, bandeira, 'credito', 'pos')}
+                                            canEdit={canEditRates}
+                                            isSuperAdmin={isSuperAdmin}
+                                            isCore={isCore}
+                                            marginOutbank={parseFloat(marginOutbank) || 0}
+                                            marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                            marginCore={parseFloat(marginCore) || 0}
+                                            onOverrideChange={loadOverrides}
+                                          />
+                                        </td>
+                                        <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
+                                          <EditableRateCell
+                                            customerId={customerId}
+                                            fornecedorCategoryId={table.fornecedorCategoryId}
+                                            bandeira={bandeira}
+                                            produto="credito2x"
+                                            canal="pos"
+                                            custoBase={parseRate(table.credito2xPos, idx)}
+                                            taxaFinalCalculada={calculateFinalRate(table.credito2xPos, idx)}
+                                            override={getOverride(table.fornecedorCategoryId, bandeira, 'credito2x', 'pos')}
+                                            canEdit={canEditRates}
+                                            isSuperAdmin={isSuperAdmin}
+                                            isCore={isCore}
+                                            marginOutbank={parseFloat(marginOutbank) || 0}
+                                            marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                            marginCore={parseFloat(marginCore) || 0}
+                                            onOverrideChange={loadOverrides}
+                                          />
+                                        </td>
+                                        <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
+                                          <EditableRateCell
+                                            customerId={customerId}
+                                            fornecedorCategoryId={table.fornecedorCategoryId}
+                                            bandeira={bandeira}
+                                            produto="credito7x"
+                                            canal="pos"
+                                            custoBase={parseRate(table.credito7xPos, idx)}
+                                            taxaFinalCalculada={calculateFinalRate(table.credito7xPos, idx)}
+                                            override={getOverride(table.fornecedorCategoryId, bandeira, 'credito7x', 'pos')}
+                                            canEdit={canEditRates}
+                                            isSuperAdmin={isSuperAdmin}
+                                            isCore={isCore}
+                                            marginOutbank={parseFloat(marginOutbank) || 0}
+                                            marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                            marginCore={parseFloat(marginCore) || 0}
+                                            onOverrideChange={loadOverrides}
+                                          />
+                                        </td>
+                                        <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
+                                          <EditableRateCell
+                                            customerId={customerId}
+                                            fornecedorCategoryId={table.fornecedorCategoryId}
+                                            bandeira={bandeira}
+                                            produto="pre"
+                                            canal="pos"
+                                            custoBase={parseRate(table.prePos, idx)}
+                                            taxaFinalCalculada={calculateFinalRate(table.prePos, idx)}
+                                            override={getOverride(table.fornecedorCategoryId, bandeira, 'pre', 'pos')}
+                                            canEdit={canEditRates}
+                                            isSuperAdmin={isSuperAdmin}
+                                            isCore={isCore}
+                                            marginOutbank={parseFloat(marginOutbank) || 0}
+                                            marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                            marginCore={parseFloat(marginCore) || 0}
+                                            onOverrideChange={loadOverrides}
+                                          />
+                                        </td>
+                                        <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
+                                          <EditableRateCell
+                                            customerId={customerId}
+                                            fornecedorCategoryId={table.fornecedorCategoryId}
+                                            bandeira={bandeira}
+                                            produto="voucher"
+                                            canal="pos"
+                                            custoBase={parseRate(table.voucherPos, idx)}
+                                            taxaFinalCalculada={calculateFinalRate(table.voucherPos, idx)}
+                                            override={getOverride(table.fornecedorCategoryId, bandeira, 'voucher', 'pos')}
+                                            canEdit={canEditRates}
+                                            isSuperAdmin={isSuperAdmin}
+                                            isCore={isCore}
+                                            marginOutbank={parseFloat(marginOutbank) || 0}
+                                            marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                            marginCore={parseFloat(marginCore) || 0}
+                                            onOverrideChange={loadOverrides}
+                                          />
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
                               </div>
-                              <div className="bg-[#0a0a0a] rounded-lg p-3 border border-[#2a2a2a]">
-                                <div className="text-xs text-[#616161] mb-2">Antecipação</div>
-                                <EditableRateCell
-                                  customerId={customerId}
-                                  fornecedorCategoryId={table.fornecedorCategoryId}
-                                  bandeira="ANTECIPACAO"
-                                  produto="antecipacao"
-                                  canal="pos"
-                                  custoBase={parseRate(table.antecipacao, 0)}
-                                  taxaFinalCalculada={calculateFinalRate(table.antecipacao, 0)}
-                                  override={getOverride(table.fornecedorCategoryId, 'ANTECIPACAO', 'antecipacao', 'pos')}
-                                  canEdit={canEditRates}
-                                  isSuperAdmin={isSuperAdmin}
-                                  marginOutbank={parseFloat(marginOutbank) || 0}
-                                  marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                  marginCore={parseFloat(marginCore) || 0}
-                                  onOverrideChange={loadOverrides}
-                                />
+                              <div className="grid grid-cols-2 gap-4 p-4 border-t border-[#2a2a2a]">
+                                <div className="bg-[#0a0a0a] rounded-lg p-3 border border-[#2a2a2a]">
+                                  <div className="text-xs text-[#616161] mb-2">PIX</div>
+                                  <EditableRateCell
+                                    customerId={customerId}
+                                    fornecedorCategoryId={table.fornecedorCategoryId}
+                                    bandeira="PIX"
+                                    produto="pix"
+                                    canal="pos"
+                                    custoBase={parseRate(table.custoPixPos, 0)}
+                                    taxaFinalCalculada={calculateFinalRate(table.custoPixPos, 0)}
+                                    override={getOverride(table.fornecedorCategoryId, 'PIX', 'pix', 'pos')}
+                                    canEdit={canEditRates}
+                                    isSuperAdmin={isSuperAdmin}
+                                    marginOutbank={parseFloat(marginOutbank) || 0}
+                                    marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                    marginCore={parseFloat(marginCore) || 0}
+                                    onOverrideChange={loadOverrides}
+                                  />
+                                </div>
+                                <div className="bg-[#0a0a0a] rounded-lg p-3 border border-[#2a2a2a]">
+                                  <div className="text-xs text-[#616161] mb-2">Antecipação</div>
+                                  <EditableRateCell
+                                    customerId={customerId}
+                                    fornecedorCategoryId={table.fornecedorCategoryId}
+                                    bandeira="ANTECIPACAO"
+                                    produto="antecipacao"
+                                    canal="pos"
+                                    custoBase={parseRate(table.antecipacao, 0)}
+                                    taxaFinalCalculada={calculateFinalRate(table.antecipacao, 0)}
+                                    override={getOverride(table.fornecedorCategoryId, 'ANTECIPACAO', 'antecipacao', 'pos')}
+                                    canEdit={canEditRates}
+                                    isSuperAdmin={isSuperAdmin}
+                                    marginOutbank={parseFloat(marginOutbank) || 0}
+                                    marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                    marginCore={parseFloat(marginCore) || 0}
+                                    onOverrideChange={loadOverrides}
+                                  />
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="online" className="mt-4">
-                <div className="space-y-3">
-                  {linkedTables.map(table => {
-                    const isExpanded = expandedMccs.has(table.fornecedorCategoryId);
-                    const bandeiras = parseBandeiras(table.bandeiras);
-                    
-                    return (
-                      <div key={table.fornecedorCategoryId} className="border border-[#2E2E2E] rounded-lg overflow-hidden">
-                        <div 
-                          className="flex items-center justify-between p-3 bg-[#0a0a0a] hover:bg-[#1a1a1a] cursor-pointer"
-                          onClick={() => toggleMccExpanded(table.fornecedorCategoryId)}
-                        >
-                          <div className="flex items-center gap-3">
-                            {isExpanded ? (
-                              <ChevronDown className="w-4 h-4 text-[#616161]" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4 text-[#616161]" />
-                            )}
-                            <Badge variant="outline" className="border-[#ff9800] text-[#ff9800]">
-                              {table.mcc}
-                            </Badge>
-                            <span className="text-white text-sm">{table.categoryName}</span>
-                            <span className="text-xs text-[#616161]">({isSuperAdmin ? `${table.fornecedorNome} | ` : ''}{bandeiras.length} bandeiras)</span>
-                            <MdrStatusBadge status={(table.status as MdrStatus) || 'rascunho'} size="sm" />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {canValidateMdr && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => { e.stopPropagation(); openValidationModal(table); }}
-                                className="text-[#808080] hover:text-white hover:bg-[#2E2E2E]"
-                              >
-                                <Shield className="w-4 h-4" />
-                              </Button>
-                            )}
-                            {isSuperAdmin && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => { e.stopPropagation(); handleUnlinkTable(table.fornecedorCategoryId); }}
-                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
+                          )}
                         </div>
-                        
-                        {isExpanded && (
-                          <div className="bg-[#0f0f0f]">
-                            <div className="overflow-x-auto">
-                              <table className="w-full min-w-[900px] border-collapse">
-                                <thead>
-                                  <tr className="border-b border-[#2a2a2a]">
-                                    <th className="sticky left-0 z-10 bg-[#0a0a0a] text-sm font-medium text-white p-3 text-left border-r border-[#2a2a2a] min-w-[100px]">
-                                      Bandeiras
-                                    </th>
-                                    <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Débito</th>
-                                    <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Crédito à vista</th>
-                                    <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Crédito 2-6x</th>
-                                    <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Crédito 7-12x</th>
-                                    <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Pré-pago</th>
-                                    <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Voucher</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {bandeiras.map((bandeira, idx) => (
-                                    <tr key={`online-${table.fornecedorCategoryId}-${idx}`} className="border-b border-[#1f1f1f]">
-                                      <td className="sticky left-0 z-10 bg-[#0a0a0a] text-white px-3 py-2 text-left border-r border-[#1f1f1f] font-medium text-sm">
-                                        {bandeira}
-                                      </td>
-                                      <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
-                                        <EditableRateCell
-                                          customerId={customerId}
-                                          fornecedorCategoryId={table.fornecedorCategoryId}
-                                          bandeira={bandeira}
-                                          produto="debito"
-                                          canal="online"
-                                          custoBase={parseRate(table.debitoOnline, idx)}
-                                          taxaFinalCalculada={calculateFinalRate(table.debitoOnline, idx)}
-                                          override={getOverride(table.fornecedorCategoryId, bandeira, 'debito', 'online')}
-                                          canEdit={canEditRates}
-                                          isSuperAdmin={isSuperAdmin}
-                                          isCore={isCore}
-                                          marginOutbank={parseFloat(marginOutbank) || 0}
-                                          marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                          marginCore={parseFloat(marginCore) || 0}
-                                          onOverrideChange={loadOverrides}
-                                        />
-                                      </td>
-                                      <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
-                                        <EditableRateCell
-                                          customerId={customerId}
-                                          fornecedorCategoryId={table.fornecedorCategoryId}
-                                          bandeira={bandeira}
-                                          produto="credito"
-                                          canal="online"
-                                          custoBase={parseRate(table.creditoOnline, idx)}
-                                          taxaFinalCalculada={calculateFinalRate(table.creditoOnline, idx)}
-                                          override={getOverride(table.fornecedorCategoryId, bandeira, 'credito', 'online')}
-                                          canEdit={canEditRates}
-                                          isSuperAdmin={isSuperAdmin}
-                                          isCore={isCore}
-                                          marginOutbank={parseFloat(marginOutbank) || 0}
-                                          marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                          marginCore={parseFloat(marginCore) || 0}
-                                          onOverrideChange={loadOverrides}
-                                        />
-                                      </td>
-                                      <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
-                                        <EditableRateCell
-                                          customerId={customerId}
-                                          fornecedorCategoryId={table.fornecedorCategoryId}
-                                          bandeira={bandeira}
-                                          produto="credito2x"
-                                          canal="online"
-                                          custoBase={parseRate(table.credito2xOnline, idx)}
-                                          taxaFinalCalculada={calculateFinalRate(table.credito2xOnline, idx)}
-                                          override={getOverride(table.fornecedorCategoryId, bandeira, 'credito2x', 'online')}
-                                          canEdit={canEditRates}
-                                          isSuperAdmin={isSuperAdmin}
-                                          isCore={isCore}
-                                          marginOutbank={parseFloat(marginOutbank) || 0}
-                                          marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                          marginCore={parseFloat(marginCore) || 0}
-                                          onOverrideChange={loadOverrides}
-                                        />
-                                      </td>
-                                      <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
-                                        <EditableRateCell
-                                          customerId={customerId}
-                                          fornecedorCategoryId={table.fornecedorCategoryId}
-                                          bandeira={bandeira}
-                                          produto="credito7x"
-                                          canal="online"
-                                          custoBase={parseRate(table.credito7xOnline, idx)}
-                                          taxaFinalCalculada={calculateFinalRate(table.credito7xOnline, idx)}
-                                          override={getOverride(table.fornecedorCategoryId, bandeira, 'credito7x', 'online')}
-                                          canEdit={canEditRates}
-                                          isSuperAdmin={isSuperAdmin}
-                                          isCore={isCore}
-                                          marginOutbank={parseFloat(marginOutbank) || 0}
-                                          marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                          marginCore={parseFloat(marginCore) || 0}
-                                          onOverrideChange={loadOverrides}
-                                        />
-                                      </td>
-                                      <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
-                                        <EditableRateCell
-                                          customerId={customerId}
-                                          fornecedorCategoryId={table.fornecedorCategoryId}
-                                          bandeira={bandeira}
-                                          produto="pre"
-                                          canal="online"
-                                          custoBase={parseRate(table.preOnline, idx)}
-                                          taxaFinalCalculada={calculateFinalRate(table.preOnline, idx)}
-                                          override={getOverride(table.fornecedorCategoryId, bandeira, 'pre', 'online')}
-                                          canEdit={canEditRates}
-                                          isSuperAdmin={isSuperAdmin}
-                                          isCore={isCore}
-                                          marginOutbank={parseFloat(marginOutbank) || 0}
-                                          marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                          marginCore={parseFloat(marginCore) || 0}
-                                          onOverrideChange={loadOverrides}
-                                        />
-                                      </td>
-                                      <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
-                                        <EditableRateCell
-                                          customerId={customerId}
-                                          fornecedorCategoryId={table.fornecedorCategoryId}
-                                          bandeira={bandeira}
-                                          produto="voucher"
-                                          canal="online"
-                                          custoBase={parseRate(table.voucherOnline, idx)}
-                                          taxaFinalCalculada={calculateFinalRate(table.voucherOnline, idx)}
-                                          override={getOverride(table.fornecedorCategoryId, bandeira, 'voucher', 'online')}
-                                          canEdit={canEditRates}
-                                          isSuperAdmin={isSuperAdmin}
-                                          isCore={isCore}
-                                          marginOutbank={parseFloat(marginOutbank) || 0}
-                                          marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                          marginCore={parseFloat(marginCore) || 0}
-                                          onOverrideChange={loadOverrides}
-                                        />
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                      );
+                    })}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="online" className="mt-4">
+                  <div className="space-y-3">
+                    {linkedTables.map(table => {
+                      const isExpanded = expandedMccs.has(table.fornecedorCategoryId);
+                      const bandeiras = parseBandeiras(table.bandeiras);
+
+                      return (
+                        <div key={table.fornecedorCategoryId} className="border border-[#2E2E2E] rounded-lg overflow-hidden">
+                          <div
+                            className="flex items-center justify-between p-3 bg-[#0a0a0a] hover:bg-[#1a1a1a] cursor-pointer"
+                            onClick={() => toggleMccExpanded(table.fornecedorCategoryId)}
+                          >
+                            <div className="flex items-center gap-3">
+                              {isExpanded ? (
+                                <ChevronDown className="w-4 h-4 text-[#616161]" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-[#616161]" />
+                              )}
+                              <Badge variant="outline" className="border-[#ff9800] text-[#ff9800]">
+                                {table.mcc}
+                              </Badge>
+                              <span className="text-white text-sm">{table.categoryName}</span>
+                              <span className="text-xs text-[#616161]">({isSuperAdmin ? `${table.fornecedorNome} | ` : ''}{bandeiras.length} bandeiras)</span>
+                              <MdrStatusBadge status={(table.status as MdrStatus) || 'rascunho'} size="sm" />
                             </div>
-                            <div className="grid grid-cols-2 gap-4 p-4 border-t border-[#2a2a2a]">
-                              <div className="bg-[#0a0a0a] rounded-lg p-3 border border-[#2a2a2a]">
-                                <div className="text-xs text-[#616161] mb-2">PIX</div>
-                                <EditableRateCell
-                                  customerId={customerId}
-                                  fornecedorCategoryId={table.fornecedorCategoryId}
-                                  bandeira="PIX"
-                                  produto="pix"
-                                  canal="online"
-                                  custoBase={parseRate(table.custoPixOnline, 0)}
-                                  taxaFinalCalculada={calculateFinalRate(table.custoPixOnline, 0)}
-                                  override={getOverride(table.fornecedorCategoryId, 'PIX', 'pix', 'online')}
-                                  canEdit={canEditRates}
-                                  isSuperAdmin={isSuperAdmin}
-                                  marginOutbank={parseFloat(marginOutbank) || 0}
-                                  marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                  marginCore={parseFloat(marginCore) || 0}
-                                  onOverrideChange={loadOverrides}
-                                />
-                              </div>
-                              <div className="bg-[#0a0a0a] rounded-lg p-3 border border-[#2a2a2a]">
-                                <div className="text-xs text-[#616161] mb-2">Antecipação</div>
-                                <EditableRateCell
-                                  customerId={customerId}
-                                  fornecedorCategoryId={table.fornecedorCategoryId}
-                                  bandeira="ANTECIPACAO"
-                                  produto="antecipacao"
-                                  canal="online"
-                                  custoBase={parseRate(table.antecipacaoOnline, 0)}
-                                  taxaFinalCalculada={calculateFinalRate(table.antecipacaoOnline, 0)}
-                                  override={getOverride(table.fornecedorCategoryId, 'ANTECIPACAO', 'antecipacao', 'online')}
-                                  canEdit={canEditRates}
-                                  isSuperAdmin={isSuperAdmin}
-                                  marginOutbank={parseFloat(marginOutbank) || 0}
-                                  marginExecutivo={parseFloat(marginExecutivo) || 0}
-                                  marginCore={parseFloat(marginCore) || 0}
-                                  onOverrideChange={loadOverrides}
-                                />
-                              </div>
+                            <div className="flex items-center gap-2">
+                              {canValidateMdr && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => { e.stopPropagation(); openValidationModal(table); }}
+                                  className="text-[#808080] hover:text-white hover:bg-[#2E2E2E]"
+                                >
+                                  <Shield className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {isSuperAdmin && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => { e.stopPropagation(); handleUnlinkTable(table.fornecedorCategoryId); }}
+                                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </TabsContent>
-            </Tabs>
-          )}
-        </CardContent>
-      </Card>
+
+                          {isExpanded && (
+                            <div className="bg-[#0f0f0f]">
+                              <div className="overflow-x-auto">
+                                <table className="w-full min-w-[900px] border-collapse">
+                                  <thead>
+                                    <tr className="border-b border-[#2a2a2a]">
+                                      <th className="sticky left-0 z-10 bg-[#0a0a0a] text-sm font-medium text-white p-3 text-left border-r border-[#2a2a2a] min-w-[100px]">
+                                        Bandeiras
+                                      </th>
+                                      <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Débito</th>
+                                      <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Crédito à vista</th>
+                                      <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Crédito 2-6x</th>
+                                      <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Crédito 7-12x</th>
+                                      <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Pré-pago</th>
+                                      <th className="text-center min-w-[100px] text-xs font-medium text-[#616161] p-3 border-l border-[#2a2a2a]">Voucher</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {bandeiras.map((bandeira, idx) => (
+                                      <tr key={`online-${table.fornecedorCategoryId}-${idx}`} className="border-b border-[#1f1f1f]">
+                                        <td className="sticky left-0 z-10 bg-[#0a0a0a] text-white px-3 py-2 text-left border-r border-[#1f1f1f] font-medium text-sm">
+                                          {bandeira}
+                                        </td>
+                                        <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
+                                          <EditableRateCell
+                                            customerId={customerId}
+                                            fornecedorCategoryId={table.fornecedorCategoryId}
+                                            bandeira={bandeira}
+                                            produto="debito"
+                                            canal="online"
+                                            custoBase={parseRate(table.debitoOnline, idx)}
+                                            taxaFinalCalculada={calculateFinalRate(table.debitoOnline, idx)}
+                                            override={getOverride(table.fornecedorCategoryId, bandeira, 'debito', 'online')}
+                                            canEdit={canEditRates}
+                                            isSuperAdmin={isSuperAdmin}
+                                            isCore={isCore}
+                                            marginOutbank={parseFloat(marginOutbank) || 0}
+                                            marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                            marginCore={parseFloat(marginCore) || 0}
+                                            onOverrideChange={loadOverrides}
+                                          />
+                                        </td>
+                                        <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
+                                          <EditableRateCell
+                                            customerId={customerId}
+                                            fornecedorCategoryId={table.fornecedorCategoryId}
+                                            bandeira={bandeira}
+                                            produto="credito"
+                                            canal="online"
+                                            custoBase={parseRate(table.creditoOnline, idx)}
+                                            taxaFinalCalculada={calculateFinalRate(table.creditoOnline, idx)}
+                                            override={getOverride(table.fornecedorCategoryId, bandeira, 'credito', 'online')}
+                                            canEdit={canEditRates}
+                                            isSuperAdmin={isSuperAdmin}
+                                            isCore={isCore}
+                                            marginOutbank={parseFloat(marginOutbank) || 0}
+                                            marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                            marginCore={parseFloat(marginCore) || 0}
+                                            onOverrideChange={loadOverrides}
+                                          />
+                                        </td>
+                                        <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
+                                          <EditableRateCell
+                                            customerId={customerId}
+                                            fornecedorCategoryId={table.fornecedorCategoryId}
+                                            bandeira={bandeira}
+                                            produto="credito2x"
+                                            canal="online"
+                                            custoBase={parseRate(table.credito2xOnline, idx)}
+                                            taxaFinalCalculada={calculateFinalRate(table.credito2xOnline, idx)}
+                                            override={getOverride(table.fornecedorCategoryId, bandeira, 'credito2x', 'online')}
+                                            canEdit={canEditRates}
+                                            isSuperAdmin={isSuperAdmin}
+                                            isCore={isCore}
+                                            marginOutbank={parseFloat(marginOutbank) || 0}
+                                            marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                            marginCore={parseFloat(marginCore) || 0}
+                                            onOverrideChange={loadOverrides}
+                                          />
+                                        </td>
+                                        <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
+                                          <EditableRateCell
+                                            customerId={customerId}
+                                            fornecedorCategoryId={table.fornecedorCategoryId}
+                                            bandeira={bandeira}
+                                            produto="credito7x"
+                                            canal="online"
+                                            custoBase={parseRate(table.credito7xOnline, idx)}
+                                            taxaFinalCalculada={calculateFinalRate(table.credito7xOnline, idx)}
+                                            override={getOverride(table.fornecedorCategoryId, bandeira, 'credito7x', 'online')}
+                                            canEdit={canEditRates}
+                                            isSuperAdmin={isSuperAdmin}
+                                            isCore={isCore}
+                                            marginOutbank={parseFloat(marginOutbank) || 0}
+                                            marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                            marginCore={parseFloat(marginCore) || 0}
+                                            onOverrideChange={loadOverrides}
+                                          />
+                                        </td>
+                                        <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
+                                          <EditableRateCell
+                                            customerId={customerId}
+                                            fornecedorCategoryId={table.fornecedorCategoryId}
+                                            bandeira={bandeira}
+                                            produto="pre"
+                                            canal="online"
+                                            custoBase={parseRate(table.preOnline, idx)}
+                                            taxaFinalCalculada={calculateFinalRate(table.preOnline, idx)}
+                                            override={getOverride(table.fornecedorCategoryId, bandeira, 'pre', 'online')}
+                                            canEdit={canEditRates}
+                                            isSuperAdmin={isSuperAdmin}
+                                            isCore={isCore}
+                                            marginOutbank={parseFloat(marginOutbank) || 0}
+                                            marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                            marginCore={parseFloat(marginCore) || 0}
+                                            onOverrideChange={loadOverrides}
+                                          />
+                                        </td>
+                                        <td className="text-center bg-[#121212] border-l border-[#1f1f1f] p-2">
+                                          <EditableRateCell
+                                            customerId={customerId}
+                                            fornecedorCategoryId={table.fornecedorCategoryId}
+                                            bandeira={bandeira}
+                                            produto="voucher"
+                                            canal="online"
+                                            custoBase={parseRate(table.voucherOnline, idx)}
+                                            taxaFinalCalculada={calculateFinalRate(table.voucherOnline, idx)}
+                                            override={getOverride(table.fornecedorCategoryId, bandeira, 'voucher', 'online')}
+                                            canEdit={canEditRates}
+                                            isSuperAdmin={isSuperAdmin}
+                                            isCore={isCore}
+                                            marginOutbank={parseFloat(marginOutbank) || 0}
+                                            marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                            marginCore={parseFloat(marginCore) || 0}
+                                            onOverrideChange={loadOverrides}
+                                          />
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4 p-4 border-t border-[#2a2a2a]">
+                                <div className="bg-[#0a0a0a] rounded-lg p-3 border border-[#2a2a2a]">
+                                  <div className="text-xs text-[#616161] mb-2">PIX</div>
+                                  <EditableRateCell
+                                    customerId={customerId}
+                                    fornecedorCategoryId={table.fornecedorCategoryId}
+                                    bandeira="PIX"
+                                    produto="pix"
+                                    canal="online"
+                                    custoBase={parseRate(table.custoPixOnline, 0)}
+                                    taxaFinalCalculada={calculateFinalRate(table.custoPixOnline, 0)}
+                                    override={getOverride(table.fornecedorCategoryId, 'PIX', 'pix', 'online')}
+                                    canEdit={canEditRates}
+                                    isSuperAdmin={isSuperAdmin}
+                                    marginOutbank={parseFloat(marginOutbank) || 0}
+                                    marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                    marginCore={parseFloat(marginCore) || 0}
+                                    onOverrideChange={loadOverrides}
+                                  />
+                                </div>
+                                <div className="bg-[#0a0a0a] rounded-lg p-3 border border-[#2a2a2a]">
+                                  <div className="text-xs text-[#616161] mb-2">Antecipação</div>
+                                  <EditableRateCell
+                                    customerId={customerId}
+                                    fornecedorCategoryId={table.fornecedorCategoryId}
+                                    bandeira="ANTECIPACAO"
+                                    produto="antecipacao"
+                                    canal="online"
+                                    custoBase={parseRate(table.antecipacaoOnline, 0)}
+                                    taxaFinalCalculada={calculateFinalRate(table.antecipacaoOnline, 0)}
+                                    override={getOverride(table.fornecedorCategoryId, 'ANTECIPACAO', 'antecipacao', 'online')}
+                                    canEdit={canEditRates}
+                                    isSuperAdmin={isSuperAdmin}
+                                    marginOutbank={parseFloat(marginOutbank) || 0}
+                                    marginExecutivo={parseFloat(marginExecutivo) || 0}
+                                    marginCore={parseFloat(marginCore) || 0}
+                                    onOverrideChange={loadOverrides}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       <Dialog open={showCoreWarningDialog} onOpenChange={setShowCoreWarningDialog}>
@@ -1201,14 +1201,14 @@ export function IsoDetailPage({
             </p>
           </div>
           <DialogFooter>
-            <Button 
+            <Button
               variant="outline"
               onClick={() => setShowCoreWarningDialog(false)}
               className="border-[#2E2E2E] text-white hover:bg-[#2E2E2E]"
             >
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={() => handleSaveMargins(true)}
               disabled={saving}
               className="bg-[#2E2E2E] hover:bg-[#3a3a3a] text-white border border-[#3a3a3a]"
