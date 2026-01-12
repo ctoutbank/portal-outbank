@@ -11,12 +11,16 @@ const DEV_BYPASS_ENABLED =
 const DEV_FALLBACK_SECRET = 'dev-only-secret-do-not-use-in-production-32bytes';
 
 function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET || process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  const secret = process.env.JWT_SECRET ||
+    process.env.AUTH_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    process.env.CLERK_SECRET_KEY; // Fallback para usar a chave do Clerk que já existe no ambiente
+
   if (!secret) {
     if (DEV_BYPASS_ENABLED) {
       return new TextEncoder().encode(DEV_FALLBACK_SECRET);
     }
-    throw new Error('JWT_SECRET (or AUTH_SECRET/NEXTAUTH_SECRET) environment variable is required');
+    throw new Error('Nenhuma chave secreta encontrada (JWT_SECRET, AUTH_SECRET, etc).');
   }
   return new TextEncoder().encode(secret);
 }
