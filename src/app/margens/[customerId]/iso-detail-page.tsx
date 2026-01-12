@@ -449,7 +449,7 @@ export function IsoDetailPage({
                   {/* Botão de salvar - Super Admin e Core podem salvar, Executivo não */}
                   {(isSuperAdmin || userRole === 'core') && (
                     <Button 
-                      onClick={handleSaveMargins} 
+                      onClick={() => handleSaveMargins()} 
                       disabled={saving}
                       className="mt-1 w-full h-10 bg-[#2E2E2E] hover:bg-[#3a3a3a] text-white font-medium border border-[#3a3a3a]"
                     >
