@@ -673,3 +673,205 @@ export async function resetUserPassword(userId: number): Promise<{
     };
   }
 }
+
+export interface IsoCommissionLinkInput {
+  customerId: number;
+  commissionType: string;
+}
+
+/**
+ * Migra margin_core para margin_outbank quando não há mais usuários CORE em um ISO
+ * @param customerId - ID do ISO
+ */
+async function migrateCoreMarginsIfNeeded(customerId: number): Promise<void> {
+  try {
+    // Verificar se ainda existem usuários CORE vinculados a este ISO
+    const remainingCoreUsers = await db
+      .select({ id: userCustomers.idUser })
+      .from(userCustomers)
+      .where(
+        and(
+          eq(userCustomers.idCustomer, customerId),
+          eq(userCustomers.commissionType, "CORE"),
+          eq(userCustomers.active, true)
+        )
+      );
+
+    // Se ainda há usuários CORE, não fazer nada
+    if (remainingCoreUsers.length > 0) {
+      console.log(`[migrateCoreMarginsIfNeeded] ISO ${customerId} ainda tem ${remainingCoreUsers.length} usuários CORE, não migrar margens`);
+      return;
+    }
+
+    // Buscar margem atual do ISO
+    const { sql: sqlVercel } = await import("@vercel/postgres");
+    const { rows } = await sqlVercel.query(`
+      SELECT margin_core, margin_outbank 
+      FROM iso_margin_config 
+      WHERE customer_id = $1
+    `, [customerId]);
+
+    if (rows.length === 0) {
+      console.log(`[migrateCoreMarginsIfNeeded] ISO ${customerId} não tem configuração de margem`);
+      return;
+    }
+
+    const currentMarginCore = parseFloat(rows[0].margin_core?.replace(",", ".") || "0");
+    const currentMarginOutbank = parseFloat(rows[0].margin_outbank?.replace(",", ".") || "0");
+
+    // Se margin_core é 0, não há nada a transferir
+    if (currentMarginCore === 0) {
+      console.log(`[migrateCoreMarginsIfNeeded] ISO ${customerId} já tem margin_core=0, nada a transferir`);
+      return;
+    }
+
+    // Transferir margin_core para margin_outbank e zerar margin_core
+    const newMarginOutbank = currentMarginOutbank + currentMarginCore;
+    
+    await sqlVercel.query(`
+      UPDATE iso_margin_config 
+      SET margin_core = '0', 
+          margin_outbank = $1,
+          updated_at = NOW()
+      WHERE customer_id = $2
+    `, [newMarginOutbank.toFixed(4), customerId]);
+
+    console.log(`[migrateCoreMarginsIfNeeded] ✅ ISO ${customerId}: transferido margin_core=${currentMarginCore} para margin_outbank. Novo margin_outbank=${newMarginOutbank}`);
+  } catch (error) {
+    console.error(`[migrateCoreMarginsIfNeeded] Erro ao migrar margens do ISO ${customerId}:`, error);
+    // Não bloquear a operação principal
+  }
+}
+
+export async function saveUserIsoCommissionLinks(
+  userId: number,
+  links: IsoCommissionLinkInput[]
+): Promise<void> {
+  if (!userId || userId <= 0) {
+    throw new Error("ID do usuário é obrigatório");
+  }
+
+  try {
+    // Buscar vínculos existentes para fazer upsert inteligente
+    const existingLinks = await db
+      .select()
+      .from(userCustomers)
+      .where(eq(userCustomers.idUser, userId));
+    
+    // Detectar mudanças de CORE para outro tipo (para migração de margens)
+    const coreToOtherChanges: number[] = [];
+
+    // Criar mapa de links existentes por customerId
+    const existingByCustomerId = new Map(
+      existingLinks.map((l) => [l.idCustomer, l])
+    );
+
+    // Identificar customerIds que devem ter vínculo de comissão
+    const newCustomerIds = new Set(links.map((l) => l.customerId));
+
+    // Para links existentes que NÃO estão na nova lista:
+    // - Se já tinham commission_type, remover o commission_type (manter o vínculo)
+    // - Se não tinham commission_type, manter como está
+    for (const existing of existingLinks) {
+      if (!newCustomerIds.has(existing.idCustomer) && existing.commissionType) {
+        // Se era CORE e está sendo removido, marcar para verificar migração
+        if (existing.commissionType === "CORE") {
+          coreToOtherChanges.push(existing.idCustomer);
+        }
+        // Remover commission_type mas manter o vínculo
+        await db
+          .update(userCustomers)
+          .set({ commissionType: null })
+          .where(
+            and(
+              eq(userCustomers.idUser, userId),
+              eq(userCustomers.idCustomer, existing.idCustomer)
+            )
+          );
+      }
+    }
+
+    // Para novos links:
+    // - Se já existe vínculo, atualizar commission_type
+    // - Se não existe, inserir novo
+    for (let i = 0; i < links.length; i++) {
+      const link = links[i];
+      const existing = existingByCustomerId.get(link.customerId);
+
+      if (existing) {
+        // Detectar se está mudando de CORE para outro tipo
+        if (existing.commissionType === "CORE" && link.commissionType !== "CORE") {
+          coreToOtherChanges.push(link.customerId);
+        }
+        // Atualizar commission_type do vínculo existente
+        await db
+          .update(userCustomers)
+          .set({ 
+            commissionType: link.commissionType,
+            active: true,
+          })
+          .where(
+            and(
+              eq(userCustomers.idUser, userId),
+              eq(userCustomers.idCustomer, link.customerId)
+            )
+          );
+      } else {
+        // Inserir novo vínculo
+        await db.insert(userCustomers).values({
+          idUser: userId,
+          idCustomer: link.customerId,
+          commissionType: link.commissionType,
+          active: true,
+          isPrimary: i === 0 && existingLinks.filter(l => l.isPrimary).length === 0,
+        });
+      }
+    }
+
+    // Após todas as atualizações, verificar se precisa migrar margens para ISOs que perderam usuários CORE
+    if (coreToOtherChanges.length > 0) {
+      console.log(`[saveUserIsoCommissionLinks] Verificando migração de margens para ${coreToOtherChanges.length} ISOs que perderam usuário CORE`);
+      for (const customerId of coreToOtherChanges) {
+        await migrateCoreMarginsIfNeeded(customerId);
+      }
+    }
+
+    revalidatePath("/config/users");
+    revalidatePath("/margens");
+  } catch (error) {
+    console.error("[saveUserIsoCommissionLinks] Erro ao salvar vínculos:", error);
+    throw error;
+  }
+}
+
+export async function getUserIsoCommissionLinks(
+  userId: number
+): Promise<Array<{ customerId: number; customerName: string; commissionType: string }>> {
+  if (!userId || userId <= 0) {
+    return [];
+  }
+
+  try {
+    const links = await db
+      .select({
+        customerId: userCustomers.idCustomer,
+        customerName: customers.name,
+        commissionType: userCustomers.commissionType,
+      })
+      .from(userCustomers)
+      .leftJoin(customers, eq(userCustomers.idCustomer, customers.id))
+      .where(and(eq(userCustomers.idUser, userId), eq(userCustomers.active, true)));
+
+    // Filtrar apenas links que têm commission_type definido (não NULL)
+    return links
+      .filter((l) => l.commissionType !== null)
+      .map((l) => ({
+        customerId: l.customerId,
+        customerName: l.customerName || "",
+        commissionType: l.commissionType || "",
+      }));
+  } catch (error) {
+    console.error("[getUserIsoCommissionLinks] Erro ao buscar vínculos:", error);
+    return [];
+  }
+}
