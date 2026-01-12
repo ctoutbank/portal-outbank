@@ -4,8 +4,7 @@ import { getUserProfile, getUserPermissionsSummary } from "@/features/users/serv
 import { ProfilePage } from "@/features/users/_components/profile-page";
 import { redirect } from "next/navigation";
 import { getPortalSettings } from "@/lib/portal-settings";
-import { db } from "@/lib/db";
-import { customers } from "../../../drizzle/schema";
+import { db, customers } from "@/lib/db";
 import { count, eq } from "drizzle-orm";
 
 export const revalidate = 0;

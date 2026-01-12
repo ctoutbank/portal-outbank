@@ -2,8 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import BaseHeader from "@/components/layout/base-header";
 import { ProfileForm } from "@/components/profile/profile-form";
-import { db } from "@/lib/db";
-import { users, profiles } from "../../../drizzle/schema";
+import { db, users, profiles } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 export const dynamic = 'force-dynamic';

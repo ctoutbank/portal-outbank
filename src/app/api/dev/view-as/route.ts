@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getCurrentUser } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { users } from "../../../../../drizzle/schema";
+import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 const SIMULATED_USER_COOKIE = "dev_simulated_user_id";

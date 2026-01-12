@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isSuperAdmin } from "@/lib/permissions/check-permissions";
-import { db } from "@/db/drizzle";
-import { users } from "../../../../drizzle/schema";
+import { db, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { hashPassword } from "@/app/utils/password";
 

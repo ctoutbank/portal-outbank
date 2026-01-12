@@ -1,8 +1,7 @@
 "use server";
 
-import { db } from "@/db/drizzle";
+import { db, merchants, payout, transactions, customers } from "@/lib/db";
 import { and, count, sql, inArray, or, not, isNull } from "drizzle-orm";
-import { merchants, payout, transactions, customers } from "../../../drizzle/schema";
 import { revalidatePath } from "next/cache";
 import { getMerchantModuleBadges } from "@/lib/modules/merchant-modules";
 import { getCurrentUserInfo } from "@/lib/permissions/check-permissions";
