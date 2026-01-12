@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { 
-  getIsoNotifications, 
+import {
+  getIsoNotifications,
   getUnreadNotificationCount,
   markNotificationAsRead,
-  markAllNotificationsAsRead 
+  markAllNotificationsAsRead
 } from '@/lib/db/mdr-versioning';
+
+export const dynamic = 'force-dynamic';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {

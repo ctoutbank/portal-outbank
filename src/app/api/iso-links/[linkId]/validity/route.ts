@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { setLinkValidityDates, getIsoLinkWithVersionInfo, applyPendingVersion } from '@/lib/db/mdr-versioning';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ linkId: string }> }
@@ -73,7 +75,7 @@ export async function POST(
 
     const { linkId } = await params;
     const body = await request.json();
-    
+
     if (body.action === 'apply_pending_version') {
       await applyPendingVersion(linkId);
       return NextResponse.json({ success: true, message: 'Nova versão aplicada com sucesso' });

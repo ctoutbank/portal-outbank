@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
+export const dynamic = 'force-dynamic';
+
 const SIMULATED_USER_COOKIE = "dev_simulated_user_id";
 
 async function verifyIsSuperAdmin(): Promise<boolean> {
