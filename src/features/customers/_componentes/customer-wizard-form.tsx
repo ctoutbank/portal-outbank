@@ -15,9 +15,9 @@ import {
   ProfileDD,
   UserDetailForm,
   getUserDetailWithClerk,
-  UserDetail,
   getUsersWithClerk,
 } from "../users/_actions/user-actions";
+import { UserWithClerk } from "../users/_components/user-table-updated";
 import {
   saveCustomization,
   updateCustomization,
@@ -57,7 +57,7 @@ export default function CustomerWizardForm({
     customer.id || null
   );
   const [isFirstStepComplete, setIsFirstStepComplete] = useState(!!customer.id);
-  const [users, setUsers] = useState<UserDetail[]>([]);
+  const [users, setUsers] = useState<UserWithClerk[]>([]);
   const [isLoadingUsers] = useState(false);
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [userToEdit, setUserToEdit] = useState<UserDetailForm | null>(null);
