@@ -100,3 +100,31 @@ export function formatDateLabel(dateString: string): string {
   const [year, month, day] = dateString.split('-');
   return `${day}/${month}`;
 }
+
+// Formato completo brasileiro para valores monetários
+export function formatCurrencyFull(value: number): string {
+  return value.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+// Formato abreviado para eixos de gráficos (mantém legibilidade)
+export function formatCurrencyShort(value: number): string {
+  if (value >= 1_000_000_000) return `R$ ${(value / 1_000_000_000).toFixed(1).replace('.', ',')}B`;
+  if (value >= 1_000_000) return `R$ ${(value / 1_000_000).toFixed(1).replace('.', ',')}M`;
+  if (value >= 1_000) return `R$ ${(value / 1_000).toFixed(1).replace('.', ',')}K`;
+  return formatCurrencyFull(value);
+}
+
+// Formatar número com separador de milhar brasileiro
+export function formatNumber(value: number): string {
+  return value.toLocaleString('pt-BR');
+}
+
+// Formatar percentual com vírgula (padrão BR)
+export function formatPercent(value: number, decimals: number = 1): string {
+  return `${value.toFixed(decimals).replace('.', ',')}%`;
+}

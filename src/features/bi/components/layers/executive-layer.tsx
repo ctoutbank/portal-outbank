@@ -5,7 +5,7 @@ import { DollarSign, CreditCard, Receipt, CheckCircle, XCircle } from "lucide-re
 import { LayerHeader } from "../shared/layer-header";
 import { InfoCard } from "../shared/info-card";
 import { ChartCard } from "../shared/chart-card";
-import { CHART_PALETTE, getProductLabel, formatDateLabel } from "../shared/colors";
+import { CHART_PALETTE, getProductLabel, formatDateLabel, formatCurrencyFull, formatCurrencyShort, formatNumber, formatPercent } from "../shared/colors";
 import {
   LineChart,
   Line,
@@ -21,16 +21,6 @@ import {
 } from "recharts";
 
 type Props = { data: BiData };
-
-function formatCurrency(value: number): string {
-  if (value >= 1000000) return `R$ ${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `R$ ${(value / 1000).toFixed(1)}K`;
-  return `R$ ${value.toFixed(2)}`;
-}
-
-function formatNumber(value: number): string {
-  return value.toLocaleString('pt-BR');
-}
 
 export function ExecutiveLayer({ data }: Props) {
   const { executive, dailyTpv, productMix } = data;
@@ -53,7 +43,7 @@ export function ExecutiveLayer({ data }: Props) {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <InfoCard
           title="TPV Total"
-          value={formatCurrency(executive.tpv)}
+          value={formatCurrencyFull(executive.tpv)}
           icon={DollarSign}
         />
         <InfoCard
@@ -63,23 +53,23 @@ export function ExecutiveLayer({ data }: Props) {
         />
         <InfoCard
           title="Ticket Médio"
-          value={formatCurrency(executive.ticketMedio)}
+          value={formatCurrencyFull(executive.ticketMedio)}
           icon={Receipt}
         />
         <InfoCard
           title="Taxa Aprovação"
-          value={`${executive.taxaAprovacao}%`}
+          value={formatPercent(parseFloat(executive.taxaAprovacao))}
           icon={CheckCircle}
           iconColor="green"
         />
         <InfoCard
           title="Taxa Cancelamento"
-          value={`${executive.taxaCancelamento}%`}
+          value={formatPercent(parseFloat(executive.taxaCancelamento))}
           icon={XCircle}
         />
         <InfoCard
           title="Taxa Recusa"
-          value={`${executive.taxaRecusa}%`}
+          value={formatPercent(parseFloat(executive.taxaRecusa))}
           icon={XCircle}
           iconColor="red"
         />
@@ -96,12 +86,12 @@ export function ExecutiveLayer({ data }: Props) {
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis dataKey="date" stroke="#666" tick={{ fill: '#888', fontSize: 10 }} />
-                <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrency(v)} />
+                <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrencyShort(v)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
                   labelStyle={{ color: '#fff' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number) => [formatCurrency(value), 'TPV']}
+                  formatter={(value: number) => [formatCurrencyFull(value), 'TPV']}
                 />
                 <Line 
                   type="monotone" 
@@ -131,7 +121,7 @@ export function ExecutiveLayer({ data }: Props) {
                   outerRadius={70}
                   paddingAngle={2}
                   dataKey="value"
-                  label={({ percent }) => percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''}
+                  label={({ percent }) => percent > 0.03 ? `${(percent * 100).toFixed(1).replace('.', ',')}%` : ''}
                   labelLine={false}
                   style={{ fontSize: '11px' }}
                 >
@@ -143,7 +133,11 @@ export function ExecutiveLayer({ data }: Props) {
                   contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
                   labelStyle={{ color: '#fff' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value: number, name: string, props: any) => {
+                    const total = pieData.reduce((sum, item) => sum + item.value, 0);
+                    const percent = ((value / total) * 100).toFixed(1).replace('.', ',');
+                    return [`${formatCurrencyFull(value)} (${percent}%)`, props.payload.name];
+                  }}
                 />
                 <Legend 
                   wrapperStyle={{ fontSize: '10px', paddingTop: '8px', color: '#888' }}

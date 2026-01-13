@@ -5,7 +5,7 @@ import { Store, Users, TrendingUp, Building2 } from "lucide-react";
 import { LayerHeader } from "../shared/layer-header";
 import { InfoCard } from "../shared/info-card";
 import { ChartCard } from "../shared/chart-card";
-import { CHART_PALETTE } from "../shared/colors";
+import { CHART_PALETTE, formatCurrencyFull, formatCurrencyShort, formatNumber } from "../shared/colors";
 import {
   BarChart,
   Bar,
@@ -18,16 +18,6 @@ import {
 } from "recharts";
 
 type Props = { data: BiData };
-
-function formatCurrency(value: number): string {
-  if (value >= 1000000) return `R$ ${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `R$ ${(value / 1000).toFixed(1)}K`;
-  return `R$ ${value.toFixed(2)}`;
-}
-
-function formatNumber(value: number): string {
-  return value.toLocaleString('pt-BR');
-}
 
 export function CommercialLayer({ data }: Props) {
   const { topMerchants, customerBreakdown } = data;
@@ -56,7 +46,7 @@ export function CommercialLayer({ data }: Props) {
         />
         <InfoCard
           title="TPV Top 10"
-          value={formatCurrency(totalTpv)}
+          value={formatCurrencyFull(totalTpv)}
           icon={TrendingUp}
         />
         <InfoCard
@@ -79,14 +69,14 @@ export function CommercialLayer({ data }: Props) {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={merchantData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal={false} />
-              <XAxis type="number" stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrency(v)} />
+              <XAxis type="number" stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrencyShort(v)} />
               <YAxis type="category" dataKey="name" stroke="#666" tick={{ fill: '#888', fontSize: 10 }} width={120} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
                 labelStyle={{ color: '#fff' }}
                 itemStyle={{ color: '#fff' }}
                 formatter={(value: number, name: string) => [
-                  name === 'tpv' ? formatCurrency(value) : formatNumber(value),
+                  name === 'tpv' ? formatCurrencyFull(value) : formatNumber(value),
                   name === 'tpv' ? 'TPV' : 'Transações'
                 ]}
                 labelFormatter={(label) => merchantData.find(m => m.name === label)?.fullName || label}
@@ -122,7 +112,7 @@ export function CommercialLayer({ data }: Props) {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-foreground">{formatCurrency(merchant.tpv)}</p>
+                  <p className="text-sm font-bold text-foreground">{formatCurrencyFull(merchant.tpv)}</p>
                 </div>
               </div>
             ))}
@@ -142,7 +132,7 @@ export function CommercialLayer({ data }: Props) {
                 <div key={customer.slug} className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{customer.name}</span>
-                    <span className="text-foreground font-medium">{formatCurrency(customer.tpv)}</span>
+                    <span className="text-foreground font-medium">{formatCurrencyFull(customer.tpv)}</span>
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div

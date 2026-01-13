@@ -3,7 +3,7 @@
 import { BiData } from "../bi-dashboard";
 import { LayerHeader } from "../shared/layer-header";
 import { ChartCard } from "../shared/chart-card";
-import { HEATMAP_GRADIENT, SHIFT_COLORS, DAY_COLORS, CHART_PALETTE } from "../shared/colors";
+import { HEATMAP_GRADIENT, SHIFT_COLORS, DAY_COLORS, CHART_PALETTE, formatCurrencyFull, formatCurrencyShort, formatNumber } from "../shared/colors";
 import {
   BarChart,
   Bar,
@@ -18,16 +18,6 @@ import {
 } from "recharts";
 
 type Props = { data: BiData };
-
-function formatCurrency(value: number): string {
-  if (value >= 1000000) return `R$ ${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `R$ ${(value / 1000).toFixed(1)}K`;
-  return `R$ ${value.toFixed(2)}`;
-}
-
-function formatNumber(value: number): string {
-  return value.toLocaleString('pt-BR');
-}
 
 export function TemporalLayer({ data }: Props) {
   const { hourlyHeatmap, weekdayVolume, shiftVolume } = data;
@@ -101,7 +91,7 @@ export function TemporalLayer({ data }: Props) {
                       key={hour}
                       className="flex-1 h-6 mx-0.5 rounded-sm cursor-pointer transition-all hover:scale-110"
                       style={{ backgroundColor: getHeatColor(value) }}
-                      title={`${day} ${hour}h: ${formatCurrency(value)}`}
+                      title={`${day} ${hour}h: ${formatCurrencyFull(value)}`}
                     />
                   );
                 })}
@@ -130,13 +120,13 @@ export function TemporalLayer({ data }: Props) {
               <BarChart data={shiftData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis dataKey="name" stroke="#666" tick={{ fill: '#888', fontSize: 10 }} />
-                <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrency(v)} />
+                <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrencyShort(v)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
                   labelStyle={{ color: '#fff' }}
                   itemStyle={{ color: '#fff' }}
                   formatter={(value: number, name: string) => [
-                    name === 'tpv' ? formatCurrency(value) : formatNumber(value),
+                    name === 'tpv' ? formatCurrencyFull(value) : formatNumber(value),
                     name === 'tpv' ? 'TPV' : 'Qtd'
                   ]}
                 />
@@ -159,12 +149,12 @@ export function TemporalLayer({ data }: Props) {
               <BarChart data={weekdayData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis dataKey="day" stroke="#666" tick={{ fill: '#888', fontSize: 10 }} />
-                <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrency(v)} />
+                <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrencyShort(v)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
                   labelStyle={{ color: '#fff' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number) => [formatCurrency(value), 'TPV']}
+                  formatter={(value: number) => [formatCurrencyFull(value), 'TPV']}
                 />
                 <Bar dataKey="tpv" radius={[4, 4, 0, 0]}>
                   {weekdayData.map((entry) => (
@@ -186,12 +176,12 @@ export function TemporalLayer({ data }: Props) {
             <LineChart data={ticketByHour}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
               <XAxis dataKey="hour" stroke="#666" tick={{ fill: '#888', fontSize: 10 }} interval={1} />
-              <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrency(v)} />
+              <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrencyShort(v)} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
                 labelStyle={{ color: '#fff' }}
                 itemStyle={{ color: '#fff' }}
-                formatter={(value: number) => [formatCurrency(value), 'Ticket Médio']}
+                formatter={(value: number) => [formatCurrencyFull(value), 'Ticket Médio']}
               />
               <Line 
                 type="monotone" 

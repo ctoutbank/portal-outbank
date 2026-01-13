@@ -5,7 +5,7 @@ import { Activity, Zap } from "lucide-react";
 import { LayerHeader } from "../shared/layer-header";
 import { InfoCard } from "../shared/info-card";
 import { ChartCard } from "../shared/chart-card";
-import { STATUS_COLORS, CHART_PALETTE, formatDateLabel } from "../shared/colors";
+import { STATUS_COLORS, CHART_PALETTE, formatDateLabel, formatCurrencyFull, formatNumber, formatPercent } from "../shared/colors";
 import {
   BarChart,
   Bar,
@@ -30,16 +30,6 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const FUNNEL_COLORS = ['#8b9a6b', '#a8b88a', '#d9956a'];
-
-function formatCurrency(value: number): string {
-  if (value >= 1000000) return `R$ ${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `R$ ${(value / 1000).toFixed(1)}K`;
-  return `R$ ${value.toFixed(2)}`;
-}
-
-function formatNumber(value: number): string {
-  return value.toLocaleString('pt-BR');
-}
 
 export function ConversionLayer({ data }: Props) {
   const { statusDistribution, dailyTpv, executive } = data;
@@ -84,7 +74,7 @@ export function ConversionLayer({ data }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <InfoCard
           title="Taxa de Aprovação"
-          value={`${executive.taxaAprovacao}%`}
+          value={formatPercent(parseFloat(executive.taxaAprovacao))}
           icon={Activity}
           iconColor="green"
         />
@@ -105,7 +95,7 @@ export function ConversionLayer({ data }: Props) {
               <div key={item.name} className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{item.name}</span>
-                  <span className="text-foreground font-medium">{formatNumber(item.value)} ({item.percent.toFixed(1)}%)</span>
+                  <span className="text-foreground font-medium">{formatNumber(item.value)} ({item.percent.toFixed(1).replace('.', ',')}%)</span>
                 </div>
                 <div className="h-8 bg-muted rounded-lg overflow-hidden">
                   <div
@@ -136,7 +126,7 @@ export function ConversionLayer({ data }: Props) {
                   labelStyle={{ color: '#fff' }}
                   itemStyle={{ color: '#fff' }}
                   formatter={(value: number, name: string) => [
-                    name === 'count' ? formatNumber(value) : formatCurrency(value),
+                    name === 'count' ? formatNumber(value) : formatCurrencyFull(value),
                     name === 'count' ? 'Quantidade' : 'TPV'
                   ]}
                 />
@@ -165,7 +155,7 @@ export function ConversionLayer({ data }: Props) {
                 contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
                 labelStyle={{ color: '#fff' }}
                 itemStyle={{ color: '#fff' }}
-                formatter={(value: number) => [`${value.toFixed(1)}%`, 'Taxa Aprovação']}
+                formatter={(value: number) => [`${value.toFixed(1).replace('.', ',')}%`, 'Taxa Aprovação']}
               />
               <Line 
                 type="monotone" 

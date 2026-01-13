@@ -3,7 +3,7 @@
 import { BiData } from "../bi-dashboard";
 import { LayerHeader } from "../shared/layer-header";
 import { ChartCard } from "../shared/chart-card";
-import { CHART_PALETTE, getProductLabel } from "../shared/colors";
+import { CHART_PALETTE, getProductLabel, formatCurrencyFull, formatCurrencyShort } from "../shared/colors";
 import {
   BarChart,
   Bar,
@@ -16,12 +16,6 @@ import {
 } from "recharts";
 
 type Props = { data: BiData };
-
-function formatCurrency(value: number): string {
-  if (value >= 1000000) return `R$ ${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `R$ ${(value / 1000).toFixed(1)}K`;
-  return `R$ ${value.toFixed(2)}`;
-}
 
 export function BrandProductLayer({ data }: Props) {
   const { brandAnalysis, productMix } = data;
@@ -51,12 +45,12 @@ export function BrandProductLayer({ data }: Props) {
               <BarChart data={brandData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis dataKey="name" stroke="#666" tick={{ fill: '#888', fontSize: 10 }} />
-                <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrency(v)} />
+                <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrencyShort(v)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
                   labelStyle={{ color: '#fff' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number) => [formatCurrency(value), 'TPV']}
+                  formatter={(value: number) => [formatCurrencyFull(value), 'TPV']}
                 />
                 <Bar dataKey="tpv" radius={[4, 4, 0, 0]}>
                   {brandData.map((_, index) => (
@@ -77,12 +71,12 @@ export function BrandProductLayer({ data }: Props) {
               <BarChart data={productData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis dataKey="name" stroke="#666" tick={{ fill: '#888', fontSize: 10 }} />
-                <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrency(v)} />
+                <YAxis stroke="#666" tick={{ fill: '#888', fontSize: 10 }} tickFormatter={(v) => formatCurrencyShort(v)} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
                   labelStyle={{ color: '#fff' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number) => [formatCurrency(value), 'TPV']}
+                  formatter={(value: number) => [formatCurrencyFull(value), 'TPV']}
                 />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                   {productData.map((_, index) => (
