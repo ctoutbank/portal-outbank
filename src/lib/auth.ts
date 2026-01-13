@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import { users } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
+import { matchPassword as matchPasswordScrypt } from '@/app/utils/password';
 
 const DEV_BYPASS_ENABLED =
   process.env.NODE_ENV === "development" &&
@@ -54,7 +55,23 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return bcrypt.compare(password, hashedPassword);
+  // Primeiro tenta scrypt (formato padrão: 96 caracteres = hash 64 + salt 32)
+  // Scrypt é MUITO mais rápido que bcrypt para verificação
+  if (hashedPassword && hashedPassword.length === 96) {
+    try {
+      const isValid = matchPasswordScrypt(password, hashedPassword);
+      if (isValid) return true;
+    } catch {
+      // Se falhar, tenta bcrypt
+    }
+  }
+  
+  // Fallback para bcrypt (senhas antigas)
+  try {
+    return await bcrypt.compare(password, hashedPassword);
+  } catch {
+    return false;
+  }
 }
 
 export async function createToken(user: SessionUser, expiresIn: number = SESSION_DURATION): Promise<string> {
