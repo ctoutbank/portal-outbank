@@ -322,44 +322,46 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
       }
     }
 
-    // Sincronizar usuario com outbank-one e enviar email em background (não-bloqueante)
-    // Fire-and-forget com wrapper try/catch para evitar unhandled rejections
-    void (async () => {
-      try {
-        // Sincronizar com outbank-one
-        if (idCustomer) {
-          try {
-            const syncResult = await syncUserToOutbankOneClerk({
-              email: normalizedEmail,
-              firstName,
-              lastName,
-              password: finalPassword,
-            });
-            if (!syncResult.success) {
-              console.warn(`[InsertUser] Falha na sincronizacao com outbank-one: ${syncResult.error}`);
-            }
-          } catch (syncError) {
-            console.error("[InsertUser] Erro na sincronizacao:", syncError);
-          }
-        }
+    // Enviar email de boas-vindas (SÍNCRONO para garantir envio no serverless)
+    try {
+      console.log(`[InsertUser] 📧 Enviando email de boas-vindas para ${normalizedEmail}...`);
+      const tenantData = await getTenantEmailData(idCustomer);
+      console.log(`[InsertUser] 📧 Dados do tenant:`, { 
+        customerName: tenantData.customerName, 
+        hasLogo: !!tenantData.logo, 
+        link: tenantData.link 
+      });
+      await sendWelcomePasswordEmail(
+        normalizedEmail,
+        finalPassword,
+        tenantData.logo,
+        tenantData.customerName,
+        tenantData.link
+      );
+      console.log(`[InsertUser] ✅ Email enviado com sucesso para ${normalizedEmail}`);
+    } catch (emailError: any) {
+      console.error("[InsertUser] ❌ Erro ao enviar email:", emailError?.message || emailError);
+      // Não bloqueia a criação do usuário se email falhar
+    }
 
-        // Enviar email de boas-vindas
+    // Sincronizar com outbank-one (em background, menos crítico)
+    if (idCustomer) {
+      void (async () => {
         try {
-          const tenantData = await getTenantEmailData(idCustomer);
-          await sendWelcomePasswordEmail(
-            normalizedEmail,
-            finalPassword,
-            tenantData.logo,
-            tenantData.customerName,
-            tenantData.link
-          );
-        } catch (emailError: any) {
-          console.error("[InsertUser] Erro ao enviar email:", emailError?.message || emailError);
+          const syncResult = await syncUserToOutbankOneClerk({
+            email: normalizedEmail,
+            firstName,
+            lastName,
+            password: finalPassword,
+          });
+          if (!syncResult.success) {
+            console.warn(`[InsertUser] Falha na sincronizacao com outbank-one: ${syncResult.error}`);
+          }
+        } catch (syncError) {
+          console.error("[InsertUser] Erro na sincronizacao:", syncError);
         }
-      } catch (backgroundError) {
-        console.error("[InsertUser] Erro inesperado em background task:", backgroundError);
-      }
-    })();
+      })();
+    }
 
     return {
       ok: true,
