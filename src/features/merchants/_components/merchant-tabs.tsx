@@ -1,23 +1,64 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { MerchantTabsProps } from "@/features/merchants/server/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import MerchantFormCompany from "./merchant-form-company";
+// Componente de loading para as tabs
+function TabSkeleton() {
+  return (
+    <div className="space-y-4 p-4">
+      <Skeleton className="h-8 w-48" />
+      <div className="grid grid-cols-2 gap-4">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-import MerchantFormcontact from "./merchant-form-contact";
+// Lazy loading dos formulários de cada tab
+const MerchantFormCompany = dynamic(() => import("./merchant-form-company"), {
+  loading: () => <TabSkeleton />,
+  ssr: false
+});
 
-import MerchantFormOperations from "./merchant-form-operation";
+const MerchantFormcontact = dynamic(() => import("./merchant-form-contact"), {
+  loading: () => <TabSkeleton />,
+  ssr: false
+});
 
-import MerchantFormBankAccount from "./merchant-form-bank-account";
+const MerchantFormOperations = dynamic(() => import("./merchant-form-operation"), {
+  loading: () => <TabSkeleton />,
+  ssr: false
+});
 
-import MerchantFormAuthorizers from "./merchant-form-authorizers";
+const MerchantFormBankAccount = dynamic(() => import("./merchant-form-bank-account"), {
+  loading: () => <TabSkeleton />,
+  ssr: false
+});
 
-import MerchantFormTax2 from "./merchant-form-tax2";
+const MerchantFormAuthorizers = dynamic(() => import("./merchant-form-authorizers"), {
+  loading: () => <TabSkeleton />,
+  ssr: false
+});
 
-import MerchantFormDocuments from "./merchant-form-documents";
+const MerchantFormTax2 = dynamic(() => import("./merchant-form-tax2"), {
+  loading: () => <TabSkeleton />,
+  ssr: false
+});
+
+const MerchantFormDocuments = dynamic(() => import("./merchant-form-documents"), {
+  loading: () => <TabSkeleton />,
+  ssr: false
+});
 
 const listTabs = [
   "company",

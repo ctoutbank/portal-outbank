@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth";
 
 export const dynamic = 'force-dynamic';
+// Cache de dados por 60 segundos
+export const revalidate = 60;
 
 async function getUserCustomerAccess(userId: number): Promise<{ isSuperAdmin: boolean; customerIds: number[]; customerSlugs: string[] }> {
   const { rows: userInfo } = await sql.query(`SELECT user_type FROM users WHERE id = $1`, [userId]);
@@ -116,6 +118,9 @@ export async function GET(request: NextRequest) {
 
     const { where, params } = buildWhereClause();
 
+    // OTIMIZAÇÃO: Todas as queries executadas em paralelo
+    const queryStartTime = performance.now();
+    
     const [
       executiveMetrics,
       dailyTpv,
@@ -308,6 +313,9 @@ export async function GET(request: NextRequest) {
         ORDER BY m.bandeira, m.modalidade
       `, [customerSlugs])
     ]);
+
+    const queryEndTime = performance.now();
+    console.log(`[BI API] ${14} queries paralelas executadas em ${(queryEndTime - queryStartTime).toFixed(0)}ms`);
 
     const metrics = executiveMetrics.rows[0];
     const totalTx = parseInt(metrics.total_transactions) || 1;

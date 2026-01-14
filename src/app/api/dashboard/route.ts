@@ -6,6 +6,9 @@ import { getInheritedCommissions } from '@/lib/db/inherited-commissions';
 
 export const dynamic = 'force-dynamic';
 
+// Cache de dados por 60 segundos (ISR)
+export const revalidate = 60;
+
 async function getUserTypeById(userId: number): Promise<string | null> {
   const { rows } = await sql.query(`SELECT user_type FROM users WHERE id = $1`, [userId]);
   return rows[0]?.user_type || null;
@@ -131,33 +134,47 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    const { rows: merchantsCount } = await sql.query(`
-      SELECT COUNT(*) as count
-      FROM merchants
-      WHERE slug_customer = ANY($1::text[])
-    `, [customerSlugs]);
+    // OTIMIZAÇÃO: Executar queries em paralelo
+    const startTime = performance.now();
     
-    const { rows: merchantsByIsoData } = await sql.query(`
-      SELECT slug_customer, COUNT(*) as count
-      FROM merchants
-      WHERE slug_customer = ANY($1::text[])
-      GROUP BY slug_customer
-    `, [customerSlugs]);
+    const [
+      merchantsCountResult,
+      merchantsByIsoResult,
+      transactionStatsResult
+    ] = await Promise.all([
+      sql.query(`
+        SELECT COUNT(*) as count
+        FROM merchants
+        WHERE slug_customer = ANY($1::text[])
+      `, [customerSlugs]),
+      sql.query(`
+        SELECT slug_customer, COUNT(*) as count
+        FROM merchants
+        WHERE slug_customer = ANY($1::text[])
+        GROUP BY slug_customer
+      `, [customerSlugs]),
+      sql.query(`
+        SELECT 
+          COUNT(*) as total_count,
+          COALESCE(SUM(total_amount), 0) as total_volume,
+          slug_customer
+        FROM transactions
+        WHERE slug_customer = ANY($1::text[])
+        GROUP BY slug_customer
+      `, [customerSlugs])
+    ]);
+    
+    const parallelTime = performance.now() - startTime;
+    console.log(`[Dashboard API] Queries paralelas executadas em ${parallelTime.toFixed(0)}ms`);
+    
+    const { rows: merchantsCount } = merchantsCountResult;
+    const { rows: merchantsByIsoData } = merchantsByIsoResult;
+    const { rows: transactionStats } = transactionStatsResult;
     
     const merchantsBySlug = new Map<string, number>();
     merchantsByIsoData.forEach(row => {
       merchantsBySlug.set(row.slug_customer, parseInt(row.count, 10));
     });
-    
-    const { rows: transactionStats } = await sql.query(`
-      SELECT 
-        COUNT(*) as total_count,
-        COALESCE(SUM(total_amount), 0) as total_volume,
-        slug_customer
-      FROM transactions
-      WHERE slug_customer = ANY($1::text[])
-      GROUP BY slug_customer
-    `, [customerSlugs]);
     
     let totalTransacoes = 0;
     let totalBruto = 0;

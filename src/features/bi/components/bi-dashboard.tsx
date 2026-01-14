@@ -1,14 +1,58 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { BiFilters } from "./bi-filters";
-import { ExecutiveLayer } from "./layers/executive-layer";
-import { FinancialLayer } from "./layers/financial-layer";
-import { BrandProductLayer } from "./layers/brand-product-layer";
-import { TemporalLayer } from "./layers/temporal-layer";
-import { ConversionLayer } from "./layers/conversion-layer";
-import { CommercialLayer } from "./layers/commercial-layer";
 import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy loading dos layers para reduzir bundle inicial
+const ExecutiveLayer = dynamic(() => import("./layers/executive-layer").then(mod => ({ default: mod.ExecutiveLayer })), {
+  loading: () => <LayerSkeleton title="Resumo Executivo" />,
+  ssr: false
+});
+
+const FinancialLayer = dynamic(() => import("./layers/financial-layer").then(mod => ({ default: mod.FinancialLayer })), {
+  loading: () => <LayerSkeleton title="Análise Financeira" />,
+  ssr: false
+});
+
+const BrandProductLayer = dynamic(() => import("./layers/brand-product-layer").then(mod => ({ default: mod.BrandProductLayer })), {
+  loading: () => <LayerSkeleton title="Análise por Bandeira e Produto" />,
+  ssr: false
+});
+
+const TemporalLayer = dynamic(() => import("./layers/temporal-layer").then(mod => ({ default: mod.TemporalLayer })), {
+  loading: () => <LayerSkeleton title="Análise Temporal" />,
+  ssr: false
+});
+
+const ConversionLayer = dynamic(() => import("./layers/conversion-layer").then(mod => ({ default: mod.ConversionLayer })), {
+  loading: () => <LayerSkeleton title="Conversão e Performance" />,
+  ssr: false
+});
+
+const CommercialLayer = dynamic(() => import("./layers/commercial-layer").then(mod => ({ default: mod.CommercialLayer })), {
+  loading: () => <LayerSkeleton title="Análise Comercial" />,
+  ssr: false
+});
+
+// Skeleton para os layers durante carregamento
+function LayerSkeleton({ title }: { title: string }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-6 w-6 rounded" />
+        <Skeleton className="h-6 w-48" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-64 rounded-lg" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export type BiData = {
   executive: {

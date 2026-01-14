@@ -31,13 +31,29 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const tenantCustomization = await getCurrentTenantCustomization();
-  const isAdmin = await isAdminOrSuperAdmin();
-  const hasMerchants = await hasMerchantsAccess();
-  const isCore = await isCoreProfile();
-  const authorizedMenus = await getUserAuthorizedMenus();
-  const userCategoryLabel = await getUserCategoryLabel();
-  const superAdmin = await isSuperAdmin();
+  // OTIMIZAÇÃO: Executar todas as chamadas de permissão em paralelo
+  const startTime = performance.now();
+  
+  const [
+    tenantCustomization,
+    isAdmin,
+    hasMerchants,
+    isCore,
+    authorizedMenus,
+    userCategoryLabel,
+    superAdmin
+  ] = await Promise.all([
+    getCurrentTenantCustomization(),
+    isAdminOrSuperAdmin(),
+    hasMerchantsAccess(),
+    isCoreProfile(),
+    getUserAuthorizedMenus(),
+    getUserCategoryLabel(),
+    isSuperAdmin()
+  ]);
+  
+  const endTime = performance.now();
+  console.log(`[Layout] Permissões carregadas em paralelo: ${(endTime - startTime).toFixed(0)}ms`);
 
   return (
     <html lang="pt-BR" suppressHydrationWarning className="dark">
