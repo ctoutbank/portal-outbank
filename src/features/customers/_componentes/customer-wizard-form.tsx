@@ -1540,7 +1540,7 @@ export default function CustomerWizardForm({
                               </div>
                             </label>
                             <div className="flex items-center gap-3">
-                              <div className="relative w-[60px] h-12">
+                              <div className="relative w-[60px] h-12 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: primaryColorHex }}>
                                 <input
                                   type="color"
                                   name="primaryColor"
@@ -1560,7 +1560,7 @@ export default function CustomerWizardForm({
                                       emailImageUrl: prev?.emailImageUrl,
                                     }));
                                   }}
-                                  className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 />
                               </div>
                               <input
@@ -1586,10 +1586,6 @@ export default function CustomerWizardForm({
                                 className="flex-1 rounded-md border border-[#2a2a2a] h-12 px-4 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
                                 placeholder="#000000"
                               />
-                              <div
-                                className="w-[100px] h-12 rounded-md border border-[#2a2a2a] flex-shrink-0"
-                                style={{ backgroundColor: primaryColorHex }}
-                              />
                             </div>
                           </div>
 
@@ -1599,7 +1595,7 @@ export default function CustomerWizardForm({
                               Cor Secundária
                             </label>
                             <div className="flex items-center gap-3">
-                              <div className="relative w-[60px] h-12">
+                              <div className="relative w-[60px] h-12 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: secondaryColorHex }}>
                                 <input
                                   type="color"
                                   name="secondaryColor"
@@ -1619,7 +1615,7 @@ export default function CustomerWizardForm({
                                       emailImageUrl: prev?.emailImageUrl,
                                     }));
                                   }}
-                                  className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 />
                               </div>
                               <input
@@ -1645,10 +1641,6 @@ export default function CustomerWizardForm({
                                 className="flex-1 rounded-md border border-[#2a2a2a] h-12 px-4 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
                                 placeholder="#ffffff"
                               />
-                              <div
-                                className="w-[100px] h-12 rounded-md border border-[#2a2a2a] flex-shrink-0"
-                                style={{ backgroundColor: secondaryColorHex }}
-                              />
                             </div>
                           </div>
                         </div>
@@ -1666,13 +1658,9 @@ export default function CustomerWizardForm({
                                 <label className="text-sm font-medium text-white">
                                   Cor do Botão
                                 </label>
-                                <div
-                                  className="w-6 h-6 rounded border border-[#2a2a2a]"
-                                  style={{ backgroundColor: loginButtonColorHex }}
-                                />
                               </div>
                               <div className="flex items-center gap-3">
-                                <div className="relative w-[50px] h-10">
+                                <div className="relative w-[50px] h-10 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: loginButtonColorHex }}>
                                   <input
                                     type="color"
                                     name="loginButtonColor"
@@ -1686,7 +1674,7 @@ export default function CustomerWizardForm({
                                         id: prev?.id ?? 0,
                                       }));
                                     }}
-                                    className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   />
                                 </div>
                                 <input
@@ -1715,13 +1703,9 @@ export default function CustomerWizardForm({
                                 <label className="text-sm font-medium text-white">
                                   Texto do Botão
                                 </label>
-                                <div
-                                  className="w-6 h-6 rounded border border-[#2a2a2a]"
-                                  style={{ backgroundColor: loginButtonTextColorHex }}
-                                />
                               </div>
                               <div className="flex items-center gap-3">
-                                <div className="relative w-[50px] h-10">
+                                <div className="relative w-[50px] h-10 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: loginButtonTextColorHex }}>
                                   <input
                                     type="color"
                                     name="loginButtonTextColor"
@@ -1735,7 +1719,7 @@ export default function CustomerWizardForm({
                                         id: prev?.id ?? 0,
                                       }));
                                     }}
-                                    className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   />
                                 </div>
                                 <input
@@ -1764,13 +1748,9 @@ export default function CustomerWizardForm({
                                 <label className="text-sm font-medium text-white">
                                   Cor do Título
                                 </label>
-                                <div
-                                  className="w-6 h-6 rounded border border-[#2a2a2a]"
-                                  style={{ backgroundColor: loginTitleColorHex }}
-                                />
                               </div>
                               <div className="flex items-center gap-3">
-                                <div className="relative w-[50px] h-10">
+                                <div className="relative w-[50px] h-10 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: loginTitleColorHex }}>
                                   <input
                                     type="color"
                                     name="loginTitleColor"
@@ -1784,7 +1764,7 @@ export default function CustomerWizardForm({
                                         id: prev?.id ?? 0,
                                       }));
                                     }}
-                                    className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   />
                                 </div>
                                 <input
@@ -1813,13 +1793,9 @@ export default function CustomerWizardForm({
                                 <label className="text-sm font-medium text-white">
                                   Cor do Texto
                                 </label>
-                                <div
-                                  className="w-6 h-6 rounded border border-[#2a2a2a]"
-                                  style={{ backgroundColor: loginTextColorHex }}
-                                />
                               </div>
                               <div className="flex items-center gap-3">
-                                <div className="relative w-[50px] h-10">
+                                <div className="relative w-[50px] h-10 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: loginTextColorHex }}>
                                   <input
                                     type="color"
                                     name="loginTextColor"
@@ -1833,7 +1809,7 @@ export default function CustomerWizardForm({
                                         id: prev?.id ?? 0,
                                       }));
                                     }}
-                                    className="w-full h-full rounded-md border border-[#2a2a2a] cursor-pointer bg-transparent"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   />
                                 </div>
                                 <input
@@ -2068,8 +2044,9 @@ export default function CustomerWizardForm({
                           </div>
                         </div>
 
-                        {/* ÍCONE DO MENU (36x36px) */}
-                        <div className="w-full md:w-1/3 mb-10">
+                        {/* LINHA 3: ÍCONE DO MENU E IMAGEM DE FUNDO DO LOGIN (Lado a Lado) */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                          {/* ÍCONE DO MENU (36x36px) */}
                           <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
                             <label className="text-sm font-medium text-white mb-1">
                               Ícone do Menu (36×36px)
@@ -2137,10 +2114,8 @@ export default function CustomerWizardForm({
                               <span>{isRemovingImage ? "Removendo..." : "Remover ícone"}</span>
                             </button>
                           </div>
-                        </div>
 
-                        {/* LINHA 3: IMAGEM DE FUNDO DO LOGIN */}
-                        <div className="w-full md:w-1/3 mb-10">
+                          {/* IMAGEM DE FUNDO DO LOGIN */}
                           <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
                             <label className="text-sm font-medium text-white mb-1">
                               Imagem de Fundo do Login
