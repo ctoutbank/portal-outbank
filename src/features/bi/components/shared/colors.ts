@@ -101,8 +101,12 @@ export function formatDateLabel(dateString: string): string {
   return `${day}/${month}`;
 }
 
-// Formato completo brasileiro para valores monetários
+// Formato completo brasileiro para valores monetários (abrevia valores muito grandes)
 export function formatCurrencyFull(value: number): string {
+  // Para valores muito grandes (>= 100 milhões), usa formato abreviado para não exceder 10 caracteres
+  if (Math.abs(value) >= 100_000_000) {
+    return formatCurrencyShort(value);
+  }
   return value.toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
