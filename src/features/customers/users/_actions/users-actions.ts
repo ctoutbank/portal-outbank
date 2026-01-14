@@ -77,7 +77,7 @@ interface InsertUserInput {
   canViewSensitiveData?: boolean;
 }
 
-type InsertUserResult = 
+type InsertUserResult =
   | { ok: true; userId: number; reused: boolean }
   | { ok: false; code: 'invalid_email' | 'email_in_use' | 'invalid_password' | 'clerk_update_error' | 'clerk_create_error' | 'password_pwned' | 'unknown'; message: string };
 
@@ -93,7 +93,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
   } = data;
 
   const normalizedEmail = email.trim().toLowerCase();
-  
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(normalizedEmail)) {
     return {
@@ -132,7 +132,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
   // Buscar o profile ISO Admin para usuários de ISO, ou ADMIN para outros
   let idProfile: number;
   let isIsoAdmin = false;
-  
+
   if (idCustomer) {
     // Usuário de ISO - usar categoria ISO Admin (categoryType = 'ISO_ADMIN')
     const isoAdminProfile = await db
@@ -187,42 +187,136 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
   }
 
   try {
-    // ✅ Verificar se o usuário já existe no banco de dados PARA ESTE ISO (permite mesmo email em ISOs diferentes)
-    if (idCustomer) {
-      // Se idCustomer foi fornecido, verificar apenas para este ISO específico
-      const existingUserForCustomer = await db
-        .select()
-        .from(users)
-        .where(
-          and(
-            eq(users.email, normalizedEmail),
-            eq(users.idCustomer, idCustomer)
-          )
-        )
-        .limit(1);
+    // ✅ Verificar se o usuário já existe no banco de dados (Globalmente)
+    // Se existir, verificamos se podemos reutilizar (ativo=false ou não vinculado a este ISO)
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, normalizedEmail))
+      .limit(1);
 
-      if (existingUserForCustomer.length > 0) {
-        return {
-          ok: false,
-          code: 'email_in_use',
-          message: 'Este e-mail já está cadastrado para este ISO. Por favor, utilize outro e-mail.'
-        };
-      }
-    } else {
-      // Se não há idCustomer, verificar globalmente (comportamento antigo para compatibilidade)
-      const existingUser = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, normalizedEmail))
-        .limit(1);
+    if (existingUser.length > 0) {
+      const user = existingUser[0];
 
-      if (existingUser.length > 0) {
-        return {
-          ok: false,
-          code: 'email_in_use',
-          message: 'Este e-mail já está cadastrado no sistema. Por favor, utilize outro e-mail.'
-        };
+      // Caso 1: Usuário pertence a este ISO (Linked)
+      if (idCustomer && user.idCustomer === idCustomer) {
+        if (!user.active) {
+          // Usuário existe mas está inativo -> Reativar
+          console.log(`[InsertUser] ♻️ Reativando usuário inativo ID ${user.id} para ISO ${idCustomer}`);
+
+          const passwordToUse = password || await generateRandomPassword(); // Se forneceu senha, usa. Senão, gera nova.
+          const newHashedPassword = hashPassword(passwordToUse);
+
+          await db.update(users).set({
+            active: true,
+            firstName: firstName || undefined, // Atualizar nomes se fornecidos? Sim, via sales_agents
+            hashedPassword: newHashedPassword,
+            initialPassword: passwordToUse,
+            dtupdate: new Date().toISOString(),
+          }).where(eq(users.id, user.id));
+
+          // Atualizar sales_agents
+          await db.update(salesAgents).set({
+            firstName: firstName,
+            lastName: lastName,
+          }).where(eq(salesAgents.idUsers, user.id));
+
+          // Reativar link user_customers se existir
+          await db.update(userCustomers).set({ active: true }).where(and(eq(userCustomers.idUser, user.id), eq(userCustomers.idCustomer, idCustomer)));
+
+          // Enviar email de "boas vindas" / reativação
+          try {
+            const tenantData = await getTenantEmailData(idCustomer);
+            await sendWelcomePasswordEmail(normalizedEmail, passwordToUse, tenantData.logo, tenantData.customerName, tenantData.link);
+          } catch (e) {
+            console.error("[InsertUser] Erro ao enviar email de reativação:", e);
+          }
+
+          return { ok: true, userId: user.id, reused: true };
+        } else {
+          // Usuário ativo e já vinculado -> Erro
+          return {
+            ok: false,
+            code: 'email_in_use',
+            message: 'Este e-mail já está cadastrado e ativo para este ISO.'
+          };
+        }
       }
+
+      // Caso 2: Usuário existe, mas NÃO está vinculado a este ISO (ou idCustomer é null - floating)
+      // Podemos vincular ele a este ISO também? Sim, o sistema suporta multi-iso via userCustomers.
+      // Se idCustomer for null (usuário orfão), podemos assumir este ISO como primary? Sim.
+
+      console.log(`[InsertUser] 🔗 Vinculando usuário existente ID ${user.id} ao ISO ${idCustomer}`);
+
+      // Se estava inativo globalmente, reativar
+      if (!user.active) {
+        await db.update(users).set({ active: true }).where(eq(users.id, user.id));
+      }
+
+      // Se não tinha primary customer, setar este
+      if (!user.idCustomer && idCustomer) {
+        await db.update(users).set({ idCustomer: idCustomer }).where(eq(users.id, user.id));
+      }
+
+      // Criar ou reativar vínculo user_customers
+      if (idCustomer) {
+        try {
+          const existingLink = await db
+            .select()
+            .from(userCustomers)
+            .where(and(eq(userCustomers.idUser, user.id), eq(userCustomers.idCustomer, idCustomer)))
+            .limit(1);
+
+          if (existingLink.length > 0) {
+            await db.update(userCustomers).set({ active: true }).where(and(eq(userCustomers.idUser, user.id), eq(userCustomers.idCustomer, idCustomer)));
+          } else {
+            await db.insert(userCustomers).values({
+              idUser: user.id,
+              idCustomer: idCustomer,
+              active: true,
+              isPrimary: !user.idCustomer, // Se não tinha customer, este é primary
+            });
+          }
+        } catch (linkError) {
+          console.error("[InsertUser] Erro ao vincular usuário:", linkError);
+        }
+      }
+
+      // Se não tinha senha válida (ex: import e sem senha), gerar e enviar email?
+      // Assumimos que se estamos adicionando, devemos enviar email de acesso neste ISO.
+      // Resetar senha para garantir acesso?
+      // O usuário pode já ter senha de outro ISO.
+      // Se for reativação (estava inactive), devemos resetar senha.
+      // Se estava active, apenas enviar notificação? O UserForm pede senha?
+      // UserForm não pede senha explicitamente no create, gera random.
+
+      const passwordToUse = password || await generateRandomPassword();
+      // Se o usuário já estava ATIVO, talvez não devêssemos mudar a senha dele sem aviso.
+      // Mas o admin está "Criando" o usuário neste contexto.
+      // Vamos assumir que se ele já existe e está ativo, mantemos a senha (não enviamos nova), OU enviamos email "Você foi adicionado ao ISO X".
+      // Simplificação: Se já existe e ativo, apenas vincula. Não reseta senha. Envia email avisando?
+      // O UserForm atual sempre gera senha random e envia.
+      // Se resetarmos a senha de um usuário que usa outro ISO, ele perde acesso lá? Sim.
+      // Melhor: Se usuário já existe e ATIVO, NÃO mudar senha. Apenas vincular.
+      // Se usuário estava INATIVO, Resetar senha.
+
+      if (!user.active) {
+        const newHashed = hashPassword(passwordToUse);
+        await db.update(users).set({ hashedPassword: newHashed, initialPassword: passwordToUse }).where(eq(users.id, user.id));
+        try {
+          const tenantData = await getTenantEmailData(idCustomer);
+          await sendWelcomePasswordEmail(normalizedEmail, passwordToUse, tenantData.logo, tenantData.customerName, tenantData.link);
+        } catch (e) {
+          console.error("[InsertUser] Erro ao enviar email:", e);
+        }
+      } else {
+        // Usuário Ativo. Apenas notificar vínculo?
+        console.log(`[InsertUser] Usuário ${user.id} já ativo. Apenas vinculado. Senha mantida.`);
+        // Opcional: Enviar email "Você agora tem acesso ao ISO X"
+      }
+
+      return { ok: true, userId: user.id, reused: true };
     }
 
     // Criação no banco (sem Clerk)
@@ -236,10 +330,10 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
     // ISO Admin deve ter fullAccess=true para poderes totais dentro do ISO
     // Apenas usuários com categoria ISO_ADMIN recebem fullAccess, não todos com idCustomer
     const shouldHaveFullAccess = isIsoAdmin;
-    
+
     // Respeitar o valor do formulário para canViewSensitiveData, com fallback para true se for ISO Admin
     const shouldViewSensitiveData = canViewSensitiveData !== undefined ? canViewSensitiveData : isIsoAdmin;
-    
+
     const created = await db
       .insert(users)
       .values({
@@ -264,7 +358,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
       fullAccess: shouldHaveFullAccess,
       isIsoAdmin,
     });
-    
+
     // ✅ Salvar firstName e lastName na tabela sales_agents para exibição
     try {
       await db.insert(salesAgents).values({
@@ -285,7 +379,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
     } catch (salesAgentError: any) {
       console.error(`[InsertUser] ⚠️ Erro ao salvar em sales_agents:`, salesAgentError);
     }
-    
+
     // ✅ Criar vínculo user_customers para usuários de ISO Admin
     if (idCustomer && isIsoAdmin) {
       try {
@@ -298,7 +392,7 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
             eq(userCustomers.idCustomer, idCustomer)
           ))
           .limit(1);
-        
+
         if (existingLink.length === 0) {
           await db.insert(userCustomers).values({
             idUser: created[0].id,
@@ -326,10 +420,10 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
     try {
       console.log(`[InsertUser] 📧 Enviando email de boas-vindas para ${normalizedEmail}...`);
       const tenantData = await getTenantEmailData(idCustomer);
-      console.log(`[InsertUser] 📧 Dados do tenant:`, { 
-        customerName: tenantData.customerName, 
-        hasLogo: !!tenantData.logo, 
-        link: tenantData.link 
+      console.log(`[InsertUser] 📧 Dados do tenant:`, {
+        customerName: tenantData.customerName,
+        hasLogo: !!tenantData.logo,
+        link: tenantData.link
       });
       await sendWelcomePasswordEmail(
         normalizedEmail,

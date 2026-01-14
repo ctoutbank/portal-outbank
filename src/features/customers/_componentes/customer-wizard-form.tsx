@@ -170,6 +170,10 @@ export default function CustomerWizardForm({
   // ✅ Função para adicionar cache busting agressivo nas URLs (timestamp único)
   function addCacheBustingToUrl(url: string | null | undefined): string {
     if (!url) return url || '';
+    // ✅ Se for URL assinada (S3/CloudFront), não adicionar parâmetros extras pois quebra a assinatura
+    if (url.includes('X-Amz-Signature') || url.includes('Signature=') || url.includes('GoogleAccessId')) {
+      return url;
+    }
     const separator = url.includes('?') ? '&' : '?';
     // Usar timestamp + nanoid para garantir unicidade total
     const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -1654,13 +1658,9 @@ export default function CustomerWizardForm({
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {/* Cor do Botão */}
                             <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                              <div className="flex items-center justify-between mb-4">
-                                <label className="text-sm font-medium text-white">
-                                  Cor do Botão
-                                </label>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="relative w-[50px] h-10 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: loginButtonColorHex }}>
+                              <label className="flex items-center gap-3 text-sm font-medium text-white mb-3">
+                                Cor do Botão
+                                <div className="relative w-6 h-6 rounded border border-[#2a2a2a] overflow-hidden cursor-pointer shadow-sm" style={{ backgroundColor: loginButtonColorHex }}>
                                   <input
                                     type="color"
                                     name="loginButtonColor"
@@ -1677,6 +1677,8 @@ export default function CustomerWizardForm({
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   />
                                 </div>
+                              </label>
+                              <div className="flex items-center gap-3">
                                 <input
                                   type="text"
                                   value={loginButtonColorHex}
@@ -1691,7 +1693,7 @@ export default function CustomerWizardForm({
                                       }));
                                     }
                                   }}
-                                  className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                  className="w-full rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
                                   placeholder="#3b82f6"
                                 />
                               </div>
@@ -1699,13 +1701,9 @@ export default function CustomerWizardForm({
 
                             {/* Cor do Texto do Botão */}
                             <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                              <div className="flex items-center justify-between mb-4">
-                                <label className="text-sm font-medium text-white">
-                                  Texto do Botão
-                                </label>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="relative w-[50px] h-10 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: loginButtonTextColorHex }}>
+                              <label className="flex items-center gap-3 text-sm font-medium text-white mb-3">
+                                Texto do Botão
+                                <div className="relative w-6 h-6 rounded border border-[#2a2a2a] overflow-hidden cursor-pointer shadow-sm" style={{ backgroundColor: loginButtonTextColorHex }}>
                                   <input
                                     type="color"
                                     name="loginButtonTextColor"
@@ -1722,6 +1720,8 @@ export default function CustomerWizardForm({
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   />
                                 </div>
+                              </label>
+                              <div className="flex items-center gap-3">
                                 <input
                                   type="text"
                                   value={loginButtonTextColorHex}
@@ -1736,7 +1736,7 @@ export default function CustomerWizardForm({
                                       }));
                                     }
                                   }}
-                                  className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                  className="w-full rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
                                   placeholder="#ffffff"
                                 />
                               </div>
@@ -1744,13 +1744,9 @@ export default function CustomerWizardForm({
 
                             {/* Cor do Título */}
                             <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                              <div className="flex items-center justify-between mb-4">
-                                <label className="text-sm font-medium text-white">
-                                  Cor do Título
-                                </label>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="relative w-[50px] h-10 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: loginTitleColorHex }}>
+                              <label className="flex items-center gap-3 text-sm font-medium text-white mb-3">
+                                Cor do Título
+                                <div className="relative w-6 h-6 rounded border border-[#2a2a2a] overflow-hidden cursor-pointer shadow-sm" style={{ backgroundColor: loginTitleColorHex }}>
                                   <input
                                     type="color"
                                     name="loginTitleColor"
@@ -1767,6 +1763,8 @@ export default function CustomerWizardForm({
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   />
                                 </div>
+                              </label>
+                              <div className="flex items-center gap-3">
                                 <input
                                   type="text"
                                   value={loginTitleColorHex}
@@ -1781,7 +1779,7 @@ export default function CustomerWizardForm({
                                       }));
                                     }
                                   }}
-                                  className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                  className="w-full rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
                                   placeholder="#ffffff"
                                 />
                               </div>
@@ -1789,13 +1787,9 @@ export default function CustomerWizardForm({
 
                             {/* Cor do Texto */}
                             <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                              <div className="flex items-center justify-between mb-4">
-                                <label className="text-sm font-medium text-white">
-                                  Cor do Texto
-                                </label>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="relative w-[50px] h-10 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: loginTextColorHex }}>
+                              <label className="flex items-center gap-3 text-sm font-medium text-white mb-3">
+                                Cor do Texto
+                                <div className="relative w-6 h-6 rounded border border-[#2a2a2a] overflow-hidden cursor-pointer shadow-sm" style={{ backgroundColor: loginTextColorHex }}>
                                   <input
                                     type="color"
                                     name="loginTextColor"
@@ -1812,6 +1806,8 @@ export default function CustomerWizardForm({
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                   />
                                 </div>
+                              </label>
+                              <div className="flex items-center gap-3">
                                 <input
                                   type="text"
                                   value={loginTextColorHex}
@@ -1826,7 +1822,7 @@ export default function CustomerWizardForm({
                                       }));
                                     }
                                   }}
-                                  className="flex-1 rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                  className="w-full rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
                                   placeholder="#d1d5db"
                                 />
                               </div>
@@ -2179,22 +2175,33 @@ export default function CustomerWizardForm({
                           </div>
                         </div>
 
-                        {/* Botão Remover Todas as Imagens */}
-                        {(customizationData?.imageUrl || customizationData?.loginImageUrl || customizationData?.faviconUrl || customizationData?.emailImageUrl) && (
-                          <div className="mb-6">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
-                              onClick={handleRemoveAllImagesRequest}
-                              disabled={isRemovingImage}
-                            >
-                              {isRemovingImage ? "Removendo..." : "Remover todas as imagens"}
-                            </Button>
+                        {/* Botões do Rodapé: Remover Tudo (esquerda) e Salvar (direita) */}
+                        <div className="flex justify-between items-center mt-6 pt-6 border-t border-[#1a1a1a] gap-4">
+                          <div>
+                            {(customizationData?.imageUrl || customizationData?.loginImageUrl || customizationData?.faviconUrl || customizationData?.emailImageUrl) && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className="text-red-500 hover:text-red-400 hover:bg-red-950/20"
+                                onClick={handleRemoveAllImagesRequest}
+                                disabled={isRemovingImage}
+                              >
+                                {isRemovingImage ? "Removendo..." : "Remover todas as imagens"}
+                              </Button>
+                            )}
                           </div>
-                        )}
+                          <Button
+                            type="submit"
+                            className="min-w-[140px] cursor-pointer"
+                            disabled={isSavingCustomization}
+                          >
+                            {isSavingCustomization
+                              ? "Salvando..."
+                              : "Salvar Personalização"}
+                          </Button>
+                        </div>
 
-                        {/* Campos ocultos */}
+                        {/* Campos ocultos restaurados */}
                         {customizationData?.id && (
                           <input
                             type="hidden"
@@ -2213,20 +2220,7 @@ export default function CustomerWizardForm({
                           value={iso.subdomain || customizationData?.subdomain || ""}
                         />
                       </CardContent>
-                    </>
-                  )}
-                  <div className="flex justify-end space-x-2 mt-4 pr-3">
-                    <Button
-                      type="submit"
-                      className="mt-6 p-2 cursor-pointer"
-                      disabled={isSavingCustomization}
-                    >
-                      {isSavingCustomization
-                        ? "Salvando..."
-                        : "Salvar Personalização"}
-                    </Button>
-                  </div>
-                </Card>
+                    </Card>
               </form>
             )}
             {!isFirstStepComplete && (
