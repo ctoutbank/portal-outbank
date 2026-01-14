@@ -4,6 +4,9 @@ import { getUserByEmail, verifyPassword, createToken, SESSION_DURATION, REMEMBER
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const startTime = performance.now();
+  const timings: Record<string, number> = {};
+
   try {
     const { email, password, rememberMe } = await request.json();
 
@@ -14,7 +17,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 1. Buscar usuário no banco
+    const dbStart = performance.now();
     const user = await getUserByEmail(email);
+    timings.db_query = performance.now() - dbStart;
     
     if (!user) {
       return NextResponse.json(
@@ -37,7 +43,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 2. Verificar senha (principal gargalo potencial)
+    const hashType = user.hashedPassword.length === 96 ? 'scrypt' : 'bcrypt';
+    const verifyStart = performance.now();
     const isValidPassword = await verifyPassword(password, user.hashedPassword);
+    timings.verify_password = performance.now() - verifyStart;
     
     if (!isValidPassword) {
       return NextResponse.json(
@@ -46,6 +56,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 3. Criar token JWT
+    const tokenStart = performance.now();
     const duration = rememberMe ? REMEMBER_ME_DURATION : SESSION_DURATION;
     const token = await createToken({
       id: user.id,
@@ -55,10 +67,16 @@ export async function POST(request: NextRequest) {
       idProfile: user.idProfile ? Number(user.idProfile) : null,
       fullAccess: user.fullAccess,
     }, duration);
+    timings.create_token = performance.now() - tokenStart;
 
     const forwardedProto = request.headers.get('x-forwarded-proto');
     const isHttps = forwardedProto === 'https';
     const isSecure = process.env.NODE_ENV === 'production' || !!process.env.VERCEL || isHttps;
+
+    const totalTime = performance.now() - startTime;
+    
+    // Log de performance
+    console.log(`[LOGIN] ${email} | Total: ${totalTime.toFixed(0)}ms | DB: ${timings.db_query.toFixed(0)}ms | Verify(${hashType}): ${timings.verify_password.toFixed(0)}ms | Token: ${timings.create_token.toFixed(0)}ms`);
 
     const response = NextResponse.json({
       success: true,

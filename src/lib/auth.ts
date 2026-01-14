@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import { users } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
-import { matchPassword as matchPasswordScrypt } from '@/app/utils/password';
+import { matchPassword as matchPasswordScrypt, hashPassword as hashPasswordScrypt } from '@/app/utils/password';
 
 const DEV_BYPASS_ENABLED =
   process.env.NODE_ENV === "development" &&
@@ -50,28 +50,33 @@ export interface SessionUser {
   fullAccess: boolean | null;
 }
 
+// Usa scrypt para novas senhas (muito mais rápido que bcrypt)
 export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 10);
+  return hashPasswordScrypt(password);
 }
 
 export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  // Primeiro tenta scrypt (formato padrão: 96 caracteres = hash 64 + salt 32)
-  // Scrypt é MUITO mais rápido que bcrypt para verificação
-  if (hashedPassword && hashedPassword.length === 96) {
+  if (!hashedPassword) return false;
+  
+  // Scrypt: hash de 96 caracteres (64 hash + 32 salt) - RÁPIDO (~5ms)
+  if (hashedPassword.length === 96) {
     try {
-      const isValid = matchPasswordScrypt(password, hashedPassword);
-      if (isValid) return true;
+      return matchPasswordScrypt(password, hashedPassword);
     } catch {
-      // Se falhar, tenta bcrypt
+      return false; // NÃO faz fallback para bcrypt
     }
   }
   
-  // Fallback para bcrypt (senhas antigas)
-  try {
-    return await bcrypt.compare(password, hashedPassword);
-  } catch {
-    return false;
+  // Bcrypt: hash de 60 caracteres (senhas antigas) - LENTO (~1-3s)
+  if (hashedPassword.length === 60) {
+    try {
+      return await bcrypt.compare(password, hashedPassword);
+    } catch {
+      return false;
+    }
   }
+  
+  return false;
 }
 
 export async function createToken(user: SessionUser, expiresIn: number = SESSION_DURATION): Promise<string> {
@@ -155,8 +160,18 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 }
 
 export async function getUserByEmail(email: string) {
+  // Seleciona apenas os campos necessários para login (otimização)
   const result = await db
-    .select()
+    .select({
+      id: users.id,
+      email: users.email,
+      hashedPassword: users.hashedPassword,
+      active: users.active,
+      userType: users.userType,
+      idCustomer: users.idCustomer,
+      idProfile: users.idProfile,
+      fullAccess: users.fullAccess,
+    })
     .from(users)
     .where(eq(users.email, email))
     .limit(1);
