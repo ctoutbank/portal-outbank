@@ -296,6 +296,40 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         }
       }
 
+      // Criar ou atualizar sales_agents para garantir que o nome seja exibido
+      try {
+        const existingSalesAgent = await db
+          .select()
+          .from(salesAgents)
+          .where(eq(salesAgents.idUsers, user.id))
+          .limit(1);
+
+        if (existingSalesAgent.length > 0) {
+          // Atualizar nome se fornecido
+          await db.update(salesAgents).set({
+            firstName: firstName,
+            lastName: lastName,
+            dtupdate: new Date().toISOString(),
+          }).where(eq(salesAgents.idUsers, user.id));
+          console.log(`[InsertUser] ✅ sales_agents atualizado para usuário ${user.id}`);
+        } else {
+          // Criar novo registro
+          await db.insert(salesAgents).values({
+            slug: generateSlug(),
+            active: true,
+            dtinsert: new Date().toISOString(),
+            dtupdate: new Date().toISOString(),
+            firstName: firstName,
+            lastName: lastName,
+            email: normalizedEmail,
+            idUsers: user.id,
+          });
+          console.log(`[InsertUser] ✅ sales_agents criado para usuário ${user.id}`);
+        }
+      } catch (salesAgentError) {
+        console.error(`[InsertUser] ⚠️ Erro ao criar/atualizar sales_agents:`, salesAgentError);
+      }
+
       // Se não tinha senha válida (ex: import e sem senha), gerar e enviar email?
       // Assumimos que se estamos adicionando, devemos enviar email de acesso neste ISO.
       // Resetar senha para garantir acesso?
