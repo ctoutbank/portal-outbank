@@ -329,212 +329,6 @@ export default function CustomerWizardForm({
   }
 
   // Função para salvar todas as seções em sequência
-  const handleSaveAll = async () => {
-    setIsLoading(true);
-    const errors: string[] = [];
-    const successes: string[] = [];
-
-    try {
-      // 1. Salvar Informações Básicas
-      if (iso.name && iso.subdomain) {
-        try {
-          const isEdit = Boolean(newCustomerId || customer?.id);
-          if (isEdit && (newCustomerId || customer?.id)) {
-            const updatedData = {
-              id: newCustomerId || customer?.id,
-              name: iso.name,
-              slug: customer?.slug || "",
-              customerId: customer?.customerId || "",
-              settlementManagementType: customer?.settlementManagementType || "",
-            };
-            await updateCustomer(updatedData);
-            successes.push("Informações básicas atualizadas");
-
-            if (iso.subdomain && iso.subdomain.trim() !== "") {
-              const formData = new FormData();
-              const customerId = newCustomerId || customer?.id;
-              if (customerId) {
-                formData.append("customerId", customerId.toString());
-                formData.append("subdomain", iso.subdomain);
-                formData.append("primaryColor", primaryColorHex || "#000000");
-                formData.append("secondaryColor", secondaryColorHex || "#ffffff");
-                formData.append("loginButtonColor", loginButtonColorHex || "#3b82f6");
-                formData.append("loginButtonTextColor", loginButtonTextColorHex || "#ffffff");
-                formData.append("loginTitleColor", loginTitleColorHex || "#ffffff");
-                formData.append("loginTextColor", loginTextColorHex || "#d1d5db");
-              }
-
-              if (customizationData?.id) {
-                formData.append("id", customizationData.id.toString());
-                await updateCustomization(formData);
-              } else {
-                await saveCustomization(formData);
-              }
-            }
-          } else {
-            const slug = generateSlug();
-            const customerDataFixed = {
-              slug: slug || "",
-              name: iso.name,
-              customerId: customer?.customerId || undefined,
-              settlementManagementType: customer?.settlementManagementType || undefined,
-              idParent: customer?.idParent || undefined,
-              id: customer?.id || undefined,
-            };
-            const newId = await insertCustomerFormAction(customerDataFixed);
-            if (newId !== null && newId !== undefined) {
-              await handleFirstStepComplete(newId);
-              successes.push("ISO criado com sucesso");
-            }
-          }
-        } catch (error) {
-          errors.push("Erro ao salvar informações básicas");
-          console.error("Erro ao salvar informações básicas:", error);
-        }
-      }
-
-      // 2. Salvar Personalização (se houver dados)
-      if (isFirstStepComplete && (newCustomerId || customer?.id)) {
-        try {
-          const subdomain = (iso.subdomain || customizationData?.subdomain || "").trim();
-          const customerId = newCustomerId || customer?.id;
-
-          if (subdomain && customerId) {
-            const formData = new FormData();
-            formData.set("subdomain", subdomain);
-            formData.set("customerId", String(customerId));
-            formData.set("primaryColor", primaryColorHex);
-            formData.set("secondaryColor", secondaryColorHex);
-            formData.set("loginButtonColor", loginButtonColorHex || "#3b82f6");
-            formData.set("loginButtonTextColor", loginButtonTextColorHex || "#ffffff");
-            formData.set("loginTitleColor", loginTitleColorHex || "#ffffff");
-            formData.set("loginTextColor", loginTextColorHex || "#d1d5db");
-            if (customizationData?.id) {
-              formData.set("id", String(customizationData.id));
-            }
-
-            // Capturar arquivos do formulário se existirem
-            const imageInput = document.getElementById('image') as HTMLInputElement;
-            const loginImageInput = document.getElementById('loginImage') as HTMLInputElement;
-            const faviconInput = document.getElementById('favicon') as HTMLInputElement;
-            const emailImageInput = document.getElementById('emailImage') as HTMLInputElement;
-
-            if (imageInput?.files?.[0]) {
-              formData.append("image", imageInput.files[0]);
-            }
-            if (loginImageInput?.files?.[0]) {
-              formData.append("loginImage", loginImageInput.files[0]);
-            }
-            if (faviconInput?.files?.[0]) {
-              formData.append("favicon", faviconInput.files[0]);
-            }
-            if (emailImageInput?.files?.[0]) {
-              formData.append("emailImage", emailImageInput.files[0]);
-            }
-            const menuIconInput = document.getElementById('menuIcon') as HTMLInputElement;
-            if (menuIconInput?.files?.[0]) {
-              formData.append("menuIcon", menuIconInput.files[0]);
-            }
-
-            const validationData = {
-              subdomain: subdomain,
-              primaryColor: primaryColorHex,
-              secondaryColor: secondaryColorHex,
-              image: formData.get("image"),
-              customerId: String(customerId),
-              id: customizationData?.id,
-            };
-
-            const validationResult = CustomizationSchema.safeParse(validationData);
-            if (validationResult.success) {
-              const result = customizationData
-                ? await updateCustomization(formData)
-                : await saveCustomization(formData);
-
-              if (result?.customization) {
-                setCustomizationData({
-                  imageUrl: result.customization.imageUrl ?? undefined,
-                  id: result.customization.id ?? 0,
-                  subdomain: result.customization.slug ?? undefined,
-                  primaryColor: result.customization.primaryColor ?? undefined,
-                  secondaryColor: result.customization.secondaryColor ?? undefined,
-                  loginImageUrl: result.customization.loginImageUrl ?? undefined,
-                  faviconUrl: result.customization.faviconUrl ?? undefined,
-                  emailImageUrl: result.customization.emailImageUrl ?? undefined,
-                  menuIconUrl: result.customization.menuIconUrl ?? undefined,
-                });
-
-                if (result.customization.primaryColor) {
-                  setPrimaryColorHex(hslToHex(result.customization.primaryColor));
-                }
-                if (result.customization.secondaryColor) {
-                  setSecondaryColorHex(hslToHex(result.customization.secondaryColor));
-                }
-
-                // ✅ ATUALIZAÇÃO INSTANTÂNEA: Atualizar DOM imediatamente
-                // 1. Atualizar favicon
-                if (result.customization.faviconUrl) {
-                  updateFaviconInDOM(result.customization.faviconUrl);
-                }
-
-                // 2. Atualizar logo
-                if (result.customization.imageUrl) {
-                  updateLogoInDOM(result.customization.imageUrl);
-                }
-
-                // 3. Atualizar cores CSS variables
-                updateColorsInDOM(
-                  result.customization.primaryColor ?? undefined,
-                  result.customization.secondaryColor ?? undefined
-                );
-
-                // 4. Atualizar background image (login)
-                if (result.customization.loginImageUrl) {
-                  updateBackgroundImageInDOM(result.customization.loginImageUrl);
-                }
-
-                // 5. Atualizar email image
-                if (result.customization.emailImageUrl) {
-                  updateEmailImageInDOM(result.customization.emailImageUrl);
-                }
-
-                setImagePreview(null);
-                setLoginImagePreview(null);
-                setFaviconPreview(null);
-                setEmailImagePreview(null);
-
-                const fileInputs = [imageInput, loginImageInput, faviconInput, emailImageInput];
-                fileInputs.forEach((input) => {
-                  if (input) input.value = '';
-                });
-
-                successes.push("Personalização salva");
-              }
-            }
-          }
-        } catch (error) {
-          errors.push("Erro ao salvar personalização");
-          console.error("Erro ao salvar personalização:", error);
-        }
-      }
-
-      // Mostrar resultados consolidados
-      if (successes.length > 0 && errors.length === 0) {
-        toast.success(`Tudo salvo com sucesso! ${successes.join(", ")}`);
-      } else if (successes.length > 0 && errors.length > 0) {
-        toast.warning(`${successes.join(", ")}. ${errors.join(", ")}`);
-      } else if (errors.length > 0) {
-        toast.error(errors.join(", "));
-      }
-
-      router.refresh();
-    } catch (error) {
-      console.error("Erro ao salvar tudo:", error);
-      toast.error("Ocorreu um erro ao salvar");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -1157,6 +951,212 @@ export default function CustomerWizardForm({
     subdomain: "",
   });
 
+  const handleSaveAll = async () => {
+    setIsLoading(true);
+    const errors: string[] = [];
+    const successes: string[] = [];
+
+    try {
+      // 1. Salvar Informações Básicas
+      if (iso.name && iso.subdomain) {
+        try {
+          const isEdit = Boolean(newCustomerId || customer?.id);
+          if (isEdit && (newCustomerId || customer?.id)) {
+            const updatedData = {
+              id: newCustomerId || customer?.id,
+              name: iso.name,
+              slug: customer?.slug || "",
+              customerId: customer?.customerId || "",
+              settlementManagementType: customer?.settlementManagementType || "",
+            };
+            await updateCustomer(updatedData);
+            successes.push("Informações básicas atualizadas");
+
+            if (iso.subdomain && iso.subdomain.trim() !== "") {
+              const formData = new FormData();
+              const customerId = newCustomerId || customer?.id;
+              if (customerId) {
+                formData.append("customerId", customerId.toString());
+                formData.append("subdomain", iso.subdomain);
+                formData.append("primaryColor", primaryColorHex || "#000000");
+                formData.append("secondaryColor", secondaryColorHex || "#ffffff");
+                formData.append("loginButtonColor", loginButtonColorHex || "#3b82f6");
+                formData.append("loginButtonTextColor", loginButtonTextColorHex || "#ffffff");
+                formData.append("loginTitleColor", loginTitleColorHex || "#ffffff");
+                formData.append("loginTextColor", loginTextColorHex || "#d1d5db");
+              }
+
+              if (customizationData?.id) {
+                formData.append("id", customizationData.id.toString());
+                await updateCustomization(formData);
+              } else {
+                await saveCustomization(formData);
+              }
+            }
+          } else {
+            const slug = generateSlug();
+            const customerDataFixed = {
+              slug: slug || "",
+              name: iso.name,
+              customerId: customer?.customerId || undefined,
+              settlementManagementType: customer?.settlementManagementType || undefined,
+              idParent: customer?.idParent || undefined,
+              id: customer?.id || undefined,
+            };
+            const newId = await insertCustomerFormAction(customerDataFixed);
+            if (newId !== null && newId !== undefined) {
+              await handleFirstStepComplete(newId);
+              successes.push("ISO criado com sucesso");
+            }
+          }
+        } catch (error) {
+          errors.push("Erro ao salvar informações básicas");
+          console.error("Erro ao salvar informações básicas:", error);
+        }
+      }
+
+      // 2. Salvar Personalização (se houver dados)
+      if (isFirstStepComplete && (newCustomerId || customer?.id)) {
+        try {
+          const subdomain = (iso.subdomain || customizationData?.subdomain || "").trim();
+          const customerId = newCustomerId || customer?.id;
+
+          if (subdomain && customerId) {
+            const formData = new FormData();
+            formData.set("subdomain", subdomain);
+            formData.set("customerId", String(customerId));
+            formData.set("primaryColor", primaryColorHex);
+            formData.set("secondaryColor", secondaryColorHex);
+            formData.set("loginButtonColor", loginButtonColorHex || "#3b82f6");
+            formData.set("loginButtonTextColor", loginButtonTextColorHex || "#ffffff");
+            formData.set("loginTitleColor", loginTitleColorHex || "#ffffff");
+            formData.set("loginTextColor", loginTextColorHex || "#d1d5db");
+            if (customizationData?.id) {
+              formData.set("id", String(customizationData.id));
+            }
+
+            // Capturar arquivos do formulário se existirem
+            const imageInput = document.getElementById('image') as HTMLInputElement;
+            const loginImageInput = document.getElementById('loginImage') as HTMLInputElement;
+            const faviconInput = document.getElementById('favicon') as HTMLInputElement;
+            const emailImageInput = document.getElementById('emailImage') as HTMLInputElement;
+
+            if (imageInput?.files?.[0]) {
+              formData.append("image", imageInput.files[0]);
+            }
+            if (loginImageInput?.files?.[0]) {
+              formData.append("loginImage", loginImageInput.files[0]);
+            }
+            if (faviconInput?.files?.[0]) {
+              formData.append("favicon", faviconInput.files[0]);
+            }
+            if (emailImageInput?.files?.[0]) {
+              formData.append("emailImage", emailImageInput.files[0]);
+            }
+            const menuIconInput = document.getElementById('menuIcon') as HTMLInputElement;
+            if (menuIconInput?.files?.[0]) {
+              formData.append("menuIcon", menuIconInput.files[0]);
+            }
+
+            const validationData = {
+              subdomain: subdomain,
+              primaryColor: primaryColorHex,
+              secondaryColor: secondaryColorHex,
+              image: formData.get("image"),
+              customerId: String(customerId),
+              id: customizationData?.id,
+            };
+
+            const validationResult = CustomizationSchema.safeParse(validationData);
+            if (validationResult.success) {
+              const result = customizationData
+                ? await updateCustomization(formData)
+                : await saveCustomization(formData);
+
+              if (result?.customization) {
+                setCustomizationData({
+                  imageUrl: result.customization.imageUrl ?? undefined,
+                  id: result.customization.id ?? 0,
+                  subdomain: result.customization.slug ?? undefined,
+                  primaryColor: result.customization.primaryColor ?? undefined,
+                  secondaryColor: result.customization.secondaryColor ?? undefined,
+                  loginImageUrl: result.customization.loginImageUrl ?? undefined,
+                  faviconUrl: result.customization.faviconUrl ?? undefined,
+                  emailImageUrl: result.customization.emailImageUrl ?? undefined,
+                  menuIconUrl: result.customization.menuIconUrl ?? undefined,
+                });
+
+                if (result.customization.primaryColor) {
+                  setPrimaryColorHex(hslToHex(result.customization.primaryColor));
+                }
+                if (result.customization.secondaryColor) {
+                  setSecondaryColorHex(hslToHex(result.customization.secondaryColor));
+                }
+
+                // ✅ ATUALIZAÇÃO INSTANTÂNEA: Atualizar DOM imediatamente
+                // 1. Atualizar favicon
+                if (result.customization.faviconUrl) {
+                  updateFaviconInDOM(result.customization.faviconUrl);
+                }
+
+                // 2. Atualizar logo
+                if (result.customization.imageUrl) {
+                  updateLogoInDOM(result.customization.imageUrl);
+                }
+
+                // 3. Atualizar cores CSS variables
+                updateColorsInDOM(
+                  result.customization.primaryColor ?? undefined,
+                  result.customization.secondaryColor ?? undefined
+                );
+
+                // 4. Atualizar background image (login)
+                if (result.customization.loginImageUrl) {
+                  updateBackgroundImageInDOM(result.customization.loginImageUrl);
+                }
+
+                // 5. Atualizar email image
+                if (result.customization.emailImageUrl) {
+                  updateEmailImageInDOM(result.customization.emailImageUrl);
+                }
+
+                setImagePreview(null);
+                setLoginImagePreview(null);
+                setFaviconPreview(null);
+                setEmailImagePreview(null);
+
+                const fileInputs = [imageInput, loginImageInput, faviconInput, emailImageInput];
+                fileInputs.forEach((input) => {
+                  if (input) input.value = '';
+                });
+
+                successes.push("Personalização salva");
+              }
+            }
+          }
+        } catch (error) {
+          errors.push("Erro ao salvar personalização");
+          console.error("Erro ao salvar personalização:", error);
+        }
+      }
+
+      // Mostrar resultados consolidados
+      if (successes.length > 0 && errors.length === 0) {
+        toast.success(`Tudo salvo com sucesso! ${successes.join(", ")}`);
+      } else if (successes.length > 0 && errors.length > 0) {
+        toast.warning(`${successes.join(", ")}. ${errors.join(", ")}`);
+      } else if (errors.length > 0) {
+        toast.error(errors.join(", "));
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Erro ao salvar tudo:", error);
+      toast.error("Ocorreu um erro ao salvar");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   useEffect(() => {
     const initialSubdomain = customizationData?.subdomain || "";
     const initialName = customer?.name || "";
@@ -1201,319 +1201,43 @@ export default function CustomerWizardForm({
 
                 <div className="flex justify-end pt-4 border-t">
                   <Button
-                    onClick={async () => {
-                      const isEdit = Boolean(newCustomerId || customer?.id);
-                      setIsLoading(true);
-                      try {
-                        if (isEdit && (newCustomerId || customer?.id)) {
-                          const updatedData = {
-                            id: newCustomerId || customer?.id,
-                            name: iso.name,
-                            slug: customer?.slug || "",
-                            customerId: customer?.customerId || "",
-                            settlementManagementType: customer?.settlementManagementType || "",
-                          };
-                          const updatedId = await updateCustomer(updatedData);
-
-                          if (iso.subdomain && iso.subdomain.trim() !== "") {
-                            const formData = new FormData();
-                            formData.append("customerId", updatedId.toString());
-                            formData.append("subdomain", iso.subdomain);
-                            formData.append("primaryColor", primaryColorHex || "#000000");
-                            formData.append("secondaryColor", secondaryColorHex || "#ffffff");
-                            formData.append("loginButtonColor", loginButtonColorHex || "#3b82f6");
-                            formData.append("loginButtonTextColor", loginButtonTextColorHex || "#ffffff");
-                            formData.append("loginTitleColor", loginTitleColorHex || "#ffffff");
-                            formData.append("loginTextColor", loginTextColorHex || "#d1d5db");
-
-                            try {
-                              if (customizationData?.id) {
-                                formData.append("id", customizationData.id.toString());
-                                await updateCustomization(formData);
-                              } else {
-                                await saveCustomization(formData);
-                              }
-                              toast.success("ISO atualizado com sucesso");
-                              router.refresh();
-                            } catch (subdomainError: any) {
-                              if (subdomainError.message?.includes("já está em uso")) {
-                                toast.error("Este subdomínio já está em uso por outro ISO. Por favor, escolha outro nome.");
-                              } else {
-                                throw subdomainError;
-                              }
-                            }
-                          } else {
-                            toast.success("ISO atualizado com sucesso");
-                          }
-                        } else {
-                          const slug = generateSlug();
-                          const customerDataFixed = {
-                            slug: slug || "",
-                            name: iso.name,
-                            customerId: customer?.customerId || undefined,
-                            settlementManagementType: customer?.settlementManagementType || undefined,
-                            idParent: customer?.idParent || undefined,
-                            id: customer?.id || undefined,
-                          };
-                          const newId = await insertCustomerFormAction(customerDataFixed);
-                          toast.success("ISO criado com sucesso");
-
-                          if (newId !== null && newId !== undefined) {
-                            await handleFirstStepComplete(newId);
-                            router.replace(`/customers/${newId}`, { scroll: false });
-                          }
-                        }
-                      } catch (error: any) {
-                        console.error("Erro ao salvar ISO:", error);
-                        if (error.message?.includes("já está em uso")) {
-                          toast.error("Este subdomínio já está em uso por outro ISO. Por favor, escolha outro nome.");
-                        } else {
-                          toast.error("Ocorreu um erro ao processar a solicitação");
-                        }
-                      } finally {
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading || !iso.name || !iso.subdomain}
-                    className="cursor-pointer"
-                  >
-                    {isLoading ? "Salvando..." : (newCustomerId || customer?.id) ? "Salvar Informações Básicas" : "Salvar Informações Básicas"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Seção 2: Personalização Visual */}
-        <Collapsible open={section2Open && isFirstStepComplete} onOpenChange={(open) => isFirstStepComplete && setSection2Open(open)} className="border rounded-lg">
-          <CollapsibleTrigger
-            className="w-full px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!isFirstStepComplete}
-          >
-            <div className="flex items-center gap-3">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${isFirstStepComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                2
-              </div>
-              <Palette className="h-5 w-5 text-muted-foreground" />
-              <span className="text-lg font-semibold">Personalização Visual</span>
-            </div>
-            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${section2Open ? 'rotate-180' : ''}`} />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="px-6 pb-6">
-            {isFirstStepComplete && (
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setIsSavingCustomization(true);
-
-                  // ✅ Capturar o formulário no início (antes do bloco assíncrono)
-                  const form = e.currentTarget as HTMLFormElement;
-                  const formData = new FormData(form);
-
-                  const subdomain = (iso.subdomain || customizationData?.subdomain || "").trim();
-                  const customerId = newCustomerId || customer?.id;
-
-                  if (!subdomain) {
-                    toast.error("Por favor, defina o Domínio do ISO no passo 1 antes de salvar a personalização");
-                    setIsSavingCustomization(false);
-                    return;
-                  }
-
-                  if (!customerId) {
-                    toast.error("Por favor, crie o ISO no passo 1 antes de salvar a personalização");
-                    setIsSavingCustomization(false);
-                    return;
-                  }
-
-                  formData.set("subdomain", subdomain);
-                  formData.set("customerId", String(customerId));
-                  // ✅ Garantir que sempre envie HEX, não HSL
-                  formData.set("primaryColor", primaryColorHex);
-                  formData.set("secondaryColor", secondaryColorHex);
-                  formData.set("loginButtonColor", loginButtonColorHex || "#3b82f6");
-                  formData.set("loginButtonTextColor", loginButtonTextColorHex || "#ffffff");
-                  formData.set("loginTitleColor", loginTitleColorHex || "#ffffff");
-                  formData.set("loginTextColor", loginTextColorHex || "#d1d5db");
-                  if (customizationData?.id) {
-                    formData.set("id", String(customizationData.id));
-                  }
-
-                  const validationData = {
-                    subdomain: subdomain,
-                    primaryColor: primaryColorHex, // Usar valor HEX do estado
-                    secondaryColor: secondaryColorHex, // Usar valor HEX do estado
-                    loginButtonColor: loginButtonColorHex,
-                    loginButtonTextColor: loginButtonTextColorHex,
-                    loginTitleColor: loginTitleColorHex,
-                    loginTextColor: loginTextColorHex,
-                    image: formData.get("image"),
-                    customerId: String(customerId),
-                    id: customizationData?.id,
-                  };
-
-                  const validationResult =
-                    CustomizationSchema.safeParse(validationData);
-
-                  if (!validationResult.success) {
-                    console.error("Validation errors:", validationResult.error.flatten());
-                    toast.error("Por favor, corrija os erros antes de continuar");
-                    setIsSavingCustomization(false);
-                    return;
-                  }
-
-                  // ✅ ATUALIZAÇÃO OTIMISTA: assume sucesso e atualiza UI imediatamente
-                  const primaryColorInput = formData.get("primaryColor") as string;
-                  const secondaryColorInput = formData.get("secondaryColor") as string;
-
-                  // Atualizar previews otimisticamente
-                  const optimisticUpdate = {
-                    ...customizationData,
-                    imageUrl: imagePreview || customizationData?.imageUrl,
-                    loginImageUrl: loginImagePreview || customizationData?.loginImageUrl,
-                    faviconUrl: faviconPreview || customizationData?.faviconUrl,
-                    primaryColor: primaryColorInput ? hexToHslForUpdate(primaryColorInput) : customizationData?.primaryColor,
-                    secondaryColor: secondaryColorInput ? hexToHslForUpdate(secondaryColorInput) : customizationData?.secondaryColor,
-                    id: customizationData?.id ?? 0,
-                    subdomain: customizationData?.subdomain,
-                  };
-
-                  setCustomizationData(optimisticUpdate);
-
-                  // ✅ ATUALIZAÇÃO INSTANTÂNEA OTIMISTA: Atualizar DOM imediatamente antes de salvar
-                  // Isso garante feedback visual instantâneo
-                  if (faviconPreview || customizationData?.faviconUrl) {
-                    updateFaviconInDOM(faviconPreview || customizationData?.faviconUrl);
-                  }
-
-                  if (primaryColorInput || customizationData?.primaryColor) {
-                    const primaryHsl = primaryColorInput ? hexToHslForUpdate(primaryColorInput) : customizationData?.primaryColor;
-                    const secondaryHsl = secondaryColorInput ? hexToHslForUpdate(secondaryColorInput) : customizationData?.secondaryColor;
-                    updateColorsInDOM(primaryHsl, secondaryHsl);
-                  }
-
-                  if (loginImagePreview || customizationData?.loginImageUrl) {
-                    updateBackgroundImageInDOM(loginImagePreview || customizationData?.loginImageUrl);
-                  }
-
-                  try {
-                    // Timeout para evitar travamentos (30 segundos)
-                    const timeoutPromise = new Promise((_, reject) =>
-                      setTimeout(() => reject(new Error("Timeout: Operação demorou muito tempo. Tente novamente.")), 30000)
-                    );
-
-                    let result;
-                    const savePromise = customizationData
-                      ? updateCustomization(formData)
-                      : saveCustomization(formData);
-
-                    // Race entre a operação de salvamento e o timeout
-                    result = await Promise.race([savePromise, timeoutPromise]) as any;
-
-                    if (result?.customization) {
-                      // ✅ Atualizar com dados reais do servidor
-                      setCustomizationData({
-                        imageUrl: result.customization.imageUrl ?? undefined,
-                        id: result.customization.id ?? 0,
-                        subdomain: result.customization.slug ?? undefined,
-                        primaryColor: result.customization.primaryColor ?? undefined,
-                        secondaryColor: result.customization.secondaryColor ?? undefined,
-                        loginImageUrl: result.customization.loginImageUrl ?? undefined,
-                        faviconUrl: result.customization.faviconUrl ?? undefined,
-                        emailImageUrl: result.customization.emailImageUrl ?? undefined,
-                        menuIconUrl: result.customization.menuIconUrl ?? undefined,
-                      });
-
-                      // ✅ Atualizar estados de cores hex
-                      if (result.customization.primaryColor) {
-                        setPrimaryColorHex(hslToHex(result.customization.primaryColor));
-                      }
-                      if (result.customization.secondaryColor) {
-                        setSecondaryColorHex(hslToHex(result.customization.secondaryColor));
-                      }
-
-                      // ✅ ATUALIZAÇÃO INSTANTÂNEA: Atualizar DOM imediatamente
-                      // 1. Atualizar favicon
-                      if (result.customization.faviconUrl) {
-                        updateFaviconInDOM(result.customization.faviconUrl);
-                      }
-
-                      // 2. Atualizar logo
-                      if (result.customization.imageUrl) {
-                        updateLogoInDOM(result.customization.imageUrl);
-                      }
-
-                      // 3. Atualizar cores CSS variables
-                      updateColorsInDOM(
-                        result.customization.primaryColor ?? undefined,
-                        result.customization.secondaryColor ?? undefined
-                      );
-
-                      // 4. Atualizar background image (login)
-                      if (result.customization.loginImageUrl) {
-                        updateBackgroundImageInDOM(result.customization.loginImageUrl);
-                      }
-
-                      // 5. Atualizar email image
-                      if (result.customization.emailImageUrl) {
-                        updateEmailImageInDOM(result.customization.emailImageUrl);
-                      }
-
-                      // Limpar previews
-                      setImagePreview(null);
-                      setLoginImagePreview(null);
-                      setFaviconPreview(null);
-                      setEmailImagePreview(null);
-
-                      // ✅ Limpar inputs de arquivo (para permitir re-upload da mesma imagem)
-                      // Usa a referência do formulário capturada no início
-                      if (form) {
-                        const fileInputs = form.querySelectorAll('input[type="file"]');
-                        fileInputs.forEach((input) => {
-                          (input as HTMLInputElement).value = '';
-                        });
-                      }
-
-                      if (result.customization.imageUrl) {
-                        const filename = result.customization.imageUrl.split('/').pop() || 'logo atual';
-                        setImageFileName(filename);
-                      }
-                      if (result.customization.loginImageUrl) {
-                        const filename = result.customization.loginImageUrl.split('/').pop() || 'imagem de login atual';
-                        setLoginImageFileName(filename);
-                      }
-                      if (result.customization.faviconUrl) {
-                        const filename = result.customization.faviconUrl.split('/').pop() || 'favicon atual';
-                        setFaviconFileName(filename);
-                      }
-                      if (result.customization.emailImageUrl) {
-                        const filename = result.customization.emailImageUrl.split('/').pop() || 'logo de email atual';
-                        setEmailImageFileName(filename);
-                      }
-                    }
-
-                    toast.success("Customização salva com sucesso!");
-
-                    // NÃO faz router.refresh() para não sobrescrever atualizações otimistas
-                    // O estado já foi atualizado acima e o DOM foi atualizado instantaneamente
-                  } catch (error) {
-                    console.error("Erro ao salvar a customização", error);
-                    const errorMessage = error instanceof Error ? error.message : "Erro ao salvar a customização";
-                    toast.error(errorMessage);
-
-                    // Reverte atualização otimista em caso de erro apenas se necessário
-                    // Não faz router.refresh() para não perder o estado atual
-                  } finally {
-                    // Garante que o loading sempre seja resetado, mesmo em caso de erro
-                    // Usa setTimeout para garantir que o estado seja atualizado
-                    setTimeout(() => {
-                      setIsSavingCustomization(false);
-                    }, 100);
-                  }
-                }}
-                className="space-y-6"
+                    onClick={() => handleSaveAll()}
+                disabled={isLoading}
               >
-                <Card className="border-1">
+                {isLoading ? "Salvando..." : "Salvar e Continuar"}
+              </Button>
+              </div>
+        </CardContent>
+      </Card>
+    </CollapsibleContent>
+      </Collapsible >
+
+    {/* Seção 2: Personalização Visual */ }
+    < Collapsible open = { section2Open && isFirstStepComplete
+} onOpenChange = {(open) => isFirstStepComplete && setSection2Open(open)} className = "border rounded-lg" >
+        <CollapsibleTrigger
+          className="w-full px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!isFirstStepComplete}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${isFirstStepComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              2
+            </div>
+            <Palette className="h-5 w-5 text-muted-foreground" />
+            <span className="text-lg font-semibold">Personalização Visual</span>
+          </div>
+          <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${section2Open ? 'rotate-180' : ''}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="px-6 pb-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              handleSaveAll(); // Chamamos handleSaveAll que lerá do form se necessário ou usará state
+            }}
+            className="space-y-6"
+          >
+            <Card className="border-1">
                   {isFirstStepComplete && (
                     <>
                       <CardContent>
@@ -2220,19 +1944,20 @@ export default function CustomerWizardForm({
                           value={iso.subdomain || customizationData?.subdomain || ""}
                         />
                       </CardContent>
-                    </Card>
-              </form>
-            )}
+                    </>
+                  )}
+            </Card>
+          </form>
             {!isFirstStepComplete && (
               <div className="text-center py-8 text-muted-foreground">
                 <p>Por favor, crie o ISO na seção "Informações Básicas" antes de personalizar.</p>
               </div>
             )}
           </CollapsibleContent>
-        </Collapsible>
+        </Collapsible >
 
-        {/* Seção 3: Gestão de Usuários */}
-        <Collapsible open={section3Open && isFirstStepComplete} onOpenChange={(open) => isFirstStepComplete && setSection3Open(open)} className="border rounded-lg">
+  {/* Seção 3: Gestão de Usuários */ }
+  < Collapsible open = { section3Open && isFirstStepComplete} onOpenChange = {(open) => isFirstStepComplete && setSection3Open(open)} className = "border rounded-lg" >
           <CollapsibleTrigger
             className="w-full px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!isFirstStepComplete}
@@ -2303,54 +2028,54 @@ export default function CustomerWizardForm({
               </div>
             )}
           </CollapsibleContent>
-        </Collapsible>
-      </div>
+        </Collapsible >
+      </div >
 
-      {/* Botão Salvar Tudo após todas as seções */}
-      <div className="flex justify-end mt-6 pt-6 border-t">
-        <Button
-          onClick={handleSaveAll}
-          disabled={isLoading || isSavingCustomization}
-          className="cursor-pointer min-w-[160px] bg-black hover:bg-gray-800 text-white"
-          size="default"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          {isLoading ? "Salvando..." : "Salvar Tudo"}
-        </Button>
-      </div>
+  {/* Botão Salvar Tudo após todas as seções */ }
+  < div className = "flex justify-end mt-6 pt-6 border-t" >
+    <Button
+      onClick={handleSaveAll}
+      disabled={isLoading || isSavingCustomization}
+      className="cursor-pointer min-w-[160px] bg-black hover:bg-gray-800 text-white"
+      size="default"
+    >
+      <Save className="h-4 w-4 mr-2" />
+      {isLoading ? "Salvando..." : "Salvar Tudo"}
+    </Button>
+      </div >
 
-      {/* Modal de confirmação para remover imagem individual */}
-      <ConfirmDialog
-        open={confirmRemoveImageOpen}
-        onOpenChange={setConfirmRemoveImageOpen}
-        title="Remover Imagem"
-        description={
-          pendingRemoveImageType === 'logo'
-            ? "Tem certeza que deseja remover o logo?"
-            : pendingRemoveImageType === 'login'
-              ? "Tem certeza que deseja remover a imagem de fundo do login?"
-              : pendingRemoveImageType === 'favicon'
-                ? "Tem certeza que deseja remover o favicon?"
-                : pendingRemoveImageType === 'menuIcon'
-                  ? "Tem certeza que deseja remover o ícone do menu?"
-                  : "Tem certeza que deseja remover a logo de email?"
+  {/* Modal de confirmação para remover imagem individual */ }
+  < ConfirmDialog
+open = { confirmRemoveImageOpen }
+onOpenChange = { setConfirmRemoveImageOpen }
+title = "Remover Imagem"
+description = {
+  pendingRemoveImageType === 'logo'
+  ? "Tem certeza que deseja remover o logo?"
+  : pendingRemoveImageType === 'login'
+    ? "Tem certeza que deseja remover a imagem de fundo do login?"
+    : pendingRemoveImageType === 'favicon'
+      ? "Tem certeza que deseja remover o favicon?"
+      : pendingRemoveImageType === 'menuIcon'
+        ? "Tem certeza que deseja remover o ícone do menu?"
+        : "Tem certeza que deseja remover a logo de email?"
         }
-        confirmText="Remover"
-        cancelText="Cancelar"
-        onConfirm={handleRemoveImageConfirm}
-        onCancel={() => setPendingRemoveImageType(null)}
+confirmText = "Remover"
+cancelText = "Cancelar"
+onConfirm = { handleRemoveImageConfirm }
+onCancel = {() => setPendingRemoveImageType(null)}
       />
 
-      {/* Modal de confirmação para remover todas as imagens */}
-      <ConfirmDialog
-        open={confirmRemoveAllImagesOpen}
-        onOpenChange={setConfirmRemoveAllImagesOpen}
-        title="Remover Todas as Imagens"
-        description="Tem certeza que deseja remover TODAS as imagens? Esta ação removerá o logo, imagem de login, favicon e logo de email."
-        confirmText="Remover Todas"
-        cancelText="Cancelar"
-        onConfirm={handleRemoveAllImagesConfirm}
-      />
-    </div>
+{/* Modal de confirmação para remover todas as imagens */ }
+<ConfirmDialog
+  open={confirmRemoveAllImagesOpen}
+  onOpenChange={setConfirmRemoveAllImagesOpen}
+  title="Remover Todas as Imagens"
+  description="Tem certeza que deseja remover TODAS as imagens? Esta ação removerá o logo, imagem de login, favicon e logo de email."
+  confirmText="Remover Todas"
+  cancelText="Cancelar"
+  onConfirm={handleRemoveAllImagesConfirm}
+/>
+    </div >
   );
 }
