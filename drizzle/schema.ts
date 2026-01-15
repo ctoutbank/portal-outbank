@@ -837,7 +837,7 @@ export const users = pgTable("users", {
         // You can use { mode: "bigint" } if numbers are exceeding js number limitations
         idAddress: bigint("id_address", { mode: "number" }),
         hashedPassword: varchar("hashed_password", { length: 100 }),
-        email: varchar({ length: 50 }),
+        email: varchar({ length: 255 }),
         initialPassword: text("initial_password"),
         isInvisible: boolean("is_invisible").default(false),
         userType: varchar("user_type", { length: 50 }),

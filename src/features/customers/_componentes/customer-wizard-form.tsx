@@ -1202,647 +1202,643 @@ export default function CustomerWizardForm({
                 <div className="flex justify-end pt-4 border-t">
                   <Button
                     onClick={() => handleSaveAll()}
-                disabled={isLoading}
-              >
-                {isLoading ? "Salvando..." : "Salvar e Continuar"}
-              </Button>
-              </div>
-        </CardContent>
-      </Card>
-    </CollapsibleContent>
-      </Collapsible >
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Salvando..." : "Salvar e Continuar"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible >
 
-    {/* Seção 2: Personalização Visual */ }
-    < Collapsible open = { section2Open && isFirstStepComplete
-} onOpenChange = {(open) => isFirstStepComplete && setSection2Open(open)} className = "border rounded-lg" >
-        <CollapsibleTrigger
-          className="w-full px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!isFirstStepComplete}
-        >
-          <div className="flex items-center gap-3">
-            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${isFirstStepComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-              2
-            </div>
-            <Palette className="h-5 w-5 text-muted-foreground" />
-            <span className="text-lg font-semibold">Personalização Visual</span>
-          </div>
-          <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${section2Open ? 'rotate-180' : ''}`} />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="px-6 pb-6">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              handleSaveAll(); // Chamamos handleSaveAll que lerá do form se necessário ou usará state
-            }}
-            className="space-y-6"
+        {/* Seção 2: Personalização Visual */}
+        < Collapsible open={section2Open && isFirstStepComplete
+        } onOpenChange={(open) => isFirstStepComplete && setSection2Open(open)} className="border rounded-lg" >
+          <CollapsibleTrigger
+            className="w-full px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!isFirstStepComplete}
           >
-            <Card className="border-1">
-                  {isFirstStepComplete && (
-                    <>
-                      <CardContent>
-                        {/* LINHA 1: CORES */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                          {/* Cor Primária */}
-                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                            <label className="block text-sm font-medium text-white mb-4">
-                              <div className="flex items-center gap-1">
-                                <span>Cor Primária</span>
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <button
-                                        type="button"
-                                        className="text-white p-1"
-                                      >
-                                        <Info className="w-4 h-4 text-gray-400" />
-                                      </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top">
-                                      <p>
-                                        A cor primária deve ser uma cor escura.
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </div>
-                            </label>
-                            <div className="flex items-center gap-3">
-                              <div className="relative w-[60px] h-12 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: primaryColorHex }}>
-                                <input
-                                  type="color"
-                                  name="primaryColor"
-                                  value={primaryColorHex}
-                                  onChange={(e) => {
-                                    const hexColor = e.target.value;
-                                    setPrimaryColorHex(hexColor);
-                                    setCustomizationData(prev => ({
-                                      ...prev,
-                                      primaryColor: hexToHslForUpdate(hexColor),
-                                      id: prev?.id ?? 0,
-                                      subdomain: prev?.subdomain,
-                                      secondaryColor: prev?.secondaryColor,
-                                      imageUrl: prev?.imageUrl,
-                                      loginImageUrl: prev?.loginImageUrl,
-                                      faviconUrl: prev?.faviconUrl,
-                                      emailImageUrl: prev?.emailImageUrl,
-                                    }));
-                                  }}
-                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                />
-                              </div>
+            <div className="flex items-center gap-3">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${isFirstStepComplete ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                2
+              </div>
+              <Palette className="h-5 w-5 text-muted-foreground" />
+              <span className="text-lg font-semibold">Personalização Visual</span>
+            </div>
+            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${section2Open ? 'rotate-180' : ''}`} />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="px-6 pb-6">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleSaveAll(); // Chamamos handleSaveAll que lerá do form se necessário ou usará state
+              }}
+              className="space-y-6"
+            >
+              <Card className="border-1">
+                {isFirstStepComplete && (
+                  <>
+                    <CardContent>
+                      {/* LINHA 1: CORES */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                        {/* Cor Primária */}
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                          <label className="block text-sm font-medium text-white mb-4">
+                            <div className="flex items-center gap-1">
+                              <span>Cor Primária</span>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="text-white p-1"
+                                    >
+                                      <Info className="w-4 h-4 text-gray-400" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    <p>
+                                      A cor primária deve ser uma cor escura.
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </label>
+                          <div className="flex items-center gap-3">
+                            <div className="relative w-[60px] h-12 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: primaryColorHex }}>
                               <input
-                                type="text"
+                                type="color"
+                                name="primaryColor"
                                 value={primaryColorHex}
                                 onChange={(e) => {
                                   const hexColor = e.target.value;
                                   setPrimaryColorHex(hexColor);
-                                  if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                    setCustomizationData(prev => ({
-                                      ...prev,
-                                      primaryColor: hexToHslForUpdate(hexColor),
-                                      id: prev?.id ?? 0,
-                                      subdomain: prev?.subdomain,
-                                      secondaryColor: prev?.secondaryColor,
-                                      imageUrl: prev?.imageUrl,
-                                      loginImageUrl: prev?.loginImageUrl,
-                                      faviconUrl: prev?.faviconUrl,
-                                      emailImageUrl: prev?.emailImageUrl,
-                                    }));
-                                  }
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    primaryColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                    subdomain: prev?.subdomain,
+                                    secondaryColor: prev?.secondaryColor,
+                                    imageUrl: prev?.imageUrl,
+                                    loginImageUrl: prev?.loginImageUrl,
+                                    faviconUrl: prev?.faviconUrl,
+                                    emailImageUrl: prev?.emailImageUrl,
+                                  }));
                                 }}
-                                className="flex-1 rounded-md border border-[#2a2a2a] h-12 px-4 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                                placeholder="#000000"
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                               />
                             </div>
+                            <input
+                              type="text"
+                              value={primaryColorHex}
+                              onChange={(e) => {
+                                const hexColor = e.target.value;
+                                setPrimaryColorHex(hexColor);
+                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    primaryColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                    subdomain: prev?.subdomain,
+                                    secondaryColor: prev?.secondaryColor,
+                                    imageUrl: prev?.imageUrl,
+                                    loginImageUrl: prev?.loginImageUrl,
+                                    faviconUrl: prev?.faviconUrl,
+                                    emailImageUrl: prev?.emailImageUrl,
+                                  }));
+                                }
+                              }}
+                              className="flex-1 rounded-md border border-[#2a2a2a] h-12 px-4 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                              placeholder="#000000"
+                            />
                           </div>
+                        </div>
 
-                          {/* Cor Secundária */}
+                        {/* Cor Secundária */}
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                          <label className="block text-sm font-medium text-white mb-4">
+                            Cor Secundária
+                          </label>
+                          <div className="flex items-center gap-3">
+                            <div className="relative w-[60px] h-12 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: secondaryColorHex }}>
+                              <input
+                                type="color"
+                                name="secondaryColor"
+                                value={secondaryColorHex}
+                                onChange={(e) => {
+                                  const hexColor = e.target.value;
+                                  setSecondaryColorHex(hexColor);
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    secondaryColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                    subdomain: prev?.subdomain,
+                                    primaryColor: prev?.primaryColor,
+                                    imageUrl: prev?.imageUrl,
+                                    loginImageUrl: prev?.loginImageUrl,
+                                    faviconUrl: prev?.faviconUrl,
+                                    emailImageUrl: prev?.emailImageUrl,
+                                  }));
+                                }}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              />
+                            </div>
+                            <input
+                              type="text"
+                              value={secondaryColorHex}
+                              onChange={(e) => {
+                                const hexColor = e.target.value;
+                                setSecondaryColorHex(hexColor);
+                                if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                  setCustomizationData(prev => ({
+                                    ...prev,
+                                    secondaryColor: hexToHslForUpdate(hexColor),
+                                    id: prev?.id ?? 0,
+                                    subdomain: prev?.subdomain,
+                                    primaryColor: prev?.primaryColor,
+                                    imageUrl: prev?.imageUrl,
+                                    loginImageUrl: prev?.loginImageUrl,
+                                    faviconUrl: prev?.faviconUrl,
+                                    emailImageUrl: prev?.emailImageUrl,
+                                  }));
+                                }
+                              }}
+                              className="flex-1 rounded-md border border-[#2a2a2a] h-12 px-4 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                              placeholder="#ffffff"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* LINHA 1.5: CORES DA PÁGINA DE LOGIN */}
+                      <div className="mb-6">
+                        <h4 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                          <Palette className="w-4 h-4" />
+                          Cores da Página de Login
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                          {/* Cor do Botão */}
                           <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                            <label className="block text-sm font-medium text-white mb-4">
-                              Cor Secundária
-                            </label>
-                            <div className="flex items-center gap-3">
-                              <div className="relative w-[60px] h-12 rounded-md overflow-hidden border border-[#2a2a2a] cursor-pointer" style={{ backgroundColor: secondaryColorHex }}>
+                            <label className="flex items-center gap-3 text-sm font-medium text-white mb-3">
+                              Cor do Botão
+                              <div className="relative w-6 h-6 rounded border border-[#2a2a2a] overflow-hidden cursor-pointer shadow-sm" style={{ backgroundColor: loginButtonColorHex }}>
                                 <input
                                   type="color"
-                                  name="secondaryColor"
-                                  value={secondaryColorHex}
+                                  name="loginButtonColor"
+                                  value={loginButtonColorHex}
                                   onChange={(e) => {
                                     const hexColor = e.target.value;
-                                    setSecondaryColorHex(hexColor);
+                                    setLoginButtonColorHex(hexColor);
                                     setCustomizationData(prev => ({
                                       ...prev,
-                                      secondaryColor: hexToHslForUpdate(hexColor),
+                                      loginButtonColor: hexToHslForUpdate(hexColor),
                                       id: prev?.id ?? 0,
-                                      subdomain: prev?.subdomain,
-                                      primaryColor: prev?.primaryColor,
-                                      imageUrl: prev?.imageUrl,
-                                      loginImageUrl: prev?.loginImageUrl,
-                                      faviconUrl: prev?.faviconUrl,
-                                      emailImageUrl: prev?.emailImageUrl,
                                     }));
                                   }}
                                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 />
                               </div>
+                            </label>
+                            <div className="flex items-center gap-3">
                               <input
                                 type="text"
-                                value={secondaryColorHex}
+                                value={loginButtonColorHex}
                                 onChange={(e) => {
                                   const hexColor = e.target.value;
-                                  setSecondaryColorHex(hexColor);
+                                  setLoginButtonColorHex(hexColor);
                                   if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
                                     setCustomizationData(prev => ({
                                       ...prev,
-                                      secondaryColor: hexToHslForUpdate(hexColor),
+                                      loginButtonColor: hexToHslForUpdate(hexColor),
                                       id: prev?.id ?? 0,
-                                      subdomain: prev?.subdomain,
-                                      primaryColor: prev?.primaryColor,
-                                      imageUrl: prev?.imageUrl,
-                                      loginImageUrl: prev?.loginImageUrl,
-                                      faviconUrl: prev?.faviconUrl,
-                                      emailImageUrl: prev?.emailImageUrl,
                                     }));
                                   }
                                 }}
-                                className="flex-1 rounded-md border border-[#2a2a2a] h-12 px-4 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                                placeholder="#ffffff"
+                                className="w-full rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                placeholder="#3b82f6"
                               />
                             </div>
                           </div>
-                        </div>
 
-                        {/* LINHA 1.5: CORES DA PÁGINA DE LOGIN */}
-                        <div className="mb-6">
-                          <h4 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
-                            <Palette className="w-4 h-4" />
-                            Cores da Página de Login
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {/* Cor do Botão */}
-                            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                              <label className="flex items-center gap-3 text-sm font-medium text-white mb-3">
-                                Cor do Botão
-                                <div className="relative w-6 h-6 rounded border border-[#2a2a2a] overflow-hidden cursor-pointer shadow-sm" style={{ backgroundColor: loginButtonColorHex }}>
-                                  <input
-                                    type="color"
-                                    name="loginButtonColor"
-                                    value={loginButtonColorHex}
-                                    onChange={(e) => {
-                                      const hexColor = e.target.value;
-                                      setLoginButtonColorHex(hexColor);
-                                      setCustomizationData(prev => ({
-                                        ...prev,
-                                        loginButtonColor: hexToHslForUpdate(hexColor),
-                                        id: prev?.id ?? 0,
-                                      }));
-                                    }}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                  />
-                                </div>
-                              </label>
-                              <div className="flex items-center gap-3">
+                          {/* Cor do Texto do Botão */}
+                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                            <label className="flex items-center gap-3 text-sm font-medium text-white mb-3">
+                              Texto do Botão
+                              <div className="relative w-6 h-6 rounded border border-[#2a2a2a] overflow-hidden cursor-pointer shadow-sm" style={{ backgroundColor: loginButtonTextColorHex }}>
                                 <input
-                                  type="text"
-                                  value={loginButtonColorHex}
-                                  onChange={(e) => {
-                                    const hexColor = e.target.value;
-                                    setLoginButtonColorHex(hexColor);
-                                    if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                      setCustomizationData(prev => ({
-                                        ...prev,
-                                        loginButtonColor: hexToHslForUpdate(hexColor),
-                                        id: prev?.id ?? 0,
-                                      }));
-                                    }
-                                  }}
-                                  className="w-full rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                                  placeholder="#3b82f6"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Cor do Texto do Botão */}
-                            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                              <label className="flex items-center gap-3 text-sm font-medium text-white mb-3">
-                                Texto do Botão
-                                <div className="relative w-6 h-6 rounded border border-[#2a2a2a] overflow-hidden cursor-pointer shadow-sm" style={{ backgroundColor: loginButtonTextColorHex }}>
-                                  <input
-                                    type="color"
-                                    name="loginButtonTextColor"
-                                    value={loginButtonTextColorHex}
-                                    onChange={(e) => {
-                                      const hexColor = e.target.value;
-                                      setLoginButtonTextColorHex(hexColor);
-                                      setCustomizationData(prev => ({
-                                        ...prev,
-                                        loginButtonTextColor: hexToHslForUpdate(hexColor),
-                                        id: prev?.id ?? 0,
-                                      }));
-                                    }}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                  />
-                                </div>
-                              </label>
-                              <div className="flex items-center gap-3">
-                                <input
-                                  type="text"
+                                  type="color"
+                                  name="loginButtonTextColor"
                                   value={loginButtonTextColorHex}
                                   onChange={(e) => {
                                     const hexColor = e.target.value;
                                     setLoginButtonTextColorHex(hexColor);
-                                    if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                      setCustomizationData(prev => ({
-                                        ...prev,
-                                        loginButtonTextColor: hexToHslForUpdate(hexColor),
-                                        id: prev?.id ?? 0,
-                                      }));
-                                    }
+                                    setCustomizationData(prev => ({
+                                      ...prev,
+                                      loginButtonTextColor: hexToHslForUpdate(hexColor),
+                                      id: prev?.id ?? 0,
+                                    }));
                                   }}
-                                  className="w-full rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                                  placeholder="#ffffff"
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 />
                               </div>
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="text"
+                                value={loginButtonTextColorHex}
+                                onChange={(e) => {
+                                  const hexColor = e.target.value;
+                                  setLoginButtonTextColorHex(hexColor);
+                                  if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                    setCustomizationData(prev => ({
+                                      ...prev,
+                                      loginButtonTextColor: hexToHslForUpdate(hexColor),
+                                      id: prev?.id ?? 0,
+                                    }));
+                                  }
+                                }}
+                                className="w-full rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                placeholder="#ffffff"
+                              />
                             </div>
+                          </div>
 
-                            {/* Cor do Título */}
-                            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                              <label className="flex items-center gap-3 text-sm font-medium text-white mb-3">
-                                Cor do Título
-                                <div className="relative w-6 h-6 rounded border border-[#2a2a2a] overflow-hidden cursor-pointer shadow-sm" style={{ backgroundColor: loginTitleColorHex }}>
-                                  <input
-                                    type="color"
-                                    name="loginTitleColor"
-                                    value={loginTitleColorHex}
-                                    onChange={(e) => {
-                                      const hexColor = e.target.value;
-                                      setLoginTitleColorHex(hexColor);
-                                      setCustomizationData(prev => ({
-                                        ...prev,
-                                        loginTitleColor: hexToHslForUpdate(hexColor),
-                                        id: prev?.id ?? 0,
-                                      }));
-                                    }}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                  />
-                                </div>
-                              </label>
-                              <div className="flex items-center gap-3">
+                          {/* Cor do Título */}
+                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                            <label className="flex items-center gap-3 text-sm font-medium text-white mb-3">
+                              Cor do Título
+                              <div className="relative w-6 h-6 rounded border border-[#2a2a2a] overflow-hidden cursor-pointer shadow-sm" style={{ backgroundColor: loginTitleColorHex }}>
                                 <input
-                                  type="text"
+                                  type="color"
+                                  name="loginTitleColor"
                                   value={loginTitleColorHex}
                                   onChange={(e) => {
                                     const hexColor = e.target.value;
                                     setLoginTitleColorHex(hexColor);
-                                    if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                      setCustomizationData(prev => ({
-                                        ...prev,
-                                        loginTitleColor: hexToHslForUpdate(hexColor),
-                                        id: prev?.id ?? 0,
-                                      }));
-                                    }
+                                    setCustomizationData(prev => ({
+                                      ...prev,
+                                      loginTitleColor: hexToHslForUpdate(hexColor),
+                                      id: prev?.id ?? 0,
+                                    }));
                                   }}
-                                  className="w-full rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                                  placeholder="#ffffff"
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 />
                               </div>
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="text"
+                                value={loginTitleColorHex}
+                                onChange={(e) => {
+                                  const hexColor = e.target.value;
+                                  setLoginTitleColorHex(hexColor);
+                                  if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                    setCustomizationData(prev => ({
+                                      ...prev,
+                                      loginTitleColor: hexToHslForUpdate(hexColor),
+                                      id: prev?.id ?? 0,
+                                    }));
+                                  }
+                                }}
+                                className="w-full rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                placeholder="#ffffff"
+                              />
                             </div>
+                          </div>
 
-                            {/* Cor do Texto */}
-                            <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
-                              <label className="flex items-center gap-3 text-sm font-medium text-white mb-3">
-                                Cor do Texto
-                                <div className="relative w-6 h-6 rounded border border-[#2a2a2a] overflow-hidden cursor-pointer shadow-sm" style={{ backgroundColor: loginTextColorHex }}>
-                                  <input
-                                    type="color"
-                                    name="loginTextColor"
-                                    value={loginTextColorHex}
-                                    onChange={(e) => {
-                                      const hexColor = e.target.value;
-                                      setLoginTextColorHex(hexColor);
-                                      setCustomizationData(prev => ({
-                                        ...prev,
-                                        loginTextColor: hexToHslForUpdate(hexColor),
-                                        id: prev?.id ?? 0,
-                                      }));
-                                    }}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                  />
-                                </div>
-                              </label>
-                              <div className="flex items-center gap-3">
+                          {/* Cor do Texto */}
+                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5">
+                            <label className="flex items-center gap-3 text-sm font-medium text-white mb-3">
+                              Cor do Texto
+                              <div className="relative w-6 h-6 rounded border border-[#2a2a2a] overflow-hidden cursor-pointer shadow-sm" style={{ backgroundColor: loginTextColorHex }}>
                                 <input
-                                  type="text"
+                                  type="color"
+                                  name="loginTextColor"
                                   value={loginTextColorHex}
                                   onChange={(e) => {
                                     const hexColor = e.target.value;
                                     setLoginTextColorHex(hexColor);
-                                    if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
-                                      setCustomizationData(prev => ({
-                                        ...prev,
-                                        loginTextColor: hexToHslForUpdate(hexColor),
-                                        id: prev?.id ?? 0,
-                                      }));
-                                    }
+                                    setCustomizationData(prev => ({
+                                      ...prev,
+                                      loginTextColor: hexToHslForUpdate(hexColor),
+                                      id: prev?.id ?? 0,
+                                    }));
                                   }}
-                                  className="w-full rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
-                                  placeholder="#d1d5db"
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 />
                               </div>
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="text"
+                                value={loginTextColorHex}
+                                onChange={(e) => {
+                                  const hexColor = e.target.value;
+                                  setLoginTextColorHex(hexColor);
+                                  if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+                                    setCustomizationData(prev => ({
+                                      ...prev,
+                                      loginTextColor: hexToHslForUpdate(hexColor),
+                                      id: prev?.id ?? 0,
+                                    }));
+                                  }
+                                }}
+                                className="w-full rounded-md border border-[#2a2a2a] h-10 px-3 text-sm text-white font-mono bg-[#1a1a1a] focus:border-[#3a3a3a] focus:outline-none"
+                                placeholder="#d1d5db"
+                              />
                             </div>
                           </div>
                         </div>
+                      </div>
 
-                        {/* LINHA 2: 3 CARDS DE IMAGENS */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                          {/* Card 1: Logotipo Principal */}
-                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
-                            <label className="text-sm font-medium text-white mb-1">
-                              Imagem ou Logotipo
-                            </label>
-                            <p className="text-xs text-gray-400 mb-4">
-                              SVG (preferencial), PNG ou JPG • Proporção 3:1 a 4:1 • 448×160px (2×) ou 672×240px (3×) • Máx. 100KB
-                            </p>
+                      {/* LINHA 2: 3 CARDS DE IMAGENS */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                        {/* Card 1: Logotipo Principal */}
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                          <label className="text-sm font-medium text-white mb-1">
+                            Imagem ou Logotipo
+                          </label>
+                          <p className="text-xs text-gray-400 mb-4">
+                            SVG (preferencial), PNG ou JPG • Proporção 3:1 a 4:1 • 448×160px (2×) ou 672×240px (3×) • Máx. 100KB
+                          </p>
 
-                            <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors ${(imagePreview || customizationData?.imageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
-                              {imagePreview ? (
-                                <img src={imagePreview} alt="Preview" className="max-w-full max-h-[180px] object-contain" />
-                              ) : customizationData?.imageUrl ? (
-                                <img src={addCacheBustingToUrl(customizationData.imageUrl)} alt="Logo atual" className="max-w-full max-h-[180px] object-contain" key={customizationData.imageUrl} />
-                              ) : (
-                                <div className="text-center text-[#606060]">
-                                  <div className="text-5xl mb-2 opacity-50">🖼️</div>
-                                  <div className="text-xs">Nenhuma imagem selecionada</div>
-                                </div>
-                              )}
-                            </div>
-
-                            {imageError && (
-                              <p className="text-xs text-orange-600 font-medium mb-2">
-                                {imageError}
-                              </p>
+                          <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors ${(imagePreview || customizationData?.imageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                            {imagePreview ? (
+                              <img src={imagePreview} alt="Preview" className="max-w-full max-h-[180px] object-contain" />
+                            ) : customizationData?.imageUrl ? (
+                              <img src={addCacheBustingToUrl(customizationData.imageUrl)} alt="Logo atual" className="max-w-full max-h-[180px] object-contain" key={customizationData.imageUrl} />
+                            ) : (
+                              <div className="text-center text-[#606060]">
+                                <div className="text-5xl mb-2 opacity-50">🖼️</div>
+                                <div className="text-xs">Nenhuma imagem selecionada</div>
+                              </div>
                             )}
-
-                            <div className="relative mb-3">
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/jpg,image/png,image/svg+xml"
-                                name="image"
-                                id="image"
-                                onChange={handleImageChange}
-                                className="hidden"
-                              />
-                              <label
-                                htmlFor="image"
-                                className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
-                              >
-                                <span>📁</span>
-                                <span>Selecionar arquivo</span>
-                              </label>
-                            </div>
-
-                            {imageFileName && (
-                              <p className="text-xs text-green-600 font-medium mb-3">
-                                ✓ Arquivo selecionado: {imageFileName}
-                              </p>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImageRequest('logo')}
-                              disabled={isRemovingImage || (!imagePreview && !customizationData?.imageUrl)}
-                              className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
-                            >
-                              <span>🗑️</span>
-                              <span>{isRemovingImage ? "Removendo..." : "Remover logo"}</span>
-                            </button>
                           </div>
 
-                          {/* Card 2: Logo para Email e Relatórios */}
-                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
-                            <label className="text-sm font-medium text-white mb-1">
-                              Logo para Email e Relatórios
-                            </label>
-                            <p className="text-xs text-gray-400 mb-4">
-                              SVG (preferencial), PNG ou JPG • Recomendado: logo com fundo transparente ou versão adequada para fundo branco • Máx. 3MB
+                          {imageError && (
+                            <p className="text-xs text-orange-600 font-medium mb-2">
+                              {imageError}
                             </p>
+                          )}
 
-                            <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors ${(emailImagePreview || customizationData?.emailImageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
-                              {emailImagePreview ? (
-                                <img src={emailImagePreview} alt="Preview" className="max-w-full max-h-[180px] object-contain" />
-                              ) : customizationData?.emailImageUrl ? (
-                                <img src={addCacheBustingToUrl(customizationData.emailImageUrl)} alt="Logo de email atual" className="max-w-full max-h-[180px] object-contain" key={customizationData.emailImageUrl} />
-                              ) : (
-                                <div className="text-center text-[#606060]">
-                                  <div className="text-5xl mb-2 opacity-50">📧</div>
-                                  <div className="text-xs">Nenhuma imagem selecionada</div>
-                                </div>
-                              )}
-                            </div>
-
-                            {emailImageError && (
-                              <p className="text-xs text-orange-600 font-medium mb-2">
-                                {emailImageError}
-                              </p>
-                            )}
-
-                            <div className="relative mb-3">
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/jpg,image/png,image/svg+xml"
-                                name="emailImage"
-                                id="emailImage"
-                                onChange={handleEmailImageChange}
-                                className="hidden"
-                              />
-                              <label
-                                htmlFor="emailImage"
-                                className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
-                              >
-                                <span>📁</span>
-                                <span>Selecionar arquivo</span>
-                              </label>
-                            </div>
-
-                            {emailImageFileName && (
-                              <p className="text-xs text-green-600 font-medium mb-3">
-                                ✓ Arquivo selecionado: {emailImageFileName}
-                              </p>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImageRequest('email')}
-                              disabled={isRemovingImage || (!emailImagePreview && !customizationData?.emailImageUrl)}
-                              className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                          <div className="relative mb-3">
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/svg+xml"
+                              name="image"
+                              id="image"
+                              onChange={handleImageChange}
+                              className="hidden"
+                            />
+                            <label
+                              htmlFor="image"
+                              className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
                             >
-                              <span>🗑️</span>
-                              <span>{isRemovingImage ? "Removendo..." : "Remover logo de email"}</span>
-                            </button>
+                              <span>📁</span>
+                              <span>Selecionar arquivo</span>
+                            </label>
                           </div>
 
-                          {/* Card 3: Favicon */}
-                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
-                            <label className="text-sm font-medium text-white mb-1">
-                              Favicon
-                            </label>
-                            <p className="text-xs text-gray-400 mb-4">
-                              ICO ou PNG • 32×32px ou 16×16px • Quadrado • Máx. 100KB
+                          {imageFileName && (
+                            <p className="text-xs text-green-600 font-medium mb-3">
+                              ✓ Arquivo selecionado: {imageFileName}
                             </p>
+                          )}
 
-                            <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[120px] flex items-center justify-center mb-4 transition-colors ${(faviconPreview || customizationData?.faviconUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
-                              {faviconPreview ? (
-                                <div className="flex gap-4 items-center">
-                                  <div className="flex flex-col items-center gap-1">
-                                    <img src={faviconPreview} alt="Favicon 16x16" width={16} height={16} className="border border-[#2a2a2a]" />
-                                    <span className="text-xs text-gray-400">16×16</span>
-                                  </div>
-                                  <div className="flex flex-col items-center gap-1">
-                                    <img src={faviconPreview} alt="Favicon 32x32" width={32} height={32} className="border border-[#2a2a2a]" />
-                                    <span className="text-xs text-gray-400">32×32</span>
-                                  </div>
-                                </div>
-                              ) : customizationData?.faviconUrl ? (
-                                <div className="flex gap-4 items-center">
-                                  <div className="flex flex-col items-center gap-1">
-                                    <img src={addCacheBustingToUrl(customizationData.faviconUrl)} alt="Favicon 16x16" width={16} height={16} className="border border-[#2a2a2a]" key={`${customizationData.faviconUrl}-16`} />
-                                    <span className="text-xs text-gray-400">16×16</span>
-                                  </div>
-                                  <div className="flex flex-col items-center gap-1">
-                                    <img src={addCacheBustingToUrl(customizationData.faviconUrl)} alt="Favicon 32x32" width={32} height={32} className="border border-[#2a2a2a]" key={`${customizationData.faviconUrl}-32`} />
-                                    <span className="text-xs text-gray-400">32×32</span>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="text-center text-[#606060]">
-                                  <div className="text-5xl mb-2 opacity-50">⭐</div>
-                                  <div className="text-xs">Nenhum ícone selecionado</div>
-                                </div>
-                              )}
-                            </div>
-
-                            {faviconError && (
-                              <p className="text-xs text-orange-600 font-medium mb-2">
-                                {faviconError}
-                              </p>
-                            )}
-
-                            <div className="relative mb-3">
-                              <input
-                                type="file"
-                                accept="image/x-icon,image/vnd.microsoft.icon,image/ico,image/png"
-                                name="favicon"
-                                id="favicon"
-                                onChange={handleFaviconChange}
-                                className="hidden"
-                              />
-                              <label
-                                htmlFor="favicon"
-                                className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
-                              >
-                                <span>📁</span>
-                                <span>Selecionar arquivo</span>
-                              </label>
-                            </div>
-
-                            {faviconFileName && (
-                              <p className="text-xs text-green-600 font-medium mb-3">
-                                ✓ Arquivo selecionado: {faviconFileName}
-                              </p>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImageRequest('favicon')}
-                              disabled={isRemovingImage || (!faviconPreview && !customizationData?.faviconUrl)}
-                              className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
-                            >
-                              <span>🗑️</span>
-                              <span>{isRemovingImage ? "Removendo..." : "Remover favicon"}</span>
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImageRequest('logo')}
+                            disabled={isRemovingImage || (!imagePreview && !customizationData?.imageUrl)}
+                            className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                          >
+                            <span>🗑️</span>
+                            <span>{isRemovingImage ? "Removendo..." : "Remover logo"}</span>
+                          </button>
                         </div>
 
-                        {/* LINHA 3: ÍCONE DO MENU E IMAGEM DE FUNDO DO LOGIN (Lado a Lado) */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                          {/* ÍCONE DO MENU (36x36px) */}
-                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
-                            <label className="text-sm font-medium text-white mb-1">
-                              Ícone do Menu (36×36px)
-                            </label>
-                            <p className="text-xs text-gray-400 mb-4">
-                              PNG ou SVG • 36×36px • Fundo transparente recomendado • Máx. 500KB
-                            </p>
+                        {/* Card 2: Logo para Email e Relatórios */}
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                          <label className="text-sm font-medium text-white mb-1">
+                            Logo para Email e Relatórios
+                          </label>
+                          <p className="text-xs text-gray-400 mb-4">
+                            SVG (preferencial), PNG ou JPG • Recomendado: logo com fundo transparente ou versão adequada para fundo branco • Máx. 3MB
+                          </p>
 
-                            <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[120px] flex items-center justify-center mb-4 transition-colors ${(menuIconPreview || customizationData?.menuIconUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
-                              {menuIconPreview ? (
-                                <div className="flex flex-col items-center gap-2">
-                                  <img src={menuIconPreview} alt="Preview ícone do menu" width={36} height={36} className="border border-[#2a2a2a]" />
-                                  <span className="text-xs text-gray-400">36×36</span>
-                                </div>
-                              ) : customizationData?.menuIconUrl ? (
-                                <div className="flex flex-col items-center gap-2">
-                                  <img src={addCacheBustingToUrl(customizationData.menuIconUrl)} alt="Ícone do menu atual" width={36} height={36} className="border border-[#2a2a2a]" key={customizationData.menuIconUrl} />
-                                  <span className="text-xs text-gray-400">36×36</span>
-                                </div>
-                              ) : (
-                                <div className="text-center text-[#606060]">
-                                  <div className="text-4xl mb-2 opacity-50">🔲</div>
-                                  <div className="text-xs">Nenhum ícone selecionado</div>
-                                </div>
-                              )}
-                            </div>
-
-                            {menuIconError && (
-                              <p className="text-xs text-orange-600 font-medium mb-2">
-                                {menuIconError}
-                              </p>
+                          <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors ${(emailImagePreview || customizationData?.emailImageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                            {emailImagePreview ? (
+                              <img src={emailImagePreview} alt="Preview" className="max-w-full max-h-[180px] object-contain" />
+                            ) : customizationData?.emailImageUrl ? (
+                              <img src={addCacheBustingToUrl(customizationData.emailImageUrl)} alt="Logo de email atual" className="max-w-full max-h-[180px] object-contain" key={customizationData.emailImageUrl} />
+                            ) : (
+                              <div className="text-center text-[#606060]">
+                                <div className="text-5xl mb-2 opacity-50">📧</div>
+                                <div className="text-xs">Nenhuma imagem selecionada</div>
+                              </div>
                             )}
-
-                            <div className="relative mb-3">
-                              <input
-                                type="file"
-                                accept="image/png,image/svg+xml"
-                                name="menuIcon"
-                                id="menuIcon"
-                                onChange={handleMenuIconChange}
-                                className="hidden"
-                              />
-                              <label
-                                htmlFor="menuIcon"
-                                className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
-                              >
-                                <span>📁</span>
-                                <span>Selecionar arquivo</span>
-                              </label>
-                            </div>
-
-                            {menuIconFileName && (
-                              <p className="text-xs text-green-600 font-medium mb-3">
-                                ✓ Arquivo selecionado: {menuIconFileName}
-                              </p>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImageRequest('menuIcon')}
-                              disabled={isRemovingImage || (!menuIconPreview && !customizationData?.menuIconUrl)}
-                              className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
-                            >
-                              <span>🗑️</span>
-                              <span>{isRemovingImage ? "Removendo..." : "Remover ícone"}</span>
-                            </button>
                           </div>
 
-                          {/* IMAGEM DE FUNDO DO LOGIN */}
-                          <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
-                            <label className="text-sm font-medium text-white mb-1">
-                              Imagem de Fundo do Login
-                            </label>
-                            <p className="text-xs text-gray-400 mb-4">
-                              WebP (preferencial) ou JPG/PNG • 1600×1200px (4:3) ou 1920×1440px • Conteúdo centralizado • Máx. 3MB
+                          {emailImageError && (
+                            <p className="text-xs text-orange-600 font-medium mb-2">
+                              {emailImageError}
                             </p>
+                          )}
+
+                          <div className="relative mb-3">
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/svg+xml"
+                              name="emailImage"
+                              id="emailImage"
+                              onChange={handleEmailImageChange}
+                              className="hidden"
+                            />
+                            <label
+                              htmlFor="emailImage"
+                              className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                            >
+                              <span>📁</span>
+                              <span>Selecionar arquivo</span>
+                            </label>
+                          </div>
+
+                          {emailImageFileName && (
+                            <p className="text-xs text-green-600 font-medium mb-3">
+                              ✓ Arquivo selecionado: {emailImageFileName}
+                            </p>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImageRequest('email')}
+                            disabled={isRemovingImage || (!emailImagePreview && !customizationData?.emailImageUrl)}
+                            className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                          >
+                            <span>🗑️</span>
+                            <span>{isRemovingImage ? "Removendo..." : "Remover logo de email"}</span>
+                          </button>
+                        </div>
+
+                        {/* Card 3: Favicon */}
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                          <label className="text-sm font-medium text-white mb-1">
+                            Favicon
+                          </label>
+                          <p className="text-xs text-gray-400 mb-4">
+                            ICO ou PNG • 32×32px ou 16×16px • Quadrado • Máx. 100KB
+                          </p>
+
+                          <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[120px] flex items-center justify-center mb-4 transition-colors ${(faviconPreview || customizationData?.faviconUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                            {faviconPreview ? (
+                              <div className="flex gap-4 items-center">
+                                <div className="flex flex-col items-center gap-1">
+                                  <img src={faviconPreview} alt="Favicon 16x16" width={16} height={16} className="border border-[#2a2a2a]" />
+                                  <span className="text-xs text-gray-400">16×16</span>
+                                </div>
+                                <div className="flex flex-col items-center gap-1">
+                                  <img src={faviconPreview} alt="Favicon 32x32" width={32} height={32} className="border border-[#2a2a2a]" />
+                                  <span className="text-xs text-gray-400">32×32</span>
+                                </div>
+                              </div>
+                            ) : customizationData?.faviconUrl ? (
+                              <div className="flex gap-4 items-center">
+                                <div className="flex flex-col items-center gap-1">
+                                  <img src={addCacheBustingToUrl(customizationData.faviconUrl)} alt="Favicon 16x16" width={16} height={16} className="border border-[#2a2a2a]" key={`${customizationData.faviconUrl}-16`} />
+                                  <span className="text-xs text-gray-400">16×16</span>
+                                </div>
+                                <div className="flex flex-col items-center gap-1">
+                                  <img src={addCacheBustingToUrl(customizationData.faviconUrl)} alt="Favicon 32x32" width={32} height={32} className="border border-[#2a2a2a]" key={`${customizationData.faviconUrl}-32`} />
+                                  <span className="text-xs text-gray-400">32×32</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-center text-[#606060]">
+                                <div className="text-5xl mb-2 opacity-50">⭐</div>
+                                <div className="text-xs">Nenhum ícone selecionado</div>
+                              </div>
+                            )}
+                          </div>
+
+                          {faviconError && (
+                            <p className="text-xs text-orange-600 font-medium mb-2">
+                              {faviconError}
+                            </p>
+                          )}
+
+                          <div className="relative mb-3">
+                            <input
+                              type="file"
+                              accept="image/x-icon,image/vnd.microsoft.icon,image/ico,image/png"
+                              name="favicon"
+                              id="favicon"
+                              onChange={handleFaviconChange}
+                              className="hidden"
+                            />
+                            <label
+                              htmlFor="favicon"
+                              className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                            >
+                              <span>📁</span>
+                              <span>Selecionar arquivo</span>
+                            </label>
+                          </div>
+
+                          {faviconFileName && (
+                            <p className="text-xs text-green-600 font-medium mb-3">
+                              ✓ Arquivo selecionado: {faviconFileName}
+                            </p>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImageRequest('favicon')}
+                            disabled={isRemovingImage || (!faviconPreview && !customizationData?.faviconUrl)}
+                            className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                          >
+                            <span>🗑️</span>
+                            <span>{isRemovingImage ? "Removendo..." : "Remover favicon"}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* LINHA 3: ÍCONE DO MENU E IMAGEM DE FUNDO DO LOGIN (Lado a Lado) */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                        {/* ÍCONE DO MENU (36x36px) */}
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                          <label className="text-sm font-medium text-white mb-1">
+                            Ícone do Menu (36×36px)
+                          </label>
+                          <p className="text-xs text-gray-400 mb-4">
+                            PNG ou SVG • 36×36px • Fundo transparente recomendado • Máx. 500KB
+                          </p>
+
+                          <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[120px] flex items-center justify-center mb-4 transition-colors ${(menuIconPreview || customizationData?.menuIconUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
+                            {menuIconPreview ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <img src={menuIconPreview} alt="Preview ícone do menu" width={36} height={36} className="border border-[#2a2a2a]" />
+                                <span className="text-xs text-gray-400">36×36</span>
+                              </div>
+                            ) : customizationData?.menuIconUrl ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <img src={addCacheBustingToUrl(customizationData.menuIconUrl)} alt="Ícone do menu atual" width={36} height={36} className="border border-[#2a2a2a]" key={customizationData.menuIconUrl} />
+                                <span className="text-xs text-gray-400">36×36</span>
+                              </div>
+                            ) : (
+                              <div className="text-center text-[#606060]">
+                                <div className="text-4xl mb-2 opacity-50">🔲</div>
+                                <div className="text-xs">Nenhum ícone selecionado</div>
+                              </div>
+                            )}
+                          </div>
+
+                          {menuIconError && (
+                            <p className="text-xs text-orange-600 font-medium mb-2">
+                              {menuIconError}
+                            </p>
+                          )}
+
+                          <div className="relative mb-3">
+                            <input
+                              type="file"
+                              accept="image/png,image/svg+xml"
+                              name="menuIcon"
+                              id="menuIcon"
+                              onChange={handleMenuIconChange}
+                              className="hidden"
+                            />
+                            <label
+                              htmlFor="menuIcon"
+                              className="flex items-center justify-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-md h-10 px-4 text-white text-sm cursor-pointer transition-all hover:bg-[#1f1f1f] hover:border-[#3a3a3a]"
+                            >
+                              <span>📁</span>
+                              <span>Selecionar arquivo</span>
+                            </label>
+                          </div>
+
+                          {menuIconFileName && (
+                            <p className="text-xs text-green-600 font-medium mb-3">
+                              ✓ Arquivo selecionado: {menuIconFileName}
+                            </p>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImageRequest('menuIcon')}
+                            disabled={isRemovingImage || (!menuIconPreview && !customizationData?.menuIconUrl)}
+                            className="w-full bg-transparent border border-[#4a1a1a] rounded-md h-10 text-[#ff5555] text-sm flex items-center justify-center gap-2 transition-all hover:bg-[#1a0a0a] hover:border-[#6a2a2a] disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:border-[#2a2a2a] disabled:text-[#606060]"
+                          >
+                            <span>🗑️</span>
+                            <span>{isRemovingImage ? "Removendo..." : "Remover ícone"}</span>
+                          </button>
+                        </div>
+
+                        {/* IMAGEM DE FUNDO DO LOGIN */}
+                        <div className="bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg p-5 flex flex-col">
+                          <label className="text-sm font-medium text-white mb-1">
+                            Imagem de Fundo do Login
 
                             <div className={`bg-[#1a1a1a] border-2 rounded-lg min-h-[180px] flex items-center justify-center mb-4 transition-colors overflow-hidden ${(loginImagePreview || customizationData?.loginImageUrl) ? 'border-solid border-[#2a2a2a] p-3' : 'border-dashed border-[#2a2a2a]'}`}>
                               {loginImagePreview ? (
@@ -1896,58 +1892,58 @@ export default function CustomerWizardForm({
                               <span>🗑️</span>
                               <span>{isRemovingImage ? "Removendo..." : "Remover imagem de login"}</span>
                             </button>
-                          </div>
                         </div>
+                      </div>
 
-                        {/* Botões do Rodapé: Remover Tudo (esquerda) e Salvar (direita) */}
-                        <div className="flex justify-between items-center mt-6 pt-6 border-t border-[#1a1a1a] gap-4">
-                          <div>
-                            {(customizationData?.imageUrl || customizationData?.loginImageUrl || customizationData?.faviconUrl || customizationData?.emailImageUrl) && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                className="text-red-500 hover:text-red-400 hover:bg-red-950/20"
-                                onClick={handleRemoveAllImagesRequest}
-                                disabled={isRemovingImage}
-                              >
-                                {isRemovingImage ? "Removendo..." : "Remover todas as imagens"}
-                              </Button>
-                            )}
-                          </div>
-                          <Button
-                            type="submit"
-                            className="min-w-[140px] cursor-pointer"
-                            disabled={isSavingCustomization}
-                          >
-                            {isSavingCustomization
-                              ? "Salvando..."
-                              : "Salvar Personalização"}
-                          </Button>
+                      {/* Botões do Rodapé: Remover Tudo (esquerda) e Salvar (direita) */}
+                      <div className="flex justify-between items-center mt-6 pt-6 border-t border-[#1a1a1a] gap-4">
+                        <div>
+                          {(customizationData?.imageUrl || customizationData?.loginImageUrl || customizationData?.faviconUrl || customizationData?.emailImageUrl) && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="text-red-500 hover:text-red-400 hover:bg-red-950/20"
+                              onClick={handleRemoveAllImagesRequest}
+                              disabled={isRemovingImage}
+                            >
+                              {isRemovingImage ? "Removendo..." : "Remover todas as imagens"}
+                            </Button>
+                          )}
                         </div>
+                        <Button
+                          type="submit"
+                          className="min-w-[140px] cursor-pointer"
+                          disabled={isSavingCustomization}
+                        >
+                          {isSavingCustomization
+                            ? "Salvando..."
+                            : "Salvar Personalização"}
+                        </Button>
+                      </div>
 
-                        {/* Campos ocultos restaurados */}
-                        {customizationData?.id && (
-                          <input
-                            type="hidden"
-                            name="id"
-                            value={customizationData.id}
-                          />
-                        )}
+                      {/* Campos ocultos restaurados */}
+                      {customizationData?.id && (
                         <input
                           type="hidden"
-                          name="customerId"
-                          value={newCustomerId || ""}
+                          name="id"
+                          value={customizationData.id}
                         />
-                        <input
-                          type="hidden"
-                          name="subdomain"
-                          value={iso.subdomain || customizationData?.subdomain || ""}
-                        />
-                      </CardContent>
-                    </>
-                  )}
-            </Card>
-          </form>
+                      )}
+                      <input
+                        type="hidden"
+                        name="customerId"
+                        value={newCustomerId || ""}
+                      />
+                      <input
+                        type="hidden"
+                        name="subdomain"
+                        value={iso.subdomain || customizationData?.subdomain || ""}
+                      />
+                    </CardContent>
+                  </>
+                )}
+              </Card>
+            </form>
             {!isFirstStepComplete && (
               <div className="text-center py-8 text-muted-foreground">
                 <p>Por favor, crie o ISO na seção "Informações Básicas" antes de personalizar.</p>
@@ -1956,8 +1952,8 @@ export default function CustomerWizardForm({
           </CollapsibleContent>
         </Collapsible >
 
-  {/* Seção 3: Gestão de Usuários */ }
-  < Collapsible open = { section3Open && isFirstStepComplete} onOpenChange = {(open) => isFirstStepComplete && setSection3Open(open)} className = "border rounded-lg" >
+        {/* Seção 3: Gestão de Usuários */}
+        < Collapsible open={section3Open && isFirstStepComplete} onOpenChange={(open) => isFirstStepComplete && setSection3Open(open)} className="border rounded-lg" >
           <CollapsibleTrigger
             className="w-full px-6 py-4 hover:bg-muted/50 transition-colors flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!isFirstStepComplete}
@@ -2031,51 +2027,51 @@ export default function CustomerWizardForm({
         </Collapsible >
       </div >
 
-  {/* Botão Salvar Tudo após todas as seções */ }
-  < div className = "flex justify-end mt-6 pt-6 border-t" >
-    <Button
-      onClick={handleSaveAll}
-      disabled={isLoading || isSavingCustomization}
-      className="cursor-pointer min-w-[160px] bg-black hover:bg-gray-800 text-white"
-      size="default"
-    >
-      <Save className="h-4 w-4 mr-2" />
-      {isLoading ? "Salvando..." : "Salvar Tudo"}
-    </Button>
+      {/* Botão Salvar Tudo após todas as seções */}
+      < div className="flex justify-end mt-6 pt-6 border-t" >
+        <Button
+          onClick={handleSaveAll}
+          disabled={isLoading || isSavingCustomization}
+          className="cursor-pointer min-w-[160px] bg-black hover:bg-gray-800 text-white"
+          size="default"
+        >
+          <Save className="h-4 w-4 mr-2" />
+          {isLoading ? "Salvando..." : "Salvar Tudo"}
+        </Button>
       </div >
 
-  {/* Modal de confirmação para remover imagem individual */ }
-  < ConfirmDialog
-open = { confirmRemoveImageOpen }
-onOpenChange = { setConfirmRemoveImageOpen }
-title = "Remover Imagem"
-description = {
-  pendingRemoveImageType === 'logo'
-  ? "Tem certeza que deseja remover o logo?"
-  : pendingRemoveImageType === 'login'
-    ? "Tem certeza que deseja remover a imagem de fundo do login?"
-    : pendingRemoveImageType === 'favicon'
-      ? "Tem certeza que deseja remover o favicon?"
-      : pendingRemoveImageType === 'menuIcon'
-        ? "Tem certeza que deseja remover o ícone do menu?"
-        : "Tem certeza que deseja remover a logo de email?"
+      {/* Modal de confirmação para remover imagem individual */}
+      < ConfirmDialog
+        open={confirmRemoveImageOpen}
+        onOpenChange={setConfirmRemoveImageOpen}
+        title="Remover Imagem"
+        description={
+          pendingRemoveImageType === 'logo'
+            ? "Tem certeza que deseja remover o logo?"
+            : pendingRemoveImageType === 'login'
+              ? "Tem certeza que deseja remover a imagem de fundo do login?"
+              : pendingRemoveImageType === 'favicon'
+                ? "Tem certeza que deseja remover o favicon?"
+                : pendingRemoveImageType === 'menuIcon'
+                  ? "Tem certeza que deseja remover o ícone do menu?"
+                  : "Tem certeza que deseja remover a logo de email?"
         }
-confirmText = "Remover"
-cancelText = "Cancelar"
-onConfirm = { handleRemoveImageConfirm }
-onCancel = {() => setPendingRemoveImageType(null)}
+        confirmText="Remover"
+        cancelText="Cancelar"
+        onConfirm={handleRemoveImageConfirm}
+        onCancel={() => setPendingRemoveImageType(null)}
       />
 
-{/* Modal de confirmação para remover todas as imagens */ }
-<ConfirmDialog
-  open={confirmRemoveAllImagesOpen}
-  onOpenChange={setConfirmRemoveAllImagesOpen}
-  title="Remover Todas as Imagens"
-  description="Tem certeza que deseja remover TODAS as imagens? Esta ação removerá o logo, imagem de login, favicon e logo de email."
-  confirmText="Remover Todas"
-  cancelText="Cancelar"
-  onConfirm={handleRemoveAllImagesConfirm}
-/>
+      {/* Modal de confirmação para remover todas as imagens */}
+      <ConfirmDialog
+        open={confirmRemoveAllImagesOpen}
+        onOpenChange={setConfirmRemoveAllImagesOpen}
+        title="Remover Todas as Imagens"
+        description="Tem certeza que deseja remover TODAS as imagens? Esta ação removerá o logo, imagem de login, favicon e logo de email."
+        confirmText="Remover Todas"
+        cancelText="Cancelar"
+        onConfirm={handleRemoveAllImagesConfirm}
+      />
     </div >
   );
 }

@@ -30,17 +30,17 @@ export type CustomerCustomization = {
 // ✅ Função helper: deletar imagem antiga do S3
 async function deleteOldImageFromS3(oldUrl: string | null | undefined) {
   if (!oldUrl) return;
-  
+
   let key = '';
   try {
     const url = new URL(oldUrl);
     key = url.pathname.substring(1); // Remove leading '/'
-    
+
     const command = new DeleteObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME!,
       Key: key,
     });
-    
+
     await s3Client.send(command);
     console.log(`✅ Imagem antiga deletada: ${key}`);
   } catch (error: any) {
@@ -58,15 +58,15 @@ async function deleteOldImageFromS3(oldUrl: string | null | undefined) {
 async function callRevalidateWithRetry(slug: string, context: string, retries = 3): Promise<boolean> {
   const revalidateUrl = process.env.NEXT_PUBLIC_OUTBANK_ONE_URL || 'https://outbank-one.vercel.app';
   const timeout = 5000; // 5 segundos
-  
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       console.log(`[${context}] 🔄 Attempt ${attempt}/${retries} to invalidate cache for slug: ${slug}`);
       const startTime = Date.now();
-      
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
-      
+
       const response = await fetch(`${revalidateUrl}/api/revalidate/theme`, {
         method: 'POST',
         headers: {
@@ -76,7 +76,7 @@ async function callRevalidateWithRetry(slug: string, context: string, retries = 
         body: JSON.stringify({ slug }),
         signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
       const duration = Date.now() - startTime;
 
@@ -113,14 +113,14 @@ async function callRevalidateWithRetry(slug: string, context: string, retries = 
 async function uploadImageToS3(file: File, prefix: string): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
-  
+
   const extension = file.name.split('.').pop()?.toLowerCase() || 'png';
-  
+
   // ✅ CRÍTICO: timestamp + nanoid = 100% único
   const timestamp = Date.now();
   const uniqueId = nanoid(10);
   const key = `${prefix}-${timestamp}-${uniqueId}.${extension}`;
-  
+
   const command = new PutObjectCommand({
     Bucket: process.env.AWS_BUCKET_NAME!,
     Key: key,
@@ -128,10 +128,11 @@ async function uploadImageToS3(file: File, prefix: string): Promise<string> {
     ContentType: file.type,
     // ✅ Sem cache - atualização instantânea
     CacheControl: 'no-cache, no-store, must-revalidate',
+    ACL: 'public-read',
   });
-  
+
   await s3Client.send(command);
-  
+
   const url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
   return url;
 }
@@ -142,9 +143,9 @@ function hexToHsl(hex: string): string | null {
     if (!hex || typeof hex !== 'string') {
       return null;
     }
-    
+
     hex = hex.replace(/^#/, "").trim();
-    
+
     if (!/^[0-9A-Fa-f]{6}$/.test(hex)) {
       console.warn(`[hexToHsl] Invalid hex color format: ${hex}`);
       return null;
@@ -156,7 +157,7 @@ function hexToHsl(hex: string): string | null {
 
     const max = Math.max(r, g, b),
       min = Math.min(r, g, b);
-   
+
     let h = 0,
       s = 0;
 
@@ -288,7 +289,7 @@ export async function getCustomizationBySubdomain(
 
 export async function saveCustomization(formData: FormData) {
   console.log("[saveCustomization] START - FormData keys:", Array.from(formData.keys()));
-  
+
   const rawData = {
     subdomain: formData.get("subdomain"),
     primaryColor: formData.get("primaryColor"),
@@ -623,7 +624,7 @@ export async function saveCustomization(formData: FormData) {
 
 export async function updateCustomization(formData: FormData) {
   console.log("[updateCustomization] FormData keys:", Array.from(formData.keys()));
-  
+
   const rawData = {
     id: formData.get("id"),
     subdomain: formData.get("subdomain"),
@@ -1022,7 +1023,7 @@ const removeAllImagesSchema = z.object({
 
 export async function removeImage(data: { customerId: number; type: 'logo' | 'login' | 'favicon' | 'email' | 'menuIcon' }) {
   console.log(`[removeImage] START - Removing ${data.type} for customerId=${data.customerId}`);
-  
+
   const validated = removeImageSchema.safeParse(data);
   if (!validated.success) {
     console.error("[removeImage] Validation error:", validated.error.flatten());
@@ -1052,21 +1053,21 @@ export async function removeImage(data: { customerId: number; type: 'logo' | 'lo
     try {
       const bucketName = process.env.AWS_BUCKET_NAME;
       const region = process.env.AWS_REGION;
-      
-      if (currentUrl.includes(`${bucketName}.s3.${region}.amazonaws.com`) || 
-          currentUrl.includes(`${bucketName}.s3.amazonaws.com`)) {
-        
+
+      if (currentUrl.includes(`${bucketName}.s3.${region}.amazonaws.com`) ||
+        currentUrl.includes(`${bucketName}.s3.amazonaws.com`)) {
+
         const urlParts = currentUrl.split('/');
         key = urlParts[urlParts.length - 1];
-        
+
         console.log(`[removeImage] Attempting to delete S3 object: ${key}`);
-        
+
         const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
         const deleteCommand = new DeleteObjectCommand({
           Bucket: bucketName,
           Key: key,
         });
-        
+
         await s3Client.send(deleteCommand);
         console.log(`[removeImage] S3 object deleted successfully: ${key}`);
       } else {
@@ -1122,7 +1123,7 @@ export async function removeImage(data: { customerId: number; type: 'logo' | 'lo
 
 export async function removeAllImages(data: { customerId: number }) {
   console.log(`[removeAllImages] START - Removing all images for customerId=${data.customerId}`);
-  
+
   const validated = removeAllImagesSchema.safeParse(data);
   if (!validated.success) {
     console.error("[removeAllImages] Validation error:", validated.error.flatten());
@@ -1149,21 +1150,21 @@ export async function removeAllImages(data: { customerId: number }) {
     try {
       const bucketName = process.env.AWS_BUCKET_NAME;
       const region = process.env.AWS_REGION;
-      
-      if (url.includes(`${bucketName}.s3.${region}.amazonaws.com`) || 
-          url.includes(`${bucketName}.s3.amazonaws.com`)) {
-        
+
+      if (url.includes(`${bucketName}.s3.${region}.amazonaws.com`) ||
+        url.includes(`${bucketName}.s3.amazonaws.com`)) {
+
         const urlParts = url.split('/');
         key = urlParts[urlParts.length - 1];
-        
+
         console.log(`[removeAllImages] Attempting to delete S3 object: ${key}`);
-        
+
         const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
         const deleteCommand = new DeleteObjectCommand({
           Bucket: bucketName,
           Key: key,
         });
-        
+
         await s3Client.send(deleteCommand);
         console.log(`[removeAllImages] S3 object deleted successfully: ${key}`);
       }
