@@ -128,7 +128,6 @@ async function uploadImageToS3(file: File, prefix: string): Promise<string> {
     ContentType: file.type,
     // ✅ Sem cache - atualização instantânea
     CacheControl: 'no-cache, no-store, must-revalidate',
-    ACL: 'public-read',
   });
 
   await s3Client.send(command);
