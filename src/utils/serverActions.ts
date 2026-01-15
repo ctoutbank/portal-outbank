@@ -288,7 +288,7 @@ export async function getCustomizationBySubdomain(
 }
 
 export async function saveCustomization(formData: FormData) {
-  console.log("[saveCustomization] START - FormData keys:", Array.from(formData.keys()));
+  console.log("[saveCustomization] START - FormData keys:", Array.from((formData as any).keys()));
 
   const rawData = {
     subdomain: formData.get("subdomain"),
