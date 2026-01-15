@@ -19,7 +19,7 @@ interface ConfirmDialogProps {
   description: string
   confirmText?: string
   cancelText?: string
-  onConfirm: () => void
+  onConfirm: () => void | Promise<void>
   onCancel?: () => void
   variant?: "destructive" | "default"
 }
@@ -35,9 +35,18 @@ export function ConfirmDialog({
   onCancel,
   variant = "destructive",
 }: ConfirmDialogProps) {
-  const handleConfirm = () => {
-    onConfirm()
-    onOpenChange(false)
+  const [isConfirming, setIsConfirming] = React.useState(false)
+
+  const handleConfirm = async () => {
+    setIsConfirming(true)
+    try {
+      await onConfirm()
+      onOpenChange(false)
+    } catch (error) {
+      console.error("Erro ao confirmar:", error)
+    } finally {
+      setIsConfirming(false)
+    }
   }
 
   const handleCancel = () => {
@@ -58,13 +67,14 @@ export function ConfirmDialog({
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
+            disabled={isConfirming}
             className={
               variant === "default"
                 ? "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
                 : undefined
             }
           >
-            {confirmText}
+            {isConfirming ? "Confirmando..." : confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
