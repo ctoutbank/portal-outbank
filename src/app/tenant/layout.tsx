@@ -52,7 +52,7 @@ export default async function TenantLayout({
       const h = parseFloat(parts[0]) / 360;
       const s = parseFloat(parts[1]) / 100;
       const l = parseFloat(parts[2]) / 100;
-      
+
       const a = s * Math.min(l, 1 - l);
       const f = (n: number) => {
         const k = (n + h * 12) % 12;
@@ -101,7 +101,10 @@ export default async function TenantLayout({
         />
       </head>
       <body>
-        <TenantCustomization subdomain={subdomain || undefined} />
+        <TenantCustomization
+          subdomain={subdomain || undefined}
+          initialCustomization={customization}
+        />
         <div className="tenant-portal">
           {children}
         </div>

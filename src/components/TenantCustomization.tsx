@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { getCustomizationBySubdomain } from "@/utils/serverActions";
+import { getCustomizationBySubdomain, type CustomerCustomization } from "@/utils/serverActions";
 
 interface TenantCustomizationProps {
   subdomain?: string;
+  initialCustomization?: CustomerCustomization | null;
 }
 
 // ✅ Função helper para adicionar cache busting
@@ -18,14 +19,14 @@ function addCacheBustingToUrl(url: string | null | undefined): string {
 function hslToHex(hsl: string | null | undefined): string {
   if (!hsl) return "#000000";
   if (hsl.startsWith('#')) return hsl;
-  
+
   try {
     const parts = hsl.trim().split(/\s+/);
     if (parts.length !== 3) return "#000000";
     const h = parseFloat(parts[0]) / 360;
     const s = parseFloat(parts[1]) / 100;
     const l = parseFloat(parts[2]) / 100;
-    
+
     const a = s * Math.min(l, 1 - l);
     const f = (n: number) => {
       const k = (n + h * 12) % 12;
@@ -38,14 +39,25 @@ function hslToHex(hsl: string | null | undefined): string {
   }
 }
 
-export default function TenantCustomization({ subdomain }: TenantCustomizationProps) {
+export default function TenantCustomization({ subdomain, initialCustomization }: TenantCustomizationProps) {
   useEffect(() => {
     const loadTenantCustomization = async () => {
       if (!subdomain) return;
 
+      if (initialCustomization) {
+        // Apply properties if already present (optimization)
+        if (initialCustomization.faviconUrl) {
+          const faviconUrl = addCacheBustingToUrl(initialCustomization.faviconUrl);
+          const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+          if (favicon) favicon.href = faviconUrl;
+        }
+        // ... apply other props similarly if needed, but layout.tsx already did colors and bg
+        return;
+      }
+
       try {
         const customization = await getCustomizationBySubdomain(subdomain);
-        
+
         if (customization) {
           // ✅ Atualizar favicon com cache busting
           if (customization.faviconUrl) {

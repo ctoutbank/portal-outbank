@@ -861,6 +861,7 @@ export const users = pgTable("users", {
                 foreignColumns: [addresses.id],
                 name: "fk_users_id_address"
         }),
+        unique("users_email_key").on(table.email),
 ]);
 
 export const adminCustomers = pgTable("admin_customers", {

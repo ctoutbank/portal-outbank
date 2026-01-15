@@ -6,7 +6,7 @@ import { dirname } from "path";
 import { config } from "dotenv";
 
 // Carregar variáveis de ambiente
-config({ path: '.env.local' });
+config({ path: 'env.local' });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,6 +19,7 @@ const migrations = [
   '0008_add_stakeholders_table.sql',
   '0009_add_stakeholder_customers_table.sql',
   '0010_add_dock_columns.sql',
+  '0012_add_users_email_index.sql',
 ];
 
 async function checkTableExists(tableName) {
