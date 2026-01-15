@@ -254,9 +254,22 @@ export async function InsertUser(data: InsertUserInput): Promise<InsertUserResul
         await db.update(users).set({ active: true }).where(eq(users.id, user.id));
       }
 
+      // Atualizar idCustomer e idProfile se necessário
+      const updateData: { idCustomer?: number; idProfile?: number } = {};
+
       // Se não tinha primary customer, setar este
       if (!user.idCustomer && idCustomer) {
-        await db.update(users).set({ idCustomer: idCustomer }).where(eq(users.id, user.id));
+        updateData.idCustomer = idCustomer;
+      }
+
+      // Se não tinha idProfile ou precisa atualizar para ISO_ADMIN
+      if (!user.idProfile || user.idProfile !== idProfile) {
+        updateData.idProfile = idProfile;
+        console.log(`[InsertUser] 🔧 Atualizando id_profile para ${idProfile} (ISO_ADMIN)`);
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await db.update(users).set(updateData).where(eq(users.id, user.id));
       }
 
       // Criar ou reativar vínculo user_customers
