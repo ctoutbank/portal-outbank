@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { unstable_cache } from 'next/cache';
 
 const getSql = () => {
   const url = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.NEON_DATABASE_URL;
@@ -22,16 +23,22 @@ export interface PortalSettings {
   login_text_color: string | null;
 }
 
-export async function getPortalSettings(): Promise<PortalSettings | null> {
-  try {
-    const sql = getSql();
-    const result = await sql`SELECT * FROM portal_settings LIMIT 1`;
-    return result[0] as PortalSettings || null;
-  } catch (error) {
-    console.error('[getPortalSettings] Error:', error);
-    return null;
-  }
-}
+const getPortalSettingsCached = unstable_cache(
+  async (): Promise<PortalSettings | null> => {
+    try {
+      const sql = getSql();
+      const result = await sql`SELECT * FROM portal_settings LIMIT 1`;
+      return result[0] as PortalSettings || null;
+    } catch (error) {
+      console.error('[getPortalSettings] Error:', error);
+      return null;
+    }
+  },
+  ['get-portal-settings'],
+  { revalidate: 3600, tags: ['settings'] }
+);
+
+export const getPortalSettings = getPortalSettingsCached;
 
 export function hslToHex(hsl: string | null | undefined): string {
   if (!hsl) return "#3b82f6";

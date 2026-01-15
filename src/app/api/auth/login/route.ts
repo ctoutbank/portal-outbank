@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserByEmail, verifyPassword, createToken, SESSION_DURATION, REMEMBER_ME_DURATION } from '@/lib/auth';
+import { getUserByEmail, verifyPassword, createToken, SESSION_DURATION, REMEMBER_ME_DURATION, hashPassword } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { users } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +24,7 @@ export async function POST(request: NextRequest) {
     const dbStart = performance.now();
     const user = await getUserByEmail(email);
     timings.db_query = performance.now() - dbStart;
-    
+
     if (!user) {
       return NextResponse.json(
         { error: 'Credenciais inválidas' },
@@ -48,12 +51,27 @@ export async function POST(request: NextRequest) {
     const verifyStart = performance.now();
     const isValidPassword = await verifyPassword(password, user.hashedPassword);
     timings.verify_password = performance.now() - verifyStart;
-    
+
     if (!isValidPassword) {
       return NextResponse.json(
         { error: 'Credenciais inválidas' },
         { status: 401 }
       );
+    }
+
+    // ✅ AUTO-UPGRADE: Se a senha era bcrypt (lenta), atualizar para scrypt (rápida)
+    if (hashType === 'bcrypt') {
+      try {
+        const upgradeStart = performance.now();
+        const newHash = await hashPassword(password);
+        await db.update(users)
+          .set({ hashedPassword: newHash })
+          .where(eq(users.id, user.id));
+        const upgradeTime = performance.now() - upgradeStart;
+        console.log(`[LOGIN] 🔄 Auto-upgraded password hash for user ${email} (bcrypt -> scrypt) in ${upgradeTime.toFixed(0)}ms`);
+      } catch (err) {
+        console.error('[LOGIN] ❌ Failed to auto-upgrade password hash:', err);
+      }
     }
 
     // 3. Criar token JWT
@@ -74,7 +92,7 @@ export async function POST(request: NextRequest) {
     const isSecure = process.env.NODE_ENV === 'production' || !!process.env.VERCEL || isHttps;
 
     const totalTime = performance.now() - startTime;
-    
+
     // Log de performance
     console.log(`[LOGIN] ${email} | Total: ${totalTime.toFixed(0)}ms | DB: ${timings.db_query.toFixed(0)}ms | Verify(${hashType}): ${timings.verify_password.toFixed(0)}ms | Token: ${timings.create_token.toFixed(0)}ms`);
 
