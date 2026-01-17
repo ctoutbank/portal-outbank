@@ -1,0 +1,37 @@
+# Regras para Assistentes de IA - Portal Outbank
+
+## ⚠️ REGRAS CRÍTICAS DE PERFORMANCE
+
+### Senhas - NÃO usar bcrypt
+**NUNCA** sugira ou use `bcrypt.hash()` ou `bcrypt.compare()` para senhas neste projeto.
+
+**Motivo**: bcrypt com custo 10 leva ~1-3 segundos por operação, causando lentidão no login.
+
+**SEMPRE use**:
+- Para criar hash: `import { hashPassword } from '@/app/utils/password'`
+- Para verificar: `import { verifyPassword } from '@/lib/auth'`
+
+Estas funções usam **scrypt** que é ~100x mais rápido (~5-50ms).
+
+### Exemplo correto:
+```typescript
+import { hashPassword } from '@/app/utils/password';
+import { verifyPassword } from '@/lib/auth';
+
+// Criar hash de nova senha
+const hash = hashPassword(password);  // ✅ Correto
+
+// Verificar senha existente
+const isValid = await verifyPassword(password, hashedPassword);  // ✅ Correto
+```
+
+### Exemplo INCORRETO (não usar):
+```typescript
+import bcrypt from 'bcryptjs';
+
+const hash = await bcrypt.hash(password, 10);  // ❌ LENTO!
+const isValid = await bcrypt.compare(password, hash);  // ❌ LENTO!
+```
+
+## Verificação
+Execute `./scripts/check-bcrypt-usage.sh` para verificar se há uso indevido de bcrypt no código.
