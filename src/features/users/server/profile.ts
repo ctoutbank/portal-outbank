@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { users, profiles, customers, adminCustomers, profileFunctions, functions, userFunctions, profileCustomers } from "../../../../drizzle/schema";
 import { eq, and, inArray } from "drizzle-orm";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, verifyPassword } from "@/lib/auth";
 import { hashPassword } from "@/app/utils/password";
 import { revalidatePath } from "next/cache";
 /**
@@ -58,7 +58,7 @@ export async function getUserProfile() {
       firstName: userData.firstName,
       lastName: userData.lastName,
       imageUrl: userData.imageUrl,
-      
+
       // Dados do banco
       idCustomer: userData.idCustomer,
       idProfile: userData.idProfile,
@@ -66,7 +66,7 @@ export async function getUserProfile() {
       profileDescription: userData.profileDescription,
       fullAccess: userData.fullAccess,
       active: userData.active,
-      
+
       // Verificações de tipo de usuário
       isSuperAdmin: userData.profileName?.toUpperCase().includes("SUPER") || false,
       isAdmin: userData.profileName?.toUpperCase().includes("ADMIN") || false,
@@ -117,14 +117,14 @@ export async function updateUserProfile(data: {
       .where(eq(users.id, sessionUser.id));
 
     console.log(`[updateUserProfile] ✅ Perfil atualizado: ${sessionUser.id}`);
-    
+
     revalidatePath("/account");
     return { success: true };
   } catch (error) {
     console.error("[updateUserProfile] Error:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Erro ao atualizar perfil" 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao atualizar perfil"
     };
   }
 }
@@ -164,12 +164,11 @@ export async function changePassword(data: {
       return { success: false, error: "Usuário não encontrado" };
     }
 
-    // Validar senha atual usando bcrypt
-    const bcrypt = await import("bcryptjs");
+    // Validar senha atual usando função unificada (suporta bcrypt e scrypt)
     const currentHashedPassword = userDb[0].hashedPassword;
-    
+
     if (currentHashedPassword) {
-      const isValid = await bcrypt.compare(data.currentPassword, currentHashedPassword);
+      const isValid = await verifyPassword(data.currentPassword, currentHashedPassword);
       if (!isValid) {
         return { success: false, error: "Senha atual incorreta" };
       }
@@ -189,9 +188,9 @@ export async function changePassword(data: {
     return { success: true };
   } catch (error: any) {
     console.error("[changePassword] Error:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Erro ao alterar senha" 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao alterar senha"
     };
   }
 }
@@ -338,7 +337,7 @@ export async function getUserPermissionsSummary() {
         .from(customers)
         .where(eq(customers.id, userData.idCustomer))
         .limit(1);
-      
+
       if (mainISOResult && mainISOResult.length > 0) {
         mainISO = mainISOResult[0];
       }

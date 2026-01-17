@@ -1,7 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { users } from '../drizzle/schema';
-import * as bcrypt from 'bcryptjs';
+import { hashPassword } from '../src/app/utils/password';
 import * as dotenv from 'dotenv';
 import { eq } from 'drizzle-orm';
 
@@ -31,7 +31,7 @@ async function createAdmin() {
     try {
         const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = hashPassword(password);
 
         if (existingUser.length > 0) {
             console.log('⚠️ Usuário já existe. Atualizando senha e permissões...');
