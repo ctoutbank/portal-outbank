@@ -1,240 +1,147 @@
-# Fluxo de Tabelas MDR: Portal-Outbank → Outbank-One
+# Fluxo de Tabelas MDR: Documentação Completa
 
-Este documento descreve o fluxo completo desde a criação de uma tabela MDR no **portal-outbank** até sua validação e consumo pelo **outbank-one**.
-
----
-
-## 📊 Visão Geral da Arquitetura
+## Visão Geral do Ciclo de Vida
 
 ```mermaid
 flowchart TB
-    subgraph Portal["Portal Outbank (Admin)"]
-        A[Admin cria Fornecedor] --> B[Associa Category/CNAE]
-        B --> C[Preenche taxas MDR]
-        C --> D[ISO vincula tabela]
-        D --> E[ISO configura margens]
-        E --> F[Submete para validação]
-        F --> G{Validação}
-        G -->|Aprovar| H[Status: validada]
-        G -->|Rejeitar| I[Status: rejeitada]
-        I --> E
+    subgraph Fase1["1. Cadastro de Custo"]
+        A[Fornecedor cadastrado] --> B[Tabela de custo preenchida]
+        B --> C[Status: Pronta para Margem]
     end
     
-    subgraph OutbankOne["Outbank-One (Consumo)"]
-        H --> J[API filtra status=validada]
-        J --> K[Exibe taxas consolidadas]
-        K --> L[Aplica em transações EC]
+    subgraph Fase2["2. Vinculação e Margens"]
+        C --> D[Super Admin vai em Margens]
+        D --> E[Seleciona ISO]
+        E --> F[Vincula tabelas prontas]
+        F --> G[Insere margens: Outbank/Core/Executivo]
+        G --> H[Status: Rascunho]
+    end
+    
+    subgraph Fase3["3. Validação"]
+        H --> I{Validar?}
+        I -->|Sim| J[Status: Validada]
+        I -->|Não| H
+    end
+    
+    subgraph Fase4["4. Consumo pelo ISO"]
+        J --> K[Aparece no tenant do ISO]
+        K --> L[Margem Consolidada → Custo ISO]
+        L --> M[ISO insere sua margem]
+        M --> N[Preço Final para EC]
     end
 ```
 
 ---
 
-## 🗄️ Estrutura do Banco de Dados
+## Tipos de Tabelas
 
-### Tabelas Principais
-
-| Tabela | Descrição | Repositório |
-|--------|-----------|-------------|
-| `mdr` | Taxas base por modalidade (débito, crédito, PIX, etc.) | Ambos |
-| `fornecedores` | Fornecedores de adquirência | Ambos |
-| `fornecedor_categories` | Associação Fornecedor ↔ Category (CNAE) + MDR | Ambos |
-| `iso_mdr_links` | Vínculo ISO ↔ Tabela MDR (com status de validação) | Ambos |
-| `iso_mdr_margins` | Margens do ISO por bandeira/modalidade | Ambos |
-| `iso_mdr_cost_snapshots` | Snapshots de custo consolidado | Ambos |
-| `iso_mdr_validation_history` | Histórico de alterações de status | Ambos |
-| `categories` | Categorias (MCC, CNAE) | Ambos |
-
-### Relacionamentos
-
-```mermaid
-erDiagram
-    FORNECEDORES ||--o{ FORNECEDOR_CATEGORIES : "1:N"
-    CATEGORIES ||--o{ FORNECEDOR_CATEGORIES : "1:N"
-    MDR ||--o{ FORNECEDOR_CATEGORIES : "1:N"
-    FORNECEDOR_CATEGORIES ||--o{ ISO_MDR_LINKS : "1:N"
-    CUSTOMERS ||--o{ ISO_MDR_LINKS : "1:N"
-    ISO_MDR_LINKS ||--o{ ISO_MDR_MARGINS : "1:N"
-    ISO_MDR_LINKS ||--o{ ISO_MDR_COST_SNAPSHOTS : "1:N"
-    ISO_MDR_LINKS ||--o{ ISO_MDR_VALIDATION_HISTORY : "1:N"
-```
+| Tipo | Descrição | Onde aparece |
+|------|-----------|--------------|
+| **Tabela de Custo** | Custo do fornecedor (Dock, etc.) | Portal > Fornecedores |
+| **Tabela Vinculada (Rascunho)** | Vinculada a um ISO, com margens em edição | Portal > Margens |
+| **Tabela Validada** | Aprovada, disponível para o ISO | Portal > Margens + Tenant ISO |
 
 ---
 
-## 🔄 Fluxo Detalhado
+## Fluxo Detalhado
 
-### 1. Criação da Tabela MDR (Portal-Outbank)
+### 1. Cadastro de Custo (Fornecedor)
 
-**Arquivos principais:**
-- [MdrRepository](file:///Users/denisonzimmerdaluz/Documents/GitHub/portal-outbank/src/lib/db/mdr.ts) - CRUD de MDR
-- [MdrForm](file:///Users/denisonzimmerdaluz/Documents/GitHub/portal-outbank/src/components/supplier/MdrForm.tsx) - UI de preenchimento
+- Admin cadastra fornecedor e sua tabela de custo
+- Custo representa o preço cobrado pelo fornecedor (Dock, etc.)
+- Quando completa, fica "pronta para margem"
 
-**Processo:**
-1. Admin cadastra um **Fornecedor** (ex: Adquirente XYZ)
-2. Associa uma **Category** (CNAE/MCC) ao fornecedor → cria registro em `fornecedor_categories`
-3. Preenche as taxas MDR para cada modalidade:
-   - **POS**: débito, crédito, crédito 2x, crédito 7x, voucher, PRE, antecipação
-   - **Online**: mesmas modalidades
-   - **PIX**: custo e margem por canal
-4. Dados salvos na tabela `mdr` e vinculados via `fornecedor_categories.mdr_id`
+### 2. Vinculação ao ISO
 
-### 2. Vínculo ISO-MDR (Portal-Outbank)
+SuperAdmin ou usuário autorizado:
+1. Acessa página **Margens**
+2. Seleciona o **ISO** desejado
+3. **Vincula** as tabelas prontas
+4. Insere **margens por usuário**:
+   - **Outbank** (obrigatório)
+   - **Core** (opcional)
+   - **Executivo** (opcional)
 
-**Arquivos principais:**
-- [IsoMarginsRepository](file:///Users/denisonzimmerdaluz/Documents/GitHub/portal-outbank/src/lib/db/iso-margins.ts) - Lógica de vínculo
-- [IsoMdrForm](file:///Users/denisonzimmerdaluz/Documents/GitHub/portal-outbank/src/components/iso/IsoMdrForm.tsx) - UI de margens do ISO
+> ⚠️ Margens são em % e alteram cada modalidade (crédito, débito, PIX, etc.)
 
-**Processo:**
-1. ISO (customer) seleciona tabelas MDR disponíveis
-2. Função `linkMdrTable()` cria registro em `iso_mdr_links`:
-   ```sql
-   INSERT INTO iso_mdr_links (customer_id, fornecedor_category_id, is_active, status)
-   VALUES ($1, $2, true, 'rascunho')
-   ```
-3. ISO configura suas **margens** por bandeira/modalidade
-4. Margens salvas em `iso_mdr_margins`:
-   ```sql
-   INSERT INTO iso_mdr_margins (iso_mdr_link_id, bandeira, modalidade, margin_iso)
-   VALUES ($1, $2, $3, $4)
-   ```
+### 3. Estados da Tabela Vinculada
 
-### 3. Workflow de Validação (Portal-Outbank)
-
-**Arquivos principais:**
-- [MdrValidationModal](file:///Users/denisonzimmerdaluz/Documents/GitHub/portal-outbank/src/components/supplier/MdrValidationModal.tsx) - Modal de validação
-- [validate/route.ts](file:///Users/denisonzimmerdaluz/Documents/GitHub/portal-outbank/src/app/api/margens/iso/[customerId]/validate/route.ts) - API de validação
-
-**Estados possíveis:**
-
-| Status | Descrição |
+| Estado | Descrição |
 |--------|-----------|
-| `rascunho` | Tabela em edição, não disponível para consumo |
-| `pendente_validacao` | ISO submeteu para aprovação |
-| `validada` | ✅ Aprovada, disponível para consumo |
-| `rejeitada` | ❌ Rejeitada com motivo, pode ser corrigida |
+| `rascunho` | Em edição, não aparece para o ISO |
+| `pendente_validacao` | Submetida para aprovação |
+| `validada` | ✅ Aparece no tenant do ISO |
+| `rejeitada` | Devolvida com motivo |
 | `inativa` | Desativada manualmente |
 
-**Fluxo de estados:**
+### 4. Consumo pelo ISO (Tenant)
 
-```mermaid
-stateDiagram-v2
-    [*] --> rascunho: Criar link
-    rascunho --> pendente_validacao: Submeter
-    pendente_validacao --> validada: Aprovar
-    pendente_validacao --> rejeitada: Rejeitar
-    rejeitada --> pendente_validacao: Corrigir e resubmeter
-    validada --> inativa: Desativar
-    inativa --> validada: Reativar
+Após validação:
+- Tabela aparece em **Taxas MDR** do ambiente tenant
+- **Margem Consolidada** (Outbank + Core + Executivo) vira o **Custo do ISO**
+- ISO insere **sua margem** adicional
+- **Preço Final** = Custo ISO + Margem ISO → usado pelo EC
+
+---
+
+## Regras Críticas de Negócio
+
+### ⚠️ Isolamento por ISO
+```
+Cada tabela vinculada possui REGISTRO PRÓPRIO por ISO.
+Alterações em uma tabela NÃO afetam outros ISOs.
 ```
 
-**API de mudança de status:**
-```typescript
-// POST /api/supplier/{fornecedorId}/cnae/{categoryId}/validation
-{
-  action: 'approve' | 'reject' | 'submit' | 'deactivate' | 'reactivate',
-  reason?: string // obrigatório para reject
-}
+### ⚠️ Proteção Contratual
+```
+Tabelas validadas NÃO sofrem alterações automáticas.
+Isso evita problemas jurídicos com contratos vigentes.
 ```
 
-### 4. Consumo pelo Outbank-One
-
-**Arquivos principais:**
-- [mdr-db.ts](file:///Users/denisonzimmerdaluz/Documents/GitHub/outbank-one/src/features/mdr/server/mdr-db.ts) - Funções de consulta
-- [tabelas-mdr/route.ts](file:///Users/denisonzimmerdaluz/Documents/GitHub/outbank-one/src/app/api/tenant/tabelas-mdr/route.ts) - API principal
-
-**Critério de consumo:**
-> Apenas tabelas com `status = 'validada'` são retornadas
-
-**Query de consumo:**
-```typescript
-const links = await db
-  .select({...})
-  .from(isoMdrLinks)
-  .innerJoin(fornecedorCategories, eq(isoMdrLinks.fornecedorCategoryId, fornecedorCategories.id))
-  .innerJoin(mdr, eq(fornecedorCategories.mdrId, mdr.id))
-  .leftJoin(categories, eq(fornecedorCategories.categoryId, categories.id))
-  .where(
-    and(
-      eq(isoMdrLinks.customerId, customerId),
-      eq(isoMdrLinks.status, "validada")  // ← FILTRO CRÍTICO
-    )
-  );
+### ⚠️ Versionamento
 ```
-
-**Resposta da API:**
-```typescript
-interface TabelaMdrResponse {
-  linkId: string;
-  mdrId: string;
-  categoryName: string | null;
-  mcc: string | null;
-  cnae: string | null;
-  bandeiras: string | null;
-  status: string | null;
-  custoConsolidado: {
-    pos: { debito, credito, credito_2x, credito_7x, voucher, pix, antecipacao };
-    online: { debito, credito, credito_2x, credito_7x, voucher, pix, antecipacao };
-  };
-  margemIso: {
-    pos: { [bandeira: string]: { [modalidade: string]: string } };
-    online: { [bandeira: string]: { [modalidade: string]: string } };
-  };
-}
+ISO pode duplicar tabelas e ter várias versões.
+Cada versão mantém independência de preços.
 ```
 
 ---
 
-## 📁 Mapeamento de Arquivos
+## Cálculo de Preços
 
-### Portal-Outbank
-
-| Caminho | Função |
-|---------|--------|
-| `src/lib/db/mdr.ts` | CRUD de taxas MDR |
-| `src/lib/db/mdr-versioning.ts` | Versionamento e notificações |
-| `src/lib/db/iso-margins.ts` | Vínculo ISO-MDR e margens |
-| `src/components/supplier/MdrForm.tsx` | Formulário de taxas |
-| `src/components/supplier/MdrValidationModal.tsx` | Modal de validação |
-| `src/components/iso/IsoMdrForm.tsx` | Formulário de margens ISO |
-| `src/app/api/tenant/tabelas-mdr/route.ts` | API de tabelas do tenant |
-
-### Outbank-One
-
-| Caminho | Função |
-|---------|--------|
-| `src/features/mdr/server/mdr-db.ts` | Funções de consulta |
-| `src/features/mdr/_components/` | Componentes de UI |
-| `src/app/api/tenant/tabelas-mdr/route.ts` | API de consumo |
-| `src/drizzle/schema.ts` | Definição das tabelas |
+```
+├── Custo Fornecedor (Dock)         = X%
+│
+├── + Margem Outbank               = Y%
+├── + Margem Core (opcional)       = Z%
+├── + Margem Executivo (opcional)  = W%
+│
+├── = MARGEM CONSOLIDADA           = X + Y + Z + W
+│     (Custo do ISO)
+│
+├── + Margem ISO                   = I%
+│
+└── = PREÇO FINAL PARA EC          = Consolidada + I
+```
 
 ---
 
-## 🔐 Pontos Críticos para Implementação
+## Estrutura de Banco
 
-### 1. Validação Obrigatória
-> ⚠️ Tabelas só são consumidas se `status = 'validada'`
-
-### 2. Tenant Isolation
-Ambas APIs verificam o `customerId` via cookie/sessão para garantir isolamento multi-tenant.
-
-### 3. Cálculo de Taxa Final
-```
-Taxa Final = Custo Base (MDR) + Margem ISO
-```
-O cálculo é feito em tempo de consulta, consolidando dados de `mdr` + `iso_mdr_margins`.
-
-### 4. Snapshots de Custo
-A tabela `iso_mdr_cost_snapshots` armazena snapshots pré-calculados para evitar recálculos frequentes.
+| Tabela | Função |
+|--------|--------|
+| `mdr` | Custos base do fornecedor |
+| `fornecedor_categories` | Liga Fornecedor + Category + MDR |
+| `iso_mdr_links` | **Vínculo único por ISO** (status, datas) |
+| `iso_mdr_margins` | Margens do ISO sobre custo consolidado |
+| `iso_mdr_cost_snapshots` | Custos pré-calculados (performance) |
+| `iso_mdr_validation_history` | Histórico de mudanças de status |
 
 ---
 
-## ✅ Checklist de Validação
+## Pontos-Chave
 
-Para uma tabela MDR ser consumida pelo outbank-one:
-
-- [ ] Fornecedor criado e ativo
-- [ ] Category associada ao fornecedor
-- [ ] Taxas MDR preenchidas na tabela `mdr`
-- [ ] `fornecedor_categories.mdr_id` apontando para a tabela MDR
-- [ ] ISO vinculou a tabela (`iso_mdr_links` criado)
-- [ ] Margens do ISO configuradas (opcional, default 0)
-- [ ] Status do link = `validada`
+1. **Margem Outbank é obrigatória** - outras são opcionais
+2. **Cada ISO tem seu registro** - sem interferência entre ISOs
+3. **Tabelas não mudam automaticamente** - proteção jurídica
+4. **ISO pode duplicar** - múltiplas versões permitidas
+5. **Validação libera para tenant** - só validadas aparecem
